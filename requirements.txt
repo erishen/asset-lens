@@ -1,0 +1,32 @@
+# Core dependencies
+pandas>=2.0.0
+numpy>=1.24.0
+python-dateutil>=2.8.0
+
+# CSV processing
+csvkit>=2.0.0
+
+# CLI
+click>=8.1.0
+rich>=13.0.0
+
+# Financial calculations
+scipy>=1.10.0
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# Data validation
+pydantic>=2.0.0
+
+# Testing (optional)
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# Optional: AI Analysis
+openai>=1.0.0
+
+# Optional: Advanced Financial Analysis
+# quantstats>=0.0.62  # Portfolio analytics
+# pandas-ta>=0.3.14b  # Technical analysis
+# yfinance>=0.2.0     # Yahoo Finance data

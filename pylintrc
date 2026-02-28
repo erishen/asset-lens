@@ -1,0 +1,27 @@
+[MASTER]
+# Python 代码检查配置
+
+# 允许单字母变量名（在上下文清晰的情况下）
+# 允许捕获通用异常（在实际项目中）
+# 允许使用通用 Exception（根据项目需要）
+# 允许重新抛出异常而不使用 from
+disable=C0103,W0718,W0719,raise-missing-from
+
+# 变量命名
+good-names=i,j,k,ex,Run,_  # 允许常见单字母变量
+
+# 每个模块的最大实例属性数
+max-attributes=20
+
+# 每个函数的最大本地变量数
+max-locals=20
+
+# 忽略的文件
+ignore=tests/*,*/migrations/*,
+
+[SIMILARITIES]
+# 相似代码检查
+min-similarity-lines=4
+ignore-comments=yes
+ignore-docstrings=yes
+ignore-imports=no
