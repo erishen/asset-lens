@@ -4,14 +4,15 @@ CSV 数据读取和解析模块
 """
 
 import csv
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from typing import List
+from typing import Any, Dict, List
 
 from ..config import config
-from ..data.models import (Currency, InvestmentProduct, InvestmentType,
-                           RiskLevel)
+from ..data.models import Currency, InvestmentProduct, InvestmentType, RiskLevel
+from .parser_utils import parse_date as _parse_date
+from .parser_utils import parse_decimal as _parse_decimal
 
 
 def days360(start_date: date, end_date: date, european: bool = False) -> int:
@@ -27,11 +28,11 @@ def days360(start_date: date, end_date: date, european: bool = False) -> int:
     start_year = start_date.year
     start_month = start_date.month
     start_day = start_date.day
-    
+
     end_year = end_date.year
     end_month = end_date.month
     end_day = end_date.day
-    
+
     if european:
         if start_day == 31:
             start_day = 30
@@ -42,7 +43,7 @@ def days360(start_date: date, end_date: date, european: bool = False) -> int:
             start_day = 30
         if end_day == 31 and start_day == 30:
             end_day = 30
-    
+
     return (end_year - start_year) * 360 + (end_month - start_month) * 30 + (end_day - start_day)
 
 
@@ -54,8 +55,8 @@ class CSVParser:
         "类型": "investment_type",
         "名称": "name",
         "风险": "risk_level",
-        "微信": "wechat_amount",
-        "支付宝": "alipay_amount",
+        "平台A": "wechat_amount",
+        "平台B": "alipay_amount",
         "到期时间": "maturity_date",
         "滚动": "is_rolling",
         "开始日期": "start_date",
@@ -77,14 +78,7 @@ class CSVParser:
     @staticmethod
     def parse_decimal(value: str) -> Decimal | None:
         """解析 Decimal 值"""
-        if not value or value.strip() == "":
-            return None
-        try:
-            # 移除逗号等格式字符
-            cleaned = value.replace(",", "").strip()
-            return Decimal(cleaned)
-        except InvalidOperation:
-            return None
+        return _parse_decimal(value)
 
     @staticmethod
     def get_exchange_rates(data_dir: Path) -> tuple[float, float]:
@@ -97,48 +91,48 @@ class CSVParser:
         """
         default_usd = float(config.default_usd_rate)
         default_hkd = float(config.default_hkd_rate)
-        
+
         try:
             # 查找工作表2文件
             ws2_files = list(data_dir.glob("*工作表 2*.csv"))
             if not ws2_files:
                 ws2_files = list(data_dir.glob("*工作表*2*.csv"))
-            
+
             if not ws2_files:
                 return default_usd, default_hkd
-            
+
             ws2_path = ws2_files[0]
-            
+
             with open(ws2_path, "r", encoding="utf-8-sig") as f:
                 lines = f.readlines()
-            
+
             if len(lines) < 2:
                 return default_usd, default_hkd
-            
+
             # 解析表头
             header = lines[0].strip().split(",")
             usd_idx = -1
             hkd_idx = -1
-            
+
             for i, col in enumerate(header):
                 col_clean = col.replace(" ", "")
                 if "美元汇率" in col_clean:
                     usd_idx = i
                 if "港元汇率" in col_clean:
                     hkd_idx = i
-            
+
             if usd_idx == -1 and hkd_idx == -1:
                 return default_usd, default_hkd
-            
+
             # 从最后一行往上找有数据的汇率
             usd_rate = default_usd
             hkd_rate = default_hkd
-            
+
             for i in range(len(lines) - 1, 0, -1):
                 cells = lines[i].strip().split(",")
                 if len(cells) <= max(usd_idx, hkd_idx):
                     continue
-                
+
                 if usd_idx != -1 and usd_rate == default_usd:
                     try:
                         rate = float(cells[usd_idx])
@@ -146,7 +140,7 @@ class CSVParser:
                             usd_rate = rate
                     except (ValueError, IndexError):
                         pass
-                
+
                 if hkd_idx != -1 and hkd_rate == default_hkd:
                     try:
                         rate = float(cells[hkd_idx])
@@ -154,37 +148,19 @@ class CSVParser:
                             hkd_rate = rate
                     except (ValueError, IndexError):
                         pass
-                
+
                 if usd_rate != default_usd and hkd_rate != default_hkd:
                     break
-            
+
             return usd_rate, hkd_rate
-            
+
         except Exception:
             return default_usd, default_hkd
 
     @staticmethod
     def parse_date(value: str) -> datetime | None:
         """解析日期值"""
-        if not value or value.strip() == "":
-            return None
-
-        # 尝试多种日期格式
-        date_formats = [
-            "%Y/%m/%d",
-            "%Y-%m-%d",
-            "%Y/%m/%d %H:%M:%S",
-            "%Y-%m-%d %H:%M:%S",
-            "%Y%m%d",
-        ]
-
-        for fmt in date_formats:
-            try:
-                return datetime.strptime(value.strip(), fmt)
-            except ValueError:
-                continue
-
-        return None
+        return _parse_date(value)
 
     @staticmethod
     def parse_boolean(value: str) -> bool:
@@ -201,8 +177,8 @@ class CSVParser:
 
         type_mapping = {
             "货币": InvestmentType.MONETARY,
-            "现金": InvestmentType.MONETARY,
-            "现金（港元）": InvestmentType.HK_STOCK,
+            "现金": InvestmentType.CASH,
+            "现金（港元）": InvestmentType.HK_CASH,
             "指数基金": InvestmentType.INDEX_FUND,
             "债券基金": InvestmentType.BOND_FUND,
             "混合基金": InvestmentType.MIXED_FUND,
@@ -213,20 +189,20 @@ class CSVParser:
             "港股（港元）": InvestmentType.HK_STOCK,
             "QDII": InvestmentType.QDII,
             "理财": InvestmentType.WEALTH,
-            "高端理财": InvestmentType.WEALTH,
-            "券商理财": InvestmentType.WEALTH,
-            "公募固收": InvestmentType.WEALTH,
+            "高端理财": InvestmentType.HIGH_END_WEALTH,
+            "券商理财": InvestmentType.BROKER_WEALTH,
+            "公募固收": InvestmentType.PUBLIC_FIXED_INCOME,
             "定期存款": InvestmentType.FIXED_DEPOSIT,
             "债券": InvestmentType.BOND,
-            "特别国债": InvestmentType.BOND,
+            "特别国债": InvestmentType.SPECIAL_TREASURY_BOND,
             "REITs": InvestmentType.REITS,
             "黄金": InvestmentType.GOLD,
             "基金": InvestmentType.FUND,
-            "定投基金": InvestmentType.FUND,
-            "股息基金（港元）": InvestmentType.FUND,
-            "个人养老金": InvestmentType.FUND,
-            "ETF": InvestmentType.FUND,
-            "美元基金（美元）": InvestmentType.MONETARY,
+            "定投基金": InvestmentType.DCA_FUND,
+            "股息基金（港元）": InvestmentType.HK_DIVIDEND_FUND,
+            "个人养老金": InvestmentType.PENSION,
+            "ETF": InvestmentType.ETF,
+            "美元基金（美元）": InvestmentType.USD_FUND,
         }
 
         return type_mapping.get(value.strip(), InvestmentType.OTHER)
@@ -252,18 +228,18 @@ class CSVParser:
         """解析投资天数，支持 '328天' 或 '328' 格式"""
         if not value or not value.strip():
             return None
-        
+
         value = value.strip()
         if value.endswith("天"):
             value = value[:-1]
-        
+
         try:
             return int(value)
         except ValueError:
             return None
 
     @classmethod
-    def parse_row(cls, row: dict, reference_date: date = None) -> InvestmentProduct | None:
+    def parse_row(cls, row: dict, reference_date: date | None = None) -> InvestmentProduct | None:
         """解析单行数据
         Args:
             row: CSV 行数据
@@ -271,7 +247,7 @@ class CSVParser:
         """
         if reference_date is None:
             reference_date = datetime.now().date()
-        
+
         try:
             # 获取基础字段
             investment_type = cls.parse_investment_type(row.get("类型", ""))
@@ -285,20 +261,20 @@ class CSVParser:
             if name in ["小计", "合计", "总计", "汇总", "平均"]:
                 return None
 
-            # 解析金额字段
-            wechat_amount = cls.parse_decimal(row.get("微信", ""))
-            zhongjin_amount = cls.parse_decimal(row.get("中金", ""))
-            alipay_amount = cls.parse_decimal(row.get("支付宝", ""))
-            futu_amount = cls.parse_decimal(row.get("富途", ""))
-            zhaoshang_amount = cls.parse_decimal(row.get("招商", ""))
-            gangzhao_amount = cls.parse_decimal(row.get("港招", ""))
-            jiaotong_amount = cls.parse_decimal(row.get("交通", ""))
-            pufa_amount = cls.parse_decimal(row.get("浦发", ""))
-            jianshe_amount = cls.parse_decimal(row.get("建设", ""))
-            zhongxin_amount = cls.parse_decimal(row.get("中信", ""))
-            minsheng_amount = cls.parse_decimal(row.get("民生", ""))
-            gongshang_amount = cls.parse_decimal(row.get("工商", ""))
-            zhongyin_amount = cls.parse_decimal(row.get("中银", ""))
+            # 解析平台金额（使用动态配置）
+            platform_amounts = {}
+            from asset_lens.core.platform_loader import PlatformLoader
+
+            from ..config import config
+
+            # 确保加载了平台配置
+            if not PlatformLoader._loaded:
+                PlatformLoader.load(data_mode=config.data_mode)
+
+            for platform in PlatformLoader.get_all_platforms(data_mode=config.data_mode):
+                amount = cls.parse_decimal(row.get(platform.name, ""))
+                if amount:
+                    platform_amounts[platform.id] = amount
 
             # 解析日期字段
             maturity_date = cls.parse_date(row.get("到期时间", ""))
@@ -315,7 +291,7 @@ class CSVParser:
 
             # 解析投资天数（优先使用 days360 计算）
             investment_days = cls.parse_investment_days(row.get("投资天数", ""))
-            
+
             # 如果有开始日期，使用 days360 重新计算投资天数
             if start_date:
                 calculated_days = days360(start_date.date(), reference_date)
@@ -350,19 +326,7 @@ class CSVParser:
                 investment_type=investment_type,
                 name=name,
                 risk_level=risk_level,
-                wechat_amount=wechat_amount,
-                zhongjin_amount=zhongjin_amount,
-                alipay_amount=alipay_amount,
-                futu_amount=futu_amount,
-                zhaoshang_amount=zhaoshang_amount,
-                gangzhao_amount=gangzhao_amount,
-                jiaotong_amount=jiaotong_amount,
-                pufa_amount=pufa_amount,
-                jianshe_amount=jianshe_amount,
-                zhongxin_amount=zhongxin_amount,
-                minsheng_amount=minsheng_amount,
-                gongshang_amount=gongshang_amount,
-                zhongyin_amount=zhongyin_amount,
+                platform_amounts=platform_amounts,
                 maturity_date=maturity_date.date() if maturity_date else None,
                 is_rolling=is_rolling,
                 start_date=start_date.date() if start_date else None,
@@ -375,25 +339,15 @@ class CSVParser:
                 annual_return=annual_return,
                 compound_return=compound_return,
                 interest_payment=interest_payment,
-                transaction_records=transaction_records
-                if transaction_records
-                else None,
+                transaction_records=transaction_records if transaction_records else None,
                 default_order=default_order,
                 usd_rate=usd_rate,
                 hkd_rate=hkd_rate,
             )
 
             # 计算当前金额（所有平台金额之和）
-            total_amount = Decimal("0")
-            for amount in [
-                wechat_amount, zhongjin_amount, alipay_amount, futu_amount,
-                zhaoshang_amount, gangzhao_amount, jiaotong_amount, pufa_amount,
-                jianshe_amount, zhongxin_amount, minsheng_amount, gongshang_amount,
-                zhongyin_amount
-            ]:
-                if amount:
-                    total_amount += amount
-            
+            total_amount = sum(platform_amounts.values(), Decimal("0"))
+
             if total_amount > 0:
                 product.current_amount = total_amount
             elif initial_amount is not None and profit_amount is not None:
@@ -408,7 +362,9 @@ class CSVParser:
             return None
 
     @classmethod
-    def _calculate_irr_for_products(cls, products: List[InvestmentProduct]) -> List[InvestmentProduct]:
+    def _calculate_irr_for_products(
+        cls, products: List[InvestmentProduct]
+    ) -> List[InvestmentProduct]:
         """
         对有交易记录的产品使用 IRR 计算年化收益率（与 ts-demo 保持一致）
         Args:
@@ -417,49 +373,87 @@ class CSVParser:
             更新后的投资产品列表
         """
         from ..core.irr_calculator import IRRCalculator
-        
+
         irr_calculator = IRRCalculator()
-        
+
         for product in products:
-            # 只对有交易记录且投资天数 >= 180 天的产品使用 IRR
-            if product.transaction_records and product.investment_days and product.investment_days >= 180:
-                # 解析交易记录
+            # 解析交易记录
+            transactions = []
+            if product.transaction_records:
                 transactions = cls._parse_transaction_records(product.transaction_records)
-                if transactions and len(transactions) > 1:
-                    # 计算买入和卖出总额
-                    total_buy = sum(t["amount"] for t in transactions if t["type"] == "buy")
-                    total_sell = sum(t["amount"] for t in transactions if t["type"] == "sell")
-                    
-                    if total_buy > 0:
-                        # 净收益 = 当前金额 + 卖出总额 - 买入总额
-                        current_value = float(product.current_amount or 0)
-                        net_gain = current_value + total_sell - total_buy
-                        
-                        # 实际收益率 = 净收益 / 买入总额
-                        simple_return = net_gain / total_buy
-                        
-                        # 更新实际收益率
-                        product.return_rate = Decimal(str(round(simple_return * 100, 2)))
-                        
-                        # 计算现金流（使用 days360 计算天数）
-                        cashflows = cls._calculate_cashflows_with_days(transactions, product.start_date, product.current_amount, product.investment_days)
-                        
-                        if cashflows and len(cashflows) > 1:
-                            # 计算 IRR
-                            irr = irr_calculator.calculate_irr(cashflows)
-                            if irr is not None and -100 < irr < 1000:  # 合理范围检查
-                                product.annual_return = Decimal(str(round(irr, 2)))
-                            else:
-                                # 如果 IRR 计算失败，使用简单年化
-                                total_days = product.investment_days
-                                if total_days > 0:
-                                    simple_annualized = (1 + simple_return) ** (360 / total_days) - 1
+
+            # 计算买入和卖出总额
+            total_buy = sum(t["amount"] for t in transactions if t["type"] == "buy") if transactions else 0
+            total_sell = sum(t["amount"] for t in transactions if t["type"] == "sell") if transactions else 0
+
+            # 计算实际收益率（与 ts-demo 保持一致）
+            if total_buy > 0:
+                # 有交易记录：实际收益率 = (当前金额 + 卖出总额 - 买入总额) / 买入总额
+                current_value = float(product.current_amount or 0)
+                net_gain = current_value + total_sell - total_buy
+                simple_return = net_gain / total_buy
+                product.return_rate = Decimal(str(round(simple_return * 100, 2)))
+            elif product.initial_amount and product.initial_amount > 0:
+                # 没有交易记录：实际收益率 = (当前金额 - 初始金额) / 初始金额
+                current_value = float(product.current_amount or 0)
+                initial_value = float(product.initial_amount)
+                simple_return = (current_value - initial_value) / initial_value
+                product.return_rate = Decimal(str(round(simple_return * 100, 2)))
+
+            # 计算年化收益率（与 ts-demo 保持一致）
+            total_days = product.investment_days or 0
+            if total_days > 0:
+                # 判断是否是债券类产品
+                is_bond_product = (
+                    product.investment_type.value
+                    and "债" in product.investment_type.value
+                ) or (product.name and "分红" in product.name)
+
+                # 债券类产品或短期投资（<180天）使用简单年化
+                if is_bond_product or total_days < 180:
+                    if product.return_rate is not None:
+                        simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
+                        product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
+                elif transactions and len(transactions) > 1 and total_buy > 0:
+                    # 有交易记录且投资天数 >= 180 天：使用 IRR 计算
+                    cashflows = cls._calculate_cashflows_with_days(
+                        transactions,
+                        product.start_date,
+                        product.current_amount,
+                        total_days,
+                    )
+
+                    if cashflows and len(cashflows) > 1:
+                        # 计算 IRR（使用带天数的现金流格式）
+                        irr = irr_calculator.calculate_irr_with_days(cashflows)
+                        if irr is not None and -1 < irr < 10:
+                            # 检查 IRR 与简单年化的差异
+                            if product.return_rate is not None:
+                                simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
+                                diff = abs(irr - simple_annualized)
+                                if diff > 1:
+                                    # 差异超过 100%，使用简单年化
                                     product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
-        
+                                else:
+                                    product.annual_return = Decimal(str(round(irr * 100, 2)))
+                            else:
+                                product.annual_return = Decimal(str(round(irr * 100, 2)))
+                        else:
+                            # IRR 计算失败，使用简单年化
+                            if product.return_rate is not None:
+                                simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
+                                product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
+                elif product.return_rate is not None:
+                    # 其他情况使用简单年化
+                    simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
+                    product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
+
         return products
-    
+
     @classmethod
-    def _calculate_cashflows_with_days(cls, transactions: List[dict], start_date, current_amount, total_days: int) -> List[float]:
+    def _calculate_cashflows_with_days(
+        cls, transactions: List[dict], start_date, current_amount, total_days: int
+    ) -> List[dict]:
         """
         计算现金流（使用 days360 计算天数，与 ts-demo 一致）
         Args:
@@ -468,30 +462,30 @@ class CSVParser:
             current_amount: 当前金额
             total_days: 总投资天数
         Returns:
-            现金流列表
+            现金流列表，格式为 [{"amount": float, "days": int}, ...]
         """
         from datetime import date
-        
-        cashflows = []
-        
+
+        cashflows: List[dict] = []
+
         if not start_date:
             return cashflows
-        
+
         for trans in transactions:
             # 解析交易日期
             date_parts = trans["date"].split("/")
             trans_date = date(int(date_parts[0]), int(date_parts[1]), int(date_parts[2]))
             trans_days = days360(start_date, trans_date)
-            
+
             if trans["type"] == "buy":
-                cashflows.append(-trans["amount"])
+                cashflows.append({"amount": -trans["amount"], "days": trans_days})
             elif trans["type"] == "sell":
-                cashflows.append(trans["amount"])
-        
+                cashflows.append({"amount": trans["amount"], "days": trans_days})
+
         # 添加当前金额作为最终现金流
         if current_amount:
-            cashflows.append(float(current_amount))
-        
+            cashflows.append({"amount": float(current_amount), "days": total_days})
+
         return cashflows
 
     @classmethod
@@ -503,29 +497,25 @@ class CSVParser:
         Returns:
             交易记录列表
         """
-        transactions = []
+        transactions: List[Dict[str, Any]] = []
         if not records_str:
             return transactions
-        
+
         for record in records_str.split(";"):
             record = record.strip()
             if not record:
                 continue
-            
+
             parts = record.split(":")
             if len(parts) >= 3:
                 try:
                     date_str = parts[0]
                     trans_type = parts[1]
                     amount = float(parts[2])
-                    transactions.append({
-                        "date": date_str,
-                        "type": trans_type,
-                        "amount": amount
-                    })
+                    transactions.append({"date": date_str, "type": trans_type, "amount": amount})
                 except (ValueError, IndexError):
                     continue
-        
+
         return transactions
 
     @classmethod
@@ -539,7 +529,7 @@ class CSVParser:
             现金流列表
         """
         cashflows = []
-        
+
         for trans in transactions:
             if trans["type"] == "buy":
                 # 买入是负现金流（投入）
@@ -547,15 +537,17 @@ class CSVParser:
             elif trans["type"] == "sell":
                 # 卖出是正现金流（收回）
                 cashflows.append(trans["amount"])
-        
+
         # 最后添加当前金额作为最终现金流
         if current_amount:
             cashflows.append(float(current_amount))
-        
+
         return cashflows
 
     @classmethod
-    def parse_csv_file(cls, csv_path: Path, reference_date: date = None) -> List[InvestmentProduct]:
+    def parse_csv_file(
+        cls, csv_path: Path, reference_date: date | None = None
+    ) -> List[InvestmentProduct]:
         """
         解析 CSV 文件
         Args:
@@ -586,10 +578,8 @@ class CSVParser:
 
         except Exception as e:
             from ..core.exceptions import DataLoadError
-            raise DataLoadError(
-                f"读取 CSV 文件失败: {e}",
-                file_path=str(csv_path)
-            )
+
+            raise DataLoadError(f"读取 CSV 文件失败: {e}", file_path=str(csv_path))
 
         return products
 
@@ -614,43 +604,47 @@ class CSVParser:
                     if d.is_dir()
                     and (d.name.startswith("money_csv_") or d.name.startswith("money_"))
                 ]
-                
+
                 if dirs:
                     import re
                     from datetime import datetime
-                    
+
                     def extract_date(d: Path) -> int:
                         match = re.search(r"(\d{8})", d.name)
                         return int(match.group(1)) if match else 0
-                    
+
                     dirs.sort(key=extract_date, reverse=True)
-                    
+
                     today_suffix = int(datetime.now().strftime("%Y%m%d"))
                     target_dir = None
-                    
+
                     for d in dirs:
                         dir_date = extract_date(d)
                         if dir_date <= today_suffix:
                             target_dir = d
                             break
-                    
+
                     if target_dir is None:
                         target_dir = dirs[0]
-                    
+
                     print(f"使用数据目录: {target_dir.name}")
-                    
+
                     usd_rate, hkd_rate = cls.get_exchange_rates(target_dir)
                     if usd_rate != float(config.default_usd_rate):
                         config.default_usd_rate = usd_rate
                     if hkd_rate != float(config.default_hkd_rate):
                         config.default_hkd_rate = hkd_rate
-                    
-                    csv_files = list(target_dir.glob("*工作表 1*.csv"))
+
+                    csv_files = list(target_dir.glob("投资产品-表格 1.csv"))
+                    if not csv_files:
+                        csv_files = list(target_dir.glob("投资产品.csv"))
+                    if not csv_files:
+                        csv_files = list(target_dir.glob("*工作表 1*.csv"))
                     if not csv_files:
                         csv_files = list(target_dir.glob("*工作表*1*.csv"))
                     if not csv_files:
                         csv_files = list(target_dir.glob("*.csv"))
-                    
+
                     if csv_files:
                         csv_path = csv_files[0]
                         try:
@@ -663,25 +657,21 @@ class CSVParser:
                         except Exception as e:
                             print(f"❌ 加载数据失败: {e}")
                             raise
-                    
+
                     print(f"❌ 未找到 CSV 文件")
                     return []
 
-        # 如果传入的是目录，查找工作表1的 CSV 文件
+        # 如果传入的是目录，查找投资产品的 CSV 文件
         if data_path.is_dir():
-            # 尝试多种 glob 模式
-            patterns = [
-                "*工作表*1*.csv",
-                "*Sheet1*.csv",
-                "*.csv"
-            ]
-            
+            # 尝试多种 glob 模式，优先匹配新文件名
+            patterns = ["投资产品-表格 1.csv", "投资产品.csv", "*工作表 1*.csv", "*工作表*1*.csv", "*Sheet1*.csv", "*.csv"]
+
             csv_files = []
             for pattern in patterns:
                 csv_files = list(data_path.glob(pattern))
                 if csv_files:
                     break
-            
+
             if not csv_files:
                 raise FileNotFoundError(f"数据目录中没有找到 CSV 文件: {data_path}")
 

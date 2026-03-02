@@ -1,0 +1,36 @@
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = "asset_lens.core.advanced_analytics.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "asset_lens.core.ai_analyzer.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "asset_lens.core.irr_calculator.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "asset_lens.data.market_index.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "asset_lens.data.exchange_rate_parser.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "asset_lens.core.sold_investment.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "asset_lens.core.portfolio_analytics.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "asset_lens.utils.logger.*"
+ignore_errors = true

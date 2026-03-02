@@ -3,7 +3,7 @@ Custom exceptions for asset-lens.
 自定义异常类
 """
 
-from typing import Any, Optional, Dict
+from typing import Any, Dict, Optional
 
 
 class AssetLensError(Exception):
@@ -39,7 +39,9 @@ class DataLoadError(AssetLensError):
 class DataParseError(AssetLensError):
     """数据解析错误"""
 
-    def __init__(self, message: str, row_number: Optional[int] = None, raw_data: Optional[str] = None):
+    def __init__(
+        self, message: str, row_number: Optional[int] = None, raw_data: Optional[str] = None
+    ):
         details: Dict[str, Any] = {}
         if row_number is not None:
             details["row_number"] = row_number
@@ -63,7 +65,9 @@ class ValidationError(AssetLensError):
 class APIError(AssetLensError):
     """API 调用错误"""
 
-    def __init__(self, message: str, api_name: Optional[str] = None, status_code: Optional[int] = None):
+    def __init__(
+        self, message: str, api_name: Optional[str] = None, status_code: Optional[int] = None
+    ):
         details: Dict[str, Any] = {}
         if api_name:
             details["api_name"] = api_name
@@ -75,7 +79,9 @@ class APIError(AssetLensError):
 class RateLimitError(APIError):
     """API 速率限制错误"""
 
-    def __init__(self, message: str, api_name: Optional[str] = None, retry_after: Optional[int] = None):
+    def __init__(
+        self, message: str, api_name: Optional[str] = None, retry_after: Optional[int] = None
+    ):
         super().__init__(message, api_name, 429)
         self.retry_after = retry_after
         if retry_after:
@@ -93,7 +99,12 @@ class CacheError(AssetLensError):
 class CalculationError(AssetLensError):
     """计算错误"""
 
-    def __init__(self, message: str, calculation_type: Optional[str] = None, inputs: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        message: str,
+        calculation_type: Optional[str] = None,
+        inputs: Optional[Dict[str, Any]] = None,
+    ):
         details: Dict[str, Any] = {}
         if calculation_type:
             details["calculation_type"] = calculation_type
@@ -114,7 +125,12 @@ class InsufficientDataError(CalculationError):
 class FileFormatError(DataParseError):
     """文件格式错误"""
 
-    def __init__(self, message: str, expected_format: Optional[str] = None, actual_format: Optional[str] = None):
+    def __init__(
+        self,
+        message: str,
+        expected_format: Optional[str] = None,
+        actual_format: Optional[str] = None,
+    ):
         self.expected_format = expected_format
         self.actual_format = actual_format
         super().__init__(message)

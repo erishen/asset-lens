@@ -115,7 +115,7 @@ class DCAParser:
 
         # 解析结束日期
         if end_str.lower() == "now":
-            end_date = reference_date or datetime.now()
+            end_date: datetime | None = reference_date or datetime.now()
         else:
             end_date = DCAParser.parse_date(end_str)
 
@@ -155,7 +155,7 @@ class DCAParser:
         Returns:
             交易记录列表
         """
-        transactions = []
+        transactions: List[Transaction] = []
 
         if not record_str or not record_str.strip():
             return transactions
@@ -190,9 +190,7 @@ class DCAParser:
                 continue
 
             # 解析定投类型和金额
-            investment_type, base_amount, max_amount = cls.parse_investment_type(
-                amount_str
-            )
+            investment_type, base_amount, max_amount = cls.parse_investment_type(amount_str)
 
             # 生成定投交易
             dca_transactions = cls.generate_dca_transactions(
@@ -230,7 +228,7 @@ class DCAParser:
         Returns:
             交易记录列表
         """
-        transactions = []
+        transactions: List[Transaction] = []
 
         # 计算总天数
         total_days = (end_date - start_date).days
@@ -269,9 +267,7 @@ class DCAParser:
         return transactions
 
     @staticmethod
-    def calculate_total_investment(
-        transactions: List[Transaction], action: str = "buy"
-    ) -> Decimal:
+    def calculate_total_investment(transactions: List[Transaction], action: str = "buy") -> Decimal:
         """
         计算总投入
         Args:

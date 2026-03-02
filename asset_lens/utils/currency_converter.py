@@ -7,6 +7,7 @@ import json
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
+from typing import Dict, Optional
 
 from ..config import config
 from ..data.models import Currency
@@ -21,9 +22,9 @@ class CurrencyConverter:
         }
 
         # 加载配置中的默认汇率
-        self.default_rates = {
-            Currency.USD: config.default_usd_rate,
-            Currency.HKD: config.default_hkd_rate,
+        self.default_rates: Dict[Currency, Decimal | None] = {
+            Currency.USD: Decimal(str(config.default_usd_rate)),
+            Currency.HKD: Decimal(str(config.default_hkd_rate)),
         }
 
         # 加载缓存的汇率
@@ -55,9 +56,7 @@ class CurrencyConverter:
 
         try:
             data = {
-                "rates": {
-                    currency.value: str(rate) for currency, rate in self.rates.items()
-                },
+                "rates": {currency.value: str(rate) for currency, rate in self.rates.items()},
                 "updated_at": datetime.now().isoformat(),
             }
 
@@ -81,8 +80,9 @@ class CurrencyConverter:
         # 使用配置中的默认汇率
         if currency in self.default_rates:
             rate = self.default_rates[currency]
-            self.rates[currency] = rate
-            return rate
+            if rate is not None:
+                self.rates[currency] = rate
+                return rate
 
         # 未知货币，使用1.0
         return Decimal("1.0")

@@ -12,14 +12,14 @@ from typing import Any, Dict, List, Optional
 @dataclass
 class IndexPerformance:
     """指数周期表现"""
-    
+
     weekly_change: Decimal = Decimal("0")  # 周涨跌幅
     weekly_high: Decimal = Decimal("0")  # 周最高
     weekly_low: Decimal = Decimal("0")  # 周最低
     weekly_amplitude: Decimal = Decimal("0")  # 周振幅
     monthly_change: Optional[Decimal] = None  # 月涨跌幅
     ytd_change: Optional[Decimal] = None  # 年初至今涨跌幅
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典"""
         result = {
@@ -38,17 +38,17 @@ class IndexPerformance:
 @dataclass
 class IndexHistory:
     """指数历史走势"""
-    
+
     date: str  # 日期
     open: Decimal  # 开盘价
     close: Decimal  # 收盘价
     high: Decimal  # 最高价
     low: Decimal  # 最低价
     volume: Optional[int] = None  # 成交量
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典"""
-        result = {
+        result: Dict[str, Any] = {
             "日期": self.date,
             "开盘": str(self.open),
             "收盘": str(self.close),
@@ -63,7 +63,7 @@ class IndexHistory:
 @dataclass
 class MarketIndex:
     """市场指数数据"""
-    
+
     code: str  # 代码
     name: str  # 名称
     latest_price: Decimal  # 最新价
@@ -77,10 +77,10 @@ class MarketIndex:
     amount: Optional[Decimal] = None  # 成交额
     performance: Optional[IndexPerformance] = None  # 周期表现
     history: List[IndexHistory] = field(default_factory=list)  # 历史走势
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典"""
-        result = {
+        result: Dict[str, Any] = {
             "代码": self.code,
             "名称": self.name,
             "最新价": str(self.latest_price),
@@ -105,14 +105,14 @@ class MarketIndex:
 @dataclass
 class MarketIndexCache:
     """市场指数缓存数据"""
-    
+
     update_time: str  # 更新时间
     data_date: str  # 数据日期
     is_trading_time: bool = False  # 是否交易时间
     is_trading_day: bool = False  # 是否交易日
     next_trading_day: Optional[str] = None  # 下一个交易日
     indexes: Dict[str, MarketIndex] = field(default_factory=dict)  # 指数数据
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典"""
         result = {
@@ -124,8 +124,5 @@ class MarketIndexCache:
         if self.next_trading_day:
             result["下一个交易日"] = self.next_trading_day
         if self.indexes:
-            result["指数数据"] = {
-                name: index.to_dict() 
-                for name, index in self.indexes.items()
-            }
+            result["指数数据"] = {name: index.to_dict() for name, index in self.indexes.items()}
         return result

@@ -1,0 +1,100 @@
+{
+    "platforms": [
+        {
+            "id": "platform_a",
+            "name": "平台A",
+            "field": "platform_a_amount",
+            "type": "third_party",
+            "description": "第三方平台A"
+        },
+        {
+            "id": "platform_b",
+            "name": "平台B",
+            "field": "platform_b_amount",
+            "type": "third_party",
+            "description": "第三方平台B"
+        },
+        {
+            "id": "securities_a",
+            "name": "券商A",
+            "field": "securities_a_amount",
+            "type": "securities",
+            "description": "证券账户A"
+        },
+        {
+            "id": "securities_b",
+            "name": "券商B",
+            "field": "securities_b_amount",
+            "type": "securities",
+            "description": "证券账户B"
+        },
+        {
+            "id": "bank_a",
+            "name": "银行A",
+            "field": "bank_a_amount",
+            "type": "bank",
+            "description": "银行账户A"
+        },
+        {
+            "id": "bank_b",
+            "name": "银行B",
+            "field": "bank_b_amount",
+            "type": "bank",
+            "description": "银行账户B"
+        },
+        {
+            "id": "bank_c",
+            "name": "银行C",
+            "field": "bank_c_amount",
+            "type": "bank",
+            "description": "银行账户C"
+        },
+        {
+            "id": "bank_d",
+            "name": "银行D",
+            "field": "bank_d_amount",
+            "type": "bank",
+            "description": "银行账户D"
+        },
+        {
+            "id": "bank_e",
+            "name": "银行E",
+            "field": "bank_e_amount",
+            "type": "bank",
+            "description": "银行账户E"
+        },
+        {
+            "id": "bank_f",
+            "name": "银行F",
+            "field": "bank_f_amount",
+            "type": "bank",
+            "description": "银行账户F"
+        },
+        {
+            "id": "bank_g",
+            "name": "银行G",
+            "field": "bank_g_amount",
+            "type": "bank",
+            "description": "银行账户G"
+        },
+        {
+            "id": "bank_h",
+            "name": "银行H",
+            "field": "bank_h_amount",
+            "type": "bank",
+            "description": "银行账户H"
+        },
+        {
+            "id": "bank_i",
+            "name": "银行I",
+            "field": "bank_i_amount",
+            "type": "bank",
+            "description": "银行账户I（境外）"
+        }
+    ],
+    "platform_types": {
+        "third_party": "第三方平台",
+        "bank": "银行",
+        "securities": "证券"
+    }
+}

@@ -14,6 +14,7 @@ from ..data.models import InvestmentProduct, Portfolio
 @dataclass
 class DrawdownResult:
     """回撤结果"""
+
     max_drawdown: Decimal
     max_drawdown_percent: Decimal
     peak_date: Optional[date]
@@ -35,6 +36,7 @@ class DrawdownResult:
 @dataclass
 class SharpeResult:
     """夏普比率结果"""
+
     sharpe_ratio: Decimal
     annualized_return: Decimal
     risk_free_rate: Decimal
@@ -52,6 +54,7 @@ class SharpeResult:
 @dataclass
 class VolatilityResult:
     """波动率结果"""
+
     daily_volatility: Decimal
     weekly_volatility: Decimal
     monthly_volatility: Decimal
@@ -69,6 +72,7 @@ class VolatilityResult:
 @dataclass
 class PortfolioAnalytics:
     """投资组合分析结果"""
+
     total_value: Decimal
     total_initial: Decimal
     total_profit: Decimal
@@ -78,7 +82,7 @@ class PortfolioAnalytics:
     volatility: Optional[VolatilityResult]
 
     def to_dict(self) -> Dict[str, Any]:
-        result = {
+        result: Dict[str, Any] = {
             "总资产": str(self.total_value),
             "总成本": str(self.total_initial),
             "总收益": str(self.total_profit),
@@ -100,7 +104,7 @@ class AdvancedAnalytics:
 
     TRADING_DAYS_PER_YEAR = 252
 
-    def __init__(self, risk_free_rate: Decimal = None):
+    def __init__(self, risk_free_rate: Decimal | None = None):
         self.risk_free_rate = risk_free_rate or self.RISK_FREE_RATE
 
     def calculate_max_drawdown(
@@ -152,7 +156,9 @@ class AdvancedAnalytics:
 
         peak_date = dates[peak_for_max] if dates and peak_for_max < len(dates) else None
         trough_date = dates[trough_idx] if dates and trough_idx < len(dates) else None
-        recovery_date = dates[recovery_idx] if dates and recovery_idx and recovery_idx < len(dates) else None
+        recovery_date = (
+            dates[recovery_idx] if dates and recovery_idx and recovery_idx < len(dates) else None
+        )
 
         if trough_date and recovery_date:
             drawdown_duration = (recovery_date - trough_date).days
@@ -185,12 +191,14 @@ class AdvancedAnalytics:
 
         avg_return = sum(returns) / len(returns)
 
-        variance = sum((r - avg_return) ** 2 for r in returns) / len(returns)
-        std_dev = variance.sqrt() if variance > 0 else Decimal("0")
+        variance = Decimal(
+            str(sum((float(r) - float(avg_return)) ** 2 for r in returns))
+        ) / Decimal(str(len(returns)))
+        std_dev = Decimal(str(float(variance) ** 0.5)) if variance > 0 else Decimal("0")
 
         if annualized:
             annualized_return = avg_return * self.TRADING_DAYS_PER_YEAR
-            annualized_std = std_dev * Decimal(str(self.TRADING_DAYS_PER_YEAR ** 0.5))
+            annualized_std = std_dev * Decimal(str(self.TRADING_DAYS_PER_YEAR**0.5))
         else:
             annualized_return = avg_return
             annualized_std = std_dev
@@ -198,14 +206,14 @@ class AdvancedAnalytics:
         daily_rf = self.risk_free_rate / self.TRADING_DAYS_PER_YEAR
 
         if annualized_std > 0:
-            excess_return = annualized_return - self.risk_free_rate
+            excess_return = Decimal(str(annualized_return)) - self.risk_free_rate
             sharpe_ratio = excess_return / annualized_std
         else:
             sharpe_ratio = Decimal("0")
 
         return SharpeResult(
             sharpe_ratio=sharpe_ratio,
-            annualized_return=annualized_return,
+            annualized_return=Decimal(str(annualized_return)),
             risk_free_rate=self.risk_free_rate,
             volatility=annualized_std,
         )
@@ -223,12 +231,14 @@ class AdvancedAnalytics:
             )
 
         avg_return = sum(returns) / len(returns)
-        variance = sum((r - avg_return) ** 2 for r in returns) / len(returns)
-        daily_vol = variance.sqrt() if variance > 0 else Decimal("0")
+        variance = Decimal(
+            str(sum((float(r) - float(avg_return)) ** 2 for r in returns))
+        ) / Decimal(str(len(returns)))
+        daily_vol = Decimal(str(float(variance) ** 0.5)) if variance > 0 else Decimal("0")
 
-        weekly_vol = daily_vol * Decimal(str(5 ** 0.5))
-        monthly_vol = daily_vol * Decimal(str(21 ** 0.5))
-        annual_vol = daily_vol * Decimal(str(self.TRADING_DAYS_PER_YEAR ** 0.5))
+        weekly_vol = daily_vol * Decimal(str(5**0.5))
+        monthly_vol = daily_vol * Decimal(str(21**0.5))
+        annual_vol = daily_vol * Decimal(str(self.TRADING_DAYS_PER_YEAR**0.5))
 
         return VolatilityResult(
             daily_volatility=daily_vol,
@@ -347,13 +357,20 @@ class AdvancedAnalytics:
         avg1 = sum(returns1) / n
         avg2 = sum(returns2) / n
 
-        cov = sum((r1 - avg1) * (r2 - avg2) for r1, r2 in zip(returns1, returns2)) / n
+        cov = Decimal(
+            str(
+                sum(
+                    (float(r1) - float(avg1)) * (float(r2) - float(avg2))
+                    for r1, r2 in zip(returns1, returns2)
+                )
+            )
+        ) / Decimal(str(n))
 
-        var1 = sum((r - avg1) ** 2 for r in returns1) / n
-        var2 = sum((r - avg2) ** 2 for r in returns2) / n
+        var1 = Decimal(str(sum((float(r) - float(avg1)) ** 2 for r in returns1))) / Decimal(str(n))
+        var2 = Decimal(str(sum((float(r) - float(avg2)) ** 2 for r in returns2))) / Decimal(str(n))
 
-        std1 = var1.sqrt() if var1 > 0 else Decimal("0")
-        std2 = var2.sqrt() if var2 > 0 else Decimal("0")
+        std1 = Decimal(str(float(var1) ** 0.5)) if var1 > 0 else Decimal("0")
+        std2 = Decimal(str(float(var2) ** 0.5)) if var2 > 0 else Decimal("0")
 
         if std1 > 0 and std2 > 0:
             correlation = cov / (std1 * std2)
@@ -367,7 +384,11 @@ class AdvancedAnalytics:
         portfolio_returns: List[Decimal],
         market_returns: List[Decimal],
     ) -> Decimal:
-        if not portfolio_returns or not market_returns or len(portfolio_returns) != len(market_returns):
+        if (
+            not portfolio_returns
+            or not market_returns
+            or len(portfolio_returns) != len(market_returns)
+        ):
             return Decimal("0")
 
         n = len(portfolio_returns)
@@ -377,12 +398,18 @@ class AdvancedAnalytics:
         avg_portfolio = sum(portfolio_returns) / n
         avg_market = sum(market_returns) / n
 
-        cov = sum(
-            (pr - avg_portfolio) * (mr - avg_market)
-            for pr, mr in zip(portfolio_returns, market_returns)
-        ) / n
+        cov = Decimal(
+            str(
+                sum(
+                    (float(pr) - float(avg_portfolio)) * (float(mr) - float(avg_market))
+                    for pr, mr in zip(portfolio_returns, market_returns)
+                )
+            )
+        ) / Decimal(str(n))
 
-        var_market = sum((r - avg_market) ** 2 for r in market_returns) / n
+        var_market = Decimal(
+            str(sum((float(r) - float(avg_market)) ** 2 for r in market_returns))
+        ) / Decimal(str(n))
 
         if var_market > 0:
             beta = cov / var_market
@@ -397,7 +424,9 @@ class AdvancedAnalytics:
         market_return: Decimal,
         beta: Decimal,
     ) -> Decimal:
-        alpha = portfolio_return - (self.risk_free_rate + beta * (market_return - self.risk_free_rate))
+        alpha = portfolio_return - (
+            self.risk_free_rate + beta * (market_return - self.risk_free_rate)
+        )
         return alpha
 
 
