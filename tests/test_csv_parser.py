@@ -220,6 +220,16 @@ class TestParseRiskLevel:
 class TestParseRow:
     """Test parse_row method"""
 
+    def setup_method(self):
+        """Setup method - ensure platform config is loaded"""
+        from asset_lens.core.platform_loader import PlatformLoader
+        from asset_lens.config import config
+
+        # 设置 sample 模式并加载平台配置
+        config.data_mode = "sample"
+        PlatformLoader.reset()
+        PlatformLoader.load(data_mode="sample")
+
     def test_parse_row_basic(self):
         row = {
             "类型": "指数基金",
@@ -246,13 +256,14 @@ class TestParseRow:
             "类型": "指数基金",
             "名称": "测试产品",
             "风险": "中",
-            "微信": "10000",
-            "支付宝": "5000",
+            "平台A": "10000",
+            "平台B": "5000",
         }
         result = CSVParser.parse_row(row)
         assert result is not None
-        assert result.wechat_amount == Decimal("10000")
-        assert result.alipay_amount == Decimal("5000")
+        # 使用 platform_amounts 字典检查金额
+        assert result.platform_amounts.get("platform_a") == Decimal("10000")
+        assert result.platform_amounts.get("platform_b") == Decimal("5000")
 
     def test_parse_row_with_dates(self):
         row = {
@@ -356,8 +367,8 @@ class TestParseRow:
             "类型": "指数基金",
             "名称": "中证500ETF",
             "风险": "中",
-            "微信": "10000",
-            "支付宝": "",
+            "平台A": "10000",
+            "平台B": "",
             "到期时间": "",
             "滚动": "否",
             "开始日期": "",  # 不设置开始日期，使用投资天数字段
@@ -380,7 +391,7 @@ class TestParseRow:
         assert result.name == "中证500ETF"
         assert result.investment_type == InvestmentType.INDEX_FUND
         assert result.risk_level == RiskLevel.MEDIUM
-        assert result.wechat_amount == Decimal("10000")
+        assert result.platform_amounts.get("platform_a") == Decimal("10000")
         assert result.start_date is None
         assert result.initial_amount == Decimal("9000")
         assert result.investment_days == 180
@@ -443,8 +454,8 @@ class TestLoadData:
         assert "类型" in CSVParser.COLUMN_MAPPING
         assert "名称" in CSVParser.COLUMN_MAPPING
         assert "风险" in CSVParser.COLUMN_MAPPING
-        assert "微信" in CSVParser.COLUMN_MAPPING
-        assert "支付宝" in CSVParser.COLUMN_MAPPING
+        assert "平台A" in CSVParser.COLUMN_MAPPING
+        assert "平台B" in CSVParser.COLUMN_MAPPING
 
     def test_column_mapping_values(self):
         assert CSVParser.COLUMN_MAPPING["类型"] == "investment_type"
@@ -688,30 +699,45 @@ class TestParseCsvFileAdvanced:
 class TestParseRowAdvanced:
     """Test parse_row advanced scenarios"""
 
+    def setup_method(self):
+        """Setup method - ensure platform config is loaded"""
+        from asset_lens.core.platform_loader import PlatformLoader
+        from asset_lens.config import config
+
+        # 设置 sample 模式并加载平台配置
+        config.data_mode = "sample"
+        PlatformLoader.reset()
+        PlatformLoader.load(data_mode="sample")
+
     def test_parse_row_with_all_platforms(self):
         """Test parsing row with all platform amounts"""
         row = {
             "类型": "理财",
             "名称": "测试产品",
             "风险": "低",
-            "微信": "1000",
-            "中金": "2000",
-            "支付宝": "3000",
-            "富途": "4000",
-            "招商": "5000",
-            "港招": "6000",
-            "交通": "7000",
-            "浦发": "8000",
-            "建设": "9000",
-            "中信": "10000",
-            "民生": "11000",
-            "工商": "12000",
-            "中银": "13000",
+            "平台A": "1000",
+            "平台B": "2000",
+            "平台C": "3000",
+            "券商A": "4000",
+            "银行A": "5000",
+            "银行I": "6000",
+            "银行B": "7000",
+            "银行C": "8000",
+            "银行D": "9000",
+            "银行E": "10000",
+            "银行F": "11000",
+            "银行G": "12000",
+            "银行H": "13000",
         }
         result = CSVParser.parse_row(row)
         assert result is not None
-        assert result.wechat_amount == Decimal("1000")
-        assert result.alipay_amount == Decimal("3000")
+        # 使用 platform_amounts 字典检查金额
+        assert result.platform_amounts.get("platform_a") == Decimal("1000")
+        assert result.platform_amounts.get("platform_b") == Decimal("2000")
+        # 验证有平台金额
+        assert len(result.platform_amounts) > 0
+        # 验证当前金额是所有平台金额之和
+        assert result.current_amount == sum(result.platform_amounts.values())
 
     def test_parse_row_with_secondary_buy(self):
         """Test parsing row with secondary buy"""

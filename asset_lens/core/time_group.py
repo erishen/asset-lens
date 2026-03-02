@@ -14,7 +14,7 @@ from ..data.models import InvestmentProduct
 @dataclass
 class TimeGroupStats:
     """时间分组统计"""
-    
+
     group_name: str  # 分组名称
     group_description: str  # 分组描述
     products_count: int  # 产品数量
@@ -24,7 +24,7 @@ class TimeGroupStats:
     avg_return_rate: Decimal  # 平均收益率
     avg_holding_days: float  # 平均持有天数
     products: List[str]  # 产品名称列表
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典"""
         return {
@@ -42,7 +42,7 @@ class TimeGroupStats:
 
 class TimeGroupAnalyzer:
     """时间分组分析器"""
-    
+
     def analyze_by_holding_period(
         self,
         products: List[InvestmentProduct],
@@ -51,19 +51,19 @@ class TimeGroupAnalyzer:
     ) -> Dict[str, Any]:
         """
         按持有时间分组分析
-        
+
         Args:
             products: 产品列表
             short_term_days: 短期天数阈值
             mid_term_days: 中期天数阈值
-        
+
         Returns:
             按持有时间分组的结果
         """
         today = date.today()
-        
+
         # 初始化分组
-        groups = {
+        groups: Dict[str, Dict[str, Any]] = {
             "short_term": {
                 "name": "短期投资",
                 "description": f"{short_term_days}天以内",
@@ -101,17 +101,17 @@ class TimeGroupAnalyzer:
                 "total_days": 0,
             },
         }
-        
+
         # 分组统计
         for product in products:
             if not product.current_amount or product.current_amount == 0:
                 continue
-            
+
             # 计算持有天数
             holding_days = 0
             if product.start_date:
                 holding_days = (today - product.start_date).days
-            
+
             # 确定分组
             if holding_days == 0:
                 group_key = "unknown"
@@ -121,24 +121,26 @@ class TimeGroupAnalyzer:
                 group_key = "mid_term"
             else:
                 group_key = "long_term"
-            
+
             # 更新分组统计
             groups[group_key]["products"].append(product.name)
             groups[group_key]["total_amount"] += product.current_amount
             groups[group_key]["total_initial"] += product.initial_amount or Decimal("0")
             groups[group_key]["total_profit"] += product.profit_amount or Decimal("0")
             groups[group_key]["total_days"] += holding_days
-        
+
         # 计算平均收益率和平均持有天数
         result_groups = []
         for group_key, group_data in groups.items():
             if group_data["products"]:
                 avg_return_rate = Decimal("0")
                 if group_data["total_initial"] > 0:
-                    avg_return_rate = (group_data["total_profit"] / group_data["total_initial"] * Decimal("100"))
-                
+                    avg_return_rate = (
+                        group_data["total_profit"] / group_data["total_initial"] * Decimal("100")
+                    )
+
                 avg_holding_days = group_data["total_days"] / len(group_data["products"])
-                
+
                 stats = TimeGroupStats(
                     group_name=group_data["name"],
                     group_description=group_data["description"],
@@ -151,16 +153,20 @@ class TimeGroupAnalyzer:
                     products=group_data["products"],
                 )
                 result_groups.append(stats)
-        
+
         # 按总金额排序
         result_groups.sort(key=lambda x: x.total_amount, reverse=True)
-        
+
         # 计算总体统计
         total_amount = sum(g.total_amount for g in result_groups)
         total_initial = sum(g.total_initial for g in result_groups)
         total_profit = sum(g.total_profit for g in result_groups)
-        total_return_rate = (total_profit / total_initial * Decimal("100")) if total_initial > 0 else Decimal("0")
-        
+        total_return_rate = (
+            (Decimal(str(total_profit)) / Decimal(str(total_initial)) * Decimal("100"))
+            if total_initial > 0
+            else Decimal("0")
+        )
+
         return {
             "groups": result_groups,
             "total_amount": total_amount,
@@ -169,29 +175,29 @@ class TimeGroupAnalyzer:
             "total_return_rate": total_return_rate,
             "total_products": sum(g.products_count for g in result_groups),
         }
-    
+
     def analyze_by_start_year(
         self,
         products: List[InvestmentProduct],
     ) -> Dict[str, Any]:
         """
         按投资起始年份分组分析
-        
+
         Args:
             products: 产品列表
-        
+
         Returns:
             按投资起始年份分组的结果
         """
         year_groups: Dict[int, Dict[str, Any]] = {}
-        
+
         for product in products:
             if not product.current_amount or product.current_amount == 0:
                 continue
-            
+
             # 获取投资年份
             year = product.start_date.year if product.start_date else 0
-            
+
             if year not in year_groups:
                 year_groups[year] = {
                     "year": year,
@@ -202,22 +208,30 @@ class TimeGroupAnalyzer:
                     "total_profit": Decimal("0"),
                     "total_days": 0,
                 }
-            
+
             year_groups[year]["products"].append(product.name)
             year_groups[year]["total_amount"] += product.current_amount
             year_groups[year]["total_initial"] += product.initial_amount or Decimal("0")
             year_groups[year]["total_profit"] += product.profit_amount or Decimal("0")
-            year_groups[year]["total_days"] += (date.today() - product.start_date).days if product.start_date else 0
-        
+            year_groups[year]["total_days"] += (
+                (date.today() - product.start_date).days if product.start_date else 0
+            )
+
         # 计算平均收益率
         result_groups = []
         for year, group_data in year_groups.items():
             avg_return_rate = Decimal("0")
             if group_data["total_initial"] > 0:
-                avg_return_rate = (group_data["total_profit"] / group_data["total_initial"] * Decimal("100"))
-            
-            avg_holding_days = group_data["total_days"] / len(group_data["products"]) if group_data["products"] else 0
-            
+                avg_return_rate = (
+                    group_data["total_profit"] / group_data["total_initial"] * Decimal("100")
+                )
+
+            avg_holding_days = (
+                group_data["total_days"] / len(group_data["products"])
+                if group_data["products"]
+                else 0
+            )
+
             stats = TimeGroupStats(
                 group_name=group_data["year_name"],
                 group_description=f"{group_data['year_name']}年开始投资",
@@ -230,10 +244,10 @@ class TimeGroupAnalyzer:
                 products=group_data["products"],
             )
             result_groups.append(stats)
-        
+
         # 按年份排序
         result_groups.sort(key=lambda x: x.group_name, reverse=True)
-        
+
         return {
             "year_groups": result_groups,
             "total_years": len(result_groups),

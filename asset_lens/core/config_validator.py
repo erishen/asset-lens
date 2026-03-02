@@ -3,9 +3,9 @@ Configuration validator for asset-lens.
 配置验证器
 """
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from dataclasses import dataclass
 
 
 @dataclass
@@ -29,7 +29,7 @@ class ConfigValidator:
         "data_mode": "sample",
         "output_path": "output",
         "default_usd_rate": "7.25",
-        "default_hkd_rate": "1.0"
+        "default_hkd_rate": "1.0",
     }
 
     @classmethod

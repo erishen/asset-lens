@@ -40,9 +40,7 @@ help: ## 显示帮助信息
 	@echo ""
 	@echo "  📊 分析命令:"
 	@echo "    make analyze          分析投资组合（使用 .env 中的 DATA_MODE 设置）"
-	@echo "    make analyze-real     分析投资组合（强制使用 real 模式）"
 	@echo "    make calculate        快捷计算收益率"
-	@echo "    make calculate-real   快捷计算收益率 (real 模式)"
 	@echo "    make weekly           生成周度报告"
 	@echo "    make analyze-sold     分析已卖出投资"
 	@echo "    make analyze-by-time  按投资时间分组分析"
@@ -163,20 +161,10 @@ analyze: ## 分析投资组合（使用 .env 中的 DATA_MODE 设置）
 	@echo "📊 分析投资组合..."
 	$(CONDA) python -m asset_lens analyze --output-format all
 
-.PHONY: analyze-real
-analyze-real: ## 分析投资组合（强制使用 real 模式）
-	@echo "📊 分析投资组合 (real 模式)..."
-	$(CONDA) python -m asset_lens analyze --data-mode real --output-format all
-
 .PHONY: calculate
 calculate: ## 快捷计算收益率
 	@echo "🔢 计算收益率..."
 	$(CONDA) python -m asset_lens calculate
-
-.PHONY: calculate-real
-calculate-real: ## 快捷计算收益率 (real 模式)
-	@echo "🔢 计算收益率 (real 模式)..."
-	$(CONDA) python -m asset_lens calculate --data-mode real
 
 .PHONY: weekly
 weekly: ## 生成周度报告

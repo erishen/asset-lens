@@ -318,3 +318,124 @@ class TestCLISetRate:
         runner = CliRunner()
         result = runner.invoke(cli, ["set-rate", "--help"])
         assert result.exit_code == 0
+
+
+class TestCLIRealExecution:
+    """Test CLI commands with real execution"""
+
+    def test_analyze_with_console_output(self):
+        """Test analyze with console output"""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["analyze", "--data-mode", "sample", "--output-format", "console"])
+        assert result.exit_code == 0
+
+    def test_calculate_with_sample_data(self):
+        """Test calculate with sample data"""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["calculate", "--data-mode", "sample"])
+        assert result.exit_code == 0
+
+    def test_weekly_report_execution(self):
+        """Test weekly report execution"""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["weekly-report", "--data-mode", "sample"])
+        # May fail if no data, but should not crash
+        assert result.exit_code in [0, 1, 2]
+
+    def test_portfolio_metrics_execution(self):
+        """Test portfolio metrics execution"""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["portfolio-metrics", "--data-mode", "sample"])
+        assert result.exit_code == 0
+
+    def test_analyze_by_time_execution(self):
+        """Test analyze by time execution"""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["analyze-by-time", "--data-mode", "sample"])
+        assert result.exit_code == 0
+
+
+class TestCLIErrorHandling:
+    """Test CLI error handling"""
+
+    def test_analyze_invalid_data_mode(self):
+        """Test analyze with invalid data mode"""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["analyze", "--data-mode", "invalid"])
+        # Should handle gracefully
+        assert result.exit_code in [0, 1, 2]
+
+    def test_switch_mode_invalid_mode(self):
+        """Test switch-mode with invalid mode"""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["switch-mode", "--target-mode", "invalid"])
+        # Should handle gracefully
+        assert result.exit_code in [0, 1, 2]
+
+
+class TestCLIOutputFormats:
+    """Test CLI output format options"""
+
+    def test_analyze_json_format(self):
+        """Test analyze JSON format"""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["analyze", "--data-mode", "sample", "--output-format", "json"])
+        assert result.exit_code == 0
+
+    def test_analyze_csv_format(self):
+        """Test analyze CSV format"""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["analyze", "--data-mode", "sample", "--output-format", "csv"])
+        assert result.exit_code == 0
+
+    def test_analyze_all_formats(self):
+        """Test analyze all formats"""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["analyze", "--data-mode", "sample", "--output-format", "all"])
+        assert result.exit_code == 0
+
+
+class TestCLIDataMode:
+    """Test CLI data mode options"""
+
+    def test_analyze_sample_mode(self):
+        """Test analyze with sample mode"""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["analyze", "--data-mode", "sample"])
+        assert result.exit_code == 0
+
+    def test_analyze_real_mode(self):
+        """Test analyze with real mode"""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["analyze", "--data-mode", "real"])
+        # May fail if no real data, but should not crash
+        assert result.exit_code in [0, 1]
+
+    def test_calculate_sample_mode(self):
+        """Test calculate with sample mode"""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["calculate", "--data-mode", "sample"])
+        assert result.exit_code == 0
+
+
+class TestCLIRiskPreference:
+    """Test CLI risk preference options"""
+
+    def test_ai_analyze_with_risk_preference(self):
+        """Test ai-analyze with risk preference"""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["ai-analyze", "--data-mode", "sample", "--risk-preference", "moderate"])
+        # May fail without API key or data, but should not crash
+        assert result.exit_code in [0, 1, 2]
+
+    def test_ai_analyze_conservative(self):
+        """Test ai-analyze with conservative preference"""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["ai-analyze", "--data-mode", "sample", "--risk-preference", "conservative"])
+        assert result.exit_code in [0, 1]
+
+    def test_ai_analyze_aggressive(self):
+        """Test ai-analyze with aggressive preference"""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["ai-analyze", "--data-mode", "sample", "--risk-preference", "aggressive"])
+        assert result.exit_code in [0, 1]

@@ -111,4 +111,9 @@ dmypy.json
 *.tmp
 *.temp
 
+# Config (keep examples, ignore real config)
+config/platforms.json
+config/investment_types.json
+!config/*.json.example
+
 .serena

@@ -1,0 +1,94 @@
+{
+    "investment_types": [
+        {
+            "id": "currency",
+            "name": "货币基金",
+            "risk_level": "low",
+            "description": "货币市场基金",
+            "examples": ["货币基金A", "货币基金B"]
+        },
+        {
+            "id": "bond",
+            "name": "债券",
+            "risk_level": "low",
+            "description": "国债、企业债、债券基金",
+            "examples": ["国债", "企业债", "债券基金"]
+        },
+        {
+            "id": "wealth",
+            "name": "理财产品",
+            "risk_level": "low",
+            "description": "银行理财产品",
+            "examples": ["理财产品A", "理财产品B"]
+        },
+        {
+            "id": "index_fund",
+            "name": "指数基金",
+            "risk_level": "medium",
+            "description": "跟踪指数的基金",
+            "examples": ["指数基金A", "指数基金B", "指数基金C"]
+        },
+        {
+            "id": "mixed_fund",
+            "name": "混合基金",
+            "risk_level": "medium",
+            "description": "股债混合型基金",
+            "examples": ["混合基金A", "混合基金B"]
+        },
+        {
+            "id": "stock_fund",
+            "name": "股票基金",
+            "risk_level": "high",
+            "description": "主要投资股票的基金",
+            "examples": ["股票基金A", "股票基金B"]
+        },
+        {
+            "id": "stock",
+            "name": "股票",
+            "risk_level": "high",
+            "description": "直接持有股票",
+            "examples": ["股票A", "股票B"]
+        },
+        {
+            "id": "gold",
+            "name": "黄金",
+            "risk_level": "medium",
+            "description": "黄金及相关产品",
+            "examples": ["黄金ETF", "纸黄金"]
+        },
+        {
+            "id": "overseas",
+            "name": "海外资产",
+            "risk_level": "medium",
+            "description": "海外市场投资",
+            "examples": ["海外基金A", "海外基金B"]
+        },
+        {
+            "id": "other",
+            "name": "其他",
+            "risk_level": "unknown",
+            "description": "其他类型投资",
+            "examples": []
+        }
+    ],
+    "risk_levels": {
+        "low": {
+            "name": "低风险",
+            "color": "green",
+            "max_allocation": 0.5,
+            "description": "适合保守型投资者"
+        },
+        "medium": {
+            "name": "中风险",
+            "color": "yellow",
+            "max_allocation": 0.3,
+            "description": "适合稳健型投资者"
+        },
+        "high": {
+            "name": "高风险",
+            "color": "red",
+            "max_allocation": 0.2,
+            "description": "适合激进型投资者"
+        }
+    }
+}

@@ -81,10 +81,8 @@ class TestPlatform:
     """Test Platform enum"""
 
     def test_platform_values(self):
-        assert Platform.WECHAT.value == "微信"
-        assert Platform.ALIPAY.value == "支付宝"
+        assert Platform.THIRD_PARTY.value == "第三方平台"
         assert Platform.BANK.value == "银行"
-        assert Platform.FUND_COMPANY.value == "基金公司"
         assert Platform.SECURITIES.value == "证券"
         assert Platform.OTHER.value == "其他"
 
@@ -176,7 +174,7 @@ class TestInvestmentProduct:
             investment_type=InvestmentType.INDEX_FUND,
             name="测试产品",
             risk_level=RiskLevel.MEDIUM,
-            wechat_amount=Decimal("1000"),
+            platform_amounts={"platform_a": Decimal("1000")},
         )
         assert product.total_amount == Decimal("1000")
 
@@ -185,7 +183,7 @@ class TestInvestmentProduct:
             investment_type=InvestmentType.INDEX_FUND,
             name="测试产品",
             risk_level=RiskLevel.MEDIUM,
-            alipay_amount=Decimal("2000"),
+            platform_amounts={"platform_b": Decimal("2000")},
         )
         assert product.total_amount == Decimal("2000")
 
@@ -194,8 +192,10 @@ class TestInvestmentProduct:
             investment_type=InvestmentType.INDEX_FUND,
             name="测试产品",
             risk_level=RiskLevel.MEDIUM,
-            wechat_amount=Decimal("1000"),
-            alipay_amount=Decimal("2000"),
+            platform_amounts={
+                "platform_a": Decimal("1000"),
+                "platform_b": Decimal("2000"),
+            },
         )
         assert product.total_amount == Decimal("3000")
 
@@ -213,26 +213,28 @@ class TestInvestmentProduct:
             investment_type=InvestmentType.INDEX_FUND,
             name="测试产品",
             risk_level=RiskLevel.MEDIUM,
-            wechat_amount=Decimal("1000"),
+            platform_amounts={"platform_a": Decimal("1000")},
         )
-        assert product.platform == Platform.WECHAT
+        assert product.platform == Platform.THIRD_PARTY
 
     def test_platform_alipay(self):
         product = InvestmentProduct(
             investment_type=InvestmentType.INDEX_FUND,
             name="测试产品",
             risk_level=RiskLevel.MEDIUM,
-            alipay_amount=Decimal("1000"),
+            platform_amounts={"platform_b": Decimal("1000")},
         )
-        assert product.platform == Platform.ALIPAY
+        assert product.platform == Platform.THIRD_PARTY
 
     def test_platform_both(self):
         product = InvestmentProduct(
             investment_type=InvestmentType.INDEX_FUND,
             name="测试产品",
             risk_level=RiskLevel.MEDIUM,
-            wechat_amount=Decimal("1000"),
-            alipay_amount=Decimal("1000"),
+            platform_amounts={
+                "platform_a": Decimal("1000"),
+                "platform_b": Decimal("1000"),
+            },
         )
         assert product.platform == Platform.OTHER
 
@@ -249,16 +251,16 @@ class TestInvestmentProduct:
             investment_type=InvestmentType.INDEX_FUND,
             name="中证500ETF",
             risk_level=RiskLevel.MEDIUM,
-            wechat_amount=Decimal("1000"),
+            platform_amounts={"platform_a": Decimal("1000")},
             current_amount=Decimal("1200"),
             initial_amount=Decimal("1000"),
             investment_days=365,
             return_rate=Decimal("20"),
         )
         result = product.to_dict()
-        assert result["投资类型"] == "指数基金"
+        assert result["类型"] == "指数基金"
         assert result["名称"] == "中证500ETF"
-        assert result["风险等级"] == "中"
+        assert result["风险情况"] == "中"
         assert result["当前金额"] == "1200"
         assert result["投资天数"] == 365
 
@@ -273,9 +275,11 @@ class TestAssetSummary:
     def test_total_platform_amount(self):
         summary = AssetSummary(
             summary_date=date(2024, 1, 15),
-            wechat_amount=Decimal("1000"),
-            alipay_amount=Decimal("2000"),
-            zhaoshang_amount=Decimal("3000"),
+            platform_amounts={
+                "platform_a": Decimal("1000"),
+                "platform_b": Decimal("2000"),
+                "bank_a": Decimal("3000"),
+            },
         )
         assert summary.total_platform_amount == Decimal("6000")
 
@@ -290,7 +294,7 @@ class TestAssetSummary:
     def test_total_investment_value(self):
         summary = AssetSummary(
             summary_date=date(2024, 1, 15),
-            wechat_amount=Decimal("1000"),
+            platform_amounts={"platform_a": Decimal("1000")},
             credit_card_amount=Decimal("500"),
             gold_amount=Decimal("200"),
         )
@@ -299,12 +303,11 @@ class TestAssetSummary:
     def test_to_dict(self):
         summary = AssetSummary(
             summary_date=date(2024, 1, 15),
-            wechat_amount=Decimal("1000"),
+            platform_amounts={"platform_a": Decimal("1000")},
             usd_rate=Decimal("7.2"),
         )
         result = summary.to_dict()
         assert result["汇总日期"] == "2024-01-15"
-        assert result["微信金额"] == "1000"
         assert result["美元汇率"] == "7.2"
 
 
@@ -323,8 +326,8 @@ class TestExchangeRateHistory:
 
     def test_default_rates(self):
         rate = ExchangeRateHistory(rate_date=date(2024, 1, 15))
-        assert rate.usd_rate == Decimal("7.1242")
-        assert rate.hkd_rate == Decimal("0.9157")
+        assert rate.usd_rate is None
+        assert rate.hkd_rate is None
 
     def test_to_dict(self):
         rate = ExchangeRateHistory(

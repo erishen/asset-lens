@@ -7,7 +7,10 @@ from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List
+
+if TYPE_CHECKING:
+    from asset_lens.core.platform_loader import PlatformLoader
 
 
 class Currency(str, Enum):
@@ -24,19 +27,30 @@ class InvestmentType(str, Enum):
     """投资类型"""
 
     MONETARY = "货币"  # 货币基金
+    CASH = "现金"  # 现金
     INDEX_FUND = "指数基金"  # 指数基金
     BOND_FUND = "债券基金"  # 债券基金
     MIXED_FUND = "混合基金"  # 混合基金
     STOCK = "股票"  # 股票
     US_STOCK = "美股"  # 美股
     HK_STOCK = "港股"  # 港股
+    HK_CASH = "现金（港元）"  # 港元现金
+    HK_DIVIDEND_FUND = "股息基金（港元）"  # 港元股息基金
     QDII = "QDII"  # QDII 基金
     WEALTH = "理财"  # 理财产品
+    HIGH_END_WEALTH = "高端理财"  # 高端理财
+    BROKER_WEALTH = "券商理财"  # 券商理财
+    PUBLIC_FIXED_INCOME = "公募固收"  # 公募固收
     FIXED_DEPOSIT = "定期存款"  # 定期存款
     BOND = "债券"  # 债券
+    SPECIAL_TREASURY_BOND = "特别国债"  # 特别国债
     REITS = "REITs"  # 不动产投资信托
     GOLD = "黄金"  # 黄金
     FUND = "基金"  # 其他基金
+    DCA_FUND = "定投基金"  # 定投基金
+    PENSION = "个人养老金"  # 个人养老金
+    ETF = "ETF"  # ETF
+    USD_FUND = "美元基金（美元）"  # 美元基金
     OTHER = "其他"  # 其他
 
 
@@ -53,10 +67,8 @@ class RiskLevel(str, Enum):
 class Platform(str, Enum):
     """投资平台"""
 
-    WECHAT = "微信"
-    ALIPAY = "支付宝"
+    THIRD_PARTY = "第三方平台"
     BANK = "银行"
-    FUND_COMPANY = "基金公司"
     SECURITIES = "证券"
     OTHER = "其他"
 
@@ -93,19 +105,7 @@ class InvestmentProduct:
     investment_type: InvestmentType  # 投资类型
     name: str  # 产品名称
     risk_level: RiskLevel  # 风险等级
-    wechat_amount: Decimal | None = None  # 微信平台金额
-    zhongjin_amount: Decimal | None = None  # 中金平台金额
-    alipay_amount: Decimal | None = None  # 支付宝平台金额
-    futu_amount: Decimal | None = None  # 富途平台金额
-    zhaoshang_amount: Decimal | None = None  # 招商平台金额
-    gangzhao_amount: Decimal | None = None  # 港招平台金额
-    jiaotong_amount: Decimal | None = None  # 交通平台金额
-    pufa_amount: Decimal | None = None  # 浦发平台金额
-    jianshe_amount: Decimal | None = None  # 建设平台金额
-    zhongxin_amount: Decimal | None = None  # 中信平台金额
-    minsheng_amount: Decimal | None = None  # 民生平台金额
-    gongshang_amount: Decimal | None = None  # 工商平台金额
-    zhongyin_amount: Decimal | None = None  # 中银平台金额
+    platform_amounts: Dict[str, Decimal] = field(default_factory=dict)  # 平台金额字典
     maturity_date: date | None = None  # 到期时间
     is_rolling: bool = False  # 是否滚动
     start_date: date | None = None  # 开始日期
@@ -128,70 +128,130 @@ class InvestmentProduct:
     annualized_return_irr: Decimal | None = None  # IRR 年化收益率
     transactions: List[Transaction] = field(default_factory=list)  # 解析后的交易记录
 
+    def get_amount(self, platform_id: str) -> Decimal:
+        """获取平台金额"""
+        return self.platform_amounts.get(platform_id, Decimal("0"))
+
+    def set_amount(self, platform_id: str, amount: Decimal) -> None:
+        """设置平台金额"""
+        self.platform_amounts[platform_id] = amount
+
     @property
     def total_amount(self) -> Decimal:
         """总金额"""
-        total = Decimal("0")
-        if self.wechat_amount:
-            total += self.wechat_amount
-        if self.alipay_amount:
-            total += self.alipay_amount
+        total = sum(self.platform_amounts.values())
         return total or self.current_amount or Decimal("0")
+
+    def get_converted_amount(self, usd_rate: Decimal, hkd_rate: Decimal) -> Decimal:
+        """获取汇率转换后的当前金额（人民币），包含利息发放"""
+        amount = self.current_amount or Decimal("0")
+        interest = self.interest_payment or Decimal("0")
+
+        # 检查是否需要汇率转换
+        if self.investment_type in [
+            InvestmentType.US_STOCK,
+            InvestmentType.USD_FUND,
+        ]:
+            rate = self.usd_rate or usd_rate
+            return amount * rate + interest * rate
+        elif self.investment_type in [
+            InvestmentType.HK_STOCK,
+            InvestmentType.HK_CASH,
+            InvestmentType.HK_DIVIDEND_FUND,
+        ]:
+            rate = self.hkd_rate or hkd_rate
+            return amount * rate + interest * rate
+        return amount + interest
 
     @property
     def platform(self) -> Platform:
         """主要平台"""
-        if self.wechat_amount and self.alipay_amount:
+        if len(self.platform_amounts) > 1:
             return Platform.OTHER
-        elif self.wechat_amount:
-            return Platform.WECHAT
-        elif self.alipay_amount:
-            return Platform.ALIPAY
+        elif len(self.platform_amounts) == 1:
+            return Platform.THIRD_PARTY
         else:
             return Platform.OTHER
 
     def to_dict(self) -> Dict[str, Any]:
-        """转换为字典"""
-        return {
-            "投资类型": self.investment_type.value,
+        """转换为字典（与 ts-demo 格式一致）"""
+        result = {
             "名称": self.name,
-            "风险等级": self.risk_level.value,
-            "微信金额": str(self.wechat_amount) if self.wechat_amount else None,
-            "支付宝金额": str(self.alipay_amount) if self.alipay_amount else None,
-            "到期时间": self.maturity_date.isoformat() if self.maturity_date else None,
-            "是否滚动": self.is_rolling,
-            "开始日期": self.start_date.isoformat() if self.start_date else None,
-            "初始金额": str(self.initial_amount) if self.initial_amount else None,
-            "当前金额": str(self.current_amount) if self.current_amount else None,
+            "类型": self.investment_type.value,
+            "所属平台": self._get_main_platform(),
             "投资天数": self.investment_days,
-            "收益率": f"{self.return_rate:.2f}%" if self.return_rate else None,
-            "年化收益率": f"{self.annual_return:.2f}%" if self.annual_return else None,
-            "IRR年化": f"{self.annualized_return_irr:.2f}%"
-            if self.annualized_return_irr
-            else None,
-            "平台": self.platform.value,
-            "交易记录": self.transaction_records,
+            "年化收益率(%)": f"{self.annual_return:.2f}" if self.annual_return else None,
+            "实际收益率(%)": f"{self.return_rate:.2f}" if self.return_rate else None,
+            "当前金额": str(self.current_amount) if self.current_amount else None,
+            "净投入/初始金额": str(self.initial_amount) if self.initial_amount else None,
+            "总买入": self._get_total_buy(),
+            "总卖出": self._get_total_sell(),
+            "开始日期": self.start_date.isoformat() if self.start_date else None,
+            "风险情况": self.risk_level.value,
         }
+        return result
+
+    def _get_main_platform(self) -> str:
+        """获取主平台名称"""
+        from asset_lens.core.platform_loader import PlatformLoader
+
+        amounts = {}
+        for platform in PlatformLoader.get_all_platforms():
+            amount = self.platform_amounts.get(platform.id, Decimal("0"))
+            if amount and amount > Decimal("0"):
+                amounts[platform.name] = amount
+
+        if amounts:
+            return str(max(amounts, key=lambda k: amounts[k] or Decimal("0")))
+        return "未知"
+
+    def _get_total_buy(self) -> str | None:
+        """获取总买入金额"""
+        if not self.transaction_records:
+            return None
+        try:
+            total = Decimal("0")
+            for line in self.transaction_records.strip().split("\n"):
+                if "买入" in line:
+                    parts = line.split()
+                    for i, part in enumerate(parts):
+                        if part == "买入" and i + 1 < len(parts):
+                            amount_str = parts[i + 1].replace("¥", "").replace(",", "")
+                            try:
+                                total += Decimal(amount_str)
+                            except:
+                                pass
+            return str(total) if total > 0 else None
+        except:
+            return None
+
+    def _get_total_sell(self) -> str | None:
+        """获取总卖出金额"""
+        if not self.transaction_records:
+            return None
+        try:
+            total = Decimal("0")
+            for line in self.transaction_records.strip().split("\n"):
+                if "卖出" in line:
+                    parts = line.split()
+                    for i, part in enumerate(parts):
+                        if part == "卖出" and i + 1 < len(parts):
+                            amount_str = parts[i + 1].replace("¥", "").replace(",", "")
+                            try:
+                                total += Decimal(amount_str)
+                            except:
+                                pass
+            return str(total) if total > 0 else None
+        except:
+            return None
 
 
 @dataclass
 class AssetSummary:
     """资产汇总记录"""
-    
+
     summary_date: date  # 汇总日期
-    wechat_amount: Decimal = Decimal("0")  # 微信金额
-    zhongjin_amount: Decimal = Decimal("0")  # 中金金额
-    alipay_amount: Decimal = Decimal("0")  # 支付宝金额
-    futu_amount: Decimal = Decimal("0")  # 富途金额
-    zhaoshang_amount: Decimal = Decimal("0")  # 招商金额
-    gangzhao_amount: Decimal = Decimal("0")  # 港招金额
-    jiaotong_amount: Decimal = Decimal("0")  # 交通金额
-    pufa_amount: Decimal = Decimal("0")  # 浦发金额
-    jianshe_amount: Decimal = Decimal("0")  # 建设金额
-    zhongxin_amount: Decimal = Decimal("0")  # 中信金额
-    minsheng_amount: Decimal = Decimal("0")  # 民生金额
-    gongshang_amount: Decimal = Decimal("0")  # 工商金额
-    zhongyin_amount: Decimal = Decimal("0")  # 中银金额
+    platform_amounts: Dict[str, Decimal] = field(default_factory=dict)  # 平台金额字典
     credit_card_amount: Decimal = Decimal("0")  # 信用卡金额
     jingdong_white_amount: Decimal = Decimal("0")  # 京东白条金额
     douyin_monthly_amount: Decimal = Decimal("0")  # 抖音月付金额
@@ -212,48 +272,41 @@ class AssetSummary:
     us_treasury_rate: Decimal = Decimal("0")  # 美联基利率
     property_value: Decimal = Decimal("0")  # 房产总价
     return_rate: Decimal = Decimal("0")  # 收益率
-    
+
+    def get_amount(self, platform_id: str) -> Decimal:
+        """获取平台金额"""
+        return self.platform_amounts.get(platform_id, Decimal("0"))
+
+    def set_amount(self, platform_id: str, amount: Decimal) -> None:
+        """设置平台金额"""
+        self.platform_amounts[platform_id] = amount
+
     @property
     def total_platform_amount(self) -> Decimal:
         """总平台金额"""
-        return (
-            self.wechat_amount + self.zhongjin_amount + self.alipay_amount +
-            self.futu_amount + self.zhaoshang_amount + self.gangzhao_amount +
-            self.jiaotong_amount + self.pufa_amount + self.jianshe_amount +
-            self.zhongxin_amount + self.minsheng_amount + self.gongshang_amount +
-            self.zhongyin_amount
-        )
-    
+        if not self.platform_amounts:
+            return Decimal("0")
+        return sum(self.platform_amounts.values(), Decimal("0"))
+
     @property
     def total_credit_amount(self) -> Decimal:
         """总信用金额"""
         return (
-            self.credit_card_amount + self.jingdong_white_amount +
-            self.douyin_monthly_amount + self.duoduo_later_amount
+            self.credit_card_amount
+            + self.jingdong_white_amount
+            + self.douyin_monthly_amount
+            + self.duoduo_later_amount
         )
-    
+
     @property
     def total_investment_value(self) -> Decimal:
         """总投资价值"""
         return self.total_platform_amount + self.total_credit_amount + self.gold_amount
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典"""
-        return {
+        result = {
             "汇总日期": self.summary_date.isoformat(),
-            "微信金额": str(self.wechat_amount),
-            "中金金额": str(self.zhongjin_amount),
-            "支付宝金额": str(self.alipay_amount),
-            "富途金额": str(self.futu_amount),
-            "招商金额": str(self.zhaoshang_amount),
-            "港招金额": str(self.gangzhao_amount),
-            "交通金额": str(self.jiaotong_amount),
-            "浦发金额": str(self.pufa_amount),
-            "建设金额": str(self.jianshe_amount),
-            "中信金额": str(self.zhongxin_amount),
-            "民生金额": str(self.minsheng_amount),
-            "工商金额": str(self.gongshang_amount),
-            "中银金额": str(self.zhongyin_amount),
             "信用卡金额": str(self.credit_card_amount),
             "京东白条金额": str(self.jingdong_white_amount),
             "抖音月付金额": str(self.douyin_monthly_amount),
@@ -275,16 +328,23 @@ class AssetSummary:
             "房产总价": str(self.property_value),
             "收益率": f"{self.return_rate:.2f}%" if self.return_rate else None,
         }
+        # 添加平台金额（使用平台名称作为字段名）
+        from asset_lens.core.platform_loader import PlatformLoader
+
+        for platform in PlatformLoader.get_all_platforms():
+            amount = self.platform_amounts.get(platform.id, Decimal("0"))
+            result[f"{platform.name}金额"] = str(amount)
+        return result
 
 
 @dataclass
 class ExchangeRateHistory:
     """汇率历史记录"""
-    
+
     rate_date: date  # 汇率日期
-    usd_rate: Decimal = Decimal("7.1242")  # 美元汇率
-    hkd_rate: Decimal = Decimal("0.9157")  # 港元汇率
-    
+    usd_rate: Decimal | None = None  # 美元汇率
+    hkd_rate: Decimal | None = None  # 港元汇率
+
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典"""
         return {
@@ -297,7 +357,7 @@ class ExchangeRateHistory:
 @dataclass
 class SellRecord:
     """卖出记录"""
-    
+
     sell_date: date  # 卖出日期
     name: str  # 产品名称
     risk_level: RiskLevel  # 风险等级
@@ -316,7 +376,7 @@ class SellRecord:
     interest_payment: Decimal | None = None  # 利息发放
     transaction_records: str | None = None  # 交易记录
     default_order: int | None = None  # 默认顺序
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """转换为字典"""
         return {
@@ -344,7 +404,7 @@ class SellRecord:
 @dataclass
 class Portfolio:
     """投资组合"""
-    
+
     products: List[InvestmentProduct] = field(default_factory=list)
     usd_rate: Decimal = Decimal("7.1242")  # 美元汇率
     hkd_rate: Decimal = Decimal("0.9157")  # 港元汇率
@@ -366,11 +426,16 @@ class Portfolio:
 
     @property
     def total_value(self) -> Decimal:
-        """总资产"""
+        """总资产（不包含利息，与 ts-demo 保持一致）"""
         total = Decimal("0")
         for product in self.products:
             if product.current_amount:
-                total += product.current_amount
+                amount = product.current_amount
+                if product.investment_type in [InvestmentType.US_STOCK, InvestmentType.USD_FUND]:
+                    amount = amount * (product.usd_rate or self.usd_rate)
+                elif product.investment_type in [InvestmentType.HK_STOCK, InvestmentType.HK_CASH, InvestmentType.HK_DIVIDEND_FUND]:
+                    amount = amount * (product.hkd_rate or self.hkd_rate)
+                total += amount
         return total
 
     @property
@@ -379,13 +444,46 @@ class Portfolio:
         total = Decimal("0")
         for product in self.products:
             if product.initial_amount:
-                total += product.initial_amount
+                amount = product.initial_amount
+                if product.investment_type in [InvestmentType.US_STOCK, InvestmentType.USD_FUND]:
+                    amount = amount * (product.usd_rate or self.usd_rate)
+                elif product.investment_type in [InvestmentType.HK_STOCK, InvestmentType.HK_CASH, InvestmentType.HK_DIVIDEND_FUND]:
+                    amount = amount * (product.hkd_rate or self.hkd_rate)
+                total += amount
         return total
 
     @property
     def total_profit(self) -> Decimal:
-        """总收益"""
-        return self.total_value - self.total_initial
+        """总收益（只计算有初始投资的产品收益 + 利息发放）"""
+        total = Decimal("0")
+        for product in self.products:
+            # 只计算有初始投资的产品
+            if product.initial_amount and product.current_amount:
+                current = product.current_amount
+                initial = product.initial_amount
+                
+                # 汇率转换
+                if product.investment_type in [InvestmentType.US_STOCK, InvestmentType.USD_FUND]:
+                    rate = product.usd_rate or self.usd_rate
+                    current = current * rate
+                    initial = initial * rate
+                elif product.investment_type in [InvestmentType.HK_STOCK, InvestmentType.HK_CASH, InvestmentType.HK_DIVIDEND_FUND]:
+                    rate = product.hkd_rate or self.hkd_rate
+                    current = current * rate
+                    initial = initial * rate
+                
+                total += current - initial
+            
+            # 加上利息发放
+            if product.interest_payment and product.interest_payment > 0:
+                interest = product.interest_payment
+                if product.investment_type in [InvestmentType.US_STOCK, InvestmentType.USD_FUND]:
+                    interest = interest * (product.usd_rate or self.usd_rate)
+                elif product.investment_type in [InvestmentType.HK_STOCK, InvestmentType.HK_CASH, InvestmentType.HK_DIVIDEND_FUND]:
+                    interest = interest * (product.hkd_rate or self.hkd_rate)
+                total += interest
+        
+        return total
 
     @property
     def overall_return_rate(self) -> Decimal | None:
@@ -406,16 +504,13 @@ class Portfolio:
                     "products": [],
                 }
             type_stats[type_name]["count"] += 1
-            if product.current_amount:
-                type_stats[type_name]["total_value"] += product.current_amount
+            type_stats[type_name]["total_value"] += product.get_converted_amount(self.usd_rate, self.hkd_rate)
             type_stats[type_name]["products"].append(product)
 
-        # 计算占比
+        total = sum(stats["total_value"] for stats in type_stats.values())
         for stats in type_stats.values():
-            if self.total_value > Decimal("0"):
-                stats["percentage"] = (
-                    stats["total_value"] / self.total_value
-                ) * Decimal("100")
+            if total > Decimal("0"):
+                stats["percentage"] = (stats["total_value"] / total) * Decimal("100")
             else:
                 stats["percentage"] = Decimal("0")
 
@@ -433,16 +528,13 @@ class Portfolio:
                     "products": [],
                 }
             risk_stats[risk_name]["count"] += 1
-            if product.current_amount:
-                risk_stats[risk_name]["total_value"] += product.current_amount
+            risk_stats[risk_name]["total_value"] += product.get_converted_amount(self.usd_rate, self.hkd_rate)
             risk_stats[risk_name]["products"].append(product)
 
-        # 计算占比
+        total = sum(stats["total_value"] for stats in risk_stats.values())
         for stats in risk_stats.values():
-            if self.total_value > Decimal("0"):
-                stats["percentage"] = (
-                    stats["total_value"] / self.total_value
-                ) * Decimal("100")
+            if total > Decimal("0"):
+                stats["percentage"] = (stats["total_value"] / total) * Decimal("100")
             else:
                 stats["percentage"] = Decimal("0")
 

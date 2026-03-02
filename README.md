@@ -69,9 +69,8 @@ asset-lens 支持两种数据模式，确保隐私安全：
 - ✅ 定投策略（DCA）模拟 - 支持4种模式
 - ✅ 周度收益报告生成
 - ✅ 多币种支持（USD/HKD 转 CNY）
-- ✅ 资产汇总数据管理（备份-表格 1.csv）
-- ✅ 汇率历史数据管理（工作表 2-表格 1.csv）
-- ✅ 卖出记录管理（卖出记录-表格 1.csv）
+- ✅ 资产汇总数据管理（资产汇总.csv / 资产汇总-表格 1.csv）
+- ✅ 卖出记录管理（卖出记录.csv / 卖出记录-表格 1.csv）
 
 ### 高级分析功能
 - ✅ **实时盈亏估算** - 基于市场指数的日/周盈亏估算
@@ -157,13 +156,14 @@ asset-lens/
 │       └── analyzer.py       # 分析报告
 ├── data/
 │   ├── sample_data/           # 示例数据（可提交）
-│   │   └── 工作表 1-表格 1.csv
+│   │   ├── 投资产品.csv
+│   │   ├── 资产汇总.csv
+│   │   └── 卖出记录.csv
 │   └── real/                 # 真实数据（不提交）
-│       └── money_csv_20260226/
-│           ├── 工作表 1-表格 1.csv
-│           ├── 工作表 2-表格 1.csv
-│           ├── 卖出记录-表格 1.csv
-│           └── 备份-表格 1.csv
+│       └── money_csv_20260301/
+│           ├── 投资产品-表格 1.csv
+│           ├── 资产汇总-表格 1.csv
+│           └── 卖出记录-表格 1.csv
 ├── tests/                    # 测试文件
 ├── output/                   # 输出文件
 ├── cache/                    # 缓存文件
@@ -232,7 +232,77 @@ FINNHUB_API_KEY=your_actual_finnhub_api_key_here
 AI_CACHE_TTL=3600  # 缓存有效期（秒），默认 1 小时
 ```
 
-### 4. 运行分析
+### 4. 配置投资平台和品种（可选）
+
+asset-lens 支持动态配置投资平台和品种，你可以根据自己的实际情况自定义。
+
+#### 4.1 复制示例配置文件
+
+```bash
+# 复制平台配置示例文件
+cp config/platforms.json.example config/platforms.json
+
+# 复制投资品种配置示例文件
+cp config/investment_types.json.example config/investment_types.json
+```
+
+#### 4.2 编辑配置文件
+
+**config/platforms.json** - 配置你的投资平台：
+
+```json
+{
+    "platforms": [
+        {
+            "id": "wechat",
+            "name": "微信",
+            "field": "wechat_amount",
+            "type": "third_party",
+            "description": "微信理财"
+        },
+        {
+            "id": "alipay",
+            "name": "支付宝",
+            "field": "alipay_amount",
+            "type": "third_party",
+            "description": "支付宝理财"
+        },
+        {
+            "id": "cmb",
+            "name": "招商银行",
+            "field": "cmb_amount",
+            "type": "bank",
+            "description": "招商银行理财"
+        }
+    ],
+    "platform_types": {
+        "third_party": "第三方平台",
+        "bank": "银行",
+        "securities": "证券"
+    }
+}
+```
+
+**config/investment_types.json** - 配置投资品种：
+
+```json
+{
+    "types": [
+        {"id": "stock", "name": "股票"},
+        {"id": "fund", "name": "基金"},
+        {"id": "bond", "name": "债券"},
+        {"id": "monetary", "name": "货币"}
+    ]
+}
+```
+
+#### 4.3 配置文件说明
+
+- `config/platforms.json` 和 `config/investment_types.json` 不会被 Git 追踪
+- 如果没有创建配置文件，系统会使用默认配置
+- 配置文件修改后需要重新运行分析命令才能生效
+
+### 5. 运行分析
 
 ```bash
 # 使用示例数据进行分析
@@ -248,7 +318,7 @@ python -m asset_lens analyze --data-mode sample --output-format console
 python -m asset_lens analyze --data-mode sample --output-format all
 ```
 
-### 5. AI 分析（新功能）
+### 6. AI 分析（新功能）
 
 ```bash
 # AI 分析投资组合（需要配置 OPENAI_API_KEY）
@@ -263,7 +333,7 @@ python -m asset_lens ai-analyze --risk-preference aggressive    # 激进型
 make ai-analyze
 ```
 
-### 6. 投资组合专业指标（新功能）
+### 7. 投资组合专业指标（新功能）
 
 ```bash
 # 计算投资组合专业指标
@@ -273,7 +343,7 @@ python -m asset_lens portfolio-metrics
 make portfolio-metrics
 ```
 
-### 7. 其他常用命令
+### 8. 其他常用命令
 
 ```bash
 # 查看资产汇总
