@@ -7,7 +7,7 @@ import csv
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from ..config import config
 from ..data.models import Currency, InvestmentProduct, InvestmentType, RiskLevel
@@ -83,7 +83,8 @@ class CSVParser:
     @staticmethod
     def get_exchange_rates(data_dir: Path) -> tuple[float, float]:
         """
-        从工作表2中读取美元和港元汇率
+        从数据文件中读取美元和港元汇率
+        优先从投资产品表格中读取，其次从工作表2中读取
         Args:
             data_dir: 数据目录路径
         Returns:
@@ -93,7 +94,57 @@ class CSVParser:
         default_hkd = float(config.default_hkd_rate)
 
         try:
-            # 查找工作表2文件
+            # 首先尝试从投资产品表格中读取汇率
+            csv_files = list(data_dir.glob("投资产品*.csv"))
+            if csv_files:
+                csv_path = csv_files[0]
+                with open(csv_path, "r", encoding="utf-8-sig") as f:
+                    lines = f.readlines()
+
+                if len(lines) >= 2:
+                    header = lines[0].strip().split(",")
+                    usd_idx = -1
+                    hkd_idx = -1
+
+                    for i, col in enumerate(header):
+                        col_clean = col.replace(" ", "")
+                        if "美元汇率" in col_clean:
+                            usd_idx = i
+                        if "港元汇率" in col_clean:
+                            hkd_idx = i
+
+                    if usd_idx != -1 or hkd_idx != -1:
+                        usd_rate = default_usd
+                        hkd_rate = default_hkd
+
+                        for i in range(1, len(lines)):
+                            cells = lines[i].strip().split(",")
+                            if len(cells) <= max(usd_idx, hkd_idx):
+                                continue
+
+                            if usd_idx != -1 and usd_rate == default_usd:
+                                try:
+                                    rate = float(cells[usd_idx])
+                                    if 5 < rate < 10:
+                                        usd_rate = rate
+                                except (ValueError, IndexError):
+                                    pass
+
+                            if hkd_idx != -1 and hkd_rate == default_hkd:
+                                try:
+                                    rate = float(cells[hkd_idx])
+                                    if 0.8 < rate < 1.2:
+                                        hkd_rate = rate
+                                except (ValueError, IndexError):
+                                    pass
+
+                            if usd_rate != default_usd and hkd_rate != default_hkd:
+                                break
+
+                        if usd_rate != default_usd or hkd_rate != default_hkd:
+                            return usd_rate, hkd_rate
+
+            # 其次尝试从工作表2文件读取
             ws2_files = list(data_dir.glob("*工作表 2*.csv"))
             if not ws2_files:
                 ws2_files = list(data_dir.glob("*工作表*2*.csv"))
@@ -363,59 +414,116 @@ class CSVParser:
 
     @classmethod
     def _calculate_irr_for_products(
-        cls, products: List[InvestmentProduct]
+        cls, products: List[InvestmentProduct], reference_date: Optional[datetime] = None
     ) -> List[InvestmentProduct]:
         """
         对有交易记录的产品使用 IRR 计算年化收益率（与 ts-demo 保持一致）
         Args:
             products: 投资产品列表
+            reference_date: 参考日期（数据目录日期）
         Returns:
             更新后的投资产品列表
         """
+        from ..core.dca_parser import DCAParser
         from ..core.irr_calculator import IRRCalculator
 
         irr_calculator = IRRCalculator()
+        dca_parser = DCAParser()
 
         for product in products:
-            # 解析交易记录
             transactions = []
             if product.transaction_records:
-                transactions = cls._parse_transaction_records(product.transaction_records)
+                is_dca = cls._is_dca_product(product)
+                if is_dca:
+                    transactions = cls._parse_dca_transactions(
+                        product.transaction_records,
+                        product.investment_type,
+                        reference_date,
+                        product.name,
+                    )
+                else:
+                    transactions = cls._parse_transaction_records(product.transaction_records)
 
-            # 计算买入和卖出总额
             total_buy = sum(t["amount"] for t in transactions if t["type"] == "buy") if transactions else 0
             total_sell = sum(t["amount"] for t in transactions if t["type"] == "sell") if transactions else 0
 
-            # 计算实际收益率（与 ts-demo 保持一致）
-            if total_buy > 0:
-                # 有交易记录：实际收益率 = (当前金额 + 卖出总额 - 买入总额) / 买入总额
+            is_dca_product = cls._is_dca_product(product)
+            if is_dca_product and product.initial_amount and product.initial_amount > 0:
+                # 检查交易记录计算的净投入与 CSV 初始金额是否一致
+                net_invest = total_buy - total_sell
+                if net_invest > 0 and abs(net_invest - float(product.initial_amount)) > 1:
+                    diff = net_invest - float(product.initial_amount)
+                    diff_days = abs(diff) / 100 if abs(diff) >= 100 else abs(diff) / 50
+                    print(f"⚠️  定投产品数据不一致: {product.name}")
+                    print(f"    CSV 初始金额: {product.initial_amount}")
+                    print(f"    交易记录净投入: {net_invest:.2f}")
+                    print(f"    差异: {diff:.2f} (约 {diff_days:.0f} 个交易日)")
+                    print(f"    将使用 CSV 初始金额计算收益率")
+                    print()
+
+                current_value = float(product.current_amount or 0)
+                initial_value = float(product.initial_amount)
+                simple_return = (current_value - initial_value) / initial_value
+                product.return_rate = Decimal(str(round(simple_return * 100, 2)))
+            elif total_buy > 0:
                 current_value = float(product.current_amount or 0)
                 net_gain = current_value + total_sell - total_buy
                 simple_return = net_gain / total_buy
                 product.return_rate = Decimal(str(round(simple_return * 100, 2)))
             elif product.initial_amount and product.initial_amount > 0:
-                # 没有交易记录：实际收益率 = (当前金额 - 初始金额) / 初始金额
                 current_value = float(product.current_amount or 0)
                 initial_value = float(product.initial_amount)
                 simple_return = (current_value - initial_value) / initial_value
                 product.return_rate = Decimal(str(round(simple_return * 100, 2)))
 
-            # 计算年化收益率（与 ts-demo 保持一致）
             total_days = product.investment_days or 0
             if total_days > 0:
-                # 判断是否是债券类产品
                 is_bond_product = (
                     product.investment_type.value
                     and "债" in product.investment_type.value
                 ) or (product.name and "分红" in product.name)
 
-                # 债券类产品或短期投资（<180天）使用简单年化
-                if is_bond_product or total_days < 180:
+                if is_bond_product:
+                    # 对于债券类产品，使用简化计算方法（与 ts-demo 保持一致）
+                    # 净收益 = 当前金额 + 利息 - 初始金额
+                    if product.initial_amount and product.initial_amount > 0:
+                        current_value = float(product.current_amount or 0)
+                        interest = float(product.interest_payment or 0)
+                        initial_value = float(product.initial_amount)
+                        net_gain = current_value + interest - initial_value
+                        simple_return = net_gain / initial_value
+                        product.return_rate = Decimal(str(round(simple_return * 100, 2)))
+                        simple_annualized = (1 + simple_return) ** (360 / total_days) - 1
+                        product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
+                elif is_dca_product and product.initial_amount and product.initial_amount > 0:
+                    if product.start_date and product.current_amount:
+                        cashflows = cls._calculate_cashflows_with_days_for_dca(
+                            transactions,
+                            product.start_date,
+                            product.current_amount,
+                            total_days,
+                            product.initial_amount,
+                        )
+                    else:
+                        cashflows = []
+
+                    if cashflows and len(cashflows) > 1:
+                        irr = irr_calculator.calculate_irr_with_days(cashflows)
+                        if irr is not None and -1 < irr < 10:
+                            product.annual_return = Decimal(str(round(irr * 100, 2)))
+                        else:
+                            if product.return_rate is not None:
+                                simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
+                                product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
+                    else:
+                        if product.return_rate is not None:
+                            simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
+                            product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
+                elif total_days < 180:
                     if product.return_rate is not None:
                         simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
                         product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
                 elif transactions and len(transactions) > 1 and total_buy > 0:
-                    # 有交易记录且投资天数 >= 180 天：使用 IRR 计算
                     cashflows = cls._calculate_cashflows_with_days(
                         transactions,
                         product.start_date,
@@ -424,31 +532,69 @@ class CSVParser:
                     )
 
                     if cashflows and len(cashflows) > 1:
-                        # 计算 IRR（使用带天数的现金流格式）
                         irr = irr_calculator.calculate_irr_with_days(cashflows)
                         if irr is not None and -1 < irr < 10:
-                            # 检查 IRR 与简单年化的差异
                             if product.return_rate is not None:
                                 simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
                                 diff = abs(irr - simple_annualized)
                                 if diff > 1:
-                                    # 差异超过 100%，使用简单年化
                                     product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
                                 else:
                                     product.annual_return = Decimal(str(round(irr * 100, 2)))
                             else:
                                 product.annual_return = Decimal(str(round(irr * 100, 2)))
                         else:
-                            # IRR 计算失败，使用简单年化
                             if product.return_rate is not None:
                                 simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
                                 product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
                 elif product.return_rate is not None:
-                    # 其他情况使用简单年化
                     simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
                     product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
 
         return products
+
+    @classmethod
+    def _is_dca_product(cls, product: InvestmentProduct) -> bool:
+        """判断是否为定投产品"""
+        if product.investment_type and product.investment_type.value == "定投基金":
+            return True
+        if product.transaction_records:
+            records = product.transaction_records.strip()
+            if "-now:" in records or "-" in records.split(":")[0] if ":" in records else False:
+                buy_count = records.count(":buy:")
+                sell_count = records.count(":sell:")
+                return buy_count >= 1 and sell_count == 0
+        return False
+
+    @classmethod
+    def _parse_dca_transactions(
+        cls,
+        records_str: str,
+        investment_type,
+        reference_date: Optional[datetime] = None,
+        product_name: Optional[str] = None,
+    ) -> List[dict]:
+        """解析定投交易记录"""
+        from ..core.dca_parser import DCAParser
+        from datetime import datetime
+
+        dca_parser = DCAParser()
+        transactions = dca_parser.parse_transaction_record(
+            records_str,
+            reference_date=reference_date or datetime.now(),
+            investment_type=investment_type,
+            product_name=product_name,
+        )
+
+        result = []
+        for t in transactions:
+            result.append({
+                "date": t.transaction_date.strftime("%Y/%m/%d"),
+                "type": t.action,
+                "amount": float(t.amount),
+            })
+
+        return result
 
     @classmethod
     def _calculate_cashflows_with_days(
@@ -481,6 +627,40 @@ class CSVParser:
                 cashflows.append({"amount": -trans["amount"], "days": trans_days})
             elif trans["type"] == "sell":
                 cashflows.append({"amount": trans["amount"], "days": trans_days})
+
+        # 添加当前金额作为最终现金流
+        if current_amount:
+            cashflows.append({"amount": float(current_amount), "days": total_days})
+
+        return cashflows
+
+    @classmethod
+    def _calculate_cashflows_with_days_for_dca(
+        cls,
+        transactions: List[dict],
+        start_date: date,
+        current_amount: Decimal,
+        total_days: int,
+        initial_amount: Decimal,
+    ) -> List[dict]:
+        """
+        计算定投产品的现金流（使用初始金额作为净投入）
+        Args:
+            transactions: 交易记录列表
+            start_date: 开始日期
+            current_amount: 当前金额
+            total_days: 总投资天数
+            initial_amount: 初始金额（净投入）
+        Returns:
+            现金流列表，格式为 [{"amount": float, "days": int}, ...]
+        """
+        cashflows: List[dict] = []
+
+        if not start_date:
+            return cashflows
+
+        # 定投产品：第一笔投入为初始金额（负数表示流出）
+        cashflows.append({"amount": -float(initial_amount), "days": 0})
 
         # 添加当前金额作为最终现金流
         if current_amount:
@@ -573,8 +753,7 @@ class CSVParser:
                     product = cls.parse_row(row, reference_date)
                     if product:
                         products.append(product)
-                    else:
-                        print(f"警告: 第 {row_num} 行数据解析失败")
+                    # 不再打印警告，因为空行和小计行是正常情况
 
         except Exception as e:
             from ..core.exceptions import DataLoadError
@@ -649,8 +828,11 @@ class CSVParser:
                         csv_path = csv_files[0]
                         try:
                             products = cls.parse_csv_file(csv_path)
+                            # 提取数据目录日期作为参考日期
+                            dir_date_str = target_dir.name.split("_")[-1]
+                            reference_date = datetime.strptime(dir_date_str, "%Y%m%d")
                             # 对有交易记录的产品使用简单年化收益率计算
-                            products = cls._calculate_irr_for_products(products)
+                            products = cls._calculate_irr_for_products(products, reference_date)
                             print(f"✅ 成功加载 {len(products)} 个投资产品")
                             print(f"    美元汇率: {usd_rate}, 港元汇率: {hkd_rate}")
                             return products
@@ -682,3 +864,50 @@ class CSVParser:
             csv_path = data_path
 
         return cls.parse_csv_file(csv_path)
+
+    @classmethod
+    def load_data_from_dir(cls, data_dir: Path) -> List[InvestmentProduct]:
+        """
+        从指定目录加载投资数据
+
+        Args:
+            data_dir: 数据目录路径
+
+        Returns:
+            投资产品列表
+        """
+        if not data_dir.exists():
+            raise FileNotFoundError(f"数据目录不存在: {data_dir}")
+
+        # 获取汇率
+        usd_rate, hkd_rate = cls.get_exchange_rates(data_dir)
+
+        # 查找 CSV 文件
+        patterns = ["投资产品-表格 1.csv", "投资产品.csv", "*工作表 1*.csv", "*工作表*1*.csv", "*Sheet1*.csv", "*.csv"]
+
+        csv_files = []
+        for pattern in patterns:
+            csv_files = list(data_dir.glob(pattern))
+            if csv_files:
+                break
+
+        if not csv_files:
+            raise FileNotFoundError(f"数据目录中没有找到 CSV 文件: {data_dir}")
+
+        # 使用第一个找到的 CSV 文件
+        csv_path = csv_files[0]
+
+        # 解析 CSV 文件
+        products = cls.parse_csv_file(csv_path)
+
+        # 提取数据目录日期作为参考日期
+        dir_date_str = data_dir.name.split("_")[-1]
+        try:
+            from datetime import datetime
+
+            reference_date = datetime.strptime(dir_date_str, "%Y%m%d")
+            products = cls._calculate_irr_for_products(products, reference_date)
+        except ValueError:
+            pass
+
+        return products

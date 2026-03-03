@@ -628,7 +628,11 @@ class ReportGenerator:
 
         unrealized_profit = total_profit
 
-        total_investment = total_initial + realized_initial
+        # 总投入本金 = 当前持仓的初始投入（不包含卖出记录，因为卖出的资金可能已经再投资）
+        total_investment = total_initial
+
+        # 总当前金额（与 ts-demo 的"总投资金额"对应）
+        total_current_amount = total_value
 
         if total_investment > Decimal("0"):
             total_profit_all = unrealized_profit + realized_profit
@@ -679,6 +683,7 @@ class ReportGenerator:
 
         return {
             "total_investment": str(total_investment),
+            "total_current_amount": str(total_current_amount),
             "realized_profit": str(realized_profit),
             "unrealized_profit": str(unrealized_profit),
             "overall_return_rate": f"{overall_return_rate:.2f}%",
@@ -923,7 +928,8 @@ class ReportGenerator:
             eval_table = Table(show_header=False, box=None)
             eval_table.add_column("指标", style="bold")
             eval_table.add_column("值", style="cyan")
-            eval_table.add_row("总投入资金", f"{self._format_money(evaluation['total_investment'])}元")
+            eval_table.add_row("总当前金额", f"{self._format_money(evaluation['total_current_amount'])}元")
+            eval_table.add_row("总投入本金", f"{self._format_money(evaluation['total_investment'])}元")
             eval_table.add_row(
                 "已实现收益", f"[green]+{self._format_money(evaluation['realized_profit'])}元[/green]"
             )

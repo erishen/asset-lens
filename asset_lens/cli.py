@@ -6,7 +6,7 @@ CLI (Command Line Interface) for asset-lens.
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import click
 
@@ -21,6 +21,14 @@ from .data.models import Portfolio
 from .data.sell_record_parser import SellRecordParser
 from .report.analyzer import report_generator
 from .utils.currency_converter import currency_converter
+
+
+def _get_data_dir(data_mode: str) -> Optional[Path]:
+    """获取数据目录，处理 None 情况"""
+    if data_mode == "real":
+        return config.get_latest_data_dir()
+    else:
+        return config.project_root / "data" / "sample_data"
 
 
 @click.group()
@@ -186,13 +194,6 @@ def calculate(data_mode):
 
 
 @cli.command()
-def weekly_report():
-    """生成周度收益报告"""
-    ctx = click.get_current_context()
-    ctx.invoke(analyze, output_format="all")
-
-
-@cli.command()
 @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="当前数据模式")
 @click.option("--target-mode", type=click.Choice(["sample", "real"]), required=True, help="目标数据模式")
 def switch_mode(data_mode, target_mode):
@@ -261,18 +262,16 @@ def show_asset_summary(data_mode):
     """显示资产汇总（资产汇总-表格 1.csv）"""
     from .data.asset_summary_parser import AssetSummaryParser
 
-    if data_mode == "real":
-        csv_file = config.get_latest_data_dir() / "资产汇总-表格 1.csv"
-    else:
-        data_dir = config.project_root / "data" / "sample_data"
-        csv_file = data_dir / "资产汇总-表格 1.csv"
+    data_dir = _get_data_dir(data_mode)
+    if not data_dir:
+        click.echo("❌ 数据目录不存在")
+        return
+
+    csv_file = data_dir / "资产汇总-表格 1.csv"
 
     if not csv_file.exists():
         # 兼容旧文件名
-        if data_mode == "real":
-            csv_file = config.get_latest_data_dir() / "备份-表格 1.csv"
-        else:
-            csv_file = data_dir / "备份-表格 1.csv"
+        csv_file = data_dir / "备份-表格 1.csv"
 
     if not csv_file.exists():
         click.echo(f"❌ 资产汇总文件不存在: {csv_file}")
@@ -322,18 +321,16 @@ def show_exchange_rate_history(data_mode):
     """显示汇率历史（资产汇总-表格 1.csv）"""
     from .data.exchange_rate_parser import ExchangeRateParser
 
-    if data_mode == "real":
-        csv_file = config.get_latest_data_dir() / "资产汇总-表格 1.csv"
-    else:
-        data_dir = config.project_root / "data" / "sample_data"
-        csv_file = data_dir / "资产汇总-表格 1.csv"
+    data_dir = _get_data_dir(data_mode)
+    if not data_dir:
+        click.echo("❌ 数据目录不存在")
+        return
+
+    csv_file = data_dir / "资产汇总-表格 1.csv"
 
     if not csv_file.exists():
         # 兼容旧文件名
-        if data_mode == "real":
-            csv_file = config.get_latest_data_dir() / "备份-表格 1.csv"
-        else:
-            csv_file = data_dir / "备份-表格 1.csv"
+        csv_file = data_dir / "备份-表格 1.csv"
 
     if not csv_file.exists():
         click.echo(f"❌ 汇率历史文件不存在: {csv_file}")
@@ -365,11 +362,12 @@ def show_sell_records(data_mode):
     """显示卖出记录（卖出记录-表格 1.csv）"""
     from .data.sell_record_parser import SellRecordParser
 
-    if data_mode == "real":
-        csv_file = config.get_latest_data_dir() / "卖出记录-表格 1.csv"
-    else:
-        data_dir = config.project_root / "data" / "sample_data"
-        csv_file = data_dir / "卖出记录-表格 1.csv"
+    data_dir = _get_data_dir(data_mode)
+    if not data_dir:
+        click.echo("❌ 数据目录不存在")
+        return
+
+    csv_file = data_dir / "卖出记录-表格 1.csv"
 
     if not csv_file.exists():
         click.echo(f"❌ 卖出记录文件不存在: {csv_file}")
@@ -409,18 +407,16 @@ def export_asset_summary(data_mode, output_format):
     """导出资产汇总数据"""
     from .data.asset_summary_parser import AssetSummaryParser
 
-    if data_mode == "real":
-        csv_file = config.get_latest_data_dir() / "资产汇总-表格 1.csv"
-    else:
-        data_dir = config.project_root / "data" / "sample_data"
-        csv_file = data_dir / "资产汇总-表格 1.csv"
+    data_dir = _get_data_dir(data_mode)
+    if not data_dir:
+        click.echo("❌ 数据目录不存在")
+        return
+
+    csv_file = data_dir / "资产汇总-表格 1.csv"
 
     if not csv_file.exists():
         # 兼容旧文件名
-        if data_mode == "real":
-            csv_file = config.get_latest_data_dir() / "备份-表格 1.csv"
-        else:
-            csv_file = data_dir / "备份-表格 1.csv"
+        csv_file = data_dir / "备份-表格 1.csv"
 
     try:
         summaries = AssetSummaryParser.parse_csv_file(csv_file)
@@ -567,11 +563,12 @@ def export_sell_records(data_mode, output_format):
     """导出卖出记录数据"""
     from .data.sell_record_parser import SellRecordParser
 
-    if data_mode == "real":
-        csv_file = config.get_latest_data_dir() / "卖出记录-表格 1.csv"
-    else:
-        data_dir = config.project_root / "data" / "sample_data"
-        csv_file = data_dir / "卖出记录-表格 1.csv"
+    data_dir = _get_data_dir(data_mode)
+    if not data_dir:
+        click.echo("❌ 数据目录不存在")
+        return
+
+    csv_file = data_dir / "卖出记录-表格 1.csv"
 
     if not csv_file.exists():
         click.echo(f"❌ 卖出记录文件不存在: {csv_file}")
@@ -697,18 +694,16 @@ def export_exchange_rate_history(data_mode, output_format):
     """导出汇率历史数据"""
     from .data.exchange_rate_parser import ExchangeRateParser
 
-    if data_mode == "real":
-        csv_file = config.get_latest_data_dir() / "资产汇总-表格 1.csv"
-    else:
-        data_dir = config.project_root / "data" / "sample_data"
-        csv_file = data_dir / "资产汇总-表格 1.csv"
+    data_dir = _get_data_dir(data_mode)
+    if not data_dir:
+        click.echo("❌ 数据目录不存在")
+        return
+
+    csv_file = data_dir / "资产汇总-表格 1.csv"
 
     if not csv_file.exists():
         # 兼容旧文件名
-        if data_mode == "real":
-            csv_file = config.get_latest_data_dir() / "备份-表格 1.csv"
-        else:
-            csv_file = data_dir / "备份-表格 1.csv"
+        csv_file = data_dir / "备份-表格 1.csv"
 
     try:
         rates = ExchangeRateParser.parse_csv_file(csv_file)
@@ -820,7 +815,7 @@ def init_sample():
 @cli.command()
 @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
 @click.option("--weekly", is_flag=True, help="周预估模式")
-def estimate_pnl(data_mode, weekly):
+def pnl(data_mode, weekly):
     """估算实时盈亏（基于市场指数）"""
     from rich.console import Console
     from rich.table import Table
@@ -854,10 +849,14 @@ def estimate_pnl(data_mode, weekly):
 
         # 显示总体盈亏
         click.echo(f"\n💰 总盈亏: ¥{result['total']:,.2f}")
-        click.echo(f"📈 总收益率: {result['total_return_rate']:.2f}%")
+        click.echo(f"📈 估算产品收益率: {result['total_return_rate']:.2f}%")
         click.echo(f"💵 估算产品金额: ¥{result['total_amount']:,.2f}")
         if "total_amount_all" in result:
-            click.echo(f"💵 所有产品金额: ¥{result['total_amount_all']:,.2f}")
+            total_amount_all = Decimal(str(result['total_amount_all']))
+            total_pnl = Decimal(str(result['total']))
+            total_return_rate_all = (total_pnl / total_amount_all * 100) if total_amount_all > 0 else 0
+            click.echo(f"💵 所有产品金额: ¥{total_amount_all:,.2f}")
+            click.echo(f"📊 总资产收益率: {float(total_return_rate_all):.4f}%")
 
         # 显示指数涨跌幅
         click.echo(f"\n📊 市场指数涨跌幅:")
@@ -866,29 +865,140 @@ def estimate_pnl(data_mode, weekly):
 
         # 显示明细表格
         if result["details"]:
-            table = Table(title="\n产品盈亏明细")
-            table.add_column("产品名称", style="cyan", no_wrap=True)
-            table.add_column("类型", style="green", no_wrap=True)
-            table.add_column("金额", justify="right", style="yellow")
-            table.add_column("盈亏", justify="right")
-            table.add_column("收益率", justify="right")
-            table.add_column("指数", style="blue", no_wrap=True)
+            table = Table(title="\n产品盈亏明细", show_lines=False, expand=True)
+            table.add_column("产品名称", style="cyan", no_wrap=True, overflow="ellipsis", min_width=20)
+            table.add_column("类型", style="green", no_wrap=True, overflow="ellipsis", min_width=10)
+            table.add_column("金额", justify="right", style="yellow", min_width=10)
+            table.add_column("盈亏", justify="right", min_width=8)
+            table.add_column("收益率", justify="right", min_width=7)
+            table.add_column("指数", style="blue", no_wrap=True, min_width=6)
 
-            for detail in result["details"][:20]:  # 只显示前20个
-                pnl_color = "green" if detail["pnl"] >= 0 else "red"
-                return_color = "green" if detail["return_rate"] >= 0 else "red"
-
+            for detail in result["details"][:20]:
                 table.add_row(
-                    detail["name"][:20],
+                    detail["name"],
                     detail["type"],
                     f"¥{detail['amount']:,.0f}",
-                    f"¥{detail['pnl']:,.2f}",
+                    f"¥{detail['pnl']:,.0f}",
                     f"{detail['return_rate']:.2f}%",
                     detail["index_key"],
                 )
 
             console.print(table)
 
+        click.echo(f"\n✅ 估算完成！")
+
+    except Exception as e:
+        click.echo(f"❌ 估算失败: {e}", err=True)
+
+
+@cli.command()
+@click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
+@click.option("--weekly", is_flag=True, help="周预估模式")
+def estimate(data_mode, weekly):
+    """全产品收益估算（基于预期年化收益率）"""
+    from rich.console import Console
+    from rich.table import Table
+
+    from .core.daily_estimate import estimate_all_products
+    from .core.realtime_pnl import RealtimePnlEstimator
+
+    if data_mode:
+        config.data_mode = data_mode
+
+    period_text = "周" if weekly else "日"
+    click.echo(f"\n📊 全产品{period_text}收益估算")
+    click.echo("=" * 60)
+
+    try:
+        products = CSVParser.load_data()
+        click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
+
+        estimator = RealtimePnlEstimator()
+        market_change = Decimal("0")
+        
+        try:
+            moves = estimator._get_index_moves(is_weekly=weekly)
+            if moves:
+                total_change = Decimal("0")
+                count = 0
+                for key, value in moves.items():
+                    total_change += Decimal(str(value))
+                    count += 1
+                if count > 0:
+                    market_change = total_change / count / Decimal("100")
+        except Exception:
+            pass
+
+        results = estimate_all_products(products, market_change, is_weekly=weekly)
+
+        if not results:
+            click.echo("❌ 没有可估算的产品", err=True)
+            return
+
+        up_results = [r for r in results if r.estimated_daily_return >= 0]
+        down_results = [r for r in results if r.estimated_daily_return < 0]
+
+        up_results.sort(key=lambda x: x.estimated_daily_return, reverse=True)
+        down_results.sort(key=lambda x: x.estimated_daily_return)
+
+        console = Console()
+
+        if up_results:
+            click.echo(f"\n🟢 上涨产品 ({len(up_results)} 个):")
+            table = Table(show_header=True, header_style="bold blue", expand=True)
+            table.add_column("产品名称", style="cyan", no_wrap=True, min_width=20)
+            table.add_column("类型", min_width=6)
+            table.add_column("风险", min_width=4)
+            table.add_column("市值", justify="right", min_width=10)
+            table.add_column("预估收益", justify="right", min_width=8)
+            table.add_column("收益率", justify="right", min_width=7)
+            table.add_column("年化", justify="right", min_width=5)
+
+            for result in up_results[:30]:
+                table.add_row(
+                    result.product_name,
+                    result.product_type[:6],
+                    (result.risk_level or "未知")[:4],
+                    f"¥{result.current_value:,.0f}",
+                    f"¥{result.estimated_daily_return:,.0f}",
+                    f"{result.estimated_daily_return_rate * 100:.2f}%",
+                    f"{result.expected_annual_return * 100:.1f}%",
+                )
+
+            console.print(table)
+
+        if down_results:
+            click.echo(f"\n🔴 下跌产品 ({len(down_results)} 个):")
+            table = Table(show_header=True, header_style="bold blue", expand=True)
+            table.add_column("产品名称", style="cyan", no_wrap=True, min_width=20)
+            table.add_column("类型", min_width=6)
+            table.add_column("风险", min_width=4)
+            table.add_column("市值", justify="right", min_width=10)
+            table.add_column("预估收益", justify="right", min_width=8)
+            table.add_column("收益率", justify="right", min_width=7)
+            table.add_column("年化", justify="right", min_width=5)
+
+            for result in down_results[:30]:
+                table.add_row(
+                    result.product_name,
+                    result.product_type[:6],
+                    (result.risk_level or "未知")[:4],
+                    f"¥{result.current_value:,.0f}",
+                    f"¥{result.estimated_daily_return:,.0f}",
+                    f"{result.estimated_daily_return_rate * 100:.2f}%",
+                    f"{result.expected_annual_return * 100:.1f}%",
+                )
+
+            console.print(table)
+
+        total_return = sum(r.estimated_daily_return for r in results)
+        total_value = sum(r.current_value for r in results)
+        avg_return_rate = total_return / total_value * 100 if total_value > 0 else 0
+
+        click.echo(f"\n📊 汇总:")
+        click.echo(f"  总预估收益: ¥{total_return:,.2f}")
+        click.echo(f"  总市值: ¥{total_value:,.2f}")
+        click.echo(f"  平均收益率: {avg_return_rate:.4f}%")
         click.echo(f"\n✅ 估算完成！")
 
     except Exception as e:
@@ -912,11 +1022,12 @@ def analyze_sold(data_mode):
 
     try:
         # 加载卖出记录
-        if config.is_real_mode:
-            csv_file = config.get_latest_data_dir() / "卖出记录-表格 1.csv"
-        else:
-            data_dir = config.project_root / "data" / "sample_data"
-            csv_file = data_dir / "卖出记录-表格 1.csv"
+        data_dir = _get_data_dir(config.data_mode)
+        if not data_dir:
+            click.echo("❌ 数据目录不存在", err=True)
+            return
+
+        csv_file = data_dir / "卖出记录-表格 1.csv"
 
         if not csv_file.exists():
             click.echo(f"❌ 卖出记录文件不存在: {csv_file}", err=True)
@@ -1356,6 +1467,137 @@ def portfolio_metrics_cmd(data_mode):
 
     except Exception as e:
         click.echo(f"❌ 计算失败: {e}", err=True)
+
+
+@cli.command("compare")
+@click.option("--before", type=str, help="对比开始日期 (YYYYMMDD)")
+@click.option("--after", type=str, help="对比结束日期 (YYYYMMDD)")
+@click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
+def compare_cmd(before, after, data_mode):
+    """对比不同时期的投资收益变化"""
+    from datetime import date, timedelta
+
+    from rich.console import Console
+    from rich.table import Table
+
+    from .core.comparison import ComparisonAnalyzer
+
+    if data_mode:
+        config.data_mode = data_mode
+
+    console = Console()
+
+    click.echo("\n📊 投资收益对比分析")
+    click.echo("=" * 60)
+
+    try:
+        # 解析日期
+        if not before or not after:
+            today = date.today()
+            after_date = today.strftime("%Y%m%d")
+            before_date = (today - timedelta(days=7)).strftime("%Y%m%d")
+        else:
+            before_date = before
+            after_date = after
+
+        # 查找数据目录
+        data_root = config.project_root / "data"
+        if config.data_mode == "real":
+            data_root = data_root / "real"
+
+        # 查找最接近的数据目录
+        before_dir = _find_closest_data_dir(data_root, before_date)
+        after_dir = _find_closest_data_dir(data_root, after_date)
+
+        if not before_dir:
+            click.echo(f"❌ 找不到 {before_date} 附近的数据目录", err=True)
+            return
+
+        if not after_dir:
+            click.echo(f"❌ 找不到 {after_date} 附近的数据目录", err=True)
+            return
+
+        click.echo(f"\n📅 对比数据: {before_dir.name} → {after_dir.name}")
+
+        # 加载数据
+        before_products = CSVParser.load_data_from_dir(before_dir)
+        after_products = CSVParser.load_data_from_dir(after_dir)
+
+        click.echo(f"  之前产品数: {len(before_products)}")
+        click.echo(f"  之后产品数: {len(after_products)}")
+
+        # 创建对比分析器
+        analyzer = ComparisonAnalyzer()
+
+        # 生成对比报告
+        result = analyzer.compare_periods(before_products, after_products, "周度对比")
+
+        # 显示趋势分析
+        trend = result.get("trend")
+        if trend:
+            console.print(f"\n📈 总体趋势:")
+            console.print(f"  之前总金额: ¥{float(trend.total_amount_before):,.2f}")
+            console.print(f"  之后总金额: ¥{float(trend.total_amount_after):,.2f}")
+            console.print(f"  总变化: ¥{float(trend.total_change):,.2f}")
+            console.print(f"  总收益率: {float(trend.total_return_rate):.2f}%")
+            console.print(f"  正收益产品: {trend.positive_count} 个")
+            console.print(f"  负收益产品: {trend.negative_count} 个")
+
+        # 显示产品对比结果
+        details = result.get("details", [])
+        if details:
+            # 按收益率排序
+            sorted_details = sorted(details, key=lambda x: x.return_rate, reverse=True)
+
+            console.print(f"\n📊 收益率变化前10名:")
+
+            table = Table(show_header=True, header_style="bold white on blue")
+            table.add_column("名称", style="cyan", no_wrap=True)
+            table.add_column("之前金额", justify="right")
+            table.add_column("之后金额", justify="right")
+            table.add_column("变化", justify="right")
+            table.add_column("收益率", justify="right")
+
+            for item in sorted_details[:10]:
+                table.add_row(
+                    item.name,
+                    f"¥{float(item.amount_before):,.2f}",
+                    f"¥{float(item.amount_after):,.2f}",
+                    f"¥{float(item.amount_change):,.2f}",
+                    f"{float(item.return_rate):.2f}%",
+                )
+
+            console.print(table)
+
+        click.echo(f"\n✅ 对比分析完成！")
+
+    except Exception as e:
+        click.echo(f"❌ 对比分析失败: {e}", err=True)
+
+
+def _find_closest_data_dir(data_root: Path, target_date: str) -> Optional[Path]:
+    """查找最接近目标日期的数据目录"""
+    if not data_root.exists():
+        return None
+
+    # 获取所有 money_csv_* 目录
+    data_dirs = sorted(
+        [d for d in data_root.iterdir() if d.is_dir() and d.name.startswith("money_csv_")],
+        key=lambda x: x.name,
+    )
+
+    if not data_dirs:
+        return None
+
+    # 查找最接近的目录
+    target = target_date
+    for d in reversed(data_dirs):
+        dir_date = d.name.replace("money_csv_", "")
+        if dir_date <= target:
+            return d
+
+    # 如果没有找到，返回最新的目录
+    return data_dirs[-1] if data_dirs else None
 
 
 if __name__ == "__main__":

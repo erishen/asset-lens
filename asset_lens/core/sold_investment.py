@@ -114,8 +114,8 @@ class SoldInvestmentAnalyzer:
             return_rate = record.return_rate or Decimal("0")
             holding_days = record.investment_days or 0
 
-            # 使用CSV中的年化收益率（优先使用复利年化，其次年化收益）
-            annualized_return = record.compound_return or record.annual_return or Decimal("0")
+            # 使用CSV中的年化收益率（与 ts-demo 保持一致，优先使用年化收益）
+            annualized_return = record.annual_return or record.compound_return or Decimal("0")
 
             detail = SoldInvestmentDetail(
                 name=record.name,
@@ -274,7 +274,7 @@ class SoldInvestmentAnalyzer:
         self, details: List[SoldInvestmentDetail], top_n: int = 3
     ) -> List[SoldInvestmentDetail]:
         """
-        获取表现最好的产品
+        获取表现最好的产品（按年化收益率排序，与 ts-demo 保持一致）
 
         Args:
             details: 已卖出投资明细列表
@@ -283,8 +283,8 @@ class SoldInvestmentAnalyzer:
         Returns:
             表现最好的产品列表
         """
-        positive = [d for d in details if d.return_rate > 0]
-        return sorted(positive, key=lambda x: x.return_rate, reverse=True)[:top_n]
+        positive = [d for d in details if d.annualized_return and d.annualized_return > 0]
+        return sorted(positive, key=lambda x: x.annualized_return or 0, reverse=True)[:top_n]
 
     def get_worst_performers(
         self, details: List[SoldInvestmentDetail], top_n: int = 3

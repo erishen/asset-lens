@@ -57,8 +57,8 @@ class CalculateReportGenerator:
         ]
         # 总投资金额不包含利息（与 ts-demo 保持一致）
         total_investment = sum(
-            p.current_amount * (p.usd_rate or usd_rate) if p.investment_type in [InvestmentType.US_STOCK, InvestmentType.USD_FUND]
-            else p.current_amount * (p.hkd_rate or hkd_rate) if p.investment_type in [InvestmentType.HK_STOCK, InvestmentType.HK_CASH, InvestmentType.HK_DIVIDEND_FUND]
+            (p.current_amount or Decimal("0")) * (p.usd_rate or usd_rate) if p.investment_type in [InvestmentType.US_STOCK, InvestmentType.USD_FUND]
+            else (p.current_amount or Decimal("0")) * (p.hkd_rate or hkd_rate) if p.investment_type in [InvestmentType.HK_STOCK, InvestmentType.HK_CASH, InvestmentType.HK_DIVIDEND_FUND]
             else p.current_amount or Decimal("0")
             for p in all_products_with_amount
         )

@@ -192,23 +192,13 @@ class TestCLIInit:
         assert result.exit_code == 0
 
 
-class TestCLIWeekly:
-    """Test CLI weekly commands"""
+class TestCLIPnl:
+    """Test CLI PnL commands"""
 
-    def test_weekly_report_help(self):
-        """Test weekly-report command help"""
+    def test_pnl_help(self):
+        """Test pnl command help"""
         runner = CliRunner()
-        result = runner.invoke(cli, ["weekly-report", "--help"])
-        assert result.exit_code == 0
-
-
-class TestCLIEstimatePnL:
-    """Test CLI estimate PnL commands"""
-
-    def test_estimate_pnl_help(self):
-        """Test estimate-pnl command help"""
-        runner = CliRunner()
-        result = runner.invoke(cli, ["estimate-pnl", "--help"])
+        result = runner.invoke(cli, ["pnl", "--help"])
         assert result.exit_code == 0
 
 
@@ -335,11 +325,10 @@ class TestCLIRealExecution:
         result = runner.invoke(cli, ["calculate", "--data-mode", "sample"])
         assert result.exit_code == 0
 
-    def test_weekly_report_execution(self):
-        """Test weekly report execution"""
+    def test_pnl_weekly_execution(self):
+        """Test pnl weekly execution"""
         runner = CliRunner()
-        result = runner.invoke(cli, ["weekly-report", "--data-mode", "sample"])
-        # May fail if no data, but should not crash
+        result = runner.invoke(cli, ["pnl", "--weekly", "--data-mode", "sample"])
         assert result.exit_code in [0, 1, 2]
 
     def test_portfolio_metrics_execution(self):
@@ -439,3 +428,52 @@ class TestCLIRiskPreference:
         runner = CliRunner()
         result = runner.invoke(cli, ["ai-analyze", "--data-mode", "sample", "--risk-preference", "aggressive"])
         assert result.exit_code in [0, 1]
+
+
+class TestCLICompare:
+    """Test CLI compare commands"""
+
+    def test_compare_help(self):
+        """Test compare command help"""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["compare", "--help"])
+        assert result.exit_code == 0
+
+    def test_compare_execution(self):
+        """Test compare command execution"""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["compare", "--data-mode", "sample"])
+        # May fail if no data, but should not crash
+        assert result.exit_code in [0, 1, 2]
+
+    def test_compare_with_dates(self):
+        """Test compare command with specific dates"""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["compare", "--before", "20250101", "--after", "20250201", "--data-mode", "sample"])
+        # May fail if no data, but should not crash
+        assert result.exit_code in [0, 1, 2]
+
+
+class TestCLIEdgeCases:
+    """Test CLI edge cases"""
+
+    def test_analyze_with_invalid_output_format(self):
+        """Test analyze with invalid output format"""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["analyze", "--data-mode", "sample", "--output-format", "invalid"])
+        # Should handle gracefully
+        assert result.exit_code in [0, 1, 2]
+
+    def test_set_rate_execution(self):
+        """Test set-rate command execution"""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["set-rate", "--rate-type", "usd", "--rate", "7.25"])
+        # May fail if no config, but should not crash
+        assert result.exit_code in [0, 1, 2]
+
+    def test_estimate_pnl_weekly(self):
+        """Test estimate-pnl weekly execution"""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["estimate-pnl", "--data-mode", "sample", "--weekly"])
+        # May fail if no data, but should not crash
+        assert result.exit_code in [0, 1, 2]

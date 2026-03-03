@@ -190,12 +190,16 @@ class RealtimePnlEstimator:
         from ..data.asset_summary_parser import AssetSummaryParser
 
         try:
-            summary_file = config.get_latest_data_dir() / "资产汇总-表格 1.csv"
+            data_dir = config.get_latest_data_dir()
+            if not data_dir:
+                return Decimal("0")
+
+            summary_file = data_dir / "资产汇总-表格 1.csv"
             if not summary_file.exists():
-                summary_file = config.get_latest_data_dir() / "资产汇总.csv"
+                summary_file = data_dir / "资产汇总.csv"
             if not summary_file.exists():
                 # 兼容旧文件名
-                summary_file = config.get_latest_data_dir() / "备份-表格 1.csv"
+                summary_file = data_dir / "备份-表格 1.csv"
             if summary_file.exists():
                 summaries = AssetSummaryParser.parse_csv_file(summary_file)
                 if summaries:
@@ -236,37 +240,52 @@ class RealtimePnlEstimator:
                     if cn_name in domestic_data.get("指数数据", {}):
                         index_data = domestic_data["指数数据"][cn_name]
                         if is_weekly:
-                            # 周预估使用周涨跌幅
                             weekly_change = index_data.get("周期表现", {}).get("周涨跌幅", 0)
+                            if weekly_change == 0:
+                                weekly_change = index_data.get("涨跌幅", 0)
                             moves[en_code] = Decimal(str(weekly_change))
                         else:
-                            # 日预估使用当日涨跌幅
                             moves[en_code] = Decimal(str(index_data.get("涨跌幅", 0)))
             except Exception as e:
                 print(f"读取国内市场数据失败: {e}")
 
-        # 读取海外市场数据
         if self.foreign_cache_file.exists():
             try:
                 with open(self.foreign_cache_file, "r", encoding="utf-8") as f:
                     foreign_data = json.load(f)
 
-                # 处理海外数据
-                for key, index_data in foreign_data.get("indexes", {}).items():
+                for key, index_data in foreign_data.get("指数数据", {}).items():
                     if "QQQ" in key or "纳斯达克" in key:
                         if is_weekly:
                             weekly_change = index_data.get("周期表现", {}).get("周涨跌幅", 0)
+                            if weekly_change == 0:
+                                weekly_change = index_data.get("涨跌幅", 0)
                             moves["Nasdaq"] = Decimal(str(weekly_change))
                         else:
                             moves["Nasdaq"] = Decimal(str(index_data.get("涨跌幅", 0)))
                     elif "Gold" in key or "黄金" in key:
                         if is_weekly:
                             weekly_change = index_data.get("周期表现", {}).get("周涨跌幅", 0)
+                            if weekly_change == 0:
+                                weekly_change = index_data.get("涨跌幅", 0)
                             moves["Gold"] = Decimal(str(weekly_change))
                         else:
                             moves["Gold"] = Decimal(str(index_data.get("涨跌幅", 0)))
             except Exception as e:
                 print(f"读取海外市场数据失败: {e}")
+
+        if "黄金ETF" in domestic_data.get("指数数据", {}):
+            try:
+                gold_data = domestic_data["指数数据"]["黄金ETF"]
+                if is_weekly:
+                    weekly_change = gold_data.get("周期表现", {}).get("周涨跌幅", 0)
+                    if weekly_change == 0:
+                        weekly_change = gold_data.get("涨跌幅", 0)
+                    moves["Gold"] = Decimal(str(weekly_change))
+                else:
+                    moves["Gold"] = Decimal(str(gold_data.get("涨跌幅", 0)))
+            except Exception as e:
+                print(f"读取国内黄金数据失败: {e}")
 
         return moves
 
@@ -316,10 +335,6 @@ class RealtimePnlEstimator:
             # 混合基金使用上证指数
             sensitivity = mapping.sensitivity_to_sh
             index_move = moves.get("SHComp", Decimal("0"))
-        elif index_key in ["Cash", "Bond"]:
-            # 货币和债券基金不计算盈亏
-            index_move = Decimal("0")
-            sensitivity = Decimal("0")
 
         # 计算盈亏
         pct = (index_move / Decimal("100")) * sensitivity
@@ -365,7 +380,7 @@ class RealtimePnlEstimator:
 
         if not moves:
             return {
-                "total": Decimal("0"),
+                "total": Decimal("1"),
                 "details": [],
                 "error": "无法读取市场指数数据，请先更新缓存",
             }
@@ -373,12 +388,22 @@ class RealtimePnlEstimator:
         # 从备份-表格 1.csv 获取正确的总金额
         total_amount_all = self._get_total_amount_from_summary()
 
-        # 过滤非权益类产品
+        # 过滤非权益类产品（与 ts-demo 保持一致）
         if filter_equity:
+            exclude_types = [
+                InvestmentType.MONETARY,
+                InvestmentType.BOND,
+                InvestmentType.WEALTH,
+                InvestmentType.GOLD,
+                InvestmentType.SPECIAL_TREASURY_BOND,
+                InvestmentType.US_STOCK,
+                InvestmentType.HK_DIVIDEND_FUND,
+                InvestmentType.HIGH_END_WEALTH,
+            ]
             products = [
                 p
                 for p in products
-                if p.investment_type not in [InvestmentType.MONETARY]
+                if p.investment_type not in exclude_types
                 and p.current_amount
                 and p.current_amount > 0
             ]

@@ -60,8 +60,8 @@ class Config:
         self.output_path = Path(os.getenv("OUTPUT_PATH", "output"))
         self.cache_path = Path(os.getenv("CACHE_PATH", "cache"))
 
-        self.default_usd_rate: float = float(os.getenv("DEFAULT_USD_RATE", "7.1242"))
-        self.default_hkd_rate: float = float(os.getenv("DEFAULT_HKD_RATE", "0.9157"))
+        self.default_usd_rate: float = float(os.getenv("DEFAULT_USD_RATE", "6.90"))
+        self.default_hkd_rate: float = float(os.getenv("DEFAULT_HKD_RATE", "0.89"))
 
         self.min_return_threshold: float = float(os.getenv("MIN_RETURN_THRESHOLD", "2.0"))
 

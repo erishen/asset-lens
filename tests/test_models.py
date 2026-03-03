@@ -432,18 +432,32 @@ class TestPortfolio:
             investment_type=InvestmentType.INDEX_FUND,
             name="产品1",
             risk_level=RiskLevel.MEDIUM,
+            initial_amount=Decimal("800"),
             current_amount=Decimal("1000"),
+            start_date="2024-01-01",
         )
         product2 = InvestmentProduct(
             investment_type=InvestmentType.BOND,
             name="产品2",
             risk_level=RiskLevel.LOW,
+            initial_amount=Decimal("1800"),
             current_amount=Decimal("2000"),
+            start_date="2024-01-01",
+        )
+        # 产品3：有当前金额但无初始金额，也应计入 total_value（与 ts-demo 保持一致）
+        product3 = InvestmentProduct(
+            investment_type=InvestmentType.CASH,
+            name="产品3",
+            risk_level=RiskLevel.LOW,
+            current_amount=Decimal("500"),
+            start_date="2024-01-01",
         )
         portfolio.add_product(product1)
         portfolio.add_product(product2)
+        portfolio.add_product(product3)
 
-        assert portfolio.total_value == Decimal("3000")
+        # total_value 计算所有有当前金额且有开始日期的产品（与 ts-demo 保持一致）
+        assert portfolio.total_value == Decimal("3500")
 
     def test_total_initial(self):
         portfolio = Portfolio()
@@ -452,12 +466,14 @@ class TestPortfolio:
             name="产品1",
             risk_level=RiskLevel.MEDIUM,
             initial_amount=Decimal("1000"),
+            start_date="2024-01-01",
         )
         product2 = InvestmentProduct(
             investment_type=InvestmentType.BOND,
             name="产品2",
             risk_level=RiskLevel.LOW,
             initial_amount=Decimal("2000"),
+            start_date="2024-01-01",
         )
         portfolio.add_product(product1)
         portfolio.add_product(product2)
@@ -472,6 +488,7 @@ class TestPortfolio:
             risk_level=RiskLevel.MEDIUM,
             current_amount=Decimal("1200"),
             initial_amount=Decimal("1000"),
+            start_date="2024-01-01",
         )
         portfolio.add_product(product)
 
@@ -485,6 +502,7 @@ class TestPortfolio:
             risk_level=RiskLevel.MEDIUM,
             current_amount=Decimal("1200"),
             initial_amount=Decimal("1000"),
+            start_date="2024-01-01",
         )
         portfolio.add_product(product)
 

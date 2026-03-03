@@ -79,7 +79,7 @@ class SellRecordParser:
                 start_date=parse_date(row.get("开始日期", "")),
                 initial_amount=parse_decimal(row.get("初始金额", "")),
                 profit_amount=parse_decimal(row.get("收益金额", "")),
-                return_rate=parse_decimal(row.get("收益率", "")),
+                return_rate=parse_decimal(row.get("年化收益", "")) or parse_decimal(row.get("收益率", "")),
                 end_date=sell_date,
                 to_account_date=parse_date(row.get("到账日期", "")),
                 end_to_account_interval=cls.parse_int(row.get("结束到账间隔", "")),
