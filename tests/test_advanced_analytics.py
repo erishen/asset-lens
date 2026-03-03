@@ -202,6 +202,7 @@ class TestAdvancedAnalytics:
             current_amount=Decimal("11000"),
             initial_amount=Decimal("10000"),
             profit_amount=Decimal("1000"),
+            start_date="2024-01-01",
         )
         portfolio.add_product(product)
 
@@ -218,6 +219,7 @@ class TestAdvancedAnalytics:
             current_amount=Decimal("11000"),
             initial_amount=Decimal("10000"),
             profit_amount=Decimal("1000"),
+            start_date="2024-01-01",
         )
         portfolio.add_product(product)
 

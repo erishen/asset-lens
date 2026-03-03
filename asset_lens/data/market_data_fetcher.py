@@ -220,6 +220,10 @@ class MarketDataFetcher:
             "sh000688": "科创50",
         }
 
+        gold_mapping = {
+            "sh518880": "黄金ETF",
+        }
+
         existing_history_map = self._load_existing_history()
 
         indexes = {}
@@ -256,6 +260,34 @@ class MarketDataFetcher:
                 today_data["历史走势"] = history
                 today_data["周期表现"] = period_performance
                 today_data["技术状态"] = technical_status
+
+                indexes[name] = today_data
+                print(f"  ✅ {name}: {data['change_percent']:+.2f}%")
+            else:
+                print(f"  ❌ {name}: 获取失败")
+
+            time.sleep(0.5)
+
+        for code, name in gold_mapping.items():
+            print(f"正在获取 {name} 数据...")
+            data = self.fetch_domestic_index_sina(code)
+
+            if data:
+                today_data = {
+                    "名称": name,
+                    "代码": code,
+                    "最新价": data["current_price"],
+                    "涨跌额": data["change_amount"],
+                    "涨跌幅": data["change_percent"],
+                    "昨收": data["prev_close"],
+                    "今开": data["open"],
+                    "最高": data["high"],
+                    "最低": data["low"],
+                    "成交量": data["volume"],
+                    "成交额": data["amount"],
+                    "数据日期": datetime.now().strftime("%Y-%m-%d"),
+                    "数据来源": "新浪财经（实时数据）",
+                }
 
                 indexes[name] = today_data
                 print(f"  ✅ {name}: {data['change_percent']:+.2f}%")
