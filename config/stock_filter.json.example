@@ -1,0 +1,67 @@
+{
+    "filters": {
+        "price": {
+            "enabled": true,
+            "min": 10,
+            "max": 2000,
+            "description": "价格范围（元）"
+        },
+        "market_cap": {
+            "enabled": true,
+            "min": 100,
+            "max": null,
+            "description": "市值范围（亿元）"
+        },
+        "turnover_rate": {
+            "enabled": true,
+            "min": 2,
+            "max": 15,
+            "description": "换手率范围（%）"
+        },
+        "change_percent": {
+            "enabled": false,
+            "min": -10,
+            "max": 10,
+            "description": "涨跌幅范围（%）"
+        },
+        "volume": {
+            "enabled": false,
+            "min": 1000000,
+            "max": null,
+            "description": "成交量范围（手）"
+        },
+        "amplitude": {
+            "enabled": false,
+            "min": 2,
+            "max": null,
+            "description": "振幅范围（%）"
+        },
+        "pe_ratio": {
+            "enabled": false,
+            "min": 0,
+            "max": 100,
+            "description": "市盈率范围"
+        },
+        "pb_ratio": {
+            "enabled": false,
+            "min": 0,
+            "max": 10,
+            "description": "市净率范围"
+        }
+    },
+    "exclude": {
+        "etf": true,
+        "description": "排除ETF基金",
+        "keywords": ["ETF", "基金", "指数"],
+        "description_keywords": "排除包含这些关键词的股票"
+    },
+    "sort": {
+        "key": "turnover_rate",
+        "direction": "desc",
+        "description": "排序方式：turnover_rate(换手率), market_cap(市值), change_percent(涨跌幅)"
+    },
+    "limit": {
+        "max_results": 50,
+        "description": "最大返回结果数"
+    }
+}
