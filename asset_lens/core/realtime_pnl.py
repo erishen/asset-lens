@@ -184,6 +184,110 @@ class RealtimePnlEstimator:
         self.cache_path = config.cache_path
         self.domestic_cache_file = self.cache_path / "market_index_domestic.json"
         self.foreign_cache_file = self.cache_path / "market_index_foreign.json"
+        self.fund_cache_file = self.cache_path / "fund_quotes.json"
+        self.stock_cache_file = self.cache_path / "stock_quotes.json"
+        self._fund_codes_map: Optional[Dict[str, str]] = None
+        self._stock_codes_map: Optional[Dict[str, str]] = None
+
+    def _load_fund_codes_config(self) -> Dict[str, str]:
+        """加载基金代码配置"""
+        if self._fund_codes_map is not None:
+            return self._fund_codes_map
+
+        config_file = config.project_root / "config" / "fund_stock_codes.json"
+        result = {}
+
+        if config_file.exists():
+            try:
+                with open(config_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+
+                for fund in data.get("funds", []):
+                    name = fund.get("name", "")
+                    code = fund.get("code", "")
+                    if name and code:
+                        result[name] = code
+
+                    for keyword in fund.get("keywords", []):
+                        if keyword and code:
+                            result[keyword] = code
+
+                self._fund_codes_map = result
+                return result
+            except Exception:
+                pass
+
+        self._fund_codes_map = {}
+        return {}
+
+    def _load_stock_codes_config(self) -> Dict[str, str]:
+        """加载股票代码配置"""
+        if self._stock_codes_map is not None:
+            return self._stock_codes_map
+
+        config_file = config.project_root / "config" / "fund_stock_codes.json"
+        result = {}
+
+        if config_file.exists():
+            try:
+                with open(config_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+
+                for stock in data.get("stocks", []):
+                    name = stock.get("name", "")
+                    code = stock.get("code", "")
+                    if name and code:
+                        result[name] = code
+
+                    for keyword in stock.get("keywords", []):
+                        if keyword and code:
+                            result[keyword] = code
+
+                self._stock_codes_map = result
+                return result
+            except Exception:
+                pass
+
+        self._stock_codes_map = {}
+        return {}
+
+    def _read_fund_quotes_from_cache(self) -> Dict[str, Decimal]:
+        """从缓存读取基金净值涨跌幅"""
+        moves: Dict[str, Decimal] = {}
+
+        if not self.fund_cache_file.exists():
+            return moves
+
+        try:
+            with open(self.fund_cache_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            for code, fund_data in data.get("data", {}).items():
+                change_percent = fund_data.get("change_percent", 0)
+                moves[code] = Decimal(str(change_percent))
+        except Exception as e:
+            print(f"读取基金净值数据失败: {e}")
+
+        return moves
+
+    def _read_stock_quotes_from_cache(self) -> Dict[str, Decimal]:
+        """从缓存读取股票行情涨跌幅"""
+        moves: Dict[str, Decimal] = {}
+
+        if not self.stock_cache_file.exists():
+            return moves
+
+        try:
+            with open(self.stock_cache_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            for code, stock_data in data.get("data", {}).items():
+                change_percent = stock_data.get("change_percent", 0)
+                moves[code] = Decimal(str(change_percent))
+        except Exception as e:
+            print(f"读取股票行情数据失败: {e}")
+
+        return moves
 
     def _get_total_amount_from_summary(self) -> Decimal:
         """从资产汇总-表格 1.csv 获取最新的总金额"""
@@ -254,23 +358,34 @@ class RealtimePnlEstimator:
                 with open(self.foreign_cache_file, "r", encoding="utf-8") as f:
                     foreign_data = json.load(f)
 
+                foreign_index_mapping = {
+                    "QQQ": "Nasdaq",
+                    "纳斯达克": "Nasdaq",
+                    "SPY": "SP500",
+                    "标普": "SP500",
+                    "GLD": "Gold",
+                    "黄金": "Gold",
+                    "HSI": "HangSeng",
+                    "恒生": "HangSeng",
+                    "NKY": "Nikkei",
+                    "日经": "Nikkei",
+                    "UKX": "FTSE",
+                    "富时": "FTSE",
+                    "DAX": "DAX",
+                    "CAC": "CAC",
+                }
+
                 for key, index_data in foreign_data.get("指数数据", {}).items():
-                    if "QQQ" in key or "纳斯达克" in key:
-                        if is_weekly:
-                            weekly_change = index_data.get("周期表现", {}).get("周涨跌幅", 0)
-                            if weekly_change == 0:
-                                weekly_change = index_data.get("涨跌幅", 0)
-                            moves["Nasdaq"] = Decimal(str(weekly_change))
-                        else:
-                            moves["Nasdaq"] = Decimal(str(index_data.get("涨跌幅", 0)))
-                    elif "Gold" in key or "黄金" in key:
-                        if is_weekly:
-                            weekly_change = index_data.get("周期表现", {}).get("周涨跌幅", 0)
-                            if weekly_change == 0:
-                                weekly_change = index_data.get("涨跌幅", 0)
-                            moves["Gold"] = Decimal(str(weekly_change))
-                        else:
-                            moves["Gold"] = Decimal(str(index_data.get("涨跌幅", 0)))
+                    for pattern, index_code in foreign_index_mapping.items():
+                        if pattern in key:
+                            if is_weekly:
+                                weekly_change = index_data.get("周期表现", {}).get("周涨跌幅", 0)
+                                if weekly_change == 0:
+                                    weekly_change = index_data.get("涨跌幅", 0)
+                                moves[index_code] = Decimal(str(weekly_change))
+                            else:
+                                moves[index_code] = Decimal(str(index_data.get("涨跌幅", 0)))
+                            break
             except Exception as e:
                 print(f"读取海外市场数据失败: {e}")
 
@@ -306,15 +421,77 @@ class RealtimePnlEstimator:
         Returns:
             盈亏估算结果
         """
-        # 获取产品映射
+        current_amount = product.current_amount or Decimal("0")
+        inv_type = product.investment_type.value if product.investment_type else ""
+
+        fund_moves = self._read_fund_quotes_from_cache()
+        stock_moves = self._read_stock_quotes_from_cache()
+        fund_codes_map = self._load_fund_codes_config()
+        stock_codes_map = self._load_stock_codes_config()
+
+        if inv_type in ["基金", "混合", "股票", "指数", "债券"]:
+            fund_code = None
+            if product.name in fund_codes_map:
+                fund_code = fund_codes_map[product.name]
+            else:
+                for keyword, code in fund_codes_map.items():
+                    if keyword in product.name or product.name in keyword:
+                        fund_code = code
+                        break
+
+            if fund_code and fund_code in fund_moves:
+                index_move = fund_moves[fund_code]
+                pnl = current_amount * index_move / Decimal("100")
+                return_rate = index_move
+
+                return {
+                    "name": product.name,
+                    "type": inv_type,
+                    "risk": product.risk_level.value if product.risk_level else "中",
+                    "amount": current_amount,
+                    "equity_ratio": Decimal("1"),
+                    "index_key": f"基金净值({fund_code})",
+                    "index_move": index_move,
+                    "sensitivity": Decimal("1"),
+                    "pnl": pnl,
+                    "return_rate": return_rate,
+                    "data_source": "基金净值",
+                }
+
+        if inv_type in ["股票", "美股", "港股", "A股"]:
+            stock_code = None
+            if product.name in stock_codes_map:
+                stock_code = stock_codes_map[product.name]
+            else:
+                for keyword, code in stock_codes_map.items():
+                    if keyword in product.name or product.name in keyword:
+                        stock_code = code
+                        break
+
+            if stock_code and stock_code in stock_moves:
+                index_move = stock_moves[stock_code]
+                pnl = current_amount * index_move / Decimal("100")
+                return_rate = index_move
+
+                return {
+                    "name": product.name,
+                    "type": inv_type,
+                    "risk": product.risk_level.value if product.risk_level else "中",
+                    "amount": current_amount,
+                    "equity_ratio": Decimal("1"),
+                    "index_key": f"股票行情({stock_code})",
+                    "index_move": index_move,
+                    "sensitivity": Decimal("1"),
+                    "pnl": pnl,
+                    "return_rate": return_rate,
+                    "data_source": "股票行情",
+                }
+
         mapping = find_product_mapping(product.name, product.investment_type)
 
-        # 计算权益金额
-        current_amount = product.current_amount or Decimal("0")
         equity_ratio = mapping.equity_ratio
         sensitivity = mapping.direct_sensitivity
 
-        # 根据风险等级调整
         equity_ratio, sensitivity = adjust_by_risk_level(
             product.name,
             equity_ratio,
@@ -324,30 +501,25 @@ class RealtimePnlEstimator:
 
         amount_eq = current_amount * equity_ratio
 
-        # 获取指数涨跌幅
         index_key = mapping.index_key
         index_move = Decimal("0")
 
         if index_key != "Blend" and index_key in moves:
-            # 使用直接指数涨跌幅
             index_move = moves[index_key]
         elif index_key == "Blend":
-            # 混合基金使用上证指数
             sensitivity = mapping.sensitivity_to_sh
             index_move = moves.get("SHComp", Decimal("0"))
 
-        # 计算盈亏
         pct = (index_move / Decimal("100")) * sensitivity
         pnl = amount_eq * pct
 
-        # 计算收益率
         return_rate = (
             (pnl / current_amount * Decimal("100")) if current_amount != 0 else Decimal("0")
         )
 
         return {
             "name": product.name,
-            "type": product.investment_type.value if product.investment_type else "其他",
+            "type": inv_type,
             "risk": product.risk_level.value if product.risk_level else "中",
             "amount": current_amount,
             "equity_ratio": equity_ratio,
@@ -356,6 +528,7 @@ class RealtimePnlEstimator:
             "sensitivity": sensitivity,
             "pnl": pnl,
             "return_rate": return_rate,
+            "data_source": "指数估算",
         }
 
     def estimate_portfolio_pnl(

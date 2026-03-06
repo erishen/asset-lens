@@ -1,6 +1,6 @@
 """
 AI Analysis module for asset-lens.
-AI 分析模块 - 借鉴 ai-analyze 项目设计
+AI 分析模块 - 使用 LiteLLM 支持多种 AI 后端
 """
 
 import hashlib
@@ -30,7 +30,23 @@ class AIAnalysisResult:
 
 
 class AIAnalyzer:
-    """AI 分析器 - 支持多种 AI 后端"""
+    """AI 分析器 - 使用 LiteLLM 支持多种 AI 后端"""
+
+    SUPPORTED_MODELS = {
+        "deepseek": "deepseek/deepseek-chat",
+        "deepseek-reasoner": "deepseek/deepseek-reasoner",
+        "qwen": "qwen/qwen-turbo",
+        "qwen-plus": "qwen/qwen-plus",
+        "qwen-max": "qwen/qwen-max",
+        "gpt-4": "gpt-4",
+        "gpt-4-turbo": "gpt-4-turbo-preview",
+        "gpt-3.5-turbo": "gpt-3.5-turbo",
+        "claude-3": "claude-3-opus-20240229",
+        "claude-3-sonnet": "claude-3-sonnet-20240229",
+        "claude-3-haiku": "claude-3-haiku-20240307",
+        "ollama-llama3": "ollama/llama3",
+        "ollama-qwen": "ollama/qwen2",
+    }
 
     def __init__(self, use_cache: bool = True, cache_ttl: int = 3600):
         """
@@ -40,9 +56,21 @@ class AIAnalyzer:
             use_cache: 是否使用缓存
             cache_ttl: 缓存有效期（秒）
         """
-        self.api_key = os.getenv("OPENAI_API_KEY")
-        self.base_url = os.getenv("OPENAI_BASE_URL", "https://api.deepseek.com")
-        self.model = os.getenv("OPENAI_MODEL", "deepseek-chat")
+        self.api_key = (
+            os.getenv("OPENAI_API_KEY")
+            or os.getenv("DEEPSEEK_API_KEY")
+            or os.getenv("DASHSCOPE_API_KEY")
+            or os.getenv("ANTHROPIC_API_KEY")
+            or os.getenv("GEMINI_API_KEY")
+            or os.getenv("AZURE_API_KEY")
+        )
+        self.model = os.getenv("AI_MODEL", "deepseek/deepseek-chat")
+
+        if self.model in self.SUPPORTED_MODELS:
+            self.model = self.SUPPORTED_MODELS[self.model]
+
+        if not self.model.startswith("deepseek/") and "deepseek" in self.model:
+            self.model = f"deepseek/{self.model}"
 
         self.use_cache = use_cache
         self.cache_ttl = cache_ttl
@@ -61,12 +89,13 @@ class AIAnalyzer:
 
     @property
     def client(self):
-        """延迟初始化 OpenAI 客户端"""
-        if self._client is None and self.api_key:
+        """延迟初始化 LiteLLM"""
+        if self._client is None:
             try:
-                import openai
+                import litellm
 
-                self._client = openai.OpenAI(api_key=self.api_key, base_url=self.base_url)
+                litellm.set_verbose = False
+                self._client = litellm
             except ImportError:
                 pass
         return self._client
@@ -81,7 +110,7 @@ class AIAnalyzer:
         Returns:
             AI 分析结果
         """
-        if self.client:
+        if self.client and self.api_key:
             return self._ai_analyze(portfolio_data)
         else:
             return self._rule_based_analyze(portfolio_data)
@@ -98,7 +127,7 @@ class AIAnalyzer:
         prompt = self._build_analysis_prompt(portfolio_data)
 
         try:
-            response = self.client.chat.completions.create(
+            response = self.client.completion(
                 model=self.model,
                 messages=[
                     {
@@ -120,6 +149,7 @@ class AIAnalyzer:
             return result
 
         except Exception as e:
+            print(f"AI 分析失败: {e}")
             return self._rule_based_analyze(portfolio_data)
 
     def _rule_based_analyze(self, portfolio_data: Dict[str, Any]) -> AIAnalysisResult:
@@ -441,6 +471,7 @@ class AIAnalyzer:
             "risk_preference": risk_preference,
             "recommended_allocation": self._get_recommended_allocation(risk_preference),
             "ai_enabled": self.client is not None,
+            "model": self.model,
         }
 
     def _get_score_level(self, score: int) -> str:
