@@ -30,6 +30,9 @@ from ..config import config
 class StockHistoryFetcher:
     """股票历史数据获取器 - 支持 Tushare、Baostock 和 AkShare"""
 
+    BAOSTOCK_MAX_RETRIES = 3
+    BAOSTOCK_RETRY_DELAY = 2
+
     def __init__(self, cache_path: Optional[Path] = None):
         self.cache_path = cache_path or config.cache_path
         self.cache_path.mkdir(parents=True, exist_ok=True)
@@ -86,6 +89,39 @@ class StockHistoryFetcher:
                 return None
         return self._baostock
 
+    def _baostock_login_with_retry(self) -> bool:
+        """
+        Baostock 登录（带重试机制）
+
+        Returns:
+            是否登录成功
+        """
+        if not self.baostock:
+            return False
+
+        if self._baostock_logged_in:
+            return True
+
+        for attempt in range(self.BAOSTOCK_MAX_RETRIES):
+            try:
+                lg = self.baostock.login()
+                if lg.error_code == "0":
+                    self._baostock_logged_in = True
+                    return True
+
+                print(f"Baostock 登录失败 (尝试 {attempt + 1}/{self.BAOSTOCK_MAX_RETRIES}): {lg.error_msg}")
+
+                if attempt < self.BAOSTOCK_MAX_RETRIES - 1:
+                    time.sleep(self.BAOSTOCK_RETRY_DELAY)
+
+            except Exception as e:
+                print(f"Baostock 登录异常 (尝试 {attempt + 1}/{self.BAOSTOCK_MAX_RETRIES}): {e}")
+
+                if attempt < self.BAOSTOCK_MAX_RETRIES - 1:
+                    time.sleep(self.BAOSTOCK_RETRY_DELAY)
+
+        return False
+
     def fetch_history_baostock(self, code: str, days: int = 60) -> Optional[Dict[str, Any]]:
         """
         使用 Baostock 获取股票历史K线数据
@@ -106,11 +142,8 @@ class StockHistoryFetcher:
             end_date = datetime.now().strftime("%Y-%m-%d")
             start_date = (datetime.now() - timedelta(days=days + 30)).strftime("%Y-%m-%d")
 
-            if not self._baostock_logged_in:
-                lg = self.baostock.login()
-                if lg.error_code != "0":
-                    return None
-                self._baostock_logged_in = True
+            if not self._baostock_login_with_retry():
+                return None
 
             rs = self.baostock.query_history_k_data_plus(
                 bs_code,

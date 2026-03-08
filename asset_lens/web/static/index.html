@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Asset Lens - 个人资产运营系统</title>
     <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
@@ -40,6 +40,39 @@
             color: #888;
             font-size: 1rem;
         }
+        .nav-wrapper {
+            position: relative;
+        }
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            justify-content: space-around;
+            width: 30px;
+            height: 24px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            z-index: 1001;
+        }
+        .hamburger span {
+            width: 30px;
+            height: 3px;
+            background: #fff;
+            border-radius: 10px;
+            transition: all 0.3s linear;
+            position: relative;
+            transform-origin: 1px;
+        }
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg);
+        }
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg);
+        }
         .nav {
             display: flex;
             justify-content: center;
@@ -55,6 +88,7 @@
             cursor: pointer;
             transition: all 0.3s;
             font-size: 1rem;
+            min-width: 100px;
         }
         .nav-btn:hover, .nav-btn.active {
             background: linear-gradient(90deg, #00d2ff, #3a7bd5);
@@ -93,6 +127,7 @@
             padding: 24px;
             margin-bottom: 30px;
             border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
         }
         .chart-title {
             font-size: 1.2rem;
@@ -100,6 +135,18 @@
         }
         .chart {
             height: 400px;
+            width: 100%;
+        }
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: #00d2ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
         .table-container {
             background: rgba(255,255,255,0.05);
@@ -108,10 +155,12 @@
             margin-bottom: 30px;
             border: 1px solid rgba(255,255,255,0.1);
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
         table {
             width: 100%;
             border-collapse: collapse;
+            min-width: 600px;
         }
         th, td {
             padding: 12px 16px;
@@ -151,9 +200,15 @@
             cursor: pointer;
             font-size: 0.9rem;
             margin-bottom: 20px;
+            min-height: 44px;
+            min-width: 44px;
         }
         .refresh-btn:hover {
             opacity: 0.9;
+        }
+        .refresh-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
         .tag {
             display: inline-block;
@@ -161,6 +216,7 @@
             border-radius: 20px;
             font-size: 0.8rem;
             background: rgba(255,255,255,0.1);
+            white-space: nowrap;
         }
         .tag-stock { background: rgba(0,200,83,0.2); color: #00c853; }
         .tag-fund { background: rgba(33,150,243,0.2); color: #2196f3; }
@@ -172,24 +228,202 @@
             color: #666;
             font-size: 0.9rem;
         }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        .overlay.active {
+            display: block;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .pagination-btn {
+            padding: 8px 16px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .pagination-btn:hover:not(:disabled) {
+            background: rgba(255,255,255,0.1);
+        }
+        .pagination-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        .pagination-info {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        @media screen and (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            .header {
+                padding: 20px 0;
+                margin-bottom: 20px;
+            }
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            .header p {
+                font-size: 0.85rem;
+            }
+            .hamburger {
+                display: flex;
+                position: absolute;
+                top: 10px;
+                right: 15px;
+            }
+            .nav {
+                display: none;
+                flex-direction: column;
+                position: fixed;
+                top: 0;
+                right: 0;
+                width: 70%;
+                max-width: 280px;
+                height: 100vh;
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                padding: 80px 20px 20px;
+                margin-bottom: 0;
+                z-index: 1000;
+                gap: 10px;
+                box-shadow: -5px 0 15px rgba(0, 0, 0, 0.3);
+            }
+            .nav.mobile-open {
+                display: flex;
+            }
+            .nav-btn {
+                width: 100%;
+                padding: 15px 20px;
+                font-size: 1rem;
+                min-width: auto;
+            }
+            .cards {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            .card {
+                padding: 18px;
+            }
+            .card-title {
+                font-size: 0.85rem;
+            }
+            .card-value {
+                font-size: 1.5rem;
+            }
+            .card-change {
+                font-size: 0.85rem;
+            }
+            .chart-container {
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+            .chart-title {
+                font-size: 1rem;
+                margin-bottom: 15px;
+            }
+            .chart {
+                height: 280px;
+            }
+            .table-container {
+                padding: 15px;
+                margin-bottom: 20px;
+                border-radius: 12px;
+            }
+            th, td {
+                padding: 10px 12px;
+                font-size: 0.85rem;
+            }
+            .refresh-btn {
+                width: 100%;
+                padding: 12px 20px;
+            }
+            .footer {
+                padding: 20px;
+                font-size: 0.8rem;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            .header p {
+                font-size: 0.8rem;
+            }
+            .cards {
+                gap: 12px;
+            }
+            .card {
+                padding: 15px;
+            }
+            .card-value {
+                font-size: 1.3rem;
+            }
+            .chart {
+                height: 240px;
+            }
+            .chart-container {
+                padding: 12px;
+            }
+            .table-container {
+                padding: 12px;
+            }
+            th, td {
+                padding: 8px 10px;
+                font-size: 0.8rem;
+            }
+            .tag {
+                padding: 3px 8px;
+                font-size: 0.75rem;
+            }
+        }
     </style>
 </head>
 <body>
     <div id="app">
+        <div class="overlay" :class="{ active: mobileMenuOpen }" @click="closeMobileMenu"></div>
         <div class="container">
             <div class="header">
                 <h1>Asset Lens</h1>
                 <p>个人资产运营系统 - 实时监控您的投资组合</p>
             </div>
 
-            <div class="nav">
-                <button class="nav-btn" :class="{ active: currentTab === 'overview' }" @click="switchTab('overview')">概览</button>
-                <button class="nav-btn" :class="{ active: currentTab === 'portfolio' }" @click="switchTab('portfolio')">投资组合</button>
-                <button class="nav-btn" :class="{ active: currentTab === 'strategies' }" @click="switchTab('strategies')">策略分析</button>
-                <button class="nav-btn" :class="{ active: currentTab === 'risk' }" @click="switchTab('risk')">风险管理</button>
+            <div class="nav-wrapper">
+                <button class="hamburger" :class="{ active: mobileMenuOpen }" @click="toggleMobileMenu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div class="nav" :class="{ 'mobile-open': mobileMenuOpen }">
+                    <button class="nav-btn" :class="{ active: currentTab === 'overview' }" @click="switchTab('overview')">概览</button>
+                    <button class="nav-btn" :class="{ active: currentTab === 'portfolio' }" @click="switchTab('portfolio')">投资组合</button>
+                    <button class="nav-btn" :class="{ active: currentTab === 'strategies' }" @click="switchTab('strategies')">策略分析</button>
+                    <button class="nav-btn" :class="{ active: currentTab === 'risk' }" @click="switchTab('risk')">风险管理</button>
+                </div>
             </div>
 
             <div v-if="loading" class="loading">
+                <div class="loading-spinner"></div>
                 <p>加载数据中...</p>
             </div>
 
@@ -234,7 +468,9 @@
                 </div>
 
                 <div v-show="currentTab === 'portfolio'">
-                    <button class="refresh-btn" @click="refreshPortfolio">刷新数据</button>
+                    <button class="refresh-btn" @click="refreshPortfolio" :disabled="refreshing">
+                        {{ refreshing ? '刷新中...' : '刷新数据' }}
+                    </button>
                     <div class="table-container">
                         <table>
                             <thead>
@@ -247,7 +483,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="item in portfolioItems" :key="item.name">
+                                <tr v-for="item in paginatedItems" :key="item.name">
                                     <td>{{ item.name }}</td>
                                     <td><span class="tag" :class="getTypeClass(item.type)">{{ item.type }}</span></td>
                                     <td>{{ formatMoney(item.current_amount) }}</td>
@@ -256,6 +492,12 @@
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                    
+                    <div v-if="portfolioItems.length > pageSize" class="pagination">
+                        <button class="pagination-btn" @click="prevPage" :disabled="currentPage === 1">上一页</button>
+                        <span class="pagination-info">第 {{ currentPage }} / {{ totalPages }} 页 (共 {{ portfolioItems.length }} 条)</span>
+                        <button class="pagination-btn" @click="nextPage" :disabled="currentPage === totalPages">下一页</button>
                     </div>
 
                     <div class="chart-container">
@@ -316,13 +558,39 @@
     </div>
 
     <script>
-        const { createApp, ref, onMounted, nextTick } = Vue;
+        const { createApp, ref, onMounted, nextTick, computed, watch } = Vue;
+
+        const CHUNK_SIZE = 100;
+        const DEBOUNCE_DELAY = 150;
+
+        function debounce(fn, delay) {
+            let timer = null;
+            return function(...args) {
+                if (timer) clearTimeout(timer);
+                timer = setTimeout(() => fn.apply(this, args), delay);
+            };
+        }
+
+        function sampleData(data, maxPoints = 100) {
+            if (data.length <= maxPoints) return data;
+            const step = Math.ceil(data.length / maxPoints);
+            const result = [];
+            for (let i = 0; i < data.length; i += step) {
+                result.push(data[i]);
+            }
+            if (data.length - 1 % step !== 0) {
+                result.push(data[data.length - 1]);
+            }
+            return result;
+        }
 
         createApp({
             setup() {
                 const currentTab = ref('overview');
                 const loading = ref(true);
+                const refreshing = ref(false);
                 const error = ref('');
+                const mobileMenuOpen = ref(false);
                 const summary = ref({
                     total_assets: 0,
                     total_profit: 0,
@@ -334,6 +602,16 @@
                 const riskScore = ref(50);
                 const riskLevel = ref('中等');
                 const lastUpdate = ref('');
+                
+                const currentPage = ref(1);
+                const pageSize = ref(15);
+
+                const totalPages = computed(() => Math.ceil(portfolioItems.value.length / pageSize.value));
+                const paginatedItems = computed(() => {
+                    const start = (currentPage.value - 1) * pageSize.value;
+                    const end = start + pageSize.value;
+                    return portfolioItems.value.slice(start, end);
+                });
 
                 let charts = {
                     allocation: null,
@@ -344,6 +622,26 @@
                 };
 
                 const API_BASE = window.location.origin;
+
+                const toggleMobileMenu = () => {
+                    mobileMenuOpen.value = !mobileMenuOpen.value;
+                };
+
+                const closeMobileMenu = () => {
+                    mobileMenuOpen.value = false;
+                };
+
+                const prevPage = () => {
+                    if (currentPage.value > 1) {
+                        currentPage.value--;
+                    }
+                };
+
+                const nextPage = () => {
+                    if (currentPage.value < totalPages.value) {
+                        currentPage.value++;
+                    }
+                };
 
                 const fetchData = async () => {
                     loading.value = true;
@@ -361,7 +659,7 @@
                         lastUpdate.value = new Date().toLocaleString('zh-CN');
 
                         await nextTick();
-                        initAllocationChart();
+                        initAllocationChart(true);
                     } catch (e) {
                         error.value = '加载数据失败: ' + e.message;
                     } finally {
@@ -371,6 +669,7 @@
 
                 const switchTab = async (tab) => {
                     currentTab.value = tab;
+                    closeMobileMenu();
                     await nextTick();
                     
                     if (tab === 'overview') {
@@ -385,8 +684,13 @@
                     }
                 };
 
-                const refreshPortfolio = () => {
-                    fetchData();
+                const refreshPortfolio = async () => {
+                    refreshing.value = true;
+                    try {
+                        await fetchData();
+                    } finally {
+                        refreshing.value = false;
+                    }
                 };
 
                 const formatMoney = (value) => {
@@ -409,14 +713,14 @@
                     return typeMap[type] || 'tag';
                 };
 
-                const initAllocationChart = () => {
+                const initAllocationChart = async (forceInit = false) => {
                     const el = document.getElementById('allocationChart');
                     if (!el) return;
                     
                     if (charts.allocation) {
                         charts.allocation.dispose();
+                        charts.allocation = null;
                     }
-                    charts.allocation = echarts.init(el);
 
                     const typeData = {};
                     portfolioItems.value.forEach(item => {
@@ -424,62 +728,120 @@
                         typeData[type] = (typeData[type] || 0) + parseFloat(item.current_amount || 0);
                     });
 
+                    const chartData = Object.entries(typeData).map(([name, value]) => ({ name, value }));
+                    const isMobile = window.innerWidth <= 768;
+
+                    charts.allocation = echarts.init(el);
+                    
                     charts.allocation.setOption({
-                        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-                        legend: { orient: 'vertical', left: 'left', textStyle: { color: '#fff' } },
+                        tooltip: { 
+                            trigger: 'item', 
+                            formatter: '{b}: {c} ({d}%)',
+                            confine: true
+                        },
+                        legend: { 
+                            orient: isMobile ? 'horizontal' : 'vertical', 
+                            left: isMobile ? 'center' : 'left', 
+                            top: isMobile ? 'bottom' : 'middle',
+                            textStyle: { color: '#fff', fontSize: isMobile ? 12 : 14 } 
+                        },
                         series: [{
                             type: 'pie',
-                            radius: ['40%', '70%'],
-                            avoidLabelOverlap: false,
+                            radius: isMobile ? ['30%', '50%'] : ['40%', '70%'],
+                            center: isMobile ? ['50%', '40%'] : ['60%', '50%'],
+                            avoidLabelOverlap: true,
                             itemStyle: { borderRadius: 10, borderColor: '#1a1a2e', borderWidth: 2 },
                             label: { show: false },
-                            emphasis: { label: { show: true, fontSize: 16, fontWeight: 'bold' } },
+                            emphasis: { 
+                                label: { show: true, fontSize: 14, fontWeight: 'bold' },
+                                itemStyle: {
+                                    shadowBlur: 10,
+                                    shadowOffsetX: 0,
+                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                }
+                            },
                             labelLine: { show: false },
-                            data: Object.entries(typeData).map(([name, value]) => ({ name, value }))
+                            data: chartData,
+                            animationType: 'scale',
+                            animationEasing: 'elasticOut',
+                            animationDelay: function (idx) {
+                                return Math.random() * 200;
+                            }
                         }]
-                    });
+                    }, true);
                 };
 
-                const initProfitChart = () => {
+                const initProfitChart = async () => {
                     const el = document.getElementById('profitChart');
                     if (!el) return;
                     
                     if (charts.profit) {
                         charts.profit.dispose();
+                        charts.profit = null;
                     }
-                    charts.profit = echarts.init(el);
 
-                    const profitData = portfolioItems.value.slice(0, 10).map(item => ({
+                    const allProfitData = portfolioItems.value.map(item => ({
                         name: item.name,
                         value: parseFloat(item.profit || 0)
                     }));
+                    
+                    const profitData = sampleData(allProfitData, 20);
+                    const isMobile = window.innerWidth <= 768;
 
+                    charts.profit = echarts.init(el);
+                    
                     charts.profit.setOption({
-                        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-                        grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-                        xAxis: { type: 'category', data: profitData.map(d => d.name), axisLabel: { color: '#888', rotate: 30 } },
+                        tooltip: { 
+                            trigger: 'axis', 
+                            axisPointer: { type: 'shadow' },
+                            confine: true
+                        },
+                        grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
+                        xAxis: { 
+                            type: 'category', 
+                            data: profitData.map(d => d.name), 
+                            axisLabel: { 
+                                color: '#888', 
+                                rotate: isMobile ? 45 : 30,
+                                fontSize: isMobile ? 10 : 12
+                            } 
+                        },
                         yAxis: { type: 'value', axisLabel: { color: '#888' } },
                         series: [{
                             type: 'bar',
+                            barWidth: isMobile ? '60%' : 'auto',
+                            large: true,
+                            largeThreshold: 500,
                             data: profitData.map(d => ({
                                 value: d.value,
                                 itemStyle: { color: d.value >= 0 ? '#00c853' : '#ff5252' }
-                            }))
-                        }]
-                    });
+                            })),
+                            animationDelay: function (idx) {
+                                return idx * 10;
+                            }
+                        }],
+                        animationEasing: 'elasticOut',
+                        animationDelayUpdate: function (idx) {
+                            return idx * 5;
+                        }
+                    }, true);
                 };
 
-                const initRiskChart = () => {
+                const initRiskChart = async () => {
                     const el = document.getElementById('riskChart');
                     if (!el) return;
                     
                     if (charts.risk) {
                         charts.risk.dispose();
+                        charts.risk = null;
                     }
-                    charts.risk = echarts.init(el);
 
+                    const isMobile = window.innerWidth <= 768;
+
+                    charts.risk = echarts.init(el);
+                    
                     charts.risk.setOption({
-                        tooltip: {},
+                        tooltip: { confine: true },
                         radar: {
                             indicator: [
                                 { name: '市场风险', max: 100 },
@@ -488,7 +850,8 @@
                                 { name: '信用风险', max: 100 },
                                 { name: '操作风险', max: 100 }
                             ],
-                            axisName: { color: '#888' }
+                            axisName: { color: '#888', fontSize: isMobile ? 10 : 12 },
+                            radius: isMobile ? '60%' : '70%'
                         },
                         series: [{
                             type: 'radar',
@@ -499,60 +862,86 @@
                                 lineStyle: { color: '#00d2ff' }
                             }]
                         }]
-                    });
+                    }, true);
                 };
 
-                const initStrategyChart = () => {
+                const initStrategyChart = async () => {
                     const el = document.getElementById('strategyChart');
                     if (!el) return;
                     
                     if (charts.strategy) {
                         charts.strategy.dispose();
+                        charts.strategy = null;
                     }
-                    charts.strategy = echarts.init(el);
 
                     const strategyNames = strategies.value.map(s => s.name);
                     const positionSizes = strategies.value.map(s => (s.position_size * 100).toFixed(0));
                     const stopLosses = strategies.value.map(s => Math.abs(s.stop_loss * 100).toFixed(0));
                     const takeProfits = strategies.value.map(s => (s.take_profit * 100).toFixed(0));
 
+                    const isMobile = window.innerWidth <= 768;
+
+                    charts.strategy = echarts.init(el);
+                    
                     charts.strategy.setOption({
-                        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-                        legend: { data: ['仓位比例', '止损比例', '止盈比例'], textStyle: { color: '#888' } },
-                        grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-                        xAxis: { type: 'category', data: strategyNames, axisLabel: { color: '#888' } },
+                        tooltip: { 
+                            trigger: 'axis', 
+                            axisPointer: { type: 'shadow' },
+                            confine: true
+                        },
+                        legend: { 
+                            data: ['仓位比例', '止损比例', '止盈比例'], 
+                            textStyle: { color: '#888', fontSize: isMobile ? 10 : 12 },
+                            top: isMobile ? 0 : 'auto'
+                        },
+                        grid: { left: '3%', right: '4%', bottom: '15%', top: isMobile ? '15%' : '10%', containLabel: true },
+                        xAxis: { 
+                            type: 'category', 
+                            data: strategyNames, 
+                            axisLabel: { 
+                                color: '#888', 
+                                rotate: isMobile ? 30 : 0,
+                                fontSize: isMobile ? 10 : 12
+                            } 
+                        },
                         yAxis: { type: 'value', axisLabel: { color: '#888', formatter: '{value}%' } },
                         series: [
                             {
                                 name: '仓位比例',
                                 type: 'bar',
+                                barWidth: isMobile ? '40%' : 'auto',
+                                large: true,
                                 data: positionSizes,
                                 itemStyle: { color: '#00d2ff' }
                             },
                             {
                                 name: '止损比例',
                                 type: 'bar',
+                                barWidth: isMobile ? '40%' : 'auto',
+                                large: true,
                                 data: stopLosses,
                                 itemStyle: { color: '#ff5252' }
                             },
                             {
                                 name: '止盈比例',
                                 type: 'bar',
+                                barWidth: isMobile ? '40%' : 'auto',
+                                large: true,
                                 data: takeProfits,
                                 itemStyle: { color: '#00c853' }
                             }
                         ]
-                    });
+                    }, true);
                 };
 
-                const initStrategyRiskChart = () => {
+                const initStrategyRiskChart = async () => {
                     const el = document.getElementById('strategyRiskChart');
                     if (!el) return;
                     
                     if (charts.strategyRisk) {
                         charts.strategyRisk.dispose();
+                        charts.strategyRisk = null;
                     }
-                    charts.strategyRisk = echarts.init(el);
 
                     const data = strategies.value.map(s => [
                         Math.abs(s.stop_loss * 100),
@@ -560,27 +949,35 @@
                         s.name
                     ]);
 
+                    const isMobile = window.innerWidth <= 768;
+
+                    charts.strategyRisk = echarts.init(el);
+                    
                     charts.strategyRisk.setOption({
                         tooltip: {
+                            confine: true,
                             formatter: function(params) {
                                 return params.data[2] + '<br/>风险: ' + params.data[0].toFixed(0) + '%<br/>收益: ' + params.data[1].toFixed(0) + '%';
                             }
                         },
+                        grid: { left: '10%', right: '10%', bottom: '15%', containLabel: true },
                         xAxis: { 
                             name: '风险(止损%)', 
-                            nameTextStyle: { color: '#888' },
-                            axisLabel: { color: '#888' },
+                            nameTextStyle: { color: '#888', fontSize: isMobile ? 10 : 12 },
+                            axisLabel: { color: '#888', fontSize: isMobile ? 10 : 12 },
                             splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } }
                         },
                         yAxis: { 
                             name: '收益(止盈%)', 
-                            nameTextStyle: { color: '#888' },
-                            axisLabel: { color: '#888' },
+                            nameTextStyle: { color: '#888', fontSize: isMobile ? 10 : 12 },
+                            axisLabel: { color: '#888', fontSize: isMobile ? 10 : 12 },
                             splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } }
                         },
                         series: [{
                             type: 'scatter',
-                            symbolSize: 20,
+                            symbolSize: isMobile ? 15 : 20,
+                            large: true,
+                            largeThreshold: 100,
                             data: data,
                             itemStyle: {
                                 color: function(params) {
@@ -589,35 +986,50 @@
                                 }
                             }
                         }]
-                    });
+                    }, true);
                 };
+
+                const handleResize = debounce(() => {
+                    Object.values(charts).forEach(chart => {
+                        if (chart) chart.resize();
+                    });
+                }, DEBOUNCE_DELAY);
 
                 onMounted(() => {
                     fetchData();
-                    
-                    window.addEventListener('resize', () => {
-                        if (charts.allocation) charts.allocation.resize();
-                        if (charts.profit) charts.profit.resize();
-                        if (charts.risk) charts.risk.resize();
-                        if (charts.strategy) charts.strategy.resize();
-                        if (charts.strategyRisk) charts.strategyRisk.resize();
+                    window.addEventListener('resize', handleResize);
+                });
+
+                watch(currentPage, () => {
+                    nextTick(() => {
+                        initProfitChart();
                     });
                 });
 
                 return {
                     currentTab,
                     loading,
+                    refreshing,
                     error,
+                    mobileMenuOpen,
                     summary,
                     strategies,
                     portfolioItems,
+                    paginatedItems,
+                    currentPage,
+                    totalPages,
+                    pageSize,
                     riskScore,
                     riskLevel,
                     lastUpdate,
                     refreshPortfolio,
                     switchTab,
                     formatMoney,
-                    getTypeClass
+                    getTypeClass,
+                    toggleMobileMenu,
+                    closeMobileMenu,
+                    prevPage,
+                    nextPage
                 };
             }
         }).mount('#app');

@@ -73,7 +73,7 @@ class TestFetchHistoryBaostock:
             assert result is None
 
     def test_fetch_history_baostock_login_failure(self, fetcher):
-        """Test fetch_history_baostock with login failure"""
+        """Test fetch_history_baostock with login failure (all retries)"""
         mock_bs = MagicMock()
         mock_bs.login.return_value = MagicMock(error_code="1", error_msg="Login failed")
 
@@ -82,6 +82,30 @@ class TestFetchHistoryBaostock:
 
         result = fetcher.fetch_history_baostock("sh600519", 60)
         assert result is None
+        # 应该尝试了 3 次
+        assert mock_bs.login.call_count == 3
+
+    def test_fetch_history_baostock_login_retry_success(self, fetcher):
+        """Test fetch_history_baostock with login retry success"""
+        mock_bs = MagicMock()
+        # 第一次失败，第二次成功
+        mock_bs.login.side_effect = [
+            MagicMock(error_code="1", error_msg="Login failed"),
+            MagicMock(error_code="0"),
+        ]
+
+        mock_rs = MagicMock()
+        mock_rs.error_code = "0"
+        mock_rs.next.return_value = False
+        mock_bs.query_history_k_data_plus.return_value = mock_rs
+
+        fetcher._baostock = mock_bs
+        fetcher._baostock_logged_in = False
+
+        result = fetcher.fetch_history_baostock("sh600519", 60)
+        # 第二次登录成功，但数据为空
+        assert result is None
+        assert mock_bs.login.call_count == 2
 
     def test_fetch_history_baostock_query_error(self, fetcher):
         """Test fetch_history_baostock with query error"""
