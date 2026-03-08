@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import List
 
 from ..data.models import ExchangeRateHistory
-from .parser_utils import parse_decimal, parse_date
+from .parser_utils import parse_date, parse_decimal
 
 
 class ExchangeRateParser:

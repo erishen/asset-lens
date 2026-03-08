@@ -21,16 +21,18 @@ from ..config import config
 @dataclass
 class RiskConfig:
     """风险配置"""
+
     max_single_position: float = 0.2  # 单只股票最大仓位
-    max_total_position: float = 0.8   # 总仓位上限
+    max_total_position: float = 0.8  # 总仓位上限
     stop_loss_default: float = -0.08  # 默认止损
-    take_profit_default: float = 0.15 # 默认止盈
-    risk_tolerance: str = "medium"    # 风险偏好: low, medium, high
+    take_profit_default: float = 0.15  # 默认止盈
+    risk_tolerance: str = "medium"  # 风险偏好: low, medium, high
 
 
 @dataclass
 class PositionAdvice:
     """仓位建议"""
+
     code: str
     name: str
     current_position: float
@@ -42,6 +44,7 @@ class PositionAdvice:
 @dataclass
 class RiskWarning:
     """风险预警"""
+
     warning_type: str
     level: str  # low, medium, high, critical
     message: str
@@ -138,8 +141,8 @@ class RiskManager:
         Returns:
             仓位建议列表
         """
-        from .stock_pool import StockPool
         from .market_environment import market_environment_analyzer
+        from .stock_pool import StockPool
 
         pool = StockPool(pool_name)
         environment = market_environment_analyzer.analyze_environment()
@@ -169,21 +172,26 @@ class RiskManager:
             if current_ratio > suggested_ratio * 1.2:
                 action = "decrease"
                 reason = f"仓位过高 ({current_ratio:.1%} > {suggested_ratio:.1%})"
-            elif current_ratio < suggested_ratio * 0.5 and current_total_ratio < self.config.max_total_position:
+            elif (
+                current_ratio < suggested_ratio * 0.5
+                and current_total_ratio < self.config.max_total_position
+            ):
                 action = "increase"
                 reason = f"仓位偏低 ({current_ratio:.1%} < {suggested_ratio:.1%})"
             else:
                 action = "hold"
                 reason = "仓位合理"
 
-            advices.append(PositionAdvice(
-                code=pos.code,
-                name=pos.name,
-                current_position=current_ratio,
-                suggested_position=suggested_ratio,
-                action=action,
-                reason=reason,
-            ))
+            advices.append(
+                PositionAdvice(
+                    code=pos.code,
+                    name=pos.name,
+                    current_position=current_ratio,
+                    suggested_position=suggested_ratio,
+                    action=action,
+                    reason=reason,
+                )
+            )
 
         return advices
 
@@ -286,10 +294,12 @@ class RiskManager:
         result["total_positions"] = len(pool.positions)
 
         if not holding_stocks:
-            result["warnings"].append({
-                "level": "info",
-                "message": "无持仓",
-            })
+            result["warnings"].append(
+                {
+                    "level": "info",
+                    "message": "无持仓",
+                }
+            )
             return result
 
         total_value = sum(p.buy_price * p.shares for p in holding_stocks)
@@ -302,12 +312,14 @@ class RiskManager:
         for pos in holding_stocks:
             value = pos.buy_price * pos.shares
             weight = value / total_value
-            position_weights.append({
-                "code": pos.code,
-                "name": pos.name,
-                "value": value,
-                "weight": weight,
-            })
+            position_weights.append(
+                {
+                    "code": pos.code,
+                    "name": pos.name,
+                    "value": value,
+                    "weight": weight,
+                }
+            )
 
         position_weights.sort(key=lambda x: x["weight"], reverse=True)
 
@@ -324,17 +336,21 @@ class RiskManager:
             result["concentration"]["herfindahl"] = herfindahl
 
             if max_weight > self.config.max_single_position:
-                result["warnings"].append({
-                    "level": "high",
-                    "message": f"单一持仓占比过高: {position_weights[0]['name']} ({max_weight:.1%})",
-                    "code": position_weights[0]["code"],
-                })
+                result["warnings"].append(
+                    {
+                        "level": "high",
+                        "message": f"单一持仓占比过高: {position_weights[0]['name']} ({max_weight:.1%})",
+                        "code": position_weights[0]["code"],
+                    }
+                )
 
             if top3_weight > 0.6:
-                result["warnings"].append({
-                    "level": "medium",
-                    "message": f"前三大持仓占比过高 ({top3_weight:.1%})",
-                })
+                result["warnings"].append(
+                    {
+                        "level": "medium",
+                        "message": f"前三大持仓占比过高 ({top3_weight:.1%})",
+                    }
+                )
 
         return result
 
@@ -351,8 +367,8 @@ class RiskManager:
         Returns:
             风险预警列表
         """
-        from .stock_pool import StockPool
         from .market_environment import market_environment_analyzer
+        from .stock_pool import StockPool
 
         pool = StockPool(pool_name)
         environment = market_environment_analyzer.analyze_environment()
@@ -420,8 +436,8 @@ class RiskManager:
         Returns:
             风险摘要
         """
-        from .stock_pool import StockPool
         from .market_environment import market_environment_analyzer
+        from .stock_pool import StockPool
 
         pool = StockPool(pool_name)
         environment = market_environment_analyzer.analyze_environment()

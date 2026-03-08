@@ -34,6 +34,7 @@ class MarketDataFetcher:
         if self._akshare is None:
             try:
                 import akshare as ak
+
                 self._akshare = ak
             except ImportError:
                 raise ImportError(
@@ -156,7 +157,9 @@ class MarketDataFetcher:
                     price = day["收盘"]
                     weekly_change = ((latest_price - price) / price * 100) if price > 0 else 0
 
-            weekly_amplitude = ((weekly_high - weekly_low) / weekly_low * 100) if weekly_low > 0 else 0
+            weekly_amplitude = (
+                ((weekly_high - weekly_low) / weekly_low * 100) if weekly_low > 0 else 0
+            )
 
             monthly_change = 0
             if len(history) >= 22:
@@ -184,7 +187,9 @@ class MarketDataFetcher:
             print(f"计算周期表现失败: {e}")
             return {}
 
-    def _estimate_domestic_technical_status(self, history: List[Dict], current_price: float) -> Dict[str, Any]:
+    def _estimate_domestic_technical_status(
+        self, history: List[Dict], current_price: float
+    ) -> Dict[str, Any]:
         """估算技术状态"""
         try:
             if len(history) < 2:
@@ -304,7 +309,9 @@ class MarketDataFetcher:
                 history = self._update_history(existing_history, today_data)
 
                 period_performance = self._calculate_domestic_period_performance(history)
-                technical_status = self._estimate_domestic_technical_status(history, data["current_price"])
+                technical_status = self._estimate_domestic_technical_status(
+                    history, data["current_price"]
+                )
 
                 today_data["历史走势"] = history
                 today_data["周期表现"] = period_performance

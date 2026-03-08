@@ -195,13 +195,13 @@ class DCAParser:
             dca_type, base_amount, max_amount = cls.parse_investment_type(amount_str)
 
             is_qdii = False
-            if product_name and 'QDII' in product_name:
+            if product_name and "QDII" in product_name:
                 is_qdii = True
             elif investment_type:
-                if hasattr(investment_type, 'value') and investment_type.value:
-                    is_qdii = 'QDII' in investment_type.value
-                elif hasattr(investment_type, 'name'):
-                    is_qdii = 'QDII' in investment_type.name
+                if hasattr(investment_type, "value") and investment_type.value:
+                    is_qdii = "QDII" in investment_type.value
+                elif hasattr(investment_type, "name"):
+                    is_qdii = "QDII" in investment_type.name
                 else:
                     is_qdii = investment_type == InvestmentType.QDII
 

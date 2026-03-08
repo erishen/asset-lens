@@ -22,6 +22,7 @@ from .stock_pool import StockPool
 @dataclass
 class DailyRecord:
     """每日记录"""
+
     date: str
     code: str
     name: str
@@ -38,6 +39,7 @@ class DailyRecord:
 @dataclass
 class MonsterStockSignal:
     """妖股信号"""
+
     code: str
     name: str
     signal_type: str
@@ -50,6 +52,7 @@ class MonsterStockSignal:
 @dataclass
 class TrackerConfig:
     """跟踪器配置"""
+
     limit_up_threshold: float = 9.5
     limit_down_threshold: float = -9.5
     consecutive_days: int = 3
@@ -154,19 +157,24 @@ class StockTracker:
         with open(self.tracker_file, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
-    def record_daily(self, stock_data: Dict[str, Any]) -> None:
+    def record_daily(self, stock_data: Dict[str, Any]) -> bool:
         """
         记录每日数据
 
         Args:
             stock_data: 股票数据字典，包含 code, name, open, close, high, low, change_percent 等
+
+        Returns:
+            是否成功记录（True=新增，False=跳过）
         """
         code = stock_data.get("code", "")
         if not code:
-            return
+            return False
 
+        today = datetime.now().strftime("%Y-%m-%d")
+        
         record = DailyRecord(
-            date=datetime.now().strftime("%Y-%m-%d"),
+            date=today,
             code=code,
             name=stock_data.get("name", ""),
             open_price=stock_data.get("open", stock_data.get("current_price", 0)),
@@ -182,8 +190,14 @@ class StockTracker:
         if code not in self.daily_records:
             self.daily_records[code] = []
 
-        self.daily_records[code].append(record)
-        self._save_tracker()
+        # 检查是否已存在同一天的记录，避免重复
+        existing_dates = {r.date for r in self.daily_records[code]}
+        if today not in existing_dates:
+            self.daily_records[code].append(record)
+            self._save_tracker()
+            return True
+
+        return False
 
     def record_batch(self, stocks_data: List[Dict[str, Any]]) -> int:
         """
@@ -198,8 +212,9 @@ class StockTracker:
         count = 0
         for stock in stocks_data:
             if stock.get("code") in self.stock_pool.positions:
-                self.record_daily(stock)
-                count += 1
+                # record_daily 会检查重复，只有新增时才返回 True
+                if self.record_daily(stock):
+                    count += 1
 
         self._save_tracker()
         return count
@@ -234,7 +249,9 @@ class StockTracker:
         self._save_tracker()
         return signals
 
-    def _analyze_monster_signals(self, code: str, records: List[DailyRecord]) -> Optional[MonsterStockSignal]:
+    def _analyze_monster_signals(
+        self, code: str, records: List[DailyRecord]
+    ) -> Optional[MonsterStockSignal]:
         """分析妖股信号"""
         if not records:
             return None
@@ -436,7 +453,8 @@ class StockTracker:
         sold_stocks = self.stock_pool.list_stocks("sold")
 
         recent_monsters = [
-            s for s in self.monster_signals
+            s
+            for s in self.monster_signals
             if (datetime.now() - datetime.strptime(s.signal_date, "%Y-%m-%d")).days <= 7
         ]
 
@@ -448,8 +466,7 @@ class StockTracker:
             "holding_count": len(holding_stocks),
             "sold_count": len(sold_stocks),
             "tracked_days": max(
-                (len(records) for records in self.daily_records.values()),
-                default=0
+                (len(records) for records in self.daily_records.values()), default=0
             ),
             "monster_signals_count": len(self.monster_signals),
             "recent_monsters": [

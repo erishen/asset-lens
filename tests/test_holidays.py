@@ -331,3 +331,54 @@ class TestEdgeCases:
         end = date(2025, 3, 17)
         result = calculate_fund_trading_days(start, end)
         assert result == 0
+
+    def test_is_holiday_fixed_holiday_new_year(self):
+        """Test is_holiday for fixed holiday - New Year"""
+        assert is_holiday(date(2030, 1, 1)) is True
+
+    def test_is_holiday_fixed_holiday_labor_day(self):
+        """Test is_holiday for fixed holiday - Labor Day"""
+        assert is_holiday(date(2030, 5, 1)) is True
+        assert is_holiday(date(2030, 5, 3)) is True
+
+    def test_is_holiday_fixed_holiday_national_day(self):
+        """Test is_holiday for fixed holiday - National Day"""
+        assert is_holiday(date(2030, 10, 1)) is True
+        assert is_holiday(date(2030, 10, 5)) is True
+
+    def test_parse_stop_periods_with_dash_format(self):
+        """Test parse stop periods with YYYY-MM-DD format - not supported for single date"""
+        result = parse_stop_periods("2025-10-13:stop")
+        assert len(result) == 0
+
+    def test_parse_stop_periods_range_with_dash_format(self):
+        """Test parse range stop period with YYYY/MM/DD-YYYY/MM/DD format"""
+        result = parse_stop_periods("2025/10/13-2025/10/15:stop")
+        assert len(result) == 1
+        assert result[0] == (date(2025, 10, 13), date(2025, 10, 15))
+
+    def test_parse_stop_periods_invalid_date_format(self):
+        """Test parse stop periods with invalid date format"""
+        result = parse_stop_periods("invalid-date:stop")
+        assert len(result) == 0
+
+    def test_parse_stop_periods_invalid_range_format(self):
+        """Test parse stop periods with invalid range format"""
+        result = parse_stop_periods("invalid-start-invalid-end:stop")
+        assert len(result) == 0
+
+    def test_is_post_holiday_trading_suspension_unknown_year(self):
+        """Test is_post_holiday_trading_suspension for unknown year"""
+        assert is_post_holiday_trading_suspension(date(2030, 1, 29)) is False
+
+    def test_is_post_holiday_trading_suspension_2025(self):
+        """Test is_post_holiday_trading_suspension for 2025"""
+        assert is_post_holiday_trading_suspension(date(2025, 1, 29)) is True
+        assert is_post_holiday_trading_suspension(date(2025, 10, 9)) is True
+        assert is_post_holiday_trading_suspension(date(2025, 3, 15)) is False
+
+    def test_is_post_holiday_trading_suspension_2026(self):
+        """Test is_post_holiday_trading_suspension for 2026"""
+        assert is_post_holiday_trading_suspension(date(2026, 2, 17)) is True
+        assert is_post_holiday_trading_suspension(date(2026, 10, 9)) is True
+        assert is_post_holiday_trading_suspension(date(2026, 3, 15)) is False

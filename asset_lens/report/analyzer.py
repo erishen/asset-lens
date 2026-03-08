@@ -613,9 +613,64 @@ class ReportGenerator:
         portfolio: Portfolio,
         sell_records: List[SellRecord] | None = None,
     ) -> Dict[str, Any]:
-        total_initial = portfolio.total_initial or Decimal("0")
-        total_profit = portfolio.total_profit or Decimal("0")
-        total_value = portfolio.total_value or Decimal("0")
+        total_initial = Decimal("0")
+        total_profit = Decimal("0")
+        total_value = Decimal("0")
+
+        for product in portfolio.products:
+            if not product.start_date:
+                continue
+
+            # 计算净投入（使用交易记录）
+            net_invest = portfolio._calculate_net_invest(product)
+
+            # 确定使用的初始金额
+            if net_invest and net_invest > 0:
+                initial = net_invest
+            elif product.initial_amount:
+                initial = product.initial_amount
+            else:
+                continue
+
+            # 汇率转换
+            if product.investment_type:
+                from ..data.models import InvestmentType
+
+                if product.investment_type in [InvestmentType.US_STOCK, InvestmentType.USD_FUND]:
+                    rate = product.usd_rate or portfolio.usd_rate
+                    initial = initial * rate
+                elif product.investment_type in [
+                    InvestmentType.HK_STOCK,
+                    InvestmentType.HK_CASH,
+                    InvestmentType.HK_DIVIDEND_FUND,
+                ]:
+                    rate = product.hkd_rate or portfolio.hkd_rate
+                    initial = initial * rate
+
+            total_initial += initial
+
+            # 计算当前总资产
+            if product.current_amount:
+                current = product.current_amount
+                if product.investment_type:
+                    from ..data.models import InvestmentType
+
+                    if product.investment_type in [
+                        InvestmentType.US_STOCK,
+                        InvestmentType.USD_FUND,
+                    ]:
+                        current = current * (product.usd_rate or portfolio.usd_rate)
+                    elif product.investment_type in [
+                        InvestmentType.HK_STOCK,
+                        InvestmentType.HK_CASH,
+                        InvestmentType.HK_DIVIDEND_FUND,
+                    ]:
+                        current = current * (product.hkd_rate or portfolio.hkd_rate)
+                total_value += current
+
+            # 计算未实现收益
+            if product.profit_amount:
+                total_profit += product.profit_amount
 
         realized_profit = Decimal("0")
         realized_initial = Decimal("0")
@@ -628,10 +683,10 @@ class ReportGenerator:
 
         unrealized_profit = total_profit
 
-        # 总投入本金 = 当前持仓的初始投入（不包含卖出记录，因为卖出的资金可能已经再投资）
+        # 总投入本金（与 ts-demo 一致：使用 initialAmount）
         total_investment = total_initial
 
-        # 总当前金额（与 ts-demo 的"总投资金额"对应）
+        # 总当前金额
         total_current_amount = total_value
 
         if total_investment > Decimal("0"):
@@ -928,7 +983,9 @@ class ReportGenerator:
             eval_table = Table(show_header=False, box=None)
             eval_table.add_column("指标", style="bold")
             eval_table.add_column("值", style="cyan")
-            eval_table.add_row("总当前金额", f"{self._format_money(evaluation['total_current_amount'])}元")
+            eval_table.add_row(
+                "总当前金额", f"{self._format_money(evaluation['total_current_amount'])}元"
+            )
             eval_table.add_row("总投入本金", f"{self._format_money(evaluation['total_investment'])}元")
             eval_table.add_row(
                 "已实现收益", f"[green]+{self._format_money(evaluation['realized_profit'])}元[/green]"

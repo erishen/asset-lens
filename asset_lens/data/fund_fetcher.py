@@ -9,12 +9,36 @@ Fund data fetcher for asset-lens.
 
 import json
 import re
+import signal
 import time
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Generator, List, Optional
 
 from ..config import config
+
+
+@contextmanager
+def timeout_context(seconds: int, message: str = "操作超时"):
+    """
+    超时上下文管理器（仅适用于 Unix 系统）
+
+    Args:
+        seconds: 超时秒数
+        message: 超时消息
+    """
+
+    def signal_handler(signum, frame):
+        raise TimeoutError(message)
+
+    try:
+        original_handler = signal.signal(signal.SIGALRM, signal_handler)
+        signal.alarm(seconds)
+        yield
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, original_handler)
 
 
 class FundDataFetcher:
@@ -39,6 +63,7 @@ class FundDataFetcher:
         if self._akshare is None:
             try:
                 import akshare as ak
+
                 self._akshare = ak
             except ImportError:
                 raise ImportError(
@@ -84,54 +109,57 @@ class FundDataFetcher:
         self._fund_codes_map = {}
         return {}
 
-    def fetch_fund_quote_akshare(self, fund_code: str) -> Optional[Dict[str, Any]]:
+    def fetch_fund_quote_akshare(
+        self, fund_code: str, timeout: int = 10
+    ) -> Optional[Dict[str, Any]]:
         """
         获取基金净值（AkShare）
 
         Args:
             fund_code: 基金代码（如 000001, 110022）
+            timeout: 超时秒数
 
         Returns:
             基金净值数据
         """
         try:
-            # 尝试获取开放式基金信息
-            df = self.akshare.fund_open_fund_info_em(symbol=fund_code, indicator="单位净值走势")
+            with timeout_context(timeout, f"获取基金 {fund_code} 超时"):
+                df = self.akshare.fund_open_fund_info_em(symbol=fund_code, indicator="单位净值走势")
 
-            if df is None or df.empty:
-                return None
+                if df is None or df.empty:
+                    return None
 
-            # 检查是否返回了有效的 DataFrame
-            if not hasattr(df, 'iloc'):
-                return None
+                if not hasattr(df, "iloc"):
+                    return None
 
-            # 获取最新数据
-            latest = df.iloc[-1]
+                latest = df.iloc[-1]
 
-            # 获取前一日数据
-            if len(df) > 1:
-                prev = df.iloc[-2]
-                prev_nav = float(prev.get("单位净值", 0))
-            else:
-                prev_nav = float(latest.get("单位净值", 0))
+                if len(df) > 1:
+                    prev = df.iloc[-2]
+                    prev_nav = float(prev.get("单位净值", 0))
+                else:
+                    prev_nav = float(latest.get("单位净值", 0))
 
-            current_nav = float(latest.get("单位净值", 0))
-            change_percent = ((current_nav - prev_nav) / prev_nav * 100) if prev_nav > 0 else 0
+                current_nav = float(latest.get("单位净值", 0))
+                change_percent = ((current_nav - prev_nav) / prev_nav * 100) if prev_nav > 0 else 0
 
-            return {
-                "code": fund_code,
-                "name": fund_code,
-                "current_nav": current_nav,
-                "prev_nav": prev_nav,
-                "nav_date": str(latest.get("净值日期", "")),
-                "estimate_nav": current_nav,
-                "estimate_time": str(latest.get("净值日期", "")),
-                "change_percent": round(change_percent, 2),
-                "fund_type": "开放式基金",
-                "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "source": "AkShare",
-            }
+                return {
+                    "code": fund_code,
+                    "name": fund_code,
+                    "current_nav": current_nav,
+                    "prev_nav": prev_nav,
+                    "nav_date": str(latest.get("净值日期", "")),
+                    "estimate_nav": current_nav,
+                    "estimate_time": str(latest.get("净值日期", "")),
+                    "change_percent": round(change_percent, 2),
+                    "fund_type": "开放式基金",
+                    "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "source": "AkShare",
+                }
 
+        except TimeoutError as e:
+            print(f"⏱️ {e}")
+            return None
         except Exception as e:
             print(f"获取基金净值失败 {fund_code}: {e}")
             return None
@@ -198,12 +226,14 @@ class FundDataFetcher:
 
             result = []
             for _, row in df.tail(page_size).iterrows():
-                result.append({
-                    "date": str(row.get("净值日期", "")),
-                    "nav": float(row.get("单位净值", 0)),
-                    "accumulated_nav": float(row.get("累计净值", 0)) if "累计净值" in row else 0,
-                    "change_percent": None,
-                })
+                result.append(
+                    {
+                        "date": str(row.get("净值日期", "")),
+                        "nav": float(row.get("单位净值", 0)),
+                        "accumulated_nav": float(row.get("累计净值", 0)) if "累计净值" in row else 0,
+                        "change_percent": None,
+                    }
+                )
 
             return result
 
@@ -276,15 +306,17 @@ class FundDataFetcher:
 
             result = []
             for _, row in matched.head(10).iterrows():
-                result.append({
-                    "code": str(row.get("基金代码", "")),
-                    "name": str(row.get("基金简称", "")),
-                    "type": str(row.get("基金类型", "")),
-                    "pinyin": "",
-                    "nav": float(row.get("单位净值", 0)) if row.get("单位净值") else 0,
-                    "manager": "",
-                    "company": "",
-                })
+                result.append(
+                    {
+                        "code": str(row.get("基金代码", "")),
+                        "name": str(row.get("基金简称", "")),
+                        "type": str(row.get("基金类型", "")),
+                        "pinyin": "",
+                        "nav": float(row.get("单位净值", 0)) if row.get("单位净值") else 0,
+                        "manager": "",
+                        "company": "",
+                    }
+                )
 
             return result
 
@@ -316,9 +348,25 @@ def auto_match_fund_codes(product_names: List[str]) -> Dict[str, Optional[str]]:
             continue
 
         skip_keywords = [
-            "余额宝", "朝朝宝", "活期富", "现金宝", "活期", "零钱通", "理财宝",
-            "薪金煲", "货币", "现金", "存款", "理财", "定期", "通知存款",
-            "白银", "原油", "期货", "期权", "外汇",
+            "余额宝",
+            "朝朝宝",
+            "活期富",
+            "现金宝",
+            "活期",
+            "零钱通",
+            "理财宝",
+            "薪金煲",
+            "货币",
+            "现金",
+            "存款",
+            "理财",
+            "定期",
+            "通知存款",
+            "白银",
+            "原油",
+            "期货",
+            "期权",
+            "外汇",
         ]
 
         should_skip = False

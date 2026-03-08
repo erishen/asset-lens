@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import List
 
 from ..data.models import RiskLevel, SellRecord
-from .parser_utils import SELL_RECORD_FIELDS, parse_decimal, parse_date
+from .parser_utils import SELL_RECORD_FIELDS, parse_date, parse_decimal
 
 
 class SellRecordParser:

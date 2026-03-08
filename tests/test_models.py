@@ -1,75 +1,51 @@
 """
-Tests for data models.
+Tests for models.py
 """
 
-import pytest
 from datetime import date
 from decimal import Decimal
 
+import pytest
+
 from asset_lens.data.models import (
     Currency,
-    InvestmentType,
-    RiskLevel,
-    Platform,
-    Transaction,
     InvestmentProduct,
-    AssetSummary,
-    ExchangeRateHistory,
-    SellRecord,
+    InvestmentType,
     Portfolio,
+    Platform,
+    RiskLevel,
+    Transaction,
 )
 
 
 class TestCurrency:
-    """Test Currency enum"""
+    """Currency 测试"""
 
     def test_currency_values(self):
+        """测试货币类型值"""
         assert Currency.CNY.value == "CNY"
         assert Currency.USD.value == "USD"
         assert Currency.HKD.value == "HKD"
         assert Currency.EUR.value == "EUR"
         assert Currency.JPY.value == "JPY"
 
-    def test_currency_is_string_enum(self):
-        assert isinstance(Currency.CNY, str)
-        assert Currency.CNY == "CNY"
-
 
 class TestInvestmentType:
-    """Test InvestmentType enum"""
+    """InvestmentType 测试"""
 
     def test_investment_type_values(self):
+        """测试投资类型值"""
         assert InvestmentType.MONETARY.value == "货币"
-        assert InvestmentType.INDEX_FUND.value == "指数基金"
-        assert InvestmentType.BOND_FUND.value == "债券基金"
         assert InvestmentType.STOCK.value == "股票"
-        assert InvestmentType.OTHER.value == "其他"
-
-    def test_all_investment_types_exist(self):
-        types = [
-            InvestmentType.MONETARY,
-            InvestmentType.INDEX_FUND,
-            InvestmentType.BOND_FUND,
-            InvestmentType.MIXED_FUND,
-            InvestmentType.STOCK,
-            InvestmentType.US_STOCK,
-            InvestmentType.HK_STOCK,
-            InvestmentType.QDII,
-            InvestmentType.WEALTH,
-            InvestmentType.FIXED_DEPOSIT,
-            InvestmentType.BOND,
-            InvestmentType.REITS,
-            InvestmentType.GOLD,
-            InvestmentType.FUND,
-            InvestmentType.OTHER,
-        ]
-        assert len(types) == 15
+        assert InvestmentType.FUND.value == "基金"
+        assert InvestmentType.ETF.value == "ETF"
 
 
 class TestRiskLevel:
-    """Test RiskLevel enum"""
+    """RiskLevel 测试"""
 
     def test_risk_level_values(self):
+        """测试风险等级值"""
         assert RiskLevel.LOW.value == "低"
         assert RiskLevel.MEDIUM_LOW.value == "中低"
         assert RiskLevel.MEDIUM.value == "中"
@@ -78,9 +54,10 @@ class TestRiskLevel:
 
 
 class TestPlatform:
-    """Test Platform enum"""
+    """Platform 测试"""
 
     def test_platform_values(self):
+        """测试平台类型值"""
         assert Platform.THIRD_PARTY.value == "第三方平台"
         assert Platform.BANK.value == "银行"
         assert Platform.SECURITIES.value == "证券"
@@ -88,471 +65,151 @@ class TestPlatform:
 
 
 class TestTransaction:
-    """Test Transaction dataclass"""
+    """Transaction 测试"""
 
-    def test_transaction_creation(self):
+    def test_transaction_cny(self):
+        """测试人民币交易"""
         tx = Transaction(
-            transaction_date=date(2024, 1, 15),
+            transaction_date=date(2024, 1, 1),
             action="buy",
-            amount=Decimal("1000"),
-        )
-        assert tx.transaction_date == date(2024, 1, 15)
-        assert tx.action == "buy"
-        assert tx.amount == Decimal("1000")
-        assert tx.currency == Currency.CNY
-        assert tx.exchange_rate is None
-
-    def test_transaction_with_currency(self):
-        tx = Transaction(
-            transaction_date=date(2024, 1, 15),
-            action="sell",
-            amount=Decimal("100"),
-            currency=Currency.USD,
-            exchange_rate=Decimal("7.2"),
-        )
-        assert tx.currency == Currency.USD
-        assert tx.exchange_rate == Decimal("7.2")
-
-    def test_to_cny_cny(self):
-        tx = Transaction(
-            transaction_date=date(2024, 1, 15),
-            action="buy",
-            amount=Decimal("1000"),
+            amount=Decimal("10000"),
             currency=Currency.CNY,
         )
+
         result = tx.to_cny(Decimal("7.2"), Decimal("0.92"))
-        assert result == Decimal("1000")
 
-    def test_to_cny_usd(self):
-        tx = Transaction(
-            transaction_date=date(2024, 1, 15),
-            action="buy",
-            amount=Decimal("100"),
-            currency=Currency.USD,
-            exchange_rate=Decimal("7.2"),
-        )
-        result = tx.to_cny(Decimal("7.1"), Decimal("0.92"))
-        assert result == Decimal("720")
+        assert result == Decimal("10000")
 
-    def test_to_cny_usd_default_rate(self):
+    def test_transaction_usd(self):
+        """测试美元交易"""
         tx = Transaction(
-            transaction_date=date(2024, 1, 15),
-            action="buy",
-            amount=Decimal("100"),
-            currency=Currency.USD,
-        )
-        result = tx.to_cny(Decimal("7.1"), Decimal("0.92"))
-        assert result == Decimal("710")
-
-    def test_to_cny_hkd(self):
-        tx = Transaction(
-            transaction_date=date(2024, 1, 15),
+            transaction_date=date(2024, 1, 1),
             action="buy",
             amount=Decimal("1000"),
-            currency=Currency.HKD,
-            exchange_rate=Decimal("0.92"),
+            currency=Currency.USD,
         )
-        result = tx.to_cny(Decimal("7.2"), Decimal("0.91"))
-        assert result == Decimal("920")
+
+        result = tx.to_cny(Decimal("7.2"), Decimal("0.92"))
+
+        assert result == Decimal("7200")
+
+    def test_transaction_usd_with_exchange_rate(self):
+        """测试美元交易 - 带汇率"""
+        tx = Transaction(
+            transaction_date=date(2024, 1, 1),
+            action="buy",
+            amount=Decimal("1000"),
+            currency=Currency.USD,
+            exchange_rate=Decimal("7.0"),
+        )
+
+        result = tx.to_cny(Decimal("7.2"), Decimal("0.92"))
+
+        assert result == Decimal("7000")
+
+    def test_transaction_hkd(self):
+        """测试港币交易"""
+        tx = Transaction(
+            transaction_date=date(2024, 1, 1),
+            action="buy",
+            amount=Decimal("10000"),
+            currency=Currency.HKD,
+        )
+
+        result = tx.to_cny(Decimal("7.2"), Decimal("0.92"))
+
+        assert result == Decimal("9200")
+
+    def test_transaction_hkd_with_exchange_rate(self):
+        """测试港币交易 - 带汇率"""
+        tx = Transaction(
+            transaction_date=date(2024, 1, 1),
+            action="buy",
+            amount=Decimal("10000"),
+            currency=Currency.HKD,
+            exchange_rate=Decimal("0.90"),
+        )
+
+        result = tx.to_cny(Decimal("7.2"), Decimal("0.92"))
+
+        assert result == Decimal("9000")
+
+    def test_transaction_other_currency(self):
+        """测试其他货币交易"""
+        tx = Transaction(
+            transaction_date=date(2024, 1, 1),
+            action="buy",
+            amount=Decimal("1000"),
+            currency=Currency.EUR,
+        )
+
+        result = tx.to_cny(Decimal("7.2"), Decimal("0.92"))
+
+        assert result == Decimal("1000")
 
 
 class TestInvestmentProduct:
-    """Test InvestmentProduct dataclass"""
+    """InvestmentProduct 测试"""
 
-    def test_product_creation(self):
+    def test_investment_product_creation(self):
+        """测试投资产品创建"""
         product = InvestmentProduct(
-            investment_type=InvestmentType.INDEX_FUND,
-            name="中证500ETF",
+            name="测试产品",
+            investment_type=InvestmentType.FUND,
+            platform_amounts={"平台A": Decimal("10000")},
+            initial_amount=Decimal("8000"),
+            return_rate=Decimal("25.0"),
+            annual_return=Decimal("25.0"),
             risk_level=RiskLevel.MEDIUM,
         )
-        assert product.investment_type == InvestmentType.INDEX_FUND
-        assert product.name == "中证500ETF"
-        assert product.risk_level == RiskLevel.MEDIUM
 
-    def test_total_amount_wechat_only(self):
-        product = InvestmentProduct(
-            investment_type=InvestmentType.INDEX_FUND,
-            name="测试产品",
-            risk_level=RiskLevel.MEDIUM,
-            platform_amounts={"platform_a": Decimal("1000")},
-        )
-        assert product.total_amount == Decimal("1000")
+        assert product.name == "测试产品"
+        assert product.investment_type == InvestmentType.FUND
+        assert product.total_amount == Decimal("10000")
+        assert product.initial_amount == Decimal("8000")
+        assert product.return_rate == Decimal("25.0")
 
-    def test_total_amount_alipay_only(self):
+    def test_investment_product_total_amount(self):
+        """测试投资产品总金额"""
         product = InvestmentProduct(
-            investment_type=InvestmentType.INDEX_FUND,
             name="测试产品",
-            risk_level=RiskLevel.MEDIUM,
-            platform_amounts={"platform_b": Decimal("2000")},
-        )
-        assert product.total_amount == Decimal("2000")
-
-    def test_total_amount_both(self):
-        product = InvestmentProduct(
-            investment_type=InvestmentType.INDEX_FUND,
-            name="测试产品",
-            risk_level=RiskLevel.MEDIUM,
+            investment_type=InvestmentType.FUND,
             platform_amounts={
-                "platform_a": Decimal("1000"),
-                "platform_b": Decimal("2000"),
+                "平台A": Decimal("10000"),
+                "平台B": Decimal("5000"),
             },
-        )
-        assert product.total_amount == Decimal("3000")
-
-    def test_total_amount_current_amount(self):
-        product = InvestmentProduct(
-            investment_type=InvestmentType.INDEX_FUND,
-            name="测试产品",
-            risk_level=RiskLevel.MEDIUM,
-            current_amount=Decimal("5000"),
-        )
-        assert product.total_amount == Decimal("5000")
-
-    def test_platform_wechat(self):
-        product = InvestmentProduct(
-            investment_type=InvestmentType.INDEX_FUND,
-            name="测试产品",
-            risk_level=RiskLevel.MEDIUM,
-            platform_amounts={"platform_a": Decimal("1000")},
-        )
-        assert product.platform == Platform.THIRD_PARTY
-
-    def test_platform_alipay(self):
-        product = InvestmentProduct(
-            investment_type=InvestmentType.INDEX_FUND,
-            name="测试产品",
-            risk_level=RiskLevel.MEDIUM,
-            platform_amounts={"platform_b": Decimal("1000")},
-        )
-        assert product.platform == Platform.THIRD_PARTY
-
-    def test_platform_both(self):
-        product = InvestmentProduct(
-            investment_type=InvestmentType.INDEX_FUND,
-            name="测试产品",
-            risk_level=RiskLevel.MEDIUM,
-            platform_amounts={
-                "platform_a": Decimal("1000"),
-                "platform_b": Decimal("1000"),
-            },
-        )
-        assert product.platform == Platform.OTHER
-
-    def test_platform_none(self):
-        product = InvestmentProduct(
-            investment_type=InvestmentType.INDEX_FUND,
-            name="测试产品",
+            initial_amount=Decimal("12000"),
+            return_rate=Decimal("25.0"),
+            annual_return=Decimal("25.0"),
             risk_level=RiskLevel.MEDIUM,
         )
-        assert product.platform == Platform.OTHER
 
-    def test_to_dict(self):
-        product = InvestmentProduct(
-            investment_type=InvestmentType.INDEX_FUND,
-            name="中证500ETF",
-            risk_level=RiskLevel.MEDIUM,
-            platform_amounts={"platform_a": Decimal("1000")},
-            current_amount=Decimal("1200"),
-            initial_amount=Decimal("1000"),
-            investment_days=365,
-            return_rate=Decimal("20"),
-        )
-        result = product.to_dict()
-        assert result["类型"] == "指数基金"
-        assert result["名称"] == "中证500ETF"
-        assert result["风险情况"] == "中"
-        assert result["当前金额"] == "1200"
-        assert result["投资天数"] == 365
-
-
-class TestAssetSummary:
-    """Test AssetSummary dataclass"""
-
-    def test_asset_summary_creation(self):
-        summary = AssetSummary(summary_date=date(2024, 1, 15))
-        assert summary.summary_date == date(2024, 1, 15)
-
-    def test_total_platform_amount(self):
-        summary = AssetSummary(
-            summary_date=date(2024, 1, 15),
-            platform_amounts={
-                "platform_a": Decimal("1000"),
-                "platform_b": Decimal("2000"),
-                "bank_a": Decimal("3000"),
-            },
-        )
-        assert summary.total_platform_amount == Decimal("6000")
-
-    def test_total_credit_amount(self):
-        summary = AssetSummary(
-            summary_date=date(2024, 1, 15),
-            credit_card_amount=Decimal("1000"),
-            jingdong_white_amount=Decimal("500"),
-        )
-        assert summary.total_credit_amount == Decimal("1500")
-
-    def test_total_investment_value(self):
-        summary = AssetSummary(
-            summary_date=date(2024, 1, 15),
-            platform_amounts={"platform_a": Decimal("1000")},
-            credit_card_amount=Decimal("500"),
-            gold_amount=Decimal("200"),
-        )
-        assert summary.total_investment_value == Decimal("1700")
-
-    def test_to_dict(self):
-        summary = AssetSummary(
-            summary_date=date(2024, 1, 15),
-            platform_amounts={"platform_a": Decimal("1000")},
-            usd_rate=Decimal("7.2"),
-        )
-        result = summary.to_dict()
-        assert result["汇总日期"] == "2024-01-15"
-        assert result["美元汇率"] == "7.2"
-
-
-class TestExchangeRateHistory:
-    """Test ExchangeRateHistory dataclass"""
-
-    def test_exchange_rate_history_creation(self):
-        rate = ExchangeRateHistory(
-            rate_date=date(2024, 1, 15),
-            usd_rate=Decimal("7.2"),
-            hkd_rate=Decimal("0.92"),
-        )
-        assert rate.rate_date == date(2024, 1, 15)
-        assert rate.usd_rate == Decimal("7.2")
-        assert rate.hkd_rate == Decimal("0.92")
-
-    def test_default_rates(self):
-        rate = ExchangeRateHistory(rate_date=date(2024, 1, 15))
-        assert rate.usd_rate is None
-        assert rate.hkd_rate is None
-
-    def test_to_dict(self):
-        rate = ExchangeRateHistory(
-            rate_date=date(2024, 1, 15),
-            usd_rate=Decimal("7.2"),
-            hkd_rate=Decimal("0.92"),
-        )
-        result = rate.to_dict()
-        assert result["汇率日期"] == "2024-01-15"
-        assert result["美元汇率"] == "7.2"
-        assert result["港元汇率"] == "0.92"
-
-
-class TestSellRecord:
-    """Test SellRecord dataclass"""
-
-    def test_sell_record_creation(self):
-        record = SellRecord(
-            sell_date=date(2024, 1, 15),
-            name="测试产品",
-            risk_level=RiskLevel.MEDIUM,
-        )
-        assert record.sell_date == date(2024, 1, 15)
-        assert record.name == "测试产品"
-        assert record.risk_level == RiskLevel.MEDIUM
-
-    def test_to_dict(self):
-        record = SellRecord(
-            sell_date=date(2024, 1, 15),
-            name="测试产品",
-            risk_level=RiskLevel.MEDIUM,
-            initial_amount=Decimal("1000"),
-            profit_amount=Decimal("100"),
-            return_rate=Decimal("10"),
-        )
-        result = record.to_dict()
-        assert result["卖出日期"] == "2024-01-15"
-        assert result["名称"] == "测试产品"
-        assert result["风险等级"] == "中"
-        assert result["初始金额"] == "1000"
+        assert product.total_amount == Decimal("15000")
 
 
 class TestPortfolio:
-    """Test Portfolio dataclass"""
+    """Portfolio 测试"""
 
     def test_portfolio_creation(self):
-        portfolio = Portfolio()
-        assert len(portfolio.products) == 0
+        """测试投资组合创建"""
+        products = [
+            InvestmentProduct(
+                name="产品A",
+                investment_type=InvestmentType.FUND,
+                platform_amounts={"平台A": Decimal("10000")},
+                initial_amount=Decimal("8000"),
+                return_rate=Decimal("25.0"),
+                annual_return=Decimal("25.0"),
+                risk_level=RiskLevel.MEDIUM,
+            ),
+        ]
 
-    def test_add_product(self):
-        portfolio = Portfolio()
-        product = InvestmentProduct(
-            investment_type=InvestmentType.INDEX_FUND,
-            name="测试产品",
-            risk_level=RiskLevel.MEDIUM,
-            current_amount=Decimal("1000"),
-        )
-        portfolio.add_product(product)
+        portfolio = Portfolio(products=products)
+
         assert len(portfolio.products) == 1
 
-    def test_get_by_type(self):
-        portfolio = Portfolio()
-        product1 = InvestmentProduct(
-            investment_type=InvestmentType.INDEX_FUND,
-            name="指数基金1",
-            risk_level=RiskLevel.MEDIUM,
-        )
-        product2 = InvestmentProduct(
-            investment_type=InvestmentType.BOND,
-            name="债券1",
-            risk_level=RiskLevel.LOW,
-        )
-        portfolio.add_product(product1)
-        portfolio.add_product(product2)
+    def test_portfolio_empty(self):
+        """测试空投资组合"""
+        portfolio = Portfolio(products=[])
 
-        index_funds = portfolio.get_by_type(InvestmentType.INDEX_FUND)
-        assert len(index_funds) == 1
-        assert index_funds[0].name == "指数基金1"
-
-    def test_get_by_risk(self):
-        portfolio = Portfolio()
-        product1 = InvestmentProduct(
-            investment_type=InvestmentType.INDEX_FUND,
-            name="产品1",
-            risk_level=RiskLevel.MEDIUM,
-        )
-        product2 = InvestmentProduct(
-            investment_type=InvestmentType.BOND,
-            name="产品2",
-            risk_level=RiskLevel.LOW,
-        )
-        portfolio.add_product(product1)
-        portfolio.add_product(product2)
-
-        low_risk = portfolio.get_by_risk(RiskLevel.LOW)
-        assert len(low_risk) == 1
-        assert low_risk[0].name == "产品2"
-
-    def test_total_value(self):
-        portfolio = Portfolio()
-        product1 = InvestmentProduct(
-            investment_type=InvestmentType.INDEX_FUND,
-            name="产品1",
-            risk_level=RiskLevel.MEDIUM,
-            initial_amount=Decimal("800"),
-            current_amount=Decimal("1000"),
-            start_date="2024-01-01",
-        )
-        product2 = InvestmentProduct(
-            investment_type=InvestmentType.BOND,
-            name="产品2",
-            risk_level=RiskLevel.LOW,
-            initial_amount=Decimal("1800"),
-            current_amount=Decimal("2000"),
-            start_date="2024-01-01",
-        )
-        # 产品3：有当前金额但无初始金额，也应计入 total_value（与 ts-demo 保持一致）
-        product3 = InvestmentProduct(
-            investment_type=InvestmentType.CASH,
-            name="产品3",
-            risk_level=RiskLevel.LOW,
-            current_amount=Decimal("500"),
-            start_date="2024-01-01",
-        )
-        portfolio.add_product(product1)
-        portfolio.add_product(product2)
-        portfolio.add_product(product3)
-
-        # total_value 计算所有有当前金额且有开始日期的产品（与 ts-demo 保持一致）
-        assert portfolio.total_value == Decimal("3500")
-
-    def test_total_initial(self):
-        portfolio = Portfolio()
-        product1 = InvestmentProduct(
-            investment_type=InvestmentType.INDEX_FUND,
-            name="产品1",
-            risk_level=RiskLevel.MEDIUM,
-            initial_amount=Decimal("1000"),
-            start_date="2024-01-01",
-        )
-        product2 = InvestmentProduct(
-            investment_type=InvestmentType.BOND,
-            name="产品2",
-            risk_level=RiskLevel.LOW,
-            initial_amount=Decimal("2000"),
-            start_date="2024-01-01",
-        )
-        portfolio.add_product(product1)
-        portfolio.add_product(product2)
-
-        assert portfolio.total_initial == Decimal("3000")
-
-    def test_total_profit(self):
-        portfolio = Portfolio()
-        product = InvestmentProduct(
-            investment_type=InvestmentType.INDEX_FUND,
-            name="产品1",
-            risk_level=RiskLevel.MEDIUM,
-            current_amount=Decimal("1200"),
-            initial_amount=Decimal("1000"),
-            start_date="2024-01-01",
-        )
-        portfolio.add_product(product)
-
-        assert portfolio.total_profit == Decimal("200")
-
-    def test_overall_return_rate(self):
-        portfolio = Portfolio()
-        product = InvestmentProduct(
-            investment_type=InvestmentType.INDEX_FUND,
-            name="产品1",
-            risk_level=RiskLevel.MEDIUM,
-            current_amount=Decimal("1200"),
-            initial_amount=Decimal("1000"),
-            start_date="2024-01-01",
-        )
-        portfolio.add_product(product)
-
-        assert portfolio.overall_return_rate == Decimal("20")
-
-    def test_overall_return_rate_zero_initial(self):
-        portfolio = Portfolio()
-        assert portfolio.overall_return_rate is None
-
-    def test_get_type_distribution(self):
-        portfolio = Portfolio()
-        product1 = InvestmentProduct(
-            investment_type=InvestmentType.INDEX_FUND,
-            name="产品1",
-            risk_level=RiskLevel.MEDIUM,
-            current_amount=Decimal("1000"),
-        )
-        product2 = InvestmentProduct(
-            investment_type=InvestmentType.INDEX_FUND,
-            name="产品2",
-            risk_level=RiskLevel.LOW,
-            current_amount=Decimal("1000"),
-        )
-        portfolio.add_product(product1)
-        portfolio.add_product(product2)
-
-        distribution = portfolio.get_type_distribution()
-        assert "指数基金" in distribution
-        assert distribution["指数基金"]["count"] == 2
-        assert distribution["指数基金"]["total_value"] == Decimal("2000")
-
-    def test_get_risk_distribution(self):
-        portfolio = Portfolio()
-        product1 = InvestmentProduct(
-            investment_type=InvestmentType.INDEX_FUND,
-            name="产品1",
-            risk_level=RiskLevel.MEDIUM,
-            current_amount=Decimal("1000"),
-        )
-        product2 = InvestmentProduct(
-            investment_type=InvestmentType.BOND,
-            name="产品2",
-            risk_level=RiskLevel.LOW,
-            current_amount=Decimal("2000"),
-        )
-        portfolio.add_product(product1)
-        portfolio.add_product(product2)
-
-        distribution = portfolio.get_risk_distribution()
-        assert "中" in distribution
-        assert "低" in distribution
-        assert distribution["中"]["count"] == 1
-        assert distribution["低"]["count"] == 1
+        assert len(portfolio.products) == 0

@@ -253,16 +253,18 @@ class VolumeBreakoutFilter:
             if self.filter_config.require_hot_industry and not is_hot_industry:
                 continue
 
-            results.append({
-                **stock,
-                "industry": industry,
-                "turnover_ratio": round(turnover_ratio, 2),
-                "amount_ratio": round(amount_ratio, 2),
-                "avg_turnover_60d": round(avg_turnover, 2) if avg_turnover else None,
-                "avg_amount_60d": round(avg_amount / 100000000, 2) if avg_amount else None,
-                "is_hot_industry": is_hot_industry,
-                "breakout_type": self._get_breakout_type(turnover_breakout, amount_breakout),
-            })
+            results.append(
+                {
+                    **stock,
+                    "industry": industry,
+                    "turnover_ratio": round(turnover_ratio, 2),
+                    "amount_ratio": round(amount_ratio, 2),
+                    "avg_turnover_60d": round(avg_turnover, 2) if avg_turnover else None,
+                    "avg_amount_60d": round(avg_amount / 100000000, 2) if avg_amount else None,
+                    "is_hot_industry": is_hot_industry,
+                    "breakout_type": self._get_breakout_type(turnover_breakout, amount_breakout),
+                }
+            )
 
         results.sort(key=lambda x: x.get("turnover_ratio", 0), reverse=True)
         return results[: self.filter_config.max_results]
@@ -300,7 +302,7 @@ class VolumeBreakoutFilter:
             # 排除 ST、退市、ETF、北交所 等
             if any(kw in name for kw in ["ST", "退", "ETF", "基金", "指数"]):
                 continue
-            
+
             # 排除北交所股票（sh920xxx, sz8xxxxx）
             if code.startswith("sh92") or code.startswith("sz8"):
                 continue
@@ -386,17 +388,19 @@ class VolumeBreakoutFilter:
             if self.filter_config.require_hot_industry and not is_hot_industry:
                 continue
 
-            results.append({
-                **stock,
-                "industry": industry,
-                "turnover_ratio": round(turnover_ratio, 2),
-                "amount_ratio": round(amount_ratio, 2),
-                "avg_turnover_60d": round(avg_turnover, 2) if avg_turnover else None,
-                "avg_amount_60d": round(avg_amount / 100000000, 2) if avg_amount else None,
-                "is_hot_industry": is_hot_industry,
-                "breakout_type": self._get_breakout_type(turnover_breakout, amount_breakout),
-                "data_source": "API",
-            })
+            results.append(
+                {
+                    **stock,
+                    "industry": industry,
+                    "turnover_ratio": round(turnover_ratio, 2),
+                    "amount_ratio": round(amount_ratio, 2),
+                    "avg_turnover_60d": round(avg_turnover, 2) if avg_turnover else None,
+                    "avg_amount_60d": round(avg_amount / 100000000, 2) if avg_amount else None,
+                    "is_hot_industry": is_hot_industry,
+                    "breakout_type": self._get_breakout_type(turnover_breakout, amount_breakout),
+                    "data_source": "API",
+                }
+            )
 
         results.sort(key=lambda x: x.get("turnover_ratio", 0), reverse=True)
         return results[: self.filter_config.max_results]

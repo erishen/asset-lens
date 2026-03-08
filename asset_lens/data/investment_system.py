@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from ..config import config
-from .backtester import BacktestResult, Backtester
+from .backtester import Backtester, BacktestResult
 from .stock_pool import StockPool, StockPosition
 from .strategy_engine import StrategyConfig, StrategyEngine, strategy_engine
 
@@ -97,7 +97,9 @@ class InvestmentSystem:
             name = stock.get("name", "")
             price = stock.get("current_price", 0)
 
-            if self.stock_pool.add_stock(code, name, price, "watching", f"策略得分: {stock.get('strategy_score', 0):.1f}"):
+            if self.stock_pool.add_stock(
+                code, name, price, "watching", f"策略得分: {stock.get('strategy_score', 0):.1f}"
+            ):
                 added_count += 1
 
         print(f"✅ 筛选出 {len(results)} 只股票，添加 {added_count} 只到股票池")
@@ -264,7 +266,9 @@ class InvestmentSystem:
             report.append("🏆 表现最佳股票 TOP 3")
             report.append("-" * 60)
             for i, stock in enumerate(best_performers, 1):
-                report.append(f"{i}. {stock['name']}({stock['code']}): {stock['profit_rate']:+.2f}%")
+                report.append(
+                    f"{i}. {stock['name']}({stock['code']}): {stock['profit_rate']:+.2f}%"
+                )
 
         # 最差表现股票
         worst_performers = self.stock_pool.get_worst_performers(3)
@@ -273,7 +277,9 @@ class InvestmentSystem:
             report.append("⚠️ 表现最差股票 TOP 3")
             report.append("-" * 60)
             for i, stock in enumerate(worst_performers, 1):
-                report.append(f"{i}. {stock['name']}({stock['code']}): {stock['profit_rate']:+.2f}%")
+                report.append(
+                    f"{i}. {stock['name']}({stock['code']}): {stock['profit_rate']:+.2f}%"
+                )
 
         # 当前持仓
         holdings = self.stock_pool.list_stocks("holding")
@@ -283,7 +289,9 @@ class InvestmentSystem:
             report.append("-" * 60)
             for stock in holdings:
                 report.append(f"  {stock['name']}({stock['code']})")
-                report.append(f"    买入价: {stock['buy_price']:.2f}, 现价: {stock['current_price']:.2f}")
+                report.append(
+                    f"    买入价: {stock['buy_price']:.2f}, 现价: {stock['current_price']:.2f}"
+                )
                 report.append(f"    盈亏: {stock['profit']:+.2f} ({stock['profit_rate']:+.2f}%)")
 
         report.append("\n" + "=" * 60)

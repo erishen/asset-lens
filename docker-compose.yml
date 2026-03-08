@@ -1,0 +1,106 @@
+# Asset Lens - Docker Compose Configuration
+# Usage: docker-compose up -d
+
+version: '3.8'
+
+services:
+  asset-lens:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: asset-lens
+    restart: unless-stopped
+    
+    # Environment variables
+    environment:
+      - TZ=Asia/Shanghai
+      - PYTHONUNBUFFERED=1
+      - DATA_MODE=sample
+    
+    # Volume mounts
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+      - ./cache:/app/cache
+      - ./logs:/app/logs
+      - ./config:/app/config:ro
+    
+    # Port mapping (for future web interface)
+    ports:
+      - "8000:8000"
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import asset_lens; print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Scheduler service (for daily tasks)
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: asset-lens-scheduler
+    restart: unless-stopped
+    
+    environment:
+      - TZ=Asia/Shanghai
+      - PYTHONUNBUFFERED=1
+      - RUN_MODE=scheduler
+    
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+      - ./cache:/app/cache
+      - ./logs:/app/logs
+      - ./config:/app/config:ro
+    
+    # Run scheduler
+    command: ["python", "-m", "asset_lens.scheduler"]
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# Named volumes (optional)
+volumes:
+  data:
+  output:
+  cache:
+  logs:
+
+# Network configuration
+networks:
+  default:
+    name: asset-lens-network

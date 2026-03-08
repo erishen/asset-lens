@@ -37,6 +37,7 @@ class MarketStockFetcher:
         if self._akshare is None:
             try:
                 import akshare as ak
+
                 self._akshare = ak
             except ImportError:
                 raise ImportError(
@@ -102,19 +103,21 @@ class MarketStockFetcher:
                 except (ValueError, TypeError):
                     continue
 
-                stocks.append({
-                    "code": full_code,
-                    "name": name,
-                    "current_price": price,
-                    "change_percent": change_percent,
-                    "volume": int(volume),
-                    "amount": amount,
-                    "turnover_rate": turnover_rate,
-                    "pe_ratio": pe_ratio,
-                    "market_cap": market_cap,
-                    "market": market,
-                    "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                })
+                stocks.append(
+                    {
+                        "code": full_code,
+                        "name": name,
+                        "current_price": price,
+                        "change_percent": change_percent,
+                        "volume": int(volume),
+                        "amount": amount,
+                        "turnover_rate": turnover_rate,
+                        "pe_ratio": pe_ratio,
+                        "market_cap": market_cap,
+                        "market": market,
+                        "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    }
+                )
 
             return stocks
 
@@ -174,19 +177,21 @@ class MarketStockFetcher:
                 except (ValueError, TypeError):
                     continue
 
-                all_stocks.append({
-                    "code": full_code,
-                    "name": name,
-                    "current_price": price,
-                    "change_percent": change_percent,
-                    "volume": int(volume),
-                    "amount": amount,
-                    "turnover_rate": turnover_rate,
-                    "pe_ratio": pe_ratio,
-                    "market_cap": market_cap,
-                    "market": "A股",
-                    "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                })
+                all_stocks.append(
+                    {
+                        "code": full_code,
+                        "name": name,
+                        "current_price": price,
+                        "change_percent": change_percent,
+                        "volume": int(volume),
+                        "amount": amount,
+                        "turnover_rate": turnover_rate,
+                        "pe_ratio": pe_ratio,
+                        "market_cap": market_cap,
+                        "market": "A股",
+                        "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    }
+                )
 
             return all_stocks
 

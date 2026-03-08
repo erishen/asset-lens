@@ -25,7 +25,10 @@ class IRRCalculator:
 
     @staticmethod
     def calculate_irr_with_days(
-        cashflows: List[dict], guess: float = 0.1, tolerance: float = 1e-6, max_iterations: int = 200
+        cashflows: List[dict],
+        guess: float = 0.1,
+        tolerance: float = 1e-6,
+        max_iterations: int = 200,
     ) -> float | None:
         """
         使用带天数的现金流计算 IRR（与 ts-demo 保持一致）
@@ -45,22 +48,22 @@ class IRRCalculator:
                 factor = (1 + rate) ** (cf["days"] / 360)
                 npv += cf["amount"] / factor
                 dnpv -= (cf["amount"] * cf["days"]) / 360 / (factor * (1 + rate))
-            
+
             if abs(npv) < tolerance:
                 return rate
-            
+
             if abs(dnpv) < tolerance:
                 rate += 0.01
                 continue
-            
+
             new_rate = rate - npv / dnpv
             clamped_rate = max(-0.99, min(10, new_rate))
-            
+
             if abs(clamped_rate - rate) < tolerance:
                 return clamped_rate
-            
+
             rate = clamped_rate
-        
+
         return rate
 
     @staticmethod

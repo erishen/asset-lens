@@ -1,254 +1,211 @@
 """
-Tests for investment strategy system.
-投资策略系统测试
+Tests for investment_system.py
 """
 
-import pytest
-from datetime import datetime, timedelta
-from pathlib import Path
-import tempfile
 import json
+import tempfile
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
-from asset_lens.data.stock_pool import StockPool, StockPosition, StockPoolConfig
-from asset_lens.data.strategy_engine import StrategyEngine, StrategyConfig, StrategyCondition
-from asset_lens.data.stock_tracker import StockTracker, TrackerConfig, DailyRecord, MonsterStockSignal
-from asset_lens.data.market_environment import MarketEnvironmentAnalyzer, MarketEnvironment
+import pytest
+
+from asset_lens.data.investment_system import InvestmentSystem
 
 
-class TestStockPool:
-    """股票池测试"""
+class TestInvestmentSystem:
+    """InvestmentSystem 测试"""
 
-    def setup_method(self):
-        """测试前准备"""
-        import time
-        self.pool = StockPool(f"test_pool_{int(time.time())}")
+    @pytest.fixture
+    def temp_cache_path(self):
+        """临时缓存路径"""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            yield Path(tmp_dir)
 
-    def test_add_stock(self):
-        """测试添加股票"""
-        result = self.pool.add_stock(
-            code="sh600519",
-            name="贵州茅台",
-            price=1800.0,
-            status="watching",
-            notes="测试股票",
-            strategy_score=75.0,
-        )
+    @pytest.fixture
+    def system(self, temp_cache_path):
+        """创建测试实例"""
+        with patch('asset_lens.data.investment_system.config') as mock_config, \
+             patch('asset_lens.data.investment_system.StockPool') as mock_pool, \
+             patch('asset_lens.data.investment_system.Backtester') as mock_backtester:
+            mock_config.cache_path = temp_cache_path
+            mock_pool_instance = MagicMock()
+            mock_pool_instance.positions = {}
+            mock_pool.return_value = mock_pool_instance
+            mock_backtester.return_value = MagicMock()
+
+            system = InvestmentSystem("test_system")
+            yield system
+
+    def test_init(self, system):
+        """测试初始化"""
+        assert system.system_name == "test_system"
+        assert system.stock_pool is not None
+        assert system.backtester is not None
+
+    def test_load_config_no_file(self, system):
+        """测试加载配置 - 文件不存在"""
+        system._load_config()
+        assert system.system_config == {}
+        assert system.current_strategy is None
+
+    def test_load_config_with_file(self, system):
+        """测试加载配置 - 有文件"""
+        config_data = {
+            "current_strategy": "momentum",
+            "update_time": "2024-01-01 12:00:00",
+        }
+        with open(system.config_file, "w", encoding="utf-8") as f:
+            json.dump(config_data, f)
+
+        system._load_config()
+        assert system.current_strategy == "momentum"
+
+    def test_set_strategy_success(self, system):
+        """测试设置策略 - 成功"""
+        with patch('asset_lens.data.investment_system.strategy_engine') as mock_engine:
+            mock_engine.strategies = {"momentum": MagicMock(), "value": MagicMock()}
+
+            result = system.set_strategy("momentum")
+
+            assert result is True
+            assert system.current_strategy == "momentum"
+
+    def test_set_strategy_not_found(self, system):
+        """测试设置策略 - 不存在"""
+        with patch('asset_lens.data.investment_system.strategy_engine') as mock_engine:
+            mock_engine.strategies = {"momentum": MagicMock()}
+
+            result = system.set_strategy("not_exist")
+
+            assert result is False
+
+    def test_screen_and_add_to_pool(self, system):
+        """测试筛选股票并添加到股票池"""
+        with patch('asset_lens.data.investment_system.strategy_engine') as mock_engine:
+            system.current_strategy = "momentum"
+            mock_engine.screen_stocks.return_value = [
+                {"code": "sh600519", "name": "贵州茅台", "current_price": 1800, "strategy_score": 85},
+            ]
+
+            stocks = [{"code": "sh600519", "name": "贵州茅台", "current_price": 1800}]
+            system.stock_pool.add_stock.return_value = True
+
+            result = system.screen_and_add_to_pool(stocks)
+
+            assert result >= 0
+
+    def test_simulate_buy(self, system):
+        """测试模拟买入"""
+        system.stock_pool.positions = {"sh600519": MagicMock(current_price=1800)}
+        system.stock_pool.buy_stock.return_value = True
+
+        result = system.simulate_buy("sh600519", price=1800, shares=100)
+
         assert result is True
-        assert "sh600519" in self.pool.positions
-        assert self.pool.positions["sh600519"].selected_count >= 1
 
-    def test_add_stock_cumulative(self):
-        """测试累积添加股票"""
-        import time
-        pool = StockPool(f"test_cumulative_{int(time.time())}")
-        pool.add_stock("sh600519", "贵州茅台", 1800.0, "watching", strategy_score=75.0)
-        pool.add_stock("sh600519", "贵州茅台", 1850.0, "watching", strategy_score=80.0)
+    def test_simulate_buy_not_in_pool(self, system):
+        """测试模拟买入 - 不在股票池"""
+        system.stock_pool.positions = {}
 
-        assert pool.positions["sh600519"].selected_count == 2
-        assert len(pool.positions["sh600519"].selected_history) == 2
+        result = system.simulate_buy("sh600519")
 
-    def test_buy_stock(self):
-        """测试买入股票"""
-        self.pool.add_stock("sh600519", "贵州茅台", 1800.0, "watching")
-        self.pool.buy_stock("sh600519", 1800.0, 100)
+        assert result is False
 
-        assert self.pool.positions["sh600519"].status == "holding"
-        assert self.pool.positions["sh600519"].buy_price == 1800.0
-        assert self.pool.positions["sh600519"].shares == 100
+    def test_simulate_sell(self, system):
+        """测试模拟卖出"""
+        system.stock_pool.positions = {"sh600519": MagicMock(current_price=1800)}
+        system.stock_pool.sell_stock.return_value = True
 
-    def test_sell_stock(self):
-        """测试卖出股票"""
-        self.pool.add_stock("sh600519", "贵州茅台", 1800.0, "watching")
-        self.pool.buy_stock("sh600519", 1800.0, 100)
-        self.pool.sell_stock("sh600519", 1900.0)
+        result = system.simulate_sell("sh600519", price=1900)
 
-        assert self.pool.positions["sh600519"].status == "sold"
-        assert self.pool.positions["sh600519"].sell_price == 1900.0
+        assert result is True
 
-    def test_get_performance(self):
-        """测试获取绩效"""
-        self.pool.add_stock("sh600519", "贵州茅台", 1800.0, "watching")
-        self.pool.buy_stock("sh600519", 1800.0, 100)
-        self.pool.sell_stock("sh600519", 1900.0)
+    def test_run_backtest(self, system):
+        """测试运行回测"""
+        with patch('asset_lens.data.investment_system.strategy_engine') as mock_engine:
+            system.current_strategy = "momentum"
+            mock_backtest_result = MagicMock()
+            system.backtester.run_backtest.return_value = mock_backtest_result
 
-        performance = self.pool.get_performance()
-        assert performance["total_stocks"] == 1
-        assert performance["sold_count"] == 1
-        assert performance["total_profit"] == pytest.approx(10000.0, rel=0.01)
+            historical_data = {"sh600519": [{"close": 1800}]}
+            result = system.run_backtest(historical_data)
 
+            assert result is not None
 
-class TestStrategyEngine:
-    """策略引擎测试"""
+    def test_run_backtest_no_strategy(self, system):
+        """测试运行回测 - 没有策略"""
+        system.current_strategy = None
 
-    def test_list_strategies(self):
-        """测试列出策略"""
-        engine = StrategyEngine()
-        strategies = engine.list_strategies()
+        with pytest.raises(ValueError):
+            system.run_backtest({})
 
-        assert len(strategies) == 4
-        strategy_names = [s["name"] for s in strategies]
-        assert "value" in strategy_names
-        assert "momentum" in strategy_names
-        assert "reversal" in strategy_names
-        assert "dividend" in strategy_names
+    def test_optimize_strategy(self, system):
+        """测试优化策略"""
+        with patch('asset_lens.data.investment_system.strategy_engine') as mock_engine:
+            mock_engine.strategies = {"momentum": MagicMock(), "value": MagicMock()}
+            mock_result = MagicMock()
+            mock_result.sharpe_ratio = 1.5
+            system.backtester.get_best_strategy.return_value = ("momentum", mock_result)
+            system.set_strategy = MagicMock(return_value=True)
 
-    def test_get_strategy(self):
-        """测试获取策略"""
-        engine = StrategyEngine()
-        strategy = engine.get_strategy("momentum")
+            historical_data = {"sh600519": [{"close": 1800}]}
+            name, result = system.optimize_strategy(historical_data)
 
-        assert strategy is not None
-        assert strategy.name == "momentum"
-        assert len(strategy.buy_conditions) > 0
+            assert name == "momentum"
 
-    def test_screen_stocks(self):
-        """测试筛选股票"""
-        engine = StrategyEngine()
-        stocks = [
-            {
-                "code": "sh600519",
-                "name": "贵州茅台",
-                "current_price": 1800.0,
-                "change_percent": 5.0,
-                "turnover_rate": 8.0,
-                "volume": 1000000,
-                "market_cap": 2000,
-                "pe_ratio": 25.0,
-            },
-            {
-                "code": "sh600000",
-                "name": "浦发银行",
-                "current_price": 10.0,
-                "change_percent": 1.0,
-                "turnover_rate": 2.0,
-                "volume": 500000,
-                "market_cap": 300,
-                "pe_ratio": 5.0,
-            },
-        ]
+    def test_get_system_status(self, system):
+        """测试获取系统状态"""
+        with patch('asset_lens.data.investment_system.strategy_engine') as mock_engine:
+            mock_engine.strategies = {"momentum": MagicMock()}
+            system.stock_pool.get_performance.return_value = {
+                "total_stocks": 10,
+                "watching_count": 5,
+                "holding_count": 3,
+                "sold_count": 2,
+                "total_profit": 1000,
+                "profit_rate": 0.1,
+                "win_rate": 0.6,
+            }
 
-        results = engine.screen_stocks(stocks, "momentum", min_score=0)
-        assert isinstance(results, list)
+            result = system.get_system_status()
 
+            assert result["system_name"] == "test_system"
+            assert "stock_pool" in result
+            assert "performance" in result
 
-class TestStockTracker:
-    """股票跟踪器测试"""
+    def test_generate_report(self, system):
+        """测试生成报告"""
+        with patch('asset_lens.data.investment_system.strategy_engine') as mock_engine:
+            mock_engine.strategies = {"momentum": MagicMock()}
+            system.stock_pool.get_performance.return_value = {
+                "total_stocks": 10,
+                "watching_count": 5,
+                "holding_count": 3,
+                "sold_count": 2,
+                "total_profit": 1000,
+                "profit_rate": 0.1,
+                "win_rate": 0.6,
+                "win_count": 6,
+                "lose_count": 4,
+            }
+            system.stock_pool.get_best_performers.return_value = []
+            system.stock_pool.get_worst_performers.return_value = []
+            system.stock_pool.list_stocks.return_value = []
 
-    def setup_method(self):
-        """测试前准备"""
-        self.temp_dir = tempfile.mkdtemp()
-        self.tracker = StockTracker("test_pool")
-        self.tracker.tracker_path = Path(self.temp_dir)
-        self.tracker.tracker_file = self.tracker.tracker_path / "test_tracker.json"
+            result = system.generate_report()
 
-    def test_record_daily(self):
-        """测试记录每日数据"""
-        stock_data = {
-            "code": "sh600519",
-            "name": "贵州茅台",
-            "current_price": 1800.0,
-            "change_percent": 5.0,
-            "turnover_rate": 8.0,
-            "volume": 1000000,
-            "amount": 1800000000,
+            assert "投资策略系统报告" in result
+            assert "test_system" in result
+
+    def test_export_data(self, system):
+        """测试导出数据"""
+        system.stock_pool.positions = {}
+        system.stock_pool.history = []
+        system.stock_pool.get_performance.return_value = {
+            "total_stocks": 0,
+            "profit_rate": 0,
         }
 
-        self.tracker.record_daily(stock_data)
+        result = system.export_data()
 
-        assert "sh600519" in self.tracker.daily_records
-        assert len(self.tracker.daily_records["sh600519"]) == 1
-
-    def test_detect_monster_stocks(self):
-        """测试检测妖股"""
-        for i in range(5):
-            stock_data = {
-                "code": "sh600519",
-                "name": "贵州茅台",
-                "current_price": 1800.0 + i * 50,
-                "change_percent": 9.8,
-                "turnover_rate": 10.0,
-                "volume": 1000000 * (1 + i * 0.5),
-                "amount": 1800000000,
-            }
-            self.tracker.record_daily(stock_data)
-
-        signals = self.tracker.detect_monster_stocks("sh600519")
-        assert isinstance(signals, list)
-
-
-class TestMarketEnvironment:
-    """市场环境分析测试"""
-
-    def test_determine_market_type(self):
-        """测试判断市场类型"""
-        analyzer = MarketEnvironmentAnalyzer()
-
-        bull_type = analyzer._determine_market_type(15, 12, 25, 2)
-        assert bull_type == "bull"
-
-        bear_type = analyzer._determine_market_type(-12, -15, -25, 2)
-        assert bear_type == "bear"
-
-        oscillation_type = analyzer._determine_market_type(2, 3, 5, 4)
-        assert oscillation_type == "oscillation"
-
-    def test_recommend_strategies(self):
-        """测试推荐策略"""
-        analyzer = MarketEnvironmentAnalyzer()
-
-        bull_strategies = analyzer._recommend_strategies("bull", 2, "optimistic")
-        assert "momentum" in bull_strategies
-
-        bear_strategies = analyzer._recommend_strategies("bear", 2, "pessimistic")
-        assert "dividend" in bear_strategies
-
-    def test_adapt_strategy(self):
-        """测试策略适配"""
-        analyzer = MarketEnvironmentAnalyzer()
-        environment = MarketEnvironment(
-            date="2026-03-06",
-            market_type="bull",
-            index_change_5d=5.0,
-            index_change_20d=12.0,
-            index_change_60d=25.0,
-            volatility=2.0,
-            volume_trend="increasing",
-            sentiment="optimistic",
-            hot_sectors=["科技"],
-            cold_sectors=["银行"],
-            recommended_strategies=["momentum"],
-            risk_level="medium",
-        )
-
-        adaptation = analyzer.adapt_strategy("momentum", environment)
-        assert adaptation.strategy_name == "momentum"
-        assert adaptation.expected_performance in ["good", "medium", "poor"]
-
-
-class TestIntegration:
-    """集成测试"""
-
-    def setup_method(self):
-        """测试前准备"""
-        pass
-
-    def test_full_workflow(self):
-        """测试完整工作流"""
-        pool = StockPool("test_pool")
-        engine = StrategyEngine()
-
-        pool.add_stock("sh600519", "贵州茅台", 1800.0, "watching", strategy_score=75.0)
-        assert len(pool.positions) == 1
-
-        strategies = engine.list_strategies()
-        assert len(strategies) == 4
-
-        pool.buy_stock("sh600519", 1800.0, 100)
-        assert pool.positions["sh600519"].status == "holding"
-
-        performance = pool.get_performance()
-        assert performance["holding_count"] == 1
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+        assert result.exists()

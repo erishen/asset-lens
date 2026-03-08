@@ -19,6 +19,7 @@ from typing import Any, Dict, List, Optional, Tuple
 @dataclass
 class ChartConfig:
     """图表配置"""
+
     width: int = 800
     height: int = 400
     title: str = ""
@@ -33,6 +34,7 @@ class ChartGenerator:
 
     def __init__(self):
         from ..config import config
+
         self.cache_path = config.cache_path
         self.chart_path = self.cache_path / "charts"
         self.chart_path.mkdir(parents=True, exist_ok=True)
@@ -242,11 +244,13 @@ class ChartGenerator:
                 type_counts[signal_type] = type_counts.get(signal_type, 0) + 1
 
         sorted_dates = sorted(date_counts.keys())[-days:]
-        
+
         data_dict: Dict[str, Any] = chart_data["data"]  # type: ignore
         data_dict["dates"] = sorted_dates
         data_dict["signal_counts"] = [date_counts.get(d, 0) for d in sorted_dates]
-        data_dict["signal_types"] = dict(sorted(type_counts.items(), key=lambda x: x[1], reverse=True)[:10])
+        data_dict["signal_types"] = dict(
+            sorted(type_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+        )
 
         filename = f"monster_signal_{pool_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         filepath = self.chart_path / filename
@@ -269,8 +273,8 @@ class ChartGenerator:
         Returns:
             图表数据
         """
-        from .stock_pool import StockPool
         from .market_environment import market_environment_analyzer
+        from .stock_pool import StockPool
 
         pool = StockPool(pool_name)
         status = pool.get_performance()

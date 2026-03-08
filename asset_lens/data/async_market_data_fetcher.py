@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 try:
     import aiohttp
+
     HAS_AIOHTTP = True
 except ImportError:
     HAS_AIOHTTP = False
@@ -49,6 +50,7 @@ class AsyncMarketDataFetcher:
         if self._akshare is None:
             try:
                 import akshare as ak
+
                 self._akshare = ak
             except ImportError:
                 raise ImportError(
@@ -215,8 +217,12 @@ class AsyncMarketDataFetcher:
             index_code = code[2:]
             if index_code in all_indexes:
                 data = all_indexes[index_code]
-                change_amount = data["current_price"] - data["prev_close"] if data["prev_close"] > 0 else 0
-                change_percent = (change_amount / data["prev_close"] * 100) if data["prev_close"] > 0 else 0
+                change_amount = (
+                    data["current_price"] - data["prev_close"] if data["prev_close"] > 0 else 0
+                )
+                change_percent = (
+                    (change_amount / data["prev_close"] * 100) if data["prev_close"] > 0 else 0
+                )
 
                 today_data = {
                     "名称": name,
@@ -247,8 +253,12 @@ class AsyncMarketDataFetcher:
             index_code = code[2:]
             if index_code in all_indexes:
                 data = all_indexes[index_code]
-                change_amount = data["current_price"] - data["prev_close"] if data["prev_close"] > 0 else 0
-                change_percent = (change_amount / data["prev_close"] * 100) if data["prev_close"] > 0 else 0
+                change_amount = (
+                    data["current_price"] - data["prev_close"] if data["prev_close"] > 0 else 0
+                )
+                change_percent = (
+                    (change_amount / data["prev_close"] * 100) if data["prev_close"] > 0 else 0
+                )
 
                 today_data = {
                     "名称": name,

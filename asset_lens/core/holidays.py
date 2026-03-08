@@ -146,8 +146,13 @@ def is_post_holiday_trading_suspension(d: date) -> bool:
 
 
 def is_fund_trading_day(d: date) -> bool:
+    """判断指定日期是否为基金交易日
+
+    注意：基金市场在周末不开市，即使是调休上班日也不开市
+    """
     weekday = d.weekday()
 
+    # 周末不是交易日（即使是调休上班日，基金市场也不开市）
     if weekday >= 5:
         return False
 

@@ -21,6 +21,7 @@ from ..config import config
 @dataclass
 class StockPosition:
     """股票持仓"""
+
     code: str
     name: str
     buy_price: float
@@ -41,6 +42,7 @@ class StockPosition:
 @dataclass
 class StockPoolConfig:
     """股票池配置"""
+
     max_pool_size: int = 50
     auto_update: bool = True
     update_interval_days: int = 1
@@ -166,21 +168,34 @@ class StockPool:
 
         if code in self.positions:
             pos = self.positions[code]
+
+            today_records = [h for h in pos.selected_history if h.get("date", "") == today]
+            if today_records:
+                print(f"⏭️ {name}({code}) 今日已入选，跳过重复记录")
+                return False
+
             pos.selected_count += 1
-            pos.selected_history.append({
-                "date": today,
-                "price": price,
-                "score": strategy_score,
-                "notes": notes,
-            })
+            pos.selected_history.append(
+                {
+                    "date": today,
+                    "price": price,
+                    "score": strategy_score,
+                    "notes": notes,
+                }
+            )
             pos.current_price = price
             pos.notes = notes
 
-            self._add_history("reselect", code, name, {
-                "price": price,
-                "score": strategy_score,
-                "count": pos.selected_count,
-            })
+            self._add_history(
+                "reselect",
+                code,
+                name,
+                {
+                    "price": price,
+                    "score": strategy_score,
+                    "count": pos.selected_count,
+                },
+            )
             self._save_pool()
 
             print(f"🔄 {name}({code}) 再次入选，累计入选 {pos.selected_count} 次")
@@ -200,16 +215,20 @@ class StockPool:
             notes=notes,
             first_selected_date=today,
             selected_count=1,
-            selected_history=[{
-                "date": today,
-                "price": price,
-                "score": strategy_score,
-                "notes": notes,
-            }],
+            selected_history=[
+                {
+                    "date": today,
+                    "price": price,
+                    "score": strategy_score,
+                    "notes": notes,
+                }
+            ],
         )
 
         self.positions[code] = position
-        self._add_history("add", code, name, {"price": price, "status": status, "score": strategy_score})
+        self._add_history(
+            "add", code, name, {"price": price, "status": status, "score": strategy_score}
+        )
         self._save_pool()
 
         print(f"✅ 已添加 {name}({code}) 到股票池，状态: {status}")
@@ -266,11 +285,16 @@ class StockPool:
         pos.shares = shares
         pos.notes = notes
 
-        self._add_history("buy", code, pos.name, {
-            "price": price,
-            "shares": shares,
-            "total": price * shares,
-        })
+        self._add_history(
+            "buy",
+            code,
+            pos.name,
+            {
+                "price": price,
+                "shares": shares,
+                "total": price * shares,
+            },
+        )
         self._save_pool()
 
         print(f"✅ 模拟买入 {pos.name}({code})")
@@ -306,13 +330,18 @@ class StockPool:
         pos.sell_date = datetime.now().strftime("%Y-%m-%d")
         pos.notes = notes
 
-        self._add_history("sell", code, pos.name, {
-            "buy_price": pos.buy_price,
-            "sell_price": price,
-            "shares": pos.shares,
-            "profit": profit,
-            "profit_rate": profit_rate,
-        })
+        self._add_history(
+            "sell",
+            code,
+            pos.name,
+            {
+                "buy_price": pos.buy_price,
+                "sell_price": price,
+                "shares": pos.shares,
+                "profit": profit,
+                "profit_rate": profit_rate,
+            },
+        )
         self._save_pool()
 
         print(f"✅ 模拟卖出 {pos.name}({code})")
@@ -373,7 +402,9 @@ class StockPool:
                 total_profit += float(profit)
                 total_invested += float(pos.buy_price * pos.shares)
 
-        win_rate = (win_count / (win_count + lose_count) * 100) if (win_count + lose_count) > 0 else 0
+        win_rate = (
+            (win_count / (win_count + lose_count) * 100) if (win_count + lose_count) > 0 else 0
+        )
         profit_rate = (total_profit / total_invested * 100) if total_invested > 0 else 0
 
         return {
@@ -392,13 +423,15 @@ class StockPool:
 
     def _add_history(self, action: str, code: str, name: str, data: Dict[str, Any]) -> None:
         """添加历史记录"""
-        self.history.append({
-            "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "action": action,
-            "code": code,
-            "name": name,
-            "data": data,
-        })
+        self.history.append(
+            {
+                "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "action": action,
+                "code": code,
+                "name": name,
+                "data": data,
+            }
+        )
 
     def list_stocks(self, status: Optional[str] = None) -> List[Dict[str, Any]]:
         """
@@ -422,20 +455,22 @@ class StockPool:
                     profit = float((pos.sell_price - pos.buy_price) * pos.shares)
                     profit_rate = float((pos.sell_price - pos.buy_price) / pos.buy_price * 100)
 
-                result.append({
-                    "code": pos.code,
-                    "name": pos.name,
-                    "status": pos.status,
-                    "buy_price": pos.buy_price,
-                    "current_price": pos.current_price,
-                    "sell_price": pos.sell_price,
-                    "shares": pos.shares,
-                    "profit": round(profit, 2),
-                    "profit_rate": round(profit_rate, 2),
-                    "buy_date": pos.buy_date,
-                    "sell_date": pos.sell_date,
-                    "notes": pos.notes,
-                })
+                result.append(
+                    {
+                        "code": pos.code,
+                        "name": pos.name,
+                        "status": pos.status,
+                        "buy_price": pos.buy_price,
+                        "current_price": pos.current_price,
+                        "sell_price": pos.sell_price,
+                        "shares": pos.shares,
+                        "profit": round(profit, 2),
+                        "profit_rate": round(profit_rate, 2),
+                        "buy_date": pos.buy_date,
+                        "sell_date": pos.sell_date,
+                        "notes": pos.notes,
+                    }
+                )
 
         return result
 
