@@ -53,12 +53,14 @@ class Config:
 
         self.finnhub_api_key: str | None = os.getenv("FINNHUB_API_KEY")
         self.alphavantage_api_key: str | None = os.getenv("ALPHAVANTAGE_API_KEY")
+        self.tushare_token: str | None = os.getenv("TUSHARE_TOKEN")
 
         self.project_root = Path(__file__).parent.parent
         self.sample_data_path = Path(os.getenv("SAMPLE_DATA_PATH", "data/sample_data"))
         self.real_data_path = Path(os.getenv("REAL_DATA_PATH", "data/real"))
         self.output_path = Path(os.getenv("OUTPUT_PATH", "output"))
         self.cache_path = Path(os.getenv("CACHE_PATH", "cache"))
+        self.config_path = Path(os.getenv("CONFIG_PATH", "config"))
 
         self.default_usd_rate: float = float(os.getenv("DEFAULT_USD_RATE", "6.90"))
         self.default_hkd_rate: float = float(os.getenv("DEFAULT_HKD_RATE", "0.89"))
@@ -142,8 +144,12 @@ class Config:
             with open(config_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
-            self._investment_types = [InvestmentTypeConfig(t) for t in data.get("investment_types", [])]
-            self._risk_levels = {k: RiskLevelConfig(v) for k, v in data.get("risk_levels", {}).items()}
+            self._investment_types = [
+                InvestmentTypeConfig(t) for t in data.get("investment_types", [])
+            ]
+            self._risk_levels = {
+                k: RiskLevelConfig(v) for k, v in data.get("risk_levels", {}).items()
+            }
         except (json.JSONDecodeError, IOError):
             self._investment_types = []
             self._risk_levels = {}

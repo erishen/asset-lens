@@ -22,6 +22,7 @@ from .stock_pool import StockPool
 @dataclass
 class ReportConfig:
     """报告配置"""
+
     output_dir: str = "reports"
     formats: List[str] = field(default_factory=lambda: ["json"])
     include_charts: bool = True
@@ -52,8 +53,8 @@ class InvestmentReportGenerator:
             报告数据
         """
         from .stock_pool import StockPool
-        from .strategy_engine import strategy_engine
         from .stock_tracker import StockTracker
+        from .strategy_engine import strategy_engine
 
         report: Dict[str, Any] = {
             "report_type": "strategy_report",
@@ -166,17 +167,19 @@ class InvestmentReportGenerator:
         positions_list: List[Dict[str, Any]] = report["positions"]
         if positions_dict:
             for code, pos in positions_dict.items():
-                positions_list.append({
-                    "code": pos.code,
-                    "name": pos.name,
-                    "status": pos.status,
-                    "buy_price": pos.buy_price,
-                    "current_price": pos.current_price,
-                    "sell_price": pos.sell_price,
-                    "shares": pos.shares,
-                    "selected_count": pos.selected_count,
-                    "first_selected_date": pos.first_selected_date,
-                })
+                positions_list.append(
+                    {
+                        "code": pos.code,
+                        "name": pos.name,
+                        "status": pos.status,
+                        "buy_price": pos.buy_price,
+                        "current_price": pos.current_price,
+                        "sell_price": pos.sell_price,
+                        "shares": pos.shares,
+                        "selected_count": pos.selected_count,
+                        "first_selected_date": pos.first_selected_date,
+                    }
+                )
 
         report["performance"] = {
             "win_rate": pool_status.get("win_rate", 0),
@@ -237,26 +240,30 @@ class InvestmentReportGenerator:
             pool = StockPool(strategy_name)
             pool_status = pool.get_performance()
 
-            comparison_list.append({
-                "name": strategy_name,
-                "description": strategy.description,
-                "total_stocks": pool_status.get("total_stocks", 0),
-                "holding_count": pool_status.get("holding_count", 0),
-                "win_rate": pool_status.get("win_rate", 0),
-                "total_profit_rate": pool_status.get("total_profit_rate", 0),
-                "risk_level": self._calculate_risk_level(strategy),
-            })
+            comparison_list.append(
+                {
+                    "name": strategy_name,
+                    "description": strategy.description,
+                    "total_stocks": pool_status.get("total_stocks", 0),
+                    "holding_count": pool_status.get("holding_count", 0),
+                    "win_rate": pool_status.get("win_rate", 0),
+                    "total_profit_rate": pool_status.get("total_profit_rate", 0),
+                    "risk_level": self._calculate_risk_level(strategy),
+                }
+            )
 
         comparison_list.sort(key=lambda x: x.get("total_profit_rate", 0), reverse=True)
 
         if comparison_list:
             best = comparison_list[0]
             recommendations_list: List[Dict[str, Any]] = report["recommendations"]
-            recommendations_list.append({
-                "type": "best_strategy",
-                "strategy": best["name"],
-                "reason": f"收益率最高 ({best['total_profit_rate']:.2f}%)",
-            })
+            recommendations_list.append(
+                {
+                    "type": "best_strategy",
+                    "strategy": best["name"],
+                    "reason": f"收益率最高 ({best['total_profit_rate']:.2f}%)",
+                }
+            )
 
         filename = f"comparison_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         filepath = self.report_path / filename
@@ -276,8 +283,8 @@ class InvestmentReportGenerator:
         Returns:
             报告数据
         """
-        from .stock_pool import StockPool
         from .market_environment import market_environment_analyzer
+        from .stock_pool import StockPool
 
         report: Dict[str, Any] = {
             "report_type": "risk_report",
@@ -308,25 +315,31 @@ class InvestmentReportGenerator:
 
         warnings_list: List[Dict[str, Any]] = report["warnings"]
         if concentration > 0.7:
-            warnings_list.append({
-                "level": "high",
-                "type": "concentration",
-                "message": f"持仓集中度过高 ({concentration:.1%})，建议分散投资",
-            })
+            warnings_list.append(
+                {
+                    "level": "high",
+                    "type": "concentration",
+                    "message": f"持仓集中度过高 ({concentration:.1%})，建议分散投资",
+                }
+            )
 
         if pool_status.get("win_rate", 0) < 0.4:
-            warnings_list.append({
-                "level": "medium",
-                "type": "win_rate",
-                "message": f"胜率较低 ({pool_status.get('win_rate', 0):.1%})，建议优化策略",
-            })
+            warnings_list.append(
+                {
+                    "level": "medium",
+                    "type": "win_rate",
+                    "message": f"胜率较低 ({pool_status.get('win_rate', 0):.1%})，建议优化策略",
+                }
+            )
 
         if pool_status.get("max_loss", 0) < -0.1:
-            warnings_list.append({
-                "level": "high",
-                "type": "max_loss",
-                "message": f"最大亏损较大 ({pool_status.get('max_loss', 0):.2%})，建议加强止损",
-            })
+            warnings_list.append(
+                {
+                    "level": "high",
+                    "type": "max_loss",
+                    "message": f"最大亏损较大 ({pool_status.get('max_loss', 0):.2%})，建议加强止损",
+                }
+            )
 
         environment = market_environment_analyzer.analyze_environment()
         report["market_environment"] = {
@@ -336,11 +349,13 @@ class InvestmentReportGenerator:
         }
 
         if environment.risk_level == "high":
-            warnings_list.append({
-                "level": "high",
-                "type": "market_risk",
-                "message": f"市场风险较高 ({environment.market_type})，建议降低仓位",
-            })
+            warnings_list.append(
+                {
+                    "level": "high",
+                    "type": "market_risk",
+                    "message": f"市场风险较高 ({environment.market_type})，建议降低仓位",
+                }
+            )
 
         report["recommendations"] = self._generate_risk_recommendations(report)
 
@@ -363,27 +378,33 @@ class InvestmentReportGenerator:
 
         win_rate = pool_status.get("win_rate", 0)
         if win_rate < 0.5:
-            recommendations.append({
-                "type": "strategy_optimization",
-                "priority": "high",
-                "message": f"胜率 {win_rate:.1%} 偏低，建议调整策略参数或更换策略",
-            })
+            recommendations.append(
+                {
+                    "type": "strategy_optimization",
+                    "priority": "high",
+                    "message": f"胜率 {win_rate:.1%} 偏低，建议调整策略参数或更换策略",
+                }
+            )
 
         holding_count = pool_status.get("holding_count", 0)
         if holding_count == 0:
-            recommendations.append({
-                "type": "action",
-                "priority": "medium",
-                "message": "当前无持仓，建议筛选股票后模拟买入",
-            })
+            recommendations.append(
+                {
+                    "type": "action",
+                    "priority": "medium",
+                    "message": "当前无持仓，建议筛选股票后模拟买入",
+                }
+            )
 
         monster_signals = tracking_report.get("recent_monsters", [])
         if monster_signals:
-            recommendations.append({
-                "type": "opportunity",
-                "priority": "medium",
-                "message": f"检测到 {len(monster_signals)} 个妖股信号，建议关注",
-            })
+            recommendations.append(
+                {
+                    "type": "opportunity",
+                    "priority": "medium",
+                    "message": f"检测到 {len(monster_signals)} 个妖股信号，建议关注",
+                }
+            )
 
         return recommendations
 
@@ -405,8 +426,7 @@ class InvestmentReportGenerator:
             return {"risk_level": "unknown", "message": "无法计算持仓价值"}
 
         position_weights = [
-            (p.code, (p.buy_price * p.shares) / total_value)
-            for p in holding_positions
+            (p.code, (p.buy_price * p.shares) / total_value) for p in holding_positions
         ]
 
         max_weight = max(w for _, w in position_weights) if position_weights else 0
@@ -458,27 +478,33 @@ class InvestmentReportGenerator:
         high_warnings = [w for w in warnings if w.get("level") == "high"]
 
         if high_warnings:
-            recommendations.append({
-                "type": "urgent",
-                "priority": "high",
-                "message": f"存在 {len(high_warnings)} 个高风险警告，请立即处理",
-            })
+            recommendations.append(
+                {
+                    "type": "urgent",
+                    "priority": "high",
+                    "message": f"存在 {len(high_warnings)} 个高风险警告，请立即处理",
+                }
+            )
 
         concentration = report.get("risk_metrics", {}).get("concentration", 0)
         if concentration > 0.5:
-            recommendations.append({
-                "type": "diversification",
-                "priority": "medium",
-                "message": "建议分散持仓，降低单一股票风险",
-            })
+            recommendations.append(
+                {
+                    "type": "diversification",
+                    "priority": "medium",
+                    "message": "建议分散持仓，降低单一股票风险",
+                }
+            )
 
         market_risk = report.get("market_environment", {}).get("risk_level", "low")
         if market_risk == "high":
-            recommendations.append({
-                "type": "position_control",
-                "priority": "high",
-                "message": "市场风险较高，建议降低整体仓位至 50% 以下",
-            })
+            recommendations.append(
+                {
+                    "type": "position_control",
+                    "priority": "high",
+                    "message": "市场风险较高，建议降低整体仓位至 50% 以下",
+                }
+            )
 
         return recommendations
 
@@ -584,6 +610,302 @@ class InvestmentReportGenerator:
             for w in warnings:
                 level_icon = "🔴" if w.get("level") == "high" else "🟡"
                 print(f"  {level_icon} {w.get('message', '')}")
+
+    def export_html_report(
+        self,
+        report: Dict[str, Any],
+        output_file: Optional[str] = None,
+        include_charts: bool = True,
+    ) -> str:
+        """
+        导出 HTML 报告
+
+        Args:
+            report: 报告数据
+            output_file: 输出文件路径
+            include_charts: 是否包含图表
+
+        Returns:
+            HTML 文件路径
+        """
+        if output_file is None:
+            report_type = report.get("report_type", "report")
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_file = f"{report_type}_{timestamp}.html"
+
+        filepath = self.report_path / output_file
+
+        html_content = self._generate_html(report, include_charts)
+
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(html_content)
+
+        return str(filepath)
+
+    def _generate_html(self, report: Dict[str, Any], include_charts: bool) -> str:
+        """生成 HTML 内容"""
+        report_type = report.get("report_type", "unknown")
+        title = self._get_report_title(report_type)
+
+        html_parts = [
+            "<!DOCTYPE html>",
+            "<html lang='zh-CN'>",
+            "<head>",
+            "    <meta charset='UTF-8'>",
+            "    <meta name='viewport' content='width=device-width, initial-scale=1.0'>",
+            f"    <title>{title} - Asset Lens</title>",
+            "    <style>",
+            "        * { margin: 0; padding: 0; box-sizing: border-box; }",
+            "        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; background: #f5f5f5; }",
+            "        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }",
+            "        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 20px; }",
+            "        .header h1 { font-size: 28px; margin-bottom: 10px; }",
+            "        .header .meta { font-size: 14px; opacity: 0.9; }",
+            "        .card { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }",
+            "        .card h2 { font-size: 20px; margin-bottom: 15px; color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px; }",
+            "        .card h3 { font-size: 16px; margin: 15px 0 10px 0; color: #333; }",
+            "        .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }",
+            "        .metric { background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; }",
+            "        .metric .value { font-size: 24px; font-weight: bold; color: #667eea; }",
+            "        .metric .label { font-size: 12px; color: #666; margin-top: 5px; }",
+            "        .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 10px 0; border-radius: 4px; }",
+            "        .warning.high { background: #f8d7da; border-left-color: #dc3545; }",
+            "        .recommendation { background: #d1ecf1; border-left: 4px solid #17a2b8; padding: 15px; margin: 10px 0; border-radius: 4px; }",
+            "        table { width: 100%; border-collapse: collapse; margin: 15px 0; }",
+            "        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }",
+            "        th { background: #f8f9fa; font-weight: 600; }",
+            "        tr:hover { background: #f8f9fa; }",
+            "        .positive { color: #28a745; }",
+            "        .negative { color: #dc3545; }",
+            "        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }",
+            "    </style>",
+            "</head>",
+            "<body>",
+            "    <div class='container'>",
+            "        <div class='header'>",
+            f"            <h1>📊 {title}</h1>",
+            f"            <div class='meta'>生成时间: {report.get('generate_time', 'N/A')}</div>",
+            "        </div>",
+        ]
+
+        if report_type == "strategy_report":
+            html_parts.extend(self._generate_strategy_html(report))
+        elif report_type == "pool_report":
+            html_parts.extend(self._generate_pool_html(report))
+        elif report_type == "comparison_report":
+            html_parts.extend(self._generate_comparison_html(report))
+        elif report_type == "risk_report":
+            html_parts.extend(self._generate_risk_html(report))
+
+        html_parts.extend(
+            [
+                "        <div class='footer'>",
+                "            <p>Generated by Asset Lens - Personal Asset Operating System</p>",
+                "        </div>",
+                "    </div>",
+                "</body>",
+                "</html>",
+            ]
+        )
+
+        return "\n".join(html_parts)
+
+    def _generate_strategy_html(self, report: Dict[str, Any]) -> List[str]:
+        """生成策略报告 HTML"""
+        parts = []
+        strategy_info = report.get("strategy_info", {})
+        pool_status = report.get("pool_status", {})
+        performance = report.get("performance", {})
+
+        parts.extend(
+            [
+                "        <div class='card'>",
+                "            <h2>策略信息</h2>",
+                f"            <p><strong>名称:</strong> {strategy_info.get('name', 'N/A')}</p>",
+                f"            <p><strong>描述:</strong> {strategy_info.get('description', 'N/A')}</p>",
+                "        </div>",
+                "        <div class='card'>",
+                "            <h2>股票池状态</h2>",
+                "            <div class='metrics'>",
+                "                <div class='metric'>",
+                f"                    <div class='value'>{pool_status.get('total_stocks', 0)}</div>",
+                "                    <div class='label'>总股票数</div>",
+                "                </div>",
+                "                <div class='metric'>",
+                f"                    <div class='value'>{pool_status.get('holding_count', 0)}</div>",
+                "                    <div class='label'>持有中</div>",
+                "                </div>",
+                "            </div>",
+                "        </div>",
+                "        <div class='card'>",
+                "            <h2>绩效表现</h2>",
+                "            <div class='metrics'>",
+                "                <div class='metric'>",
+                f"                    <div class='value'>¥{performance.get('total_profit', 0):,.2f}</div>",
+                "                    <div class='label'>总收益</div>",
+                "                </div>",
+                "                <div class='metric'>",
+                f"                    <div class='value'>{performance.get('total_profit_rate', 0):.1%}</div>",
+                "                    <div class='label'>收益率</div>",
+                "                </div>",
+                "                <div class='metric'>",
+                f"                    <div class='value'>{performance.get('win_rate', 0):.1%}</div>",
+                "                    <div class='label'>胜率</div>",
+                "                </div>",
+                "            </div>",
+                "        </div>",
+            ]
+        )
+
+        recommendations = report.get("recommendations", [])
+        if recommendations:
+            parts.append("        <div class='card'><h2>建议</h2>")
+            for r in recommendations:
+                parts.append(
+                    f"            <div class='recommendation'>{r.get('message', '')}</div>"
+                )
+            parts.append("        </div>")
+
+        return parts
+
+    def _generate_pool_html(self, report: Dict[str, Any]) -> List[str]:
+        """生成股票池报告 HTML"""
+        parts = []
+        summary = report.get("summary", {})
+        risk = report.get("risk_analysis", {})
+
+        parts.extend(
+            [
+                "        <div class='card'>",
+                "            <h2>概览</h2>",
+                "            <div class='metrics'>",
+                "                <div class='metric'>",
+                f"                    <div class='value'>{summary.get('total_stocks', 0)}</div>",
+                "                    <div class='label'>总股票数</div>",
+                "                </div>",
+                "                <div class='metric'>",
+                f"                    <div class='value'>¥{summary.get('total_profit', 0):,.2f}</div>",
+                "                    <div class='label'>总收益</div>",
+                "                </div>",
+                "                <div class='metric'>",
+                f"                    <div class='value'>{summary.get('total_profit_rate', 0):.1%}</div>",
+                "                    <div class='label'>收益率</div>",
+                "                </div>",
+                "            </div>",
+                "        </div>",
+                "        <div class='card'>",
+                "            <h2>风险分析</h2>",
+                f"            <p><strong>风险等级:</strong> {risk.get('risk_level', 'N/A')}</p>",
+                f"            <p>{risk.get('message', '')}</p>",
+                "        </div>",
+            ]
+        )
+
+        return parts
+
+    def _generate_comparison_html(self, report: Dict[str, Any]) -> List[str]:
+        """生成对比报告 HTML"""
+        parts = []
+
+        parts.extend(
+            [
+                "        <div class='card'>",
+                "            <h2>策略对比</h2>",
+                "            <table>",
+                "                <thead>",
+                "                    <tr>",
+                "                        <th>策略</th>",
+                "                        <th>股票数</th>",
+                "                        <th>胜率</th>",
+                "                        <th>收益率</th>",
+                "                        <th>风险</th>",
+                "                    </tr>",
+                "                </thead>",
+                "                <tbody>",
+            ]
+        )
+
+        for item in report.get("comparison", []):
+            profit_rate = item.get("total_profit_rate", 0)
+            rate_class = "positive" if profit_rate >= 0 else "negative"
+            parts.extend(
+                [
+                    "                    <tr>",
+                    f"                        <td>{item.get('name', '')}</td>",
+                    f"                        <td>{item.get('total_stocks', 0)}</td>",
+                    f"                        <td>{item.get('win_rate', 0):.1%}</td>",
+                    f"                        <td class='{rate_class}'>{profit_rate:.2%}</td>",
+                    f"                        <td>{item.get('risk_level', '')}</td>",
+                    "                    </tr>",
+                ]
+            )
+
+        parts.extend(
+            [
+                "                </tbody>",
+                "            </table>",
+                "        </div>",
+            ]
+        )
+
+        recommendations = report.get("recommendations", [])
+        if recommendations:
+            parts.append("        <div class='card'><h2>建议</h2>")
+            for r in recommendations:
+                parts.append(
+                    f"            <div class='recommendation'>{r.get('message', '')}</div>"
+                )
+            parts.append("        </div>")
+
+        return parts
+
+    def _generate_risk_html(self, report: Dict[str, Any]) -> List[str]:
+        """生成风险报告 HTML"""
+        parts = []
+        metrics = report.get("risk_metrics", {})
+        warnings = report.get("warnings", [])
+
+        parts.extend(
+            [
+                "        <div class='card'>",
+                "            <h2>风险指标</h2>",
+                "            <div class='metrics'>",
+                "                <div class='metric'>",
+                f"                    <div class='value'>{metrics.get('concentration', 0):.1%}</div>",
+                "                    <div class='label'>持仓集中度</div>",
+                "                </div>",
+                "                <div class='metric'>",
+                f"                    <div class='value'>{metrics.get('win_rate', 0):.1%}</div>",
+                "                    <div class='label'>胜率</div>",
+                "                </div>",
+                "                <div class='metric'>",
+                f"                    <div class='value'>{metrics.get('max_loss', 0):.2%}</div>",
+                "                    <div class='label'>最大亏损</div>",
+                "                </div>",
+                "            </div>",
+                "        </div>",
+            ]
+        )
+
+        if warnings:
+            parts.append("        <div class='card'><h2>⚠️ 警告</h2>")
+            for w in warnings:
+                level_class = "high" if w.get("level") == "high" else ""
+                parts.append(
+                    f"            <div class='warning {level_class}'>{w.get('message', '')}</div>"
+                )
+            parts.append("        </div>")
+
+        recommendations = report.get("recommendations", [])
+        if recommendations:
+            parts.append("        <div class='card'><h2>建议</h2>")
+            for r in recommendations:
+                parts.append(
+                    f"            <div class='recommendation'>{r.get('message', '')}</div>"
+                )
+            parts.append("        </div>")
+
+        return parts
 
 
 investment_report_generator = InvestmentReportGenerator()

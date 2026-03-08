@@ -48,6 +48,7 @@ class StockHistoryFetcher:
                 return None
             try:
                 import tushare as ts
+
                 ts.set_token(self._tushare_token)
                 self._tushare = ts
             except ImportError:
@@ -64,11 +65,11 @@ class StockHistoryFetcher:
         if self._akshare is None:
             try:
                 import akshare as ak
+
                 self._akshare = ak
             except ImportError:
                 raise ImportError(
-                    "请先安装 AkShare: pip install akshare\n"
-                    "AkShare 是一个开源免费的金融数据接口，无需注册"
+                    "请先安装 AkShare: pip install akshare\n" "AkShare 是一个开源免费的金融数据接口，无需注册"
                 )
         return self._akshare
 
@@ -78,6 +79,7 @@ class StockHistoryFetcher:
         if self._baostock is None:
             try:
                 import baostock as bs
+
                 self._baostock = bs
             except ImportError:
                 print("提示: 安装 Baostock 可获取完整数据: pip install baostock")
@@ -100,7 +102,7 @@ class StockHistoryFetcher:
 
         try:
             bs_code = code.replace("sh", "sh.").replace("sz", "sz.")
-            
+
             end_date = datetime.now().strftime("%Y-%m-%d")
             start_date = (datetime.now() - timedelta(days=days + 30)).strftime("%Y-%m-%d")
 
@@ -141,19 +143,21 @@ class StockHistoryFetcher:
                     if len(row) < 9:
                         continue
                     row_list: List[Any] = list(row)
-                    klines_list.append({
-                        "date": str(row_list[0]),
-                        "open": float(row_list[2]) if row_list[2] else 0,
-                        "close": float(row_list[5]) if row_list[5] else 0,
-                        "high": float(row_list[3]) if row_list[3] else 0,
-                        "low": float(row_list[4]) if row_list[4] else 0,
-                        "volume": float(row_list[6]) if row_list[6] else 0,
-                        "amount": float(row_list[7]) if row_list[7] else 0,
-                        "amplitude": 0,
-                        "change_percent": 0,
-                        "change_amount": 0,
-                        "turnover_rate": float(row_list[8]) if row_list[8] else 0,
-                    })
+                    klines_list.append(
+                        {
+                            "date": str(row_list[0]),
+                            "open": float(row_list[2]) if row_list[2] else 0,
+                            "close": float(row_list[5]) if row_list[5] else 0,
+                            "high": float(row_list[3]) if row_list[3] else 0,
+                            "low": float(row_list[4]) if row_list[4] else 0,
+                            "volume": float(row_list[6]) if row_list[6] else 0,
+                            "amount": float(row_list[7]) if row_list[7] else 0,
+                            "amplitude": 0,
+                            "change_percent": 0,
+                            "change_amount": 0,
+                            "turnover_rate": float(row_list[8]) if row_list[8] else 0,
+                        }
+                    )
                 except (ValueError, TypeError, IndexError):
                     continue
 
@@ -187,7 +191,7 @@ class StockHistoryFetcher:
 
         try:
             ts_code = code[2:] + "." + code[:2].upper()
-            
+
             end_date = datetime.now().strftime("%Y%m%d")
             start_date = (datetime.now() - timedelta(days=days + 30)).strftime("%Y%m%d")
 
@@ -213,20 +217,30 @@ class StockHistoryFetcher:
 
             for _, row in df.head(days).iterrows():
                 try:
-                    row_dict: Dict[str, Any] = row.to_dict() if hasattr(row, 'to_dict') else dict(row)
-                    klines_list.append({
-                        "date": str(row_dict.get("trade_date", "")),
-                        "open": float(row_dict.get("open", 0)),
-                        "close": float(row_dict.get("close", 0)),
-                        "high": float(row_dict.get("high", 0)),
-                        "low": float(row_dict.get("low", 0)),
-                        "volume": float(row_dict.get("vol", 0)) * 100 if row_dict.get("vol") else 0,
-                        "amount": float(row_dict.get("amount", 0)) * 1000 if row_dict.get("amount") else 0,
-                        "amplitude": 0,
-                        "change_percent": float(row_dict.get("pct_chg", 0)) if row_dict.get("pct_chg") else 0,
-                        "change_amount": 0,
-                        "turnover_rate": 0,
-                    })
+                    row_dict: Dict[str, Any] = (
+                        row.to_dict() if hasattr(row, "to_dict") else dict(row)
+                    )
+                    klines_list.append(
+                        {
+                            "date": str(row_dict.get("trade_date", "")),
+                            "open": float(row_dict.get("open", 0)),
+                            "close": float(row_dict.get("close", 0)),
+                            "high": float(row_dict.get("high", 0)),
+                            "low": float(row_dict.get("low", 0)),
+                            "volume": float(row_dict.get("vol", 0)) * 100
+                            if row_dict.get("vol")
+                            else 0,
+                            "amount": float(row_dict.get("amount", 0)) * 1000
+                            if row_dict.get("amount")
+                            else 0,
+                            "amplitude": 0,
+                            "change_percent": float(row_dict.get("pct_chg", 0))
+                            if row_dict.get("pct_chg")
+                            else 0,
+                            "change_amount": 0,
+                            "turnover_rate": 0,
+                        }
+                    )
                 except (ValueError, TypeError, KeyError):
                     continue
 
@@ -264,20 +278,24 @@ class StockHistoryFetcher:
 
             for _, row in df.tail(days).iterrows():
                 try:
-                    row_dict: Dict[str, Any] = row.to_dict() if hasattr(row, 'to_dict') else dict(row)
-                    klines_list.append({
-                        "date": str(row_dict.get("date", "")),
-                        "open": float(row_dict.get("open", 0)),
-                        "close": float(row_dict.get("close", 0)),
-                        "high": float(row_dict.get("high", 0)),
-                        "low": float(row_dict.get("low", 0)),
-                        "volume": float(row_dict.get("amount", 0)),
-                        "amount": 0,
-                        "amplitude": 0,
-                        "change_percent": 0,
-                        "change_amount": 0,
-                        "turnover_rate": 0,
-                    })
+                    row_dict: Dict[str, Any] = (
+                        row.to_dict() if hasattr(row, "to_dict") else dict(row)
+                    )
+                    klines_list.append(
+                        {
+                            "date": str(row_dict.get("date", "")),
+                            "open": float(row_dict.get("open", 0)),
+                            "close": float(row_dict.get("close", 0)),
+                            "high": float(row_dict.get("high", 0)),
+                            "low": float(row_dict.get("low", 0)),
+                            "volume": float(row_dict.get("amount", 0)),
+                            "amount": 0,
+                            "amplitude": 0,
+                            "change_percent": 0,
+                            "change_amount": 0,
+                            "turnover_rate": 0,
+                        }
+                    )
                 except (ValueError, TypeError, KeyError):
                     continue
 
@@ -300,7 +318,7 @@ class StockHistoryFetcher:
         """
         try:
             stock_code = code[2:]
-            
+
             end_date = datetime.now().strftime("%Y%m%d")
             start_date = (datetime.now() - timedelta(days=days + 30)).strftime("%Y%m%d")
 
@@ -327,20 +345,24 @@ class StockHistoryFetcher:
 
             for _, row in df.tail(days).iterrows():
                 try:
-                    row_dict: Dict[str, Any] = row.to_dict() if hasattr(row, 'to_dict') else dict(row)
-                    klines_list.append({
-                        "date": str(row_dict.get("日期", "")),
-                        "open": float(row_dict.get("开盘", 0)),
-                        "close": float(row_dict.get("收盘", 0)),
-                        "high": float(row_dict.get("最高", 0)),
-                        "low": float(row_dict.get("最低", 0)),
-                        "volume": float(row_dict.get("成交量", 0)),
-                        "amount": float(row_dict.get("成交额", 0)),
-                        "amplitude": float(row_dict.get("振幅", 0)),
-                        "change_percent": float(row_dict.get("涨跌幅", 0)),
-                        "change_amount": float(row_dict.get("涨跌额", 0)),
-                        "turnover_rate": float(row_dict.get("换手率", 0)),
-                    })
+                    row_dict: Dict[str, Any] = (
+                        row.to_dict() if hasattr(row, "to_dict") else dict(row)
+                    )
+                    klines_list.append(
+                        {
+                            "date": str(row_dict.get("日期", "")),
+                            "open": float(row_dict.get("开盘", 0)),
+                            "close": float(row_dict.get("收盘", 0)),
+                            "high": float(row_dict.get("最高", 0)),
+                            "low": float(row_dict.get("最低", 0)),
+                            "volume": float(row_dict.get("成交量", 0)),
+                            "amount": float(row_dict.get("成交额", 0)),
+                            "amplitude": float(row_dict.get("振幅", 0)),
+                            "change_percent": float(row_dict.get("涨跌幅", 0)),
+                            "change_amount": float(row_dict.get("涨跌额", 0)),
+                            "turnover_rate": float(row_dict.get("换手率", 0)),
+                        }
+                    )
                 except (ValueError, TypeError, KeyError):
                     continue
 
@@ -548,13 +570,13 @@ class StockHistoryFetcher:
         """
         try:
             df = self.akshare.stock_zh_a_spot_em()
-            
+
             if df is None or df.empty:
                 return None
 
             stock_code = code[2:]
             row = df[df["代码"] == stock_code]
-            
+
             if row.empty:
                 return None
 
@@ -584,6 +606,247 @@ class StockHistoryFetcher:
         except Exception as e:
             print(f"获取 {code} 实时行情失败: {e}")
             return None
+
+    def check_cache_validity(self, max_age_hours: int = 24) -> Dict[str, Any]:
+        """
+        检查缓存数据的有效性
+
+        Args:
+            max_age_hours: 最大缓存时间（小时）
+
+        Returns:
+            检查结果字典
+        """
+        if not self.history_cache_file.exists():
+            return {
+                "valid": False,
+                "reason": "缓存文件不存在",
+                "total_stocks": 0,
+                "need_update": [],
+            }
+
+        try:
+            with open(self.history_cache_file, "r", encoding="utf-8") as f:
+                cache_data: Dict[str, Any] = json.load(f)
+
+            update_time_str = cache_data.get("update_time", "")
+            if not update_time_str:
+                return {
+                    "valid": False,
+                    "reason": "缓存缺少更新时间",
+                    "total_stocks": len(cache_data.get("data", {})),
+                    "need_update": [],
+                }
+
+            update_time = datetime.strptime(update_time_str, "%Y-%m-%d %H:%M:%S")
+            age = datetime.now() - update_time
+            age_hours = age.total_seconds() / 3600
+
+            if age_hours > max_age_hours:
+                return {
+                    "valid": False,
+                    "reason": f"缓存已过期 ({age_hours:.1f}小时 > {max_age_hours}小时)",
+                    "total_stocks": len(cache_data.get("data", {})),
+                    "update_time": update_time_str,
+                    "need_update": [],
+                }
+
+            data: Dict[str, Dict[str, Any]] = cache_data.get("data", {})
+            incomplete_stocks = []
+
+            for code, history in data.items():
+                klines: List[Dict[str, Any]] = history.get("klines", [])
+                if len(klines) < 30:
+                    incomplete_stocks.append(
+                        {
+                            "code": code,
+                            "reason": f"数据不足 ({len(klines)}条 < 30条)",
+                        }
+                    )
+
+            return {
+                "valid": len(incomplete_stocks) == 0,
+                "reason": "缓存有效" if not incomplete_stocks else f"{len(incomplete_stocks)}只股票数据不完整",
+                "total_stocks": len(data),
+                "update_time": update_time_str,
+                "age_hours": age_hours,
+                "incomplete_stocks": incomplete_stocks,
+                "need_update": [s["code"] for s in incomplete_stocks],
+            }
+
+        except Exception as e:
+            return {
+                "valid": False,
+                "reason": f"读取缓存失败: {e}",
+                "total_stocks": 0,
+                "need_update": [],
+            }
+
+    def incremental_update(
+        self,
+        stocks: List[Dict[str, Any]],
+        days: int = 60,
+        force_update: bool = False,
+        delay: float = 0.3,
+    ) -> Dict[str, Any]:
+        """
+        增量更新历史数据
+
+        Args:
+            stocks: 股票列表
+            days: 历史天数
+            force_update: 是否强制更新所有数据
+            delay: 请求间隔
+
+        Returns:
+            更新结果
+        """
+        result: Dict[str, Any] = {
+            "total": len(stocks),
+            "cached": 0,
+            "updated": 0,
+            "failed": 0,
+            "skipped": 0,
+            "details": [],
+        }
+
+        if force_update:
+            cached_histories = {}
+            need_fetch_codes = [s.get("code", "") for s in stocks if s.get("code")]
+        else:
+            cached_histories = self.load_history_cache()
+            cache_validity = self.check_cache_validity()
+
+            need_fetch_codes = []
+
+            for stock in stocks:
+                code = stock.get("code", "")
+                if not code:
+                    continue
+
+                if code not in cached_histories:
+                    need_fetch_codes.append(code)
+                    result["details"].append(
+                        {
+                            "code": code,
+                            "status": "missing",
+                            "message": "缓存中不存在",
+                        }
+                    )
+                elif code in cache_validity.get("need_update", []):
+                    need_fetch_codes.append(code)
+                    result["details"].append(
+                        {
+                            "code": code,
+                            "status": "incomplete",
+                            "message": "数据不完整",
+                        }
+                    )
+                else:
+                    result["cached"] += 1
+                    result["details"].append(
+                        {
+                            "code": code,
+                            "status": "cached",
+                            "message": "使用缓存数据",
+                        }
+                    )
+
+        if need_fetch_codes:
+            data_source = "Tushare" if self._tushare_token else "Baostock"
+            print(f"📡 增量更新: 需要获取 {len(need_fetch_codes)} 只股票的历史数据...")
+            print(f"   数据源: {data_source}")
+
+            new_histories = self.fetch_batch_history(need_fetch_codes, days, delay=delay)
+
+            for code in need_fetch_codes:
+                if code in new_histories:
+                    cached_histories[code] = new_histories[code]
+                    result["updated"] += 1
+                    for detail in result["details"]:
+                        if detail["code"] == code:
+                            detail["status"] = "updated"
+                            detail["message"] = "更新成功"
+                else:
+                    result["failed"] += 1
+                    for detail in result["details"]:
+                        if detail["code"] == code:
+                            detail["status"] = "failed"
+                            detail["message"] = "获取失败"
+
+            self.save_history_cache(cached_histories)
+
+        result["success_rate"] = (
+            (result["cached"] + result["updated"]) / result["total"] * 100
+            if result["total"] > 0
+            else 0
+        )
+
+        return result
+
+    def get_cache_statistics(self) -> Dict[str, Any]:
+        """
+        获取缓存统计信息
+
+        Returns:
+            统计信息字典
+        """
+        if not self.history_cache_file.exists():
+            return {
+                "exists": False,
+                "total_stocks": 0,
+                "total_klines": 0,
+                "avg_klines_per_stock": 0,
+                "data_sources": {},
+            }
+
+        try:
+            with open(self.history_cache_file, "r", encoding="utf-8") as f:
+                cache_data: Dict[str, Any] = json.load(f)
+
+            data: Dict[str, Dict[str, Any]] = cache_data.get("data", {})
+            total_stocks = len(data)
+            total_klines = 0
+            data_sources: Dict[str, int] = {}
+
+            for code, history in data.items():
+                klines: List[Dict[str, Any]] = history.get("klines", [])
+                total_klines += len(klines)
+                source = history.get("data_source", "Unknown")
+                data_sources[source] = data_sources.get(source, 0) + 1
+
+            return {
+                "exists": True,
+                "update_time": cache_data.get("update_time", ""),
+                "total_stocks": total_stocks,
+                "total_klines": total_klines,
+                "avg_klines_per_stock": total_klines / total_stocks if total_stocks > 0 else 0,
+                "data_sources": data_sources,
+                "file_size_kb": self.history_cache_file.stat().st_size / 1024,
+            }
+
+        except Exception as e:
+            return {
+                "exists": True,
+                "error": str(e),
+                "total_stocks": 0,
+            }
+
+    def clear_cache(self) -> bool:
+        """
+        清除历史数据缓存
+
+        Returns:
+            是否成功
+        """
+        try:
+            if self.history_cache_file.exists():
+                self.history_cache_file.unlink()
+                print(f"✅ 已清除历史数据缓存: {self.history_cache_file}")
+            return True
+        except Exception as e:
+            print(f"❌ 清除缓存失败: {e}")
+            return False
 
 
 stock_history_fetcher = StockHistoryFetcher()

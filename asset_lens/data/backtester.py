@@ -13,15 +13,18 @@ import json
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from ..config import config
-from .strategy_engine import strategy_engine
+
+if TYPE_CHECKING:
+    from .strategy_engine import StrategyEngine
 
 
 @dataclass
 class BacktestTrade:
     """回测交易记录"""
+
     date: str
     code: str
     name: str
@@ -37,6 +40,7 @@ class BacktestTrade:
 @dataclass
 class BacktestResult:
     """回测结果"""
+
     strategy_name: str
     start_date: str
     end_date: str
@@ -89,6 +93,8 @@ class Backtester:
         Returns:
             回测结果
         """
+        from .strategy_engine import strategy_engine
+
         strategy = strategy_engine.get_strategy(strategy_name)
         if not strategy:
             raise ValueError(f"策略 {strategy_name} 不存在")
@@ -137,13 +143,15 @@ class Backtester:
                         break
 
             total_value = capital + position_value
-            daily_values.append({
-                "date": date,
-                "capital": capital,
-                "position_value": position_value,
-                "total_value": total_value,
-                "positions": len(positions),
-            })
+            daily_values.append(
+                {
+                    "date": date,
+                    "capital": capital,
+                    "position_value": position_value,
+                    "total_value": total_value,
+                    "positions": len(positions),
+                }
+            )
 
             # 检查卖出条件
             for code in list(positions.keys()):
@@ -155,8 +163,10 @@ class Backtester:
 
                 current_price = stock_data.get("close", pos["buy_price"])
                 profit_rate = (current_price - pos["buy_price"]) / pos["buy_price"]
-                holding_days = (datetime.strptime(date, "%Y-%m-%d") - 
-                               datetime.strptime(pos["buy_date"], "%Y-%m-%d")).days
+                holding_days = (
+                    datetime.strptime(date, "%Y-%m-%d")
+                    - datetime.strptime(pos["buy_date"], "%Y-%m-%d")
+                ).days
 
                 should_sell = False
                 sell_reason = ""
@@ -185,18 +195,20 @@ class Backtester:
 
                     capital += amount - commission
 
-                    trades.append(BacktestTrade(
-                        date=date,
-                        code=code,
-                        name=stock_data.get("name", ""),
-                        action="sell",
-                        price=sell_price,
-                        shares=pos["shares"],
-                        amount=amount,
-                        profit=profit,
-                        profit_rate=profit_rate,
-                        reason=sell_reason,
-                    ))
+                    trades.append(
+                        BacktestTrade(
+                            date=date,
+                            code=code,
+                            name=stock_data.get("name", ""),
+                            action="sell",
+                            price=sell_price,
+                            shares=pos["shares"],
+                            amount=amount,
+                            profit=profit,
+                            profit_rate=profit_rate,
+                            reason=sell_reason,
+                        )
+                    )
 
                     del positions[code]
 
@@ -210,10 +222,12 @@ class Backtester:
 
                     evaluation = strategy_engine.evaluate_stock(stock, strategy_name)
                     if evaluation["match"] and evaluation["score"] >= 60:
-                        candidates.append({
-                            **stock,
-                            "strategy_score": evaluation["score"],
-                        })
+                        candidates.append(
+                            {
+                                **stock,
+                                "strategy_score": evaluation["score"],
+                            }
+                        )
 
                 # 按得分排序
                 candidates.sort(key=lambda x: x.get("strategy_score", 0), reverse=True)
@@ -245,16 +259,18 @@ class Backtester:
                         "current_price": buy_price,
                     }
 
-                    trades.append(BacktestTrade(
-                        date=date,
-                        code=candidate["code"],
-                        name=candidate.get("name", ""),
-                        action="buy",
-                        price=buy_price,
-                        shares=shares,
-                        amount=amount,
-                        reason=f"策略得分: {candidate.get('strategy_score', 0):.1f}",
-                    ))
+                    trades.append(
+                        BacktestTrade(
+                            date=date,
+                            code=candidate["code"],
+                            name=candidate.get("name", ""),
+                            action="buy",
+                            price=buy_price,
+                            shares=shares,
+                            amount=amount,
+                            reason=f"策略得分: {candidate.get('strategy_score', 0):.1f}",
+                        )
+                    )
 
         # 计算绩效
         final_capital = daily_values[-1]["total_value"] if daily_values else initial_capital
@@ -286,12 +302,16 @@ class Backtester:
         # 计算夏普比率
         returns = []
         for i in range(1, len(daily_values)):
-            daily_return = (daily_values[i]["total_value"] - daily_values[i-1]["total_value"]) / daily_values[i-1]["total_value"]
+            daily_return = (
+                daily_values[i]["total_value"] - daily_values[i - 1]["total_value"]
+            ) / daily_values[i - 1]["total_value"]
             returns.append(daily_return)
 
         avg_return = sum(returns) / len(returns) if returns else 0
-        std_return = (sum((r - avg_return) ** 2 for r in returns) / len(returns)) ** 0.5 if returns else 0
-        sharpe_ratio = (avg_return * 252) / (std_return * (252 ** 0.5)) if std_return > 0 else 0
+        std_return = (
+            (sum((r - avg_return) ** 2 for r in returns) / len(returns)) ** 0.5 if returns else 0
+        )
+        sharpe_ratio = (avg_return * 252) / (std_return * (252**0.5)) if std_return > 0 else 0
 
         result = BacktestResult(
             strategy_name=strategy_name,

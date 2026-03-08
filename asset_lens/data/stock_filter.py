@@ -82,16 +82,32 @@ class StockFilter:
             return StockFilterConfig(
                 price_min=price_filter.get("min") if price_filter.get("enabled") else None,
                 price_max=price_filter.get("max") if price_filter.get("enabled") else None,
-                market_cap_min=market_cap_filter.get("min") if market_cap_filter.get("enabled") else None,
-                market_cap_max=market_cap_filter.get("max") if market_cap_filter.get("enabled") else None,
-                turnover_rate_min=turnover_rate_filter.get("min") if turnover_rate_filter.get("enabled") else None,
-                turnover_rate_max=turnover_rate_filter.get("max") if turnover_rate_filter.get("enabled") else None,
-                change_percent_min=change_percent_filter.get("min") if change_percent_filter.get("enabled") else None,
-                change_percent_max=change_percent_filter.get("max") if change_percent_filter.get("enabled") else None,
+                market_cap_min=market_cap_filter.get("min")
+                if market_cap_filter.get("enabled")
+                else None,
+                market_cap_max=market_cap_filter.get("max")
+                if market_cap_filter.get("enabled")
+                else None,
+                turnover_rate_min=turnover_rate_filter.get("min")
+                if turnover_rate_filter.get("enabled")
+                else None,
+                turnover_rate_max=turnover_rate_filter.get("max")
+                if turnover_rate_filter.get("enabled")
+                else None,
+                change_percent_min=change_percent_filter.get("min")
+                if change_percent_filter.get("enabled")
+                else None,
+                change_percent_max=change_percent_filter.get("max")
+                if change_percent_filter.get("enabled")
+                else None,
                 volume_min=volume_filter.get("min") if volume_filter.get("enabled") else None,
                 volume_max=volume_filter.get("max") if volume_filter.get("enabled") else None,
-                amplitude_min=amplitude_filter.get("min") if amplitude_filter.get("enabled") else None,
-                amplitude_max=amplitude_filter.get("max") if amplitude_filter.get("enabled") else None,
+                amplitude_min=amplitude_filter.get("min")
+                if amplitude_filter.get("enabled")
+                else None,
+                amplitude_max=amplitude_filter.get("max")
+                if amplitude_filter.get("enabled")
+                else None,
                 pe_ratio_min=pe_ratio_filter.get("min") if pe_ratio_filter.get("enabled") else None,
                 pe_ratio_max=pe_ratio_filter.get("max") if pe_ratio_filter.get("enabled") else None,
                 pb_ratio_min=pb_ratio_filter.get("min") if pb_ratio_filter.get("enabled") else None,
@@ -131,21 +147,39 @@ class StockFilter:
             return False
 
         market_cap = stock.get("market_cap", 0)
-        if self.filter_config.market_cap_min is not None and market_cap < self.filter_config.market_cap_min:
+        if (
+            self.filter_config.market_cap_min is not None
+            and market_cap < self.filter_config.market_cap_min
+        ):
             return False
-        if self.filter_config.market_cap_max is not None and market_cap > self.filter_config.market_cap_max:
+        if (
+            self.filter_config.market_cap_max is not None
+            and market_cap > self.filter_config.market_cap_max
+        ):
             return False
 
         turnover_rate = stock.get("turnover_rate", 0)
-        if self.filter_config.turnover_rate_min is not None and turnover_rate < self.filter_config.turnover_rate_min:
+        if (
+            self.filter_config.turnover_rate_min is not None
+            and turnover_rate < self.filter_config.turnover_rate_min
+        ):
             return False
-        if self.filter_config.turnover_rate_max is not None and turnover_rate > self.filter_config.turnover_rate_max:
+        if (
+            self.filter_config.turnover_rate_max is not None
+            and turnover_rate > self.filter_config.turnover_rate_max
+        ):
             return False
 
         change_percent = stock.get("change_percent", 0)
-        if self.filter_config.change_percent_min is not None and change_percent < self.filter_config.change_percent_min:
+        if (
+            self.filter_config.change_percent_min is not None
+            and change_percent < self.filter_config.change_percent_min
+        ):
             return False
-        if self.filter_config.change_percent_max is not None and change_percent > self.filter_config.change_percent_max:
+        if (
+            self.filter_config.change_percent_max is not None
+            and change_percent > self.filter_config.change_percent_max
+        ):
             return False
 
         volume = stock.get("volume", 0)
@@ -155,23 +189,41 @@ class StockFilter:
             return False
 
         amplitude = stock.get("amplitude", 0)
-        if self.filter_config.amplitude_min is not None and amplitude < self.filter_config.amplitude_min:
+        if (
+            self.filter_config.amplitude_min is not None
+            and amplitude < self.filter_config.amplitude_min
+        ):
             return False
-        if self.filter_config.amplitude_max is not None and amplitude > self.filter_config.amplitude_max:
+        if (
+            self.filter_config.amplitude_max is not None
+            and amplitude > self.filter_config.amplitude_max
+        ):
             return False
 
         pe_ratio = stock.get("pe_ratio")
         if pe_ratio is not None and pe_ratio > 0:
-            if self.filter_config.pe_ratio_min is not None and pe_ratio < self.filter_config.pe_ratio_min:
+            if (
+                self.filter_config.pe_ratio_min is not None
+                and pe_ratio < self.filter_config.pe_ratio_min
+            ):
                 return False
-            if self.filter_config.pe_ratio_max is not None and pe_ratio > self.filter_config.pe_ratio_max:
+            if (
+                self.filter_config.pe_ratio_max is not None
+                and pe_ratio > self.filter_config.pe_ratio_max
+            ):
                 return False
 
         pb_ratio = stock.get("pb_ratio")
         if pb_ratio is not None and pb_ratio > 0:
-            if self.filter_config.pb_ratio_min is not None and pb_ratio < self.filter_config.pb_ratio_min:
+            if (
+                self.filter_config.pb_ratio_min is not None
+                and pb_ratio < self.filter_config.pb_ratio_min
+            ):
                 return False
-            if self.filter_config.pb_ratio_max is not None and pb_ratio > self.filter_config.pb_ratio_max:
+            if (
+                self.filter_config.pb_ratio_max is not None
+                and pb_ratio > self.filter_config.pb_ratio_max
+            ):
                 return False
 
         return True
@@ -191,10 +243,18 @@ class StockFilter:
         reverse = self.filter_config.sort_direction == "desc"
         sort_key = self.filter_config.sort_key
 
-        if sort_key in ["turnover_rate", "market_cap", "change_percent", "volume", "amplitude", "pe_ratio", "pb_ratio"]:
+        if sort_key in [
+            "turnover_rate",
+            "market_cap",
+            "change_percent",
+            "volume",
+            "amplitude",
+            "pe_ratio",
+            "pb_ratio",
+        ]:
             filtered.sort(key=lambda x: x.get(sort_key, 0), reverse=reverse)
 
-        return filtered[:self.filter_config.max_results]
+        return filtered[: self.filter_config.max_results]
 
     def get_filter_summary(self) -> str:
         """获取筛选条件摘要"""
@@ -204,18 +264,26 @@ class StockFilter:
             price_range = f"{self.filter_config.price_min or '无下限'} - {self.filter_config.price_max or '无上限'} 元"
             lines.append(f"  - 价格范围: {price_range}")
 
-        if self.filter_config.market_cap_min is not None or self.filter_config.market_cap_max is not None:
+        if (
+            self.filter_config.market_cap_min is not None
+            or self.filter_config.market_cap_max is not None
+        ):
             cap_range = f"{self.filter_config.market_cap_min or '无下限'} - {self.filter_config.market_cap_max or '无上限'} 亿元"
             lines.append(f"  - 市值范围: {cap_range}")
 
-        if self.filter_config.turnover_rate_min is not None or self.filter_config.turnover_rate_max is not None:
+        if (
+            self.filter_config.turnover_rate_min is not None
+            or self.filter_config.turnover_rate_max is not None
+        ):
             tr_range = f"{self.filter_config.turnover_rate_min or '无下限'} - {self.filter_config.turnover_rate_max or '无上限'} %"
             lines.append(f"  - 换手率范围: {tr_range}")
 
         if self.filter_config.exclude_etf and self.filter_config.exclude_keywords:
             lines.append(f"  - 排除关键词: {', '.join(self.filter_config.exclude_keywords)}")
 
-        lines.append(f"  - 排序方式: {self.filter_config.sort_key} ({self.filter_config.sort_direction})")
+        lines.append(
+            f"  - 排序方式: {self.filter_config.sort_key} ({self.filter_config.sort_direction})"
+        )
         lines.append(f"  - 最大结果数: {self.filter_config.max_results}")
 
         return "\n".join(lines)

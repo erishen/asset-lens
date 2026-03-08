@@ -21,6 +21,7 @@ from ..config import config
 @dataclass
 class MarketEnvironment:
     """市场环境"""
+
     date: str
     market_type: str  # bull, bear, oscillation
     index_change_5d: float
@@ -38,6 +39,7 @@ class MarketEnvironment:
 @dataclass
 class StrategyAdaptation:
     """策略适配"""
+
     strategy_name: str
     original_params: Dict[str, Any]
     adapted_params: Dict[str, Any]
@@ -316,7 +318,9 @@ class MarketEnvironmentAnalyzer:
 
         if environment.market_type == "bull":
             if strategy_name == "momentum":
-                adapted_params["change_percent_min"] = original_params.get("change_percent_min", 3) * 0.8
+                adapted_params["change_percent_min"] = (
+                    original_params.get("change_percent_min", 3) * 0.8
+                )
                 adapted_params["turnover_min"] = original_params.get("turnover_min", 5) * 0.9
                 reason_parts.append("牛市环境，放宽动量条件")
 
@@ -326,7 +330,9 @@ class MarketEnvironmentAnalyzer:
 
         elif environment.market_type == "bear":
             if strategy_name == "momentum":
-                adapted_params["change_percent_min"] = original_params.get("change_percent_min", 3) * 1.5
+                adapted_params["change_percent_min"] = (
+                    original_params.get("change_percent_min", 3) * 1.5
+                )
                 adapted_params["turnover_min"] = original_params.get("turnover_min", 5) * 1.2
                 reason_parts.append("熊市环境，提高动量要求")
 
@@ -336,7 +342,9 @@ class MarketEnvironmentAnalyzer:
                 reason_parts.append("熊市环境，提高安全边际")
 
             elif strategy_name == "reversal":
-                adapted_params["change_percent_5d_min"] = original_params.get("change_percent_5d_min", -15) * 0.8
+                adapted_params["change_percent_5d_min"] = (
+                    original_params.get("change_percent_5d_min", -15) * 0.8
+                )
                 reason_parts.append("熊市环境，适度放宽抄底条件")
 
         if environment.volatility > 3:

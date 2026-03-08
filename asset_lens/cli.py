@@ -15,10 +15,10 @@ from .config import config
 from .core.dca_parser import dca_parser
 from .core.irr_calculator import irr_calculator
 from .data.asset_summary_parser import AssetSummaryParser
-from .data.parser_utils import SELL_RECORD_EXPORT_FIELDS
 from .data.csv_parser import CSVParser
 from .data.exchange_rate_parser import ExchangeRateParser
 from .data.models import Portfolio
+from .data.parser_utils import SELL_RECORD_EXPORT_FIELDS
 from .data.sell_record_parser import SellRecordParser
 from .report.analyzer import report_generator
 from .utils.currency_converter import currency_converter
@@ -38,6 +38,246 @@ def cli():
     """asset-lens: Personal Asset Operating System"""
     # 确保所有必要的目录存在
     config.ensure_directories()
+
+
+@cli.command()
+def completion():
+    """生成 shell 自动补全脚本
+
+    使用方法:
+        # Bash
+        $ source <(python -m asset_lens completion)
+        # 或添加到 ~/.bashrc
+        $ echo 'source <(python -m asset_lens completion)' >> ~/.bashrc
+
+        # Zsh
+        $ source <(python -m asset_lens completion)
+        # 或添加到 ~/.zshrc
+        $ echo 'source <(python -m asset_lens completion)' >> ~/.zshrc
+    """
+    import os
+    import sys
+
+    shell = os.environ.get("SHELL", "")
+
+    if "zsh" in shell:
+        click.echo(
+            """
+# asset-lens completion for zsh
+_asset_lens_completion() {
+    local -a commands
+    commands=(
+        'analyze:分析投资组合并生成报告'
+        'summary:生成投资组合摘要'
+        'calculate:快捷计算收益率'
+        'fetch-stock:获取股票实时行情'
+        'fetch-fund:获取基金净值'
+        'search-fund:搜索基金'
+        'update-market:更新市场指数数据'
+        'estimate-pnl:估算实时盈亏'
+        'report:生成投资报告'
+        'version:显示版本信息'
+        'completion:生成 shell 自动补全脚本'
+    )
+    
+    _describe 'command' commands
+}
+compdef _asset_lens_completion asset-lens
+"""
+        )
+    else:
+        click.echo(
+            """
+# asset-lens completion for bash
+_asset_lens_completion() {
+    local cur words
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    words="analyze summary calculate fetch-stock fetch-fund search-fund update-market estimate-pnl report version completion"
+    
+    COMPREPLY=( $(compgen -W "${words}" -- ${cur}) )
+    return 0
+}
+complete -F _asset_lens_completion asset-lens
+"""
+        )
+
+    click.echo("\n✅ 补全脚本已生成")
+    click.echo("💡 请运行以下命令启用补全:")
+    click.echo("   source <(python -m asset_lens completion)")
+    click.echo("\n💡 或添加到您的 shell 配置文件中以永久启用")
+
+
+@cli.command()
+def interactive():
+    """交互式命令行界面（问卷式输入）
+
+    提供友好的交互式体验，引导用户完成各种操作。
+    """
+    click.echo("\n" + "=" * 60)
+    click.echo("🚀 欢迎使用 Asset-Lens 交互式向导")
+    click.echo("=" * 60)
+
+    while True:
+        click.echo("\n请选择要执行的操作:")
+        click.echo("  1. 📊 分析投资组合")
+        click.echo("  2. 💰 计算收益率")
+        click.echo("  3. 📈 查询股票行情")
+        click.echo("  4. 📉 查询基金净值")
+        click.echo("  5. 🔍 搜索基金")
+        click.echo("  6. 🌍 更新市场数据")
+        click.echo("  7. 📝 生成投资报告")
+        click.echo("  8. ⚙️  系统设置")
+        click.echo("  0. 🚪 退出")
+
+        choice = click.prompt("\n请输入选项", type=click.INT, default=0)
+
+        if choice == 0:
+            click.echo("\n👋 感谢使用 Asset-Lens，再见！")
+            break
+        elif choice == 1:
+            _interactive_analyze()
+        elif choice == 2:
+            _interactive_calculate()
+        elif choice == 3:
+            _interactive_fetch_stock()
+        elif choice == 4:
+            _interactive_fetch_fund()
+        elif choice == 5:
+            _interactive_search_fund()
+        elif choice == 6:
+            _interactive_update_market()
+        elif choice == 7:
+            _interactive_report()
+        elif choice == 8:
+            _interactive_settings()
+        else:
+            click.echo("❌ 无效选项，请重新选择")
+
+
+def _interactive_analyze():
+    """交互式分析投资组合"""
+    click.echo("\n📊 投资组合分析")
+    click.echo("-" * 40)
+
+    data_mode = click.prompt(
+        "选择数据模式",
+        type=click.Choice(["sample", "real"]),
+        default="sample",
+    )
+
+    output_format = click.prompt(
+        "选择输出格式",
+        type=click.Choice(["console", "csv", "json", "all"]),
+        default="console",
+    )
+
+    click.echo(f"\n正在分析 {data_mode} 数据...")
+    click.echo("请运行: make analyze DATA_MODE={}".format(data_mode))
+
+
+def _interactive_calculate():
+    """交互式计算收益率"""
+    click.echo("\n💰 收益率计算")
+    click.echo("-" * 40)
+
+    principal = click.prompt("请输入本金金额", type=click.FLOAT)
+    current = click.prompt("请输入当前金额", type=click.FLOAT)
+    days = click.prompt("请输入投资天数", type=click.INT, default=365)
+
+    profit = current - principal
+    profit_rate = (profit / principal) * 100
+    annual_return = (profit_rate / days) * 365 if days > 0 else 0
+
+    click.echo("\n📊 计算结果:")
+    click.echo(f"  本金: ¥{principal:,.2f}")
+    click.echo(f"  当前: ¥{current:,.2f}")
+    click.echo(f"  收益: ¥{profit:,.2f}")
+    click.echo(f"  收益率: {profit_rate:.2f}%")
+    click.echo(f"  年化收益率: {annual_return:.2f}%")
+
+
+def _interactive_fetch_stock():
+    """交互式查询股票行情"""
+    click.echo("\n📈 股票行情查询")
+    click.echo("-" * 40)
+
+    code = click.prompt("请输入股票代码（如 sh600519）")
+
+    click.echo(f"\n正在查询 {code}...")
+    click.echo(f'请运行: make fetch-stock CODES="{code}"')
+
+
+def _interactive_fetch_fund():
+    """交互式查询基金净值"""
+    click.echo("\n📉 基金净值查询")
+    click.echo("-" * 40)
+
+    code = click.prompt("请输入基金代码（如 000001）")
+
+    click.echo(f"\n正在查询 {code}...")
+    click.echo(f'请运行: make fetch-fund CODES="{code}"')
+
+
+def _interactive_search_fund():
+    """交互式搜索基金"""
+    click.echo("\n🔍 基金搜索")
+    click.echo("-" * 40)
+
+    keyword = click.prompt("请输入搜索关键词（如 沪深300）")
+
+    click.echo(f"\n正在搜索 '{keyword}'...")
+    click.echo(f'请运行: make search-fund KEYWORD="{keyword}"')
+
+
+def _interactive_update_market():
+    """交互式更新市场数据"""
+    click.echo("\n🌍 市场数据更新")
+    click.echo("-" * 40)
+
+    api = click.prompt(
+        "选择数据源",
+        type=click.Choice(["sina", "eastmoney", "finnhub"]),
+        default="eastmoney",
+    )
+
+    async_mode = click.confirm("是否使用异步模式", default=True)
+
+    click.echo(f"\n正在更新市场数据（数据源: {api}）...")
+    if async_mode:
+        click.echo("请运行: make update-market-async API={}".format(api))
+    else:
+        click.echo("请运行: make update-market API={}".format(api))
+
+
+def _interactive_report():
+    """交互式生成报告"""
+    click.echo("\n📝 投资报告生成")
+    click.echo("-" * 40)
+
+    report_type = click.prompt(
+        "选择报告类型",
+        type=click.Choice(["strategy", "pool", "comparison", "risk"]),
+        default="strategy",
+    )
+
+    click.echo(f"\n正在生成 {report_type} 报告...")
+    click.echo(f"请运行: make report-{report_type}")
+
+
+def _interactive_settings():
+    """交互式系统设置"""
+    click.echo("\n⚙️  系统设置")
+    click.echo("-" * 40)
+
+    click.echo("当前设置:")
+    click.echo(f"  数据模式: {config.data_mode}")
+    click.echo(f"  USD 汇率: {config.default_usd_rate}")
+    click.echo(f"  HKD 汇率: {config.default_hkd_rate}")
+    click.echo(f"  输出目录: {config.output_path}")
+
+    if click.confirm("\n是否修改设置"):
+        click.echo("\n💡 请修改 config/settings.json 文件来更新设置")
 
 
 @cli.command()
@@ -853,9 +1093,11 @@ def pnl(data_mode, weekly):
         click.echo(f"📈 估算产品收益率: {result['total_return_rate']:.2f}%")
         click.echo(f"💵 估算产品金额: ¥{result['total_amount']:,.2f}")
         if "total_amount_all" in result:
-            total_amount_all = Decimal(str(result['total_amount_all']))
-            total_pnl = Decimal(str(result['total']))
-            total_return_rate_all = float((total_pnl / total_amount_all * 100) if total_amount_all > 0 else Decimal(0))
+            total_amount_all = Decimal(str(result["total_amount_all"]))
+            total_pnl = Decimal(str(result["total"]))
+            total_return_rate_all = float(
+                (total_pnl / total_amount_all * 100) if total_amount_all > 0 else Decimal(0)
+            )
             click.echo(f"💵 所有产品金额: ¥{total_amount_all:,.2f}")
             click.echo(f"📊 总资产收益率: {float(total_return_rate_all):.4f}%")
 
@@ -916,7 +1158,7 @@ def estimate(data_mode, weekly):
 
         estimator = RealtimePnlEstimator()
         market_change = Decimal("0")
-        
+
         try:
             moves = estimator.read_index_moves_from_cache(is_weekly=weekly)
             if moves:
@@ -1064,7 +1306,9 @@ def analyze_sold(data_mode):
                 profit_color = "green" if detail.profit_amount >= 0 else "red"
                 profit_sign = "+" if detail.profit_amount >= 0 else ""
                 console.print(f"[bold white]• {detail.name}[/bold white]")
-                console.print(f"  [dim]日期:[/dim] [yellow]{detail.sell_date.strftime('%Y-%m-%d')}[/yellow] | [dim]收益:[/dim] [{profit_color}]¥{detail.profit_amount:,.0f} ({profit_sign}{detail.return_rate:.1f}%)[/{profit_color}] | [dim]年化:[/dim] [blue]{detail.annualized_return:.1f}%[/blue]")
+                console.print(
+                    f"  [dim]日期:[/dim] [yellow]{detail.sell_date.strftime('%Y-%m-%d')}[/yellow] | [dim]收益:[/dim] [{profit_color}]¥{detail.profit_amount:,.0f} ({profit_sign}{detail.return_rate:.1f}%)[/{profit_color}] | [dim]年化:[/dim] [blue]{detail.annualized_return:.1f}%[/blue]"
+                )
             if len(result["details"]) > 20:
                 console.print(f"\n[dim]... 还有 {len(result['details']) - 20} 条记录未显示[/dim]")
 
@@ -1777,9 +2021,7 @@ def generate_report(data_mode, output_dir, include_ai):
             }
 
         pdf_gen = PDFReportGenerator(output_path)
-        report_path = pdf_gen.generate_investment_report(
-            portfolio_data, analysis_result, charts
-        )
+        report_path = pdf_gen.generate_investment_report(portfolio_data, analysis_result, charts)
 
         click.echo(f"\n✅ 报告已生成: {report_path}")
 
@@ -1861,9 +2103,7 @@ def generate_html_report(data_mode, output_dir, include_ai):
             }
 
         html_gen = HTMLReportGenerator(output_path)
-        report_path = html_gen.generate_investment_report(
-            portfolio_data, analysis_result, charts
-        )
+        report_path = html_gen.generate_investment_report(portfolio_data, analysis_result, charts)
 
         click.echo(f"\n✅ 报告已生成: {report_path}")
 
@@ -2034,7 +2274,7 @@ def filter_stocks_command(config_file, stocks_file, fetch_market, max_pages):
     """筛选股票
 
     根据配置文件中的筛选条件筛选股票
-    
+
     默认筛选自己投资的股票，使用 --fetch-market 从市场获取股票列表
     """
     from pathlib import Path
@@ -2099,9 +2339,7 @@ def filter_stocks_command(config_file, stocks_file, fetch_market, max_pages):
     if filtered:
         click.echo("筛选结果:")
         click.echo("-" * 100)
-        click.echo(
-            f"{'代码':<12} {'名称':<20} {'价格':>10} {'涨跌幅':>10} {'换手率':>10} {'市值(亿)':>12}"
-        )
+        click.echo(f"{'代码':<12} {'名称':<20} {'价格':>10} {'涨跌幅':>10} {'换手率':>10} {'市值(亿)':>12}")
         click.echo("-" * 100)
 
         for stock in filtered[:20]:
@@ -2116,7 +2354,9 @@ def filter_stocks_command(config_file, stocks_file, fetch_market, max_pages):
             turnover_str = f"{turnover:.2f}%" if turnover > 0 else "-"
             cap_str = f"{market_cap:.1f}" if market_cap > 0 else "-"
 
-            click.echo(f"{code:<12} {name:<20} {price:>10.2f} {change_str:>10} {turnover_str:>10} {cap_str:>12}")
+            click.echo(
+                f"{code:<12} {name:<20} {price:>10.2f} {change_str:>10} {turnover_str:>10} {cap_str:>12}"
+            )
 
         if len(filtered) > 20:
             click.echo(f"\n... 还有 {len(filtered) - 20} 只股票未显示")
@@ -2136,8 +2376,8 @@ def volume_breakout_command(update_history, fetch_market, use_api, days):
     - 市值在指定区间内
     - 可选：行业属于热点
     """
-    from .data.volume_breakout_filter import volume_breakout_filter
     from .data.market_stock_fetcher import market_stock_fetcher
+    from .data.volume_breakout_filter import volume_breakout_filter
 
     click.echo("\n📊 放量突破股票筛选")
     click.echo("=" * 60)
@@ -2195,7 +2435,9 @@ def volume_breakout_command(update_history, fetch_market, use_api, days):
 
     click.echo(f"\n✅ 找到 {len(results)} 只放量突破股票")
     click.echo("-" * 120)
-    click.echo(f"{'代码':<10} {'名称':<16} {'价格':>8} {'涨跌':>8} {'换手率':>8} {'换手倍数':>8} {'成交额倍数':>8} {'市值(亿)':>10} {'行业':<8} {'类型':<8}")
+    click.echo(
+        f"{'代码':<10} {'名称':<16} {'价格':>8} {'涨跌':>8} {'换手率':>8} {'换手倍数':>8} {'成交额倍数':>8} {'市值(亿)':>10} {'行业':<8} {'类型':<8}"
+    )
     click.echo("-" * 120)
 
     for stock in results:
@@ -2226,7 +2468,13 @@ def volume_breakout_command(update_history, fetch_market, use_api, days):
 
 
 @cli.command("screen-stocks")
-@click.option("--type", "-t", type=click.Choice(["fundamental", "technical", "comprehensive"]), default="comprehensive", help="筛选类型")
+@click.option(
+    "--type",
+    "-t",
+    type=click.Choice(["fundamental", "technical", "comprehensive"]),
+    default="comprehensive",
+    help="筛选类型",
+)
 @click.option("--pe-max", type=float, default=30, help="最大市盈率")
 @click.option("--pe-min", type=float, default=0, help="最小市盈率")
 @click.option("--market-cap-min", type=float, default=20, help="最小市值(亿元)")
@@ -2239,9 +2487,18 @@ def volume_breakout_command(update_history, fetch_market, use_api, days):
 @click.option("--max-results", type=int, default=20, help="最大返回结果数")
 @click.option("--fetch-market", is_flag=True, help="先获取市场数据")
 def screen_stocks_command(
-    type, pe_max, pe_min, market_cap_min, market_cap_max,
-    turnover_min, turnover_max, change_min, change_max,
-    min_score, max_results, fetch_market
+    type,
+    pe_max,
+    pe_min,
+    market_cap_min,
+    market_cap_max,
+    turnover_min,
+    turnover_max,
+    change_min,
+    change_max,
+    min_score,
+    max_results,
+    fetch_market,
 ):
     """股票综合筛选
 
@@ -2255,8 +2512,8 @@ def screen_stocks_command(
         python -m asset_lens screen-stocks --type fundamental
         python -m asset_lens screen-stocks --pe-max 20 --market-cap-min 50
     """
-    from .data.stock_screener import stock_screener
     from .data.market_stock_fetcher import market_stock_fetcher
+    from .data.stock_screener import stock_screener
 
     click.echo("\n📊 股票综合筛选")
     click.echo("=" * 60)
@@ -2306,7 +2563,9 @@ def screen_stocks_command(
 
     click.echo(f"\n✅ 找到 {len(results)} 只符合条件的股票:\n")
     click.echo("=" * 100)
-    click.echo(f"{'排名':<4} {'代码':<10} {'名称':<10} {'现价':>8} {'涨跌%':>8} {'市值(亿)':>10} {'换手%':>8} {'综合分':>8}")
+    click.echo(
+        f"{'排名':<4} {'代码':<10} {'名称':<10} {'现价':>8} {'涨跌%':>8} {'市值(亿)':>10} {'换手%':>8} {'综合分':>8}"
+    )
     click.echo("-" * 100)
 
     for i, stock in enumerate(results, 1):
@@ -2319,7 +2578,9 @@ def screen_stocks_command(
         total_score = stock.get("total_score", 0)
 
         change_str = f"{change:+.2f}%"
-        click.echo(f"{i:<4} {code:<10} {name:<10} {price:>8.2f} {change_str:>8} {market_cap:>10.1f} {turnover:>8.2f} {total_score:>8.1f}")
+        click.echo(
+            f"{i:<4} {code:<10} {name:<10} {price:>8.2f} {change_str:>8} {market_cap:>10.1f} {turnover:>8.2f} {total_score:>8.1f}"
+        )
 
     click.echo("=" * 100)
 
@@ -2343,7 +2604,7 @@ def predict_etf_command(force_update, analyze_portfolio):
     """根据股票活跃度预测ETF表现
 
     分析市场股票活跃度，预测各类ETF的表现
-    
+
     使用 --analyze-portfolio 可以分析您的投资产品与ETF的关联
     """
     from .data.stock_activity_analyzer import stock_activity_analyzer
@@ -2354,9 +2615,10 @@ def predict_etf_command(force_update, analyze_portfolio):
     click.echo("=" * 60)
 
     if analyze_portfolio:
+        from decimal import Decimal
+
         from .data.csv_parser import CSVParser
         from .data.models import Portfolio
-        from decimal import Decimal
 
         click.echo("\n📋 分析投资组合中的ETF相关产品")
         click.echo("-" * 60)
@@ -2401,11 +2663,13 @@ def predict_etf_command(force_update, analyze_portfolio):
                             "type": "index",
                         }
                     products_list = etf_related[matched_index]["products"]
-                    products_list.append({
-                        "name": name,
-                        "type": inv_type,
-                        "amount": amount,
-                    })
+                    products_list.append(
+                        {
+                            "name": name,
+                            "type": inv_type,
+                            "amount": amount,
+                        }
+                    )
                     etf_related[matched_index]["total_amount"] += amount
                     continue
 
@@ -2432,17 +2696,21 @@ def predict_etf_command(force_update, analyze_portfolio):
                                     "type": "industry",
                                 }
                             industry_products_list = etf_related[etf_name]["products"]
-                            industry_products_list.append({
-                                "name": name,
-                                "type": inv_type,
-                                "amount": amount,
-                            })
+                            industry_products_list.append(
+                                {
+                                    "name": name,
+                                    "type": inv_type,
+                                    "amount": amount,
+                                }
+                            )
                             etf_related[etf_name]["total_amount"] += amount
                             break
 
             if etf_related:
                 click.echo(f"\n找到 {len(etf_related)} 个ETF相关投资:\n")
-                sorted_etf_related = sorted(etf_related.items(), key=lambda x: float(x[1]["total_amount"]), reverse=True)
+                sorted_etf_related = sorted(
+                    etf_related.items(), key=lambda x: float(x[1]["total_amount"]), reverse=True
+                )
                 for etf_name, data in sorted_etf_related:
                     click.echo(f"📈 {etf_name}")
                     click.echo(f"   投资金额: ¥{data['total_amount']:,.2f}")
@@ -2462,7 +2730,7 @@ def predict_etf_command(force_update, analyze_portfolio):
         market_index_file = stock_activity_analyzer.cache_path / "market_index_domestic.json"
         need_update_stock = False
         need_update_index = False
-        
+
         # 检查市场股票数据
         if not market_stock_file.exists():
             click.echo("\n📡 没有市场股票数据，正在获取...")
@@ -2474,6 +2742,7 @@ def predict_etf_command(force_update, analyze_portfolio):
                     update_time_str = data.get("update_time", "")
                     if update_time_str:
                         from datetime import datetime, timedelta
+
                         update_time = datetime.strptime(update_time_str, "%Y-%m-%d %H:%M:%S")
                         now = datetime.now()
                         age = now - update_time
@@ -2482,7 +2751,7 @@ def predict_etf_command(force_update, analyze_portfolio):
                             need_update_stock = True
             except Exception:
                 need_update_stock = True
-        
+
         # 检查指数市场数据
         if not market_index_file.exists():
             click.echo("\n📡 没有指数市场数据，正在获取...")
@@ -2494,6 +2763,7 @@ def predict_etf_command(force_update, analyze_portfolio):
                     update_time_str = data.get("更新时间", "")
                     if update_time_str:
                         from datetime import datetime, timedelta
+
                         update_time = datetime.strptime(update_time_str, "%Y-%m-%d %H:%M:%S")
                         now = datetime.now()
                         age = now - update_time
@@ -2502,21 +2772,24 @@ def predict_etf_command(force_update, analyze_portfolio):
                             need_update_index = True
             except Exception:
                 need_update_index = True
-        
+
         # 更新市场股票数据
         if need_update_stock:
             from .data.market_stock_fetcher import market_stock_fetcher
+
             stocks = market_stock_fetcher.fetch_all_cn_stocks(max_pages=5)
             if stocks:
                 market_stock_fetcher.save_market_stocks(stocks)
                 click.echo("✅ 市场股票数据更新完成\n")
             else:
                 click.echo("❌ 市场股票数据更新失败", err=True)
-        
+
         # 更新指数市场数据
         if need_update_index:
             import asyncio
+
             from .data.async_market_data_fetcher import AsyncMarketDataFetcher
+
             fetcher = AsyncMarketDataFetcher(max_concurrent=5, request_delay=0.3)
             domestic_success, _ = asyncio.run(fetcher.update_all_caches_async())
             if domestic_success:
@@ -2529,18 +2802,30 @@ def predict_etf_command(force_update, analyze_portfolio):
         click.echo("=" * 60)
 
         stocks = stock_activity_analyzer.load_market_stocks()
-        
+
         # 先显示指数基金（使用指数市场数据）
-        index_funds = {k: v for k, v in etf_related.items() if k in stock_activity_analyzer.INDEX_FUND_MAPPING}
-        industry_etfs = {k: v for k, v in etf_related.items() if k in stock_activity_analyzer.ETF_MAPPING}
-        
+        index_funds = {
+            k: v for k, v in etf_related.items() if k in stock_activity_analyzer.INDEX_FUND_MAPPING
+        }
+        industry_etfs = {
+            k: v for k, v in etf_related.items() if k in stock_activity_analyzer.ETF_MAPPING
+        }
+
         if index_funds:
             click.echo("\n📈 指数基金（使用指数市场数据）")
             click.echo("-" * 60)
-            for etf_name in sorted(index_funds.keys(), key=lambda x: index_funds[x]["total_amount"], reverse=True):
+            for etf_name in sorted(
+                index_funds.keys(), key=lambda x: index_funds[x]["total_amount"], reverse=True
+            ):
                 prediction = stock_activity_analyzer.predict_index_fund(etf_name)
                 if prediction:
-                    direction = "📈" if prediction.predicted_change > 0 else "📉" if prediction.predicted_change < 0 else "➡️"
+                    direction = (
+                        "📈"
+                        if prediction.predicted_change > 0
+                        else "📉"
+                        if prediction.predicted_change < 0
+                        else "➡️"
+                    )
                     click.echo(f"\n{direction} {prediction.etf_name} ({prediction.etf_code})")
                     click.echo(f"   预测涨跌: {prediction.predicted_change:+.2f}%")
                     click.echo(f"   置信度: {prediction.confidence:.0f}%")
@@ -2550,15 +2835,23 @@ def predict_etf_command(force_update, analyze_portfolio):
                         click.echo(f"   数据来源: 指数市场数据（今日）")
                     else:
                         click.echo(f"   数据来源: 指数市场数据（历史）")
-        
+
         # 再显示行业ETF（使用股票活跃度分析）
         if industry_etfs and stocks:
             click.echo("\n📊 行业ETF（使用股票活跃度分析）")
             click.echo("-" * 60)
-            for etf_name in sorted(industry_etfs.keys(), key=lambda x: industry_etfs[x]["total_amount"], reverse=True):
+            for etf_name in sorted(
+                industry_etfs.keys(), key=lambda x: industry_etfs[x]["total_amount"], reverse=True
+            ):
                 prediction = stock_activity_analyzer.predict_etf(etf_name, stocks)
                 if prediction:
-                    direction = "📈" if prediction.predicted_change > 0 else "📉" if prediction.predicted_change < 0 else "➡️"
+                    direction = (
+                        "📈"
+                        if prediction.predicted_change > 0
+                        else "📉"
+                        if prediction.predicted_change < 0
+                        else "➡️"
+                    )
                     click.echo(f"\n{direction} {prediction.etf_name} ({prediction.etf_code})")
                     click.echo(f"   预测涨跌: {prediction.predicted_change:+.2f}%")
                     click.echo(f"   置信度: {prediction.confidence:.1f}%")
@@ -2570,12 +2863,16 @@ def predict_etf_command(force_update, analyze_portfolio):
                     if prediction.top_gainers:
                         click.echo(f"   领涨股票:")
                         for stock in prediction.top_gainers[:3]:
-                            click.echo(f"     - {stock['name']} ({stock['code']}): {stock['change']:+.2f}%")
+                            click.echo(
+                                f"     - {stock['name']} ({stock['code']}): {stock['change']:+.2f}%"
+                            )
 
                     if prediction.top_losers:
                         click.echo(f"   领跌股票:")
                         for stock in prediction.top_losers[:3]:
-                            click.echo(f"     - {stock['name']} ({stock['code']}): {stock['change']:+.2f}%")
+                            click.echo(
+                                f"     - {stock['name']} ({stock['code']}): {stock['change']:+.2f}%"
+                            )
 
         # 添加市场热点行业分析
         click.echo("\n" + "=" * 60)
@@ -2597,28 +2894,34 @@ def predict_etf_command(force_update, analyze_portfolio):
                 click.echo(f"   平均换手率: {industry['avg_turnover']:.2f}%")
                 click.echo(f"   上涨比例: {industry['up_ratio']*100:.1f}%")
                 click.echo(f"   下跌比例: {industry['down_ratio']*100:.1f}%")
-                
+
                 # 获取该行业的股票详情
                 if stocks:
-                    etf_info = stock_activity_analyzer.ETF_MAPPING.get(industry['name'], {})
+                    etf_info = stock_activity_analyzer.ETF_MAPPING.get(industry["name"], {})
                     if etf_info:
-                        filter_func = etf_info.get('stocks_filter', lambda s: False)
+                        filter_func = etf_info.get("stocks_filter", lambda s: False)
                         related_stocks = [s for s in stocks if filter_func(s)]
-                        sorted_stocks = sorted(related_stocks, key=lambda x: x.get("change_percent", 0), reverse=True)
+                        sorted_stocks = sorted(
+                            related_stocks, key=lambda x: x.get("change_percent", 0), reverse=True
+                        )
                         up_stocks = [s for s in sorted_stocks if s.get("change_percent", 0) > 0]
                         down_stocks = [s for s in sorted_stocks if s.get("change_percent", 0) < 0]
                         top_gainers = up_stocks[:3]
                         top_losers = down_stocks[:3]
-                        
+
                         if top_gainers:
                             click.echo(f"   领涨股票:")
                             for stock in top_gainers:
-                                click.echo(f"     - {stock.get('name', '')} ({stock.get('code', '')}): {stock.get('change_percent', 0):+.2f}%")
-                        
+                                click.echo(
+                                    f"     - {stock.get('name', '')} ({stock.get('code', '')}): {stock.get('change_percent', 0):+.2f}%"
+                                )
+
                         if top_losers:
                             click.echo(f"   领跌股票:")
                             for stock in top_losers:
-                                click.echo(f"     - {stock.get('name', '')} ({stock.get('code', '')}): {stock.get('change_percent', 0):+.2f}%")
+                                click.echo(
+                                    f"     - {stock.get('name', '')} ({stock.get('code', '')}): {stock.get('change_percent', 0):+.2f}%"
+                                )
 
         if suggestions.get("suggestions"):
             click.echo("\n💡 投资建议")
@@ -2644,7 +2947,9 @@ def predict_etf_command(force_update, analyze_portfolio):
                     age = now - update_time
 
                     if age > timedelta(hours=1):
-                        click.echo(f"⚠️  市场数据已过期（更新于 {update_time_str}，距今 {int(age.total_seconds() / 3600)} 小时）")
+                        click.echo(
+                            f"⚠️  市场数据已过期（更新于 {update_time_str}，距今 {int(age.total_seconds() / 3600)} 小时）"
+                        )
                         need_update = True
                     else:
                         click.echo(f"✅ 市场数据有效（更新于 {update_time_str}）")
@@ -2678,8 +2983,12 @@ def predict_etf_command(force_update, analyze_portfolio):
     click.echo("\n📈 市场概览")
     click.echo("-" * 60)
     click.echo(f"  总股票数: {overview['total_stocks']}")
-    click.echo(f"  上涨: {overview['up_count']} ({overview['up_count']/overview['total_stocks']*100:.1f}%)")
-    click.echo(f"  下跌: {overview['down_count']} ({overview['down_count']/overview['total_stocks']*100:.1f}%)")
+    click.echo(
+        f"  上涨: {overview['up_count']} ({overview['up_count']/overview['total_stocks']*100:.1f}%)"
+    )
+    click.echo(
+        f"  下跌: {overview['down_count']} ({overview['down_count']/overview['total_stocks']*100:.1f}%)"
+    )
     click.echo(f"  平盘: {overview['flat_count']}")
     click.echo(f"  平均涨跌幅: {overview['avg_change']:+.2f}%")
     click.echo(f"  平均换手率: {overview['avg_turnover']:.2f}%")
@@ -2761,8 +3070,8 @@ def stock_pool_command(action, code, name, price, shares, status_filter, pool_na
         click.echo("-" * 100)
 
         for stock in stocks:
-            profit_str = f"{stock['profit']:+.2f}" if stock['profit'] != 0 else "-"
-            rate_str = f"{stock['profit_rate']:+.2f}%" if stock['profit_rate'] != 0 else "-"
+            profit_str = f"{stock['profit']:+.2f}" if stock["profit"] != 0 else "-"
+            rate_str = f"{stock['profit_rate']:+.2f}%" if stock["profit_rate"] != 0 else "-"
             click.echo(
                 f"{stock['code']:<12} {stock['name']:<12} {stock['status']:<8} "
                 f"{stock['buy_price']:>10.2f} {stock['current_price']:>10.2f} "
@@ -2830,8 +3139,8 @@ def strategy_command(action, name, min_score, max_results, fetch_market):
         asset-lens strategy set --name momentum
         asset-lens strategy screen --name value --min-score 70
     """
-    from .data.strategy_engine import strategy_engine
     from .data.investment_system import investment_system
+    from .data.strategy_engine import strategy_engine
 
     if action == "list":
         strategies = strategy_engine.list_strategies()
@@ -2954,9 +3263,10 @@ def backtest_command(strategy, start_date, end_date, capital, days):
         asset-lens backtest --strategy momentum --start-date 2024-01-01 --end-date 2024-03-01
     """
     from datetime import datetime, timedelta
+
     from .data.backtester import backtester
-    from .data.stock_history_fetcher import stock_history_fetcher
     from .data.market_stock_fetcher import market_stock_fetcher
+    from .data.stock_history_fetcher import stock_history_fetcher
 
     click.echo(f"\n📊 策略回测: {strategy}")
     click.echo("=" * 60)
@@ -2964,7 +3274,9 @@ def backtest_command(strategy, start_date, end_date, capital, days):
     click.echo("📡 正在获取历史数据...")
 
     end = datetime.now() if not end_date else datetime.strptime(end_date, "%Y-%m-%d")
-    start = end - timedelta(days=days) if not start_date else datetime.strptime(start_date, "%Y-%m-%d")
+    start = (
+        end - timedelta(days=days) if not start_date else datetime.strptime(start_date, "%Y-%m-%d")
+    )
 
     stocks = market_stock_fetcher.get_cached_market_stocks()
     if not stocks:
@@ -3055,6 +3367,7 @@ def investment_report_command(pool_name, output):
     导出投资系统数据到文件
     """
     from pathlib import Path
+
     from .data.investment_system import InvestmentSystem
 
     system = InvestmentSystem(pool_name)
@@ -3068,7 +3381,12 @@ def investment_report_command(pool_name, output):
 @cli.command("optimize-strategy")
 @click.option("--strategies", help="策略列表（逗号分隔）")
 @click.option("--days", type=int, default=60, help="历史数据天数")
-@click.option("--metric", type=click.Choice(["sharpe_ratio", "total_return", "win_rate"]), default="sharpe_ratio", help="优化指标")
+@click.option(
+    "--metric",
+    type=click.Choice(["sharpe_ratio", "total_return", "win_rate"]),
+    default="sharpe_ratio",
+    help="优化指标",
+)
 def optimize_strategy_command(strategies, days, metric):
     """策略优化
 
@@ -3079,9 +3397,10 @@ def optimize_strategy_command(strategies, days, metric):
         asset-lens optimize-strategy --metric win_rate --days 90
     """
     from datetime import datetime, timedelta
+
     from .data.investment_system import investment_system
-    from .data.stock_history_fetcher import stock_history_fetcher
     from .data.market_stock_fetcher import market_stock_fetcher
+    from .data.stock_history_fetcher import stock_history_fetcher
 
     click.echo("\n📊 策略优化")
     click.echo("=" * 60)
@@ -3155,8 +3474,8 @@ def track_stocks_command(action, pool_name, fetch_market):
         asset-lens track-stocks detect
         asset-lens track-stocks report
     """
-    from .data.stock_tracker import StockTracker
     from .data.market_stock_fetcher import market_stock_fetcher
+    from .data.stock_tracker import StockTracker
 
     tracker = StockTracker(pool_name)
 
@@ -3217,9 +3536,9 @@ def momentum_screen_command(min_score, max_results, add_to_pool, pool_name, use_
         asset-lens momentum-screen --add-to-pool
         asset-lens momentum-screen --min-score 70 --max-results 10
     """
-    from .data.strategy_engine import strategy_engine
-    from .data.stock_pool import StockPool
     from .data.market_stock_fetcher import market_stock_fetcher
+    from .data.stock_pool import StockPool
+    from .data.strategy_engine import strategy_engine
 
     click.echo("\n📊 动量策略选股")
     click.echo("=" * 60)
@@ -3229,7 +3548,7 @@ def momentum_screen_command(min_score, max_results, add_to_pool, pool_name, use_
         stocks = market_stock_fetcher.get_cached_market_stocks()
         if stocks:
             click.echo(f"✅ 使用缓存数据: {len(stocks)} 只股票")
-    
+
     if not stocks:
         click.echo("📡 正在获取市场数据...")
         stocks = market_stock_fetcher.fetch_all_cn_stocks()
@@ -3249,7 +3568,9 @@ def momentum_screen_command(min_score, max_results, add_to_pool, pool_name, use_
 
     click.echo(f"\n✅ 找到 {len(results)} 只符合条件的股票:\n")
     click.echo("=" * 120)
-    click.echo(f"{'排名':<4} {'代码':<10} {'名称':<12} {'现价':>8} {'涨跌%':>8} {'换手%':>8} {'策略分':>8} {'匹配条件':>8}")
+    click.echo(
+        f"{'排名':<4} {'代码':<10} {'名称':<12} {'现价':>8} {'涨跌%':>8} {'换手%':>8} {'策略分':>8} {'匹配条件':>8}"
+    )
     click.echo("-" * 120)
 
     for i, stock in enumerate(results[:max_results], 1):
@@ -3262,7 +3583,9 @@ def momentum_screen_command(min_score, max_results, add_to_pool, pool_name, use_
         matched = stock.get("matched_conditions", 0)
 
         change_str = f"{change:+.2f}%"
-        click.echo(f"{i:<4} {code:<10} {name:<12} {price:>8.2f} {change_str:>8} {turnover:>8.2f} {score:>8.1f} {matched:>8}")
+        click.echo(
+            f"{i:<4} {code:<10} {name:<12} {price:>8.2f} {change_str:>8} {turnover:>8.2f} {score:>8.1f} {matched:>8}"
+        )
 
     click.echo("=" * 120)
 
@@ -3277,7 +3600,9 @@ def momentum_screen_command(min_score, max_results, add_to_pool, pool_name, use_
             price = stock.get("current_price", 0)
             score = stock.get("strategy_score", 0)
 
-            if pool.add_stock(code, name, price, "watching", f"策略得分: {score:.1f}", strategy_score=score):
+            if pool.add_stock(
+                code, name, price, "watching", f"策略得分: {score:.1f}", strategy_score=score
+            ):
                 added += 1
 
         click.echo(f"\n✅ 已添加 {added} 只股票到股票池 '{pool_name}'")
@@ -3408,13 +3733,19 @@ def personal_data_command(action, index, etf, days):
 
 @cli.command("run-daily-tasks")
 @click.option("--run-now", is_flag=True, help="立即执行一次")
-def run_daily_tasks_command(run_now):
+@click.option("--schedule", is_flag=True, help="启动定时调度器")
+@click.option("--daily-time", default="09:30", help="每日执行时间（默认 09:30）")
+@click.option("--run-on-start", is_flag=True, help="启动时立即执行一次")
+def run_daily_tasks_command(run_now, schedule, daily_time, run_on_start):
     """运行每日任务
 
     自动执行: 数据更新、策略选股、股票跟踪、妖股检测
 
     示例:
-        asset-lens run-daily-tasks --run-now
+        asset-lens run-daily-tasks --run-now           # 立即执行一次
+        asset-lens run-daily-tasks --schedule          # 启动定时调度器（每日 09:30）
+        asset-lens run-daily-tasks --schedule --daily-time 10:00  # 自定义执行时间
+        asset-lens run-daily-tasks --schedule --run-on-start     # 启动时立即执行一次
     """
     from .data.scheduler import task_scheduler
 
@@ -3424,11 +3755,18 @@ def run_daily_tasks_command(run_now):
         for r in results:
             status = "✅" if r.get("status") == "completed" else "❌"
             click.echo(f"  {status} {r.get('task', 'unknown')}: {r.get('status', 'unknown')}")
-    else:
-        click.echo("\n🚀 启动定时任务调度器...")
-        click.echo("   每日执行时间: 09:30")
+    elif schedule:
+        click.echo(f"\n🚀 启动定时任务调度器...")
+        click.echo(f"   每日执行时间: {daily_time}")
         click.echo("   按 Ctrl+C 停止")
-        task_scheduler.start_scheduler(daily_time="09:30", run_on_start=False)
+        task_scheduler.start_scheduler(daily_time=daily_time, run_on_start=run_on_start)
+    else:
+        click.echo("\n请指定操作模式:")
+        click.echo("  --run-now     立即执行一次")
+        click.echo("  --schedule    启动定时调度器")
+        click.echo("\n示例:")
+        click.echo("  asset-lens run-daily-tasks --run-now")
+        click.echo("  asset-lens run-daily-tasks --schedule --daily-time 09:30")
 
 
 @cli.command("task-status")
@@ -3522,7 +3860,9 @@ def position_advice_command(pool_name, capital):
     click.echo("-" * 80)
 
     for advice in advices:
-        action_icon = "📈" if advice.action == "increase" else "📉" if advice.action == "decrease" else "➡️"
+        action_icon = (
+            "📈" if advice.action == "increase" else "📉" if advice.action == "decrease" else "➡️"
+        )
         click.echo(
             f"{advice.code:<10} {advice.name:<12} "
             f"{advice.current_position:>10.1%} {advice.suggested_position:>10.1%} "

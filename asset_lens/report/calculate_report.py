@@ -57,16 +57,17 @@ class CalculateReportGenerator:
         ]
         # 总投资金额不包含利息（与 ts-demo 保持一致）
         total_investment = sum(
-            (p.current_amount or Decimal("0")) * (p.usd_rate or usd_rate) if p.investment_type in [InvestmentType.US_STOCK, InvestmentType.USD_FUND]
-            else (p.current_amount or Decimal("0")) * (p.hkd_rate or hkd_rate) if p.investment_type in [InvestmentType.HK_STOCK, InvestmentType.HK_CASH, InvestmentType.HK_DIVIDEND_FUND]
+            (p.current_amount or Decimal("0")) * (p.usd_rate or usd_rate)
+            if p.investment_type in [InvestmentType.US_STOCK, InvestmentType.USD_FUND]
+            else (p.current_amount or Decimal("0")) * (p.hkd_rate or hkd_rate)
+            if p.investment_type
+            in [InvestmentType.HK_STOCK, InvestmentType.HK_CASH, InvestmentType.HK_DIVIDEND_FUND]
             else p.current_amount or Decimal("0")
             for p in all_products_with_amount
         )
 
         # 有效投资总额 = 能计算收益率的记录的当前金额总和（包含利息）
-        total_value = sum(
-            p.get_converted_amount(usd_rate, hkd_rate) for p in products_with_return
-        )
+        total_value = sum(p.get_converted_amount(usd_rate, hkd_rate) for p in products_with_return)
 
         # 无收益率数据的投资金额（包含利息，用于显示）
         no_return_value = sum(

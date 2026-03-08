@@ -130,6 +130,14 @@ Day 3: 筛选出 A, E   → A 累计入选 2 次，E 新增
 | "ETF预测" / "行业预测" | `make predict-etf` |
 | "我的ETF" / "持仓ETF预测" | `make predict-etf-portfolio` |
 
+### Data Sync (数据同步)
+
+| User Intent | Command |
+|-------------|---------|
+| "同步数据" / "同步 ts-demo 数据" / "同步最新数据" | `make sync-data` |
+| "同步最新" / "只同步最新数据" | `make sync-data-latest` |
+| "预览同步" / "查看同步内容" / "同步预览" | `make sync-data-preview` |
+
 ### Analysis (分析)
 
 | User Intent | Command |

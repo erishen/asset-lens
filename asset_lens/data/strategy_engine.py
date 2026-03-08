@@ -21,6 +21,7 @@ from ..config import config
 @dataclass
 class StrategyCondition:
     """策略条件"""
+
     name: str
     field: str
     operator: str  # >, <, >=, <=, ==, !=, between
@@ -32,6 +33,7 @@ class StrategyCondition:
 @dataclass
 class StrategyConfig:
     """策略配置"""
+
     name: str
     description: str = ""
     buy_conditions: List[StrategyCondition] = field(default_factory=list)
@@ -243,9 +245,7 @@ class StrategyEngine:
         with open(strategy_file, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
-    def evaluate_stock(
-        self, stock: Dict[str, Any], strategy_name: str = "value"
-    ) -> Dict[str, Any]:
+    def evaluate_stock(self, stock: Dict[str, Any], strategy_name: str = "value") -> Dict[str, Any]:
         """
         评估股票是否符合策略
 
@@ -272,14 +272,16 @@ class StrategyEngine:
             if matched:
                 matched_weight += float(condition.weight)
 
-            details.append({
-                "condition": condition.name,
-                "field": condition.field,
-                "expected": f"{condition.operator} {condition.value}",
-                "actual": value,
-                "matched": matched,
-                "weight": condition.weight,
-            })
+            details.append(
+                {
+                    "condition": condition.name,
+                    "field": condition.field,
+                    "expected": f"{condition.operator} {condition.value}",
+                    "actual": value,
+                    "matched": matched,
+                    "weight": condition.weight,
+                }
+            )
 
         score = (matched_weight / total_weight * 100) if total_weight > 0 else 0
         match = score >= 60  # 60分以上认为匹配
@@ -367,11 +369,13 @@ class StrategyEngine:
             evaluation = self.evaluate_stock(stock, strategy_name)
 
             if evaluation["match"] and evaluation["score"] >= min_score:
-                results.append({
-                    **stock,
-                    "strategy_score": evaluation["score"],
-                    "strategy_details": evaluation["details"],
-                })
+                results.append(
+                    {
+                        **stock,
+                        "strategy_score": evaluation["score"],
+                        "strategy_details": evaluation["details"],
+                    }
+                )
 
         results.sort(key=lambda x: x.get("strategy_score", 0), reverse=True)
         return results
@@ -395,6 +399,295 @@ class StrategyEngine:
             }
             for s in self.strategies.values()
         ]
+
+    def validate_strategy(
+        self,
+        strategy_name: str,
+        historical_data: Dict[str, List[Dict[str, Any]]],
+        initial_capital: float = 100000,
+        min_trades: int = 5,
+        min_win_rate: float = 0.4,
+        min_total_return: float = 0.0,
+    ) -> Dict[str, Any]:
+        """
+        验证策略有效性
+
+        Args:
+            strategy_name: 策略名称
+            historical_data: 历史数据
+            initial_capital: 初始资金
+            min_trades: 最小交易次数
+            min_win_rate: 最小胜率
+            min_total_return: 最小总收益率
+
+        Returns:
+            验证结果
+        """
+        from .backtester import Backtester
+
+        strategy = self.get_strategy(strategy_name)
+        if not strategy:
+            return {
+                "valid": False,
+                "reason": f"策略 {strategy_name} 不存在",
+            }
+
+        try:
+            backtester = Backtester()
+            result = backtester.run_backtest(
+                strategy_name=strategy_name,
+                historical_data=historical_data,
+                initial_capital=initial_capital,
+            )
+
+            issues = []
+
+            if result.total_trades < min_trades:
+                issues.append(f"交易次数不足 ({result.total_trades} < {min_trades})")
+
+            if result.win_rate < min_win_rate:
+                issues.append(f"胜率过低 ({result.win_rate:.1%} < {min_win_rate:.1%})")
+
+            if result.total_return < min_total_return:
+                issues.append(f"收益率不达标 ({result.total_return:.1%} < {min_total_return:.1%})")
+
+            if result.max_drawdown < -0.3:
+                issues.append(f"最大回撤过大 ({result.max_drawdown:.1%})")
+
+            return {
+                "valid": len(issues) == 0,
+                "strategy_name": strategy_name,
+                "total_trades": result.total_trades,
+                "win_rate": result.win_rate,
+                "total_return": result.total_return,
+                "annual_return": result.annual_return,
+                "max_drawdown": result.max_drawdown,
+                "sharpe_ratio": result.sharpe_ratio,
+                "profit_factor": result.profit_factor,
+                "issues": issues,
+                "recommendation": "策略验证通过" if not issues else "需要优化: " + "; ".join(issues),
+            }
+
+        except Exception as e:
+            return {
+                "valid": False,
+                "reason": f"回测失败: {e}",
+            }
+
+    def optimize_strategy_params(
+        self,
+        strategy_name: str,
+        historical_data: Dict[str, List[Dict[str, Any]]],
+        param_ranges: Optional[Dict[str, List[Any]]] = None,
+        optimization_metric: str = "sharpe_ratio",
+    ) -> Dict[str, Any]:
+        """
+        优化策略参数
+
+        Args:
+            strategy_name: 策略名称
+            historical_data: 历史数据
+            param_ranges: 参数范围 {"param_name": [value1, value2, ...]}
+            optimization_metric: 优化指标 (sharpe_ratio, total_return, win_rate)
+
+        Returns:
+            优化结果
+        """
+        from .backtester import Backtester
+
+        strategy = self.get_strategy(strategy_name)
+        if not strategy:
+            return {
+                "success": False,
+                "reason": f"策略 {strategy_name} 不存在",
+            }
+
+        if param_ranges is None:
+            param_ranges = {
+                "stop_loss": [-0.05, -0.08, -0.10, -0.12],
+                "take_profit": [0.10, 0.15, 0.20, 0.25],
+                "holding_period_max": [10, 20, 30, 60],
+            }
+
+        original_params = {
+            "stop_loss": strategy.stop_loss,
+            "take_profit": strategy.take_profit,
+            "holding_period_max": strategy.holding_period_max,
+        }
+
+        best_result = None
+        best_params = original_params.copy()
+        best_metric = float("-inf")
+
+        results = []
+
+        for stop_loss in param_ranges.get("stop_loss", [original_params["stop_loss"]]):
+            for take_profit in param_ranges.get("take_profit", [original_params["take_profit"]]):
+                for holding_period in param_ranges.get(
+                    "holding_period_max", [original_params["holding_period_max"]]
+                ):
+                    strategy.stop_loss = stop_loss
+                    strategy.take_profit = take_profit
+                    strategy.holding_period_max = holding_period
+
+                    try:
+                        backtester = Backtester()
+                        result = backtester.run_backtest(
+                            strategy_name=strategy_name,
+                            historical_data=historical_data,
+                        )
+
+                        metric_value = float(getattr(result, optimization_metric, 0))
+
+                        result_data = {
+                            "params": {
+                                "stop_loss": stop_loss,
+                                "take_profit": take_profit,
+                                "holding_period_max": holding_period,
+                            },
+                            "metric_value": metric_value,
+                            "total_return": result.total_return,
+                            "win_rate": result.win_rate,
+                            "max_drawdown": result.max_drawdown,
+                            "total_trades": result.total_trades,
+                        }
+
+                        results.append(result_data)
+
+                        if metric_value > best_metric:
+                            best_metric = metric_value
+                            best_params = {
+                                "stop_loss": stop_loss,
+                                "take_profit": take_profit,
+                                "holding_period_max": holding_period,
+                            }
+                            best_result = result
+
+                    except Exception:
+                        continue
+
+        strategy.stop_loss = float(original_params["stop_loss"])
+        strategy.take_profit = float(original_params["take_profit"])
+        strategy.holding_period_max = int(original_params["holding_period_max"])
+
+        return {
+            "success": best_result is not None,
+            "strategy_name": strategy_name,
+            "optimization_metric": optimization_metric,
+            "best_params": best_params,
+            "best_metric": best_metric,
+            "original_params": original_params,
+            "improvement": best_metric
+            - getattr(
+                Backtester().run_backtest(strategy_name, historical_data),
+                optimization_metric,
+                0,
+            ),
+            "all_results": sorted(
+                results,
+                key=lambda x: float(x["metric_value"])
+                if isinstance(x["metric_value"], (int, float))
+                else 0.0,
+                reverse=True,
+            )[:10],
+        }
+
+    def combine_strategies(
+        self,
+        strategy_names: List[str],
+        combination_method: str = "intersection",
+        weights: Optional[List[float]] = None,
+    ) -> Dict[str, Any]:
+        """
+        组合多个策略
+
+        Args:
+            strategy_names: 策略名称列表
+            combination_method: 组合方法 (intersection, union, weighted)
+            weights: 权重列表（仅用于 weighted 方法）
+
+        Returns:
+            组合结果
+        """
+        strategies_to_combine = []
+        for name in strategy_names:
+            strategy = self.get_strategy(name)
+            if not strategy:
+                return {
+                    "success": False,
+                    "reason": f"策略 {name} 不存在",
+                }
+            strategies_to_combine.append(strategy)
+
+        if weights and len(weights) != len(strategy_names):
+            return {
+                "success": False,
+                "reason": "权重数量与策略数量不匹配",
+            }
+
+        if weights is None:
+            weights = [1.0 / len(strategy_names)] * len(strategy_names)
+
+        combined_name = f"Combined_{'_'.join(strategy_names[:3])}"
+        combined_description = f"组合策略: {', '.join(strategy_names)}"
+
+        combined_buy_conditions = []
+        combined_sell_conditions = []
+
+        for strategy in strategies_to_combine:
+            combined_buy_conditions.extend(strategy.buy_conditions)
+            combined_sell_conditions.extend(strategy.sell_conditions)
+
+        avg_position_size = sum(s.position_size for s in strategies_to_combine) / len(
+            strategies_to_combine
+        )
+        avg_max_positions = int(
+            sum(s.max_positions for s in strategies_to_combine) / len(strategies_to_combine)
+        )
+        avg_stop_loss = sum(s.stop_loss for s in strategies_to_combine) / len(strategies_to_combine)
+        avg_take_profit = sum(s.take_profit for s in strategies_to_combine) / len(
+            strategies_to_combine
+        )
+
+        strategy = self.create_custom_strategy(
+            name=combined_name,
+            description=combined_description,
+            buy_conditions=[
+                {
+                    "name": c.name,
+                    "field": c.field,
+                    "operator": c.operator,
+                    "value": c.value,
+                    "weight": c.weight,
+                    "description": c.description,
+                }
+                for c in combined_buy_conditions
+            ],
+            sell_conditions=[
+                {
+                    "name": c.name,
+                    "field": c.field,
+                    "operator": c.operator,
+                    "value": c.value,
+                    "weight": c.weight,
+                    "description": c.description,
+                }
+                for c in combined_sell_conditions
+            ],
+            position_size=avg_position_size,
+            max_positions=avg_max_positions,
+            stop_loss=avg_stop_loss,
+            take_profit=avg_take_profit,
+        )
+
+        return {
+            "success": True,
+            "strategy_name": strategy.name,
+            "combination_method": combination_method,
+            "weights": weights,
+            "source_strategies": strategy_names,
+            "message": f"策略组合 {combined_name} 创建成功",
+        }
 
 
 strategy_engine = StrategyEngine()

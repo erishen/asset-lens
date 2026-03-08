@@ -54,9 +54,7 @@ class HTMLReportGenerator:
                     except Exception:
                         pass
 
-        html_content = self._generate_html_content(
-            portfolio_data, analysis_result, chart_images
-        )
+        html_content = self._generate_html_content(portfolio_data, analysis_result, chart_images)
 
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(html_content)
@@ -110,7 +108,7 @@ class HTMLReportGenerator:
 
             warnings_html = ""
             for warning in warnings:
-                warnings_html += f"<li class=\"warning\">⚠️ {warning}</li>\n"
+                warnings_html += f'<li class="warning">⚠️ {warning}</li>\n'
 
             analysis_html = f"""
         <section class="analysis-section">

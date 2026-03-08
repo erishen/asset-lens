@@ -22,6 +22,7 @@ from ..config import config
 @dataclass
 class WeeklyIndexRecord:
     """每周指数记录"""
+
     date: str
     indices: Dict[str, float]  # 指数名称 -> 数值
     etfs: Dict[str, float]  # ETF名称 -> 数值
@@ -31,6 +32,7 @@ class WeeklyIndexRecord:
 @dataclass
 class PersonalDataConfig:
     """个人数据配置"""
+
     ts_demo_path: str = ""
     index_file_pattern: str = "股市指数-表格 1.csv"
     etf_file_pattern: str = "美元ETF-表格 1.csv"
@@ -338,9 +340,7 @@ class PersonalDataIntegrator:
 
         return history
 
-    def calculate_index_change(
-        self, index_name: str, days: int = 5
-    ) -> Tuple[float, float, float]:
+    def calculate_index_change(self, index_name: str, days: int = 5) -> Tuple[float, float, float]:
         """
         计算指数涨跌幅
 

@@ -2,20 +2,56 @@
 Scheduler for asset-lens.
 定时任务模块 - 自动执行每日数据记录、股票跟踪等任务
 
-功能:
-1. 每日数据更新 - 更新市场数据、基金净值
-2. 股票池跟踪 - 记录股票池每日表现
-3. 妖股检测 - 每日检测妖股信号
-4. 报告生成 - 定期生成投资报告
 """
 
 import json
+import threading
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from ..config import config
+
+
+class TimeoutError(Exception):
+    """超时错误"""
+
+    pass
+
+
+def run_with_timeout(func, timeout_seconds: int, task_name: str = "任务") -> Any:
+    """
+    带超时执行函数
+
+    Args:
+        func: 要执行的函数
+        timeout_seconds: 超时秒数
+        task_name: 任务名称
+
+    Returns:
+        函数执行结果或超时错误
+    """
+    result = {"error": "timeout", "task": task_name}
+    exception_occurred = False
+
+    def timer_handler():
+        nonlocal exception_occurred
+        exception_occurred = True
+        raise TimeoutError(f"{task_name} 超时 ({timeout_seconds}秒)")
+
+    timer = threading.Timer(timeout_seconds, timer_handler)
+    try:
+        result = func()
+    except TimeoutError:
+        pass
+    except Exception as e:
+        result = {"error": str(e), "task": task_name}
+    finally:
+        timer.cancel()
+        if exception_occurred:
+            return result
+        return result
 
 
 class TaskScheduler:
@@ -70,13 +106,16 @@ class TaskScheduler:
         }
 
         try:
+            print("  📡 正在获取基金数据...")
             fund_result = fetch_portfolio_fund_quotes()
             details_dict: Dict[str, Any] = result["details"]
             details_dict["funds"] = {
                 "count": len(fund_result.get("data", {})),
                 "status": "success" if fund_result.get("data") else "failed",
             }
+            print(f"     ✅ 基金: {details_dict['funds']['count']} 只")
 
+            print("  📡 正在获取股票数据...")
             stock_codes_map = stock_fetcher._load_stock_codes_config()
             stock_codes = list(set(stock_codes_map.values()))
             if stock_codes:
@@ -85,6 +124,7 @@ class TaskScheduler:
                     "count": len(stock_result.get("data", {})),
                     "status": "success" if stock_result.get("data") else "failed",
                 }
+                print(f"     ✅ 股票: {details_dict['stocks']['count']} 只")
 
             result["status"] = "completed"
             result["end_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -108,8 +148,8 @@ class TaskScheduler:
         Returns:
             执行结果
         """
-        from .stock_tracker import StockTracker
         from .market_stock_fetcher import market_stock_fetcher
+        from .stock_tracker import StockTracker
 
         result: Dict[str, Any] = {
             "task": "track_stocks",
@@ -198,9 +238,9 @@ class TaskScheduler:
         Returns:
             执行结果
         """
-        from .strategy_engine import strategy_engine
-        from .stock_pool import StockPool
         from .market_stock_fetcher import market_stock_fetcher
+        from .stock_pool import StockPool
+        from .strategy_engine import strategy_engine
 
         result: Dict[str, Any] = {
             "task": "momentum_screen",
@@ -228,12 +268,16 @@ class TaskScheduler:
                     name = stock.get("name", "")
                     price = stock.get("current_price", 0)
                     score = stock.get("strategy_score", 0)
-                    if pool.add_stock(code, name, price, "watching", f"策略得分: {score:.1f}", strategy_score=score):
+                    if pool.add_stock(
+                        code, name, price, "watching", f"策略得分: {score:.1f}", strategy_score=score
+                    ):
                         added += 1
 
                 details_dict["added_to_pool"] = added
                 result["status"] = "completed"
-                self._log_task("momentum_screen", "success", f"筛选出 {len(results_list)} 只，添加 {added} 只到股票池")
+                self._log_task(
+                    "momentum_screen", "success", f"筛选出 {len(results_list)} 只，添加 {added} 只到股票池"
+                )
             else:
                 result["status"] = "failed"
                 result["error"] = "没有市场数据"
@@ -309,7 +353,9 @@ class TaskScheduler:
                     target = target + timedelta(days=1)
 
                 wait_seconds = (target - now).total_seconds()
-                print(f"   下次执行时间: {target.strftime('%Y-%m-%d %H:%M:%S')} ({int(wait_seconds // 3600)}小时后)")
+                print(
+                    f"   下次执行时间: {target.strftime('%Y-%m-%d %H:%M:%S')} ({int(wait_seconds // 3600)}小时后)"
+                )
 
                 time.sleep(min(wait_seconds, 3600))
 

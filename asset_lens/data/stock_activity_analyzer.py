@@ -83,7 +83,9 @@ class StockActivityAnalyzer:
         "新能源": {
             "codes": ["sz516160", "sh515790"],
             "description": "新能源ETF",
-            "stocks_filter": lambda s: any(k in s.get("name", "") for k in ["新能源", "锂电", "光伏", "风电", "储能"]),
+            "stocks_filter": lambda s: any(
+                k in s.get("name", "") for k in ["新能源", "锂电", "光伏", "风电", "储能"]
+            ),
             "weight": "equal",
             "type": "industry",
         },
@@ -97,14 +99,18 @@ class StockActivityAnalyzer:
         "医药": {
             "codes": ["sz159929", "sh512010"],
             "description": "医药ETF",
-            "stocks_filter": lambda s: any(k in s.get("name", "") for k in ["医药", "生物", "医疗", "制药"]),
+            "stocks_filter": lambda s: any(
+                k in s.get("name", "") for k in ["医药", "生物", "医疗", "制药"]
+            ),
             "weight": "equal",
             "type": "industry",
         },
         "消费": {
             "codes": ["sz159928", "sh510150"],
             "description": "消费ETF",
-            "stocks_filter": lambda s: any(k in s.get("name", "") for k in ["消费", "食品", "饮料", "家电", "零售"]),
+            "stocks_filter": lambda s: any(
+                k in s.get("name", "") for k in ["消费", "食品", "饮料", "家电", "零售"]
+            ),
             "weight": "equal",
             "type": "industry",
         },
@@ -112,8 +118,14 @@ class StockActivityAnalyzer:
             "codes": ["sz512660", "sh512680"],
             "description": "军工ETF",
             "stocks_filter": lambda s: (
-                any(k in s.get("name", "") for k in ["军工", "航天", "兵器", "中航", "航发", "航空动力", "航空工业", "沈飞", "成飞", "西飞"])
-                and not any(k in s.get("name", "") for k in ["南方航空", "东方航空", "中国国航", "海南航空", "吉祥航空", "春秋航空", "厦门航空", "航空股份"])
+                any(
+                    k in s.get("name", "")
+                    for k in ["军工", "航天", "兵器", "中航", "航发", "航空动力", "航空工业", "沈飞", "成飞", "西飞"]
+                )
+                and not any(
+                    k in s.get("name", "")
+                    for k in ["南方航空", "东方航空", "中国国航", "海南航空", "吉祥航空", "春秋航空", "厦门航空", "航空股份"]
+                )
             ),
             "weight": "equal",
             "type": "industry",
@@ -359,14 +371,15 @@ class StockActivityAnalyzer:
             # 检查数据更新时间
             update_time_str = data.get("更新时间", "")
             confidence = 99.0  # 默认置信度
-            
+
             if update_time_str:
                 try:
                     from datetime import datetime, timedelta
+
                     update_time = datetime.strptime(update_time_str, "%Y-%m-%d %H:%M:%S")
                     now = datetime.now()
                     age = now - update_time
-                    
+
                     # 根据数据新鲜度调整置信度
                     if age > timedelta(hours=24):
                         confidence = 85.0  # 数据较旧
@@ -409,7 +422,9 @@ class StockActivityAnalyzer:
 
         activity_score = min(metrics.activity_score / 100 * 40, 40)
 
-        direction_score = 30 - abs(metrics.up_count - metrics.down_count) / max(metrics.total_count, 1) * 30
+        direction_score = (
+            30 - abs(metrics.up_count - metrics.down_count) / max(metrics.total_count, 1) * 30
+        )
 
         return min(count_score + activity_score + direction_score, 100)
 
@@ -466,7 +481,9 @@ class StockActivityAnalyzer:
             "limit_down_count": len(limit_down),
             "limit_up_stocks": [
                 {"code": s.get("code"), "name": s.get("name"), "change": s.get("change_percent")}
-                for s in sorted(limit_up, key=lambda x: x.get("change_percent", 0), reverse=True)[:10]
+                for s in sorted(limit_up, key=lambda x: x.get("change_percent", 0), reverse=True)[
+                    :10
+                ]
             ],
             "limit_down_stocks": [
                 {"code": s.get("code"), "name": s.get("name"), "change": s.get("change_percent")}
@@ -496,16 +513,22 @@ class StockActivityAnalyzer:
 
             metrics = self.analyze_activity(related_stocks)
 
-            results.append({
-                "name": etf_name,
-                "code": etf_info["codes"][0],
-                "predicted_change": metrics.avg_change_percent,
-                "activity_score": metrics.activity_score,
-                "up_ratio": metrics.up_count / metrics.total_count if metrics.total_count > 0 else 0,
-                "down_ratio": metrics.down_count / metrics.total_count if metrics.total_count > 0 else 0,
-                "stock_count": len(related_stocks),
-                "avg_turnover": metrics.avg_turnover_rate,
-            })
+            results.append(
+                {
+                    "name": etf_name,
+                    "code": etf_info["codes"][0],
+                    "predicted_change": metrics.avg_change_percent,
+                    "activity_score": metrics.activity_score,
+                    "up_ratio": metrics.up_count / metrics.total_count
+                    if metrics.total_count > 0
+                    else 0,
+                    "down_ratio": metrics.down_count / metrics.total_count
+                    if metrics.total_count > 0
+                    else 0,
+                    "stock_count": len(related_stocks),
+                    "avg_turnover": metrics.avg_turnover_rate,
+                }
+            )
 
         # 按预测涨跌幅排序
         results.sort(key=lambda x: x["predicted_change"], reverse=True)
@@ -539,9 +562,9 @@ class StockActivityAnalyzer:
         # 热门行业判断：综合评分
         # 条件：预测涨跌 > 0.5% 且 (上涨比例 > 40% 或 活跃度 > 50)
         hot_industries = [
-            i for i in not_invested 
-            if i["predicted_change"] > 0.5 
-            and (i["up_ratio"] > 0.4 or i["activity_score"] > 50)
+            i
+            for i in not_invested
+            if i["predicted_change"] > 0.5 and (i["up_ratio"] > 0.4 or i["activity_score"] > 50)
         ]
 
         # 表现差的已投资行业
@@ -584,7 +607,9 @@ class StockActivityAnalyzer:
         # 换手率高的行业
         high_turnover = [i for i in not_invested if i["avg_turnover"] > 5]
         if high_turnover:
-            suggestions.append(f"📊 高换手行业: {', '.join([i['name'] for i in high_turnover[:3]])} 资金关注度高")
+            suggestions.append(
+                f"📊 高换手行业: {', '.join([i['name'] for i in high_turnover[:3]])} 资金关注度高"
+            )
 
         return suggestions
 

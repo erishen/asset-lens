@@ -437,71 +437,130 @@ class Portfolio:
                 # 对外币进行汇率转换（与 ts-demo 保持一致）
                 if product.investment_type in [InvestmentType.US_STOCK, InvestmentType.USD_FUND]:
                     amount = amount * (product.usd_rate or self.usd_rate)
-                elif product.investment_type in [InvestmentType.HK_STOCK, InvestmentType.HK_CASH, InvestmentType.HK_DIVIDEND_FUND]:
+                elif product.investment_type in [
+                    InvestmentType.HK_STOCK,
+                    InvestmentType.HK_CASH,
+                    InvestmentType.HK_DIVIDEND_FUND,
+                ]:
                     amount = amount * (product.hkd_rate or self.hkd_rate)
                 total += amount
         return total
 
     @property
     def total_initial(self) -> Decimal:
-        """总初始投资（与 ts-demo 保持一致，过滤没有开始日期的产品，对外币进行汇率转换）"""
+        """总初始投资（与 ts-demo 保持一致，使用交易记录计算净投入）"""
         total = Decimal("0")
         for product in self.products:
             # 过滤没有开始日期的产品（与 ts-demo 保持一致）
             if not product.start_date:
                 continue
-            if product.initial_amount:
-                amount = product.initial_amount
+
+            # 计算净投入（与 ts-demo 保持一致）
+            net_invest = self._calculate_net_invest(product)
+
+            if net_invest and net_invest > 0:
+                amount = net_invest
                 # 对外币进行汇率转换（与 ts-demo 保持一致）
                 if product.investment_type in [InvestmentType.US_STOCK, InvestmentType.USD_FUND]:
                     amount = amount * (product.usd_rate or self.usd_rate)
-                elif product.investment_type in [InvestmentType.HK_STOCK, InvestmentType.HK_CASH, InvestmentType.HK_DIVIDEND_FUND]:
+                elif product.investment_type in [
+                    InvestmentType.HK_STOCK,
+                    InvestmentType.HK_CASH,
+                    InvestmentType.HK_DIVIDEND_FUND,
+                ]:
                     amount = amount * (product.hkd_rate or self.hkd_rate)
                 total += amount
-            elif product.current_amount:
-                # 对于无初始金额的产品，使用当前金额（与 ts-demo 保持一致）
-                amount = product.current_amount
-                # 对外币进行汇率转换（与 ts-demo 保持一致）
+            elif product.initial_amount:
+                # 没有交易记录的产品，使用 CSV 初始金额
+                amount = product.initial_amount
                 if product.investment_type in [InvestmentType.US_STOCK, InvestmentType.USD_FUND]:
                     amount = amount * (product.usd_rate or self.usd_rate)
-                elif product.investment_type in [InvestmentType.HK_STOCK, InvestmentType.HK_CASH, InvestmentType.HK_DIVIDEND_FUND]:
+                elif product.investment_type in [
+                    InvestmentType.HK_STOCK,
+                    InvestmentType.HK_CASH,
+                    InvestmentType.HK_DIVIDEND_FUND,
+                ]:
                     amount = amount * (product.hkd_rate or self.hkd_rate)
                 total += amount
         return total
 
+    def _calculate_net_invest(self, product: InvestmentProduct) -> Decimal | None:
+        """计算产品的净投入（从交易记录中计算 totalBuy - totalSell）
+
+        注意：定投基金类型使用 CSV 初始金额（与 ts-demo 保持一致）
+        """
+        from .transaction_parser import calculate_net_invest_from_transactions
+
+        # 定投基金类型直接使用 CSV 初始金额（与 ts-demo 保持一致）
+        if product.investment_type == InvestmentType.DCA_FUND:
+            return product.initial_amount
+
+        if not product.transaction_records:
+            return None
+
+        # 判断是否为 QDII 基金
+        is_qdii = product.investment_type in [InvestmentType.USD_FUND]
+
+        # 获取数据目录后缀（用于解析 "now" 日期）
+        suffix = self._get_data_suffix()
+
+        net_invest = calculate_net_invest_from_transactions(
+            product.transaction_records, suffix, is_qdii, product.initial_amount
+        )
+
+        return net_invest if net_invest > 0 else None
+
+    def _get_data_suffix(self) -> int:
+        """获取数据目录后缀"""
+        from ..config import config
+
+        data_dir = config.get_latest_data_dir()
+        if data_dir and data_dir.name.startswith("money_csv_"):
+            try:
+                return int(data_dir.name.replace("money_csv_", ""))
+            except:
+                pass
+
+        today = date.today()
+        return today.year * 10000 + today.month * 100 + today.day
+
     @property
     def total_profit(self) -> Decimal:
-        """总收益（与 ts-demo 保持一致，过滤没有开始日期的产品，对外币进行汇率转换）"""
+        """总收益（与 ts-demo 保持一致：currentAmount - netInvest）"""
         total = Decimal("0")
         for product in self.products:
             # 过滤没有开始日期的产品（与 ts-demo 保持一致）
             if not product.start_date:
                 continue
-            # 只计算有初始投资的产品
-            if product.initial_amount and product.current_amount:
-                current = product.current_amount
+
+            # 计算净投入（与 ts-demo 保持一致）
+            net_invest = self._calculate_net_invest(product)
+
+            # 确定使用的初始金额
+            if net_invest and net_invest > 0:
+                initial = net_invest
+            elif product.initial_amount:
                 initial = product.initial_amount
+            else:
+                continue
+
+            if product.current_amount:
+                current = product.current_amount
                 # 对外币进行汇率转换（与 ts-demo 保持一致）
                 if product.investment_type in [InvestmentType.US_STOCK, InvestmentType.USD_FUND]:
                     rate = product.usd_rate or self.usd_rate
                     current = current * rate
                     initial = initial * rate
-                elif product.investment_type in [InvestmentType.HK_STOCK, InvestmentType.HK_CASH, InvestmentType.HK_DIVIDEND_FUND]:
+                elif product.investment_type in [
+                    InvestmentType.HK_STOCK,
+                    InvestmentType.HK_CASH,
+                    InvestmentType.HK_DIVIDEND_FUND,
+                ]:
                     rate = product.hkd_rate or self.hkd_rate
                     current = current * rate
                     initial = initial * rate
                 total += current - initial
-            
-            # 加上利息发放
-            if product.interest_payment and product.interest_payment > 0:
-                interest = product.interest_payment
-                # 对外币进行汇率转换（与 ts-demo 保持一致）
-                if product.investment_type in [InvestmentType.US_STOCK, InvestmentType.USD_FUND]:
-                    interest = interest * (product.usd_rate or self.usd_rate)
-                elif product.investment_type in [InvestmentType.HK_STOCK, InvestmentType.HK_CASH, InvestmentType.HK_DIVIDEND_FUND]:
-                    interest = interest * (product.hkd_rate or self.hkd_rate)
-                total += interest
-        
+
         return total
 
     @property
@@ -523,7 +582,9 @@ class Portfolio:
                     "products": [],
                 }
             type_stats[type_name]["count"] += 1
-            type_stats[type_name]["total_value"] += product.get_converted_amount(self.usd_rate, self.hkd_rate)
+            type_stats[type_name]["total_value"] += product.get_converted_amount(
+                self.usd_rate, self.hkd_rate
+            )
             type_stats[type_name]["products"].append(product)
 
         total = sum(stats["total_value"] for stats in type_stats.values())
@@ -547,7 +608,9 @@ class Portfolio:
                     "products": [],
                 }
             risk_stats[risk_name]["count"] += 1
-            risk_stats[risk_name]["total_value"] += product.get_converted_amount(self.usd_rate, self.hkd_rate)
+            risk_stats[risk_name]["total_value"] += product.get_converted_amount(
+                self.usd_rate, self.hkd_rate
+            )
             risk_stats[risk_name]["products"].append(product)
 
         total = sum(stats["total_value"] for stats in risk_stats.values())

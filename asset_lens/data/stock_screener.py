@@ -21,6 +21,7 @@ from ..config import config
 @dataclass
 class FundamentalConfig:
     """基本面筛选配置"""
+
     pe_max: float = 30.0
     pe_min: float = 0.0
     pb_max: float = 5.0
@@ -36,6 +37,7 @@ class FundamentalConfig:
 @dataclass
 class TechnicalConfig:
     """技术面筛选配置"""
+
     ma_trend: bool = True
     macd_golden_cross: bool = False
     rsi_oversold: bool = False
@@ -51,6 +53,7 @@ class TechnicalConfig:
 @dataclass
 class ScoringWeights:
     """评分权重配置"""
+
     fundamental: float = 0.4
     technical: float = 0.3
     capital_flow: float = 0.2
@@ -60,6 +63,7 @@ class ScoringWeights:
 @dataclass
 class ScreenerConfig:
     """筛选器总配置"""
+
     fundamental: FundamentalConfig = field(default_factory=FundamentalConfig)
     technical: TechnicalConfig = field(default_factory=TechnicalConfig)
     scoring_weights: ScoringWeights = field(default_factory=ScoringWeights)
@@ -173,11 +177,13 @@ class StockScreener:
             if market_cap < cfg.market_cap_min or market_cap > cfg.market_cap_max:
                 continue
 
-            results.append({
-                **stock,
-                "fundamental_pass": True,
-                "fundamental_score": self._calculate_fundamental_score(stock),
-            })
+            results.append(
+                {
+                    **stock,
+                    "fundamental_pass": True,
+                    "fundamental_score": self._calculate_fundamental_score(stock),
+                }
+            )
 
         return results
 
@@ -251,11 +257,13 @@ class StockScreener:
             technical_pass = self._check_technical_conditions(stock, klines, cfg)
 
             if technical_pass:
-                results.append({
-                    **stock,
-                    "technical_pass": True,
-                    "technical_score": technical_score,
-                })
+                results.append(
+                    {
+                        **stock,
+                        "technical_pass": True,
+                        "technical_score": technical_score,
+                    }
+                )
 
         return results
 
@@ -504,12 +512,14 @@ class StockScreener:
             min_match_rate = strategy.get("min_match_rate", 0.6)
 
             if match_rate >= min_match_rate:
-                results.append({
-                    **stock,
-                    "custom_score": score,
-                    "match_rate": round(match_rate * 100, 1),
-                    "conditions_met": f"{conditions_met}/{total_conditions}",
-                })
+                results.append(
+                    {
+                        **stock,
+                        "custom_score": score,
+                        "match_rate": round(match_rate * 100, 1),
+                        "conditions_met": f"{conditions_met}/{total_conditions}",
+                    }
+                )
 
         results.sort(key=lambda x: x.get("custom_score", 0), reverse=True)
         return results[: strategy.get("max_results", 20)]
