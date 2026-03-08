@@ -5,7 +5,8 @@ IRR（内部收益率）计算核心逻辑
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import List
+from functools import lru_cache
+from typing import List, Tuple
 
 try:
     from numpy import irr as numpy_irr  # type: ignore
@@ -17,11 +18,103 @@ except ImportError:
 from ..data.models import Transaction
 
 
+def _hash_cashflows_with_days(cashflows: List[dict]) -> Tuple:
+    """将现金流列表转换为可哈希的元组，用于缓存"""
+    return tuple((cf["amount"], cf["days"]) for cf in cashflows)
+
+
+def _hash_cashflows(cashflows: List[float]) -> Tuple[float, ...]:
+    """将现金流列表转换为可哈希的元组，用于缓存"""
+    return tuple(cashflows)
+
+
+@lru_cache(maxsize=256)
+def _calculate_irr_with_days_cached(
+    cashflows_hash: Tuple,
+    guess: float = 0.1,
+    tolerance: float = 1e-6,
+    max_iterations: int = 200,
+) -> float | None:
+    """
+    带缓存的 IRR 计算（使用带天数的现金流）
+    """
+    cashflows = [{"amount": cf[0], "days": cf[1]} for cf in cashflows_hash]
+    rate = guess
+    for _ in range(max_iterations):
+        npv = 0.0
+        dnpv = 0.0
+        for cf in cashflows:
+            factor = (1 + rate) ** (cf["days"] / 360)
+            npv += cf["amount"] / factor
+            dnpv -= (cf["amount"] * cf["days"]) / 360 / (factor * (1 + rate))
+
+        if abs(npv) < tolerance:
+            return rate
+
+        if abs(dnpv) < tolerance:
+            rate += 0.01
+            continue
+
+        new_rate = rate - npv / dnpv
+        clamped_rate = max(-0.99, min(10, new_rate))
+
+        if abs(clamped_rate - rate) < tolerance:
+            return clamped_rate
+
+        rate = clamped_rate
+
+    return rate
+
+
+@lru_cache(maxsize=256)
+def _calculate_irr_numpy_cached(cashflows_hash: Tuple[float, ...]) -> float | None:
+    """
+    带缓存的 numpy IRR 计算
+    """
+    if not HAS_NUMPY:
+        return None
+    cashflows = list(cashflows_hash)
+    try:
+        irr_value = numpy_irr(cashflows)
+        return irr_value * 100 if irr_value is not None else None
+    except Exception:
+        return None
+
+
 class IRRCalculator:
-    """IRR 计算器"""
+    """IRR 计算器（带缓存优化）"""
+
+    _cache_hits = 0
+    _cache_misses = 0
 
     def __init__(self):
         self.use_numpy = HAS_NUMPY
+
+    @classmethod
+    def get_cache_stats(cls) -> dict:
+        """获取缓存统计信息"""
+        days_info = _calculate_irr_with_days_cached.cache_info()
+        numpy_info = _calculate_irr_numpy_cached.cache_info()
+        return {
+            "days_cache": {
+                "hits": days_info.hits,
+                "misses": days_info.misses,
+                "size": days_info.currsize,
+                "maxsize": days_info.maxsize,
+            },
+            "numpy_cache": {
+                "hits": numpy_info.hits,
+                "misses": numpy_info.misses,
+                "size": numpy_info.currsize,
+                "maxsize": numpy_info.maxsize,
+            },
+        }
+
+    @classmethod
+    def clear_cache(cls):
+        """清除所有缓存"""
+        _calculate_irr_with_days_cached.cache_clear()
+        _calculate_irr_numpy_cached.cache_clear()
 
     @staticmethod
     def calculate_irr_with_days(
@@ -40,31 +133,10 @@ class IRRCalculator:
         Returns:
             IRR 值（小数形式，如 0.1 表示 10%）
         """
-        rate = guess
-        for _ in range(max_iterations):
-            npv = 0.0
-            dnpv = 0.0
-            for cf in cashflows:
-                factor = (1 + rate) ** (cf["days"] / 360)
-                npv += cf["amount"] / factor
-                dnpv -= (cf["amount"] * cf["days"]) / 360 / (factor * (1 + rate))
-
-            if abs(npv) < tolerance:
-                return rate
-
-            if abs(dnpv) < tolerance:
-                rate += 0.01
-                continue
-
-            new_rate = rate - npv / dnpv
-            clamped_rate = max(-0.99, min(10, new_rate))
-
-            if abs(clamped_rate - rate) < tolerance:
-                return clamped_rate
-
-            rate = clamped_rate
-
-        return rate
+        if not cashflows:
+            return None
+        cashflows_hash = _hash_cashflows_with_days(cashflows)
+        return _calculate_irr_with_days_cached(cashflows_hash, guess, tolerance, max_iterations)
 
     @staticmethod
     def calculate_irr_numpy(cashflows: List[float]) -> float | None:
