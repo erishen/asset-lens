@@ -43,6 +43,13 @@
   - [x] 图表自适应移动端显示
   - [x] 禁止用户缩放 (user-scalable=no)
 
+- [x] **架构优化 - 缓存机制**
+  - [x] IRRCalculator 添加 @lru_cache 缓存优化
+  - [x] 新增 PortfolioCalculator 服务类
+  - [x] 统一汇率转换逻辑 `_convert_amount()`
+  - [x] 实例级缓存 + `clear_cache()` 方法
+  - [x] 测试用例增加到 1246 个
+
 ### 2026-03-07 新增
 
 - [x] **数据同步功能**
