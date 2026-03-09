@@ -93,13 +93,24 @@ class MarketStockFetcher:
                     continue
 
                 try:
-                    price = float(row.get("最新价", 0)) if row.get("最新价") else 0
-                    change_percent = float(row.get("涨跌幅", 0)) if row.get("涨跌幅") else 0
-                    volume = float(row.get("成交量", 0)) if row.get("成交量") else 0
-                    amount = float(row.get("成交额", 0)) if row.get("成交额") else 0
-                    turnover_rate = float(row.get("换手率", 0)) if row.get("换手率") else 0
-                    pe_ratio = float(row.get("市盈率-动态", 0)) if row.get("市盈率-动态") else 0
-                    market_cap = float(row.get("总市值", 0)) / 100000000 if row.get("总市值") else 0
+                    import math
+                    
+                    def safe_float(val, default=0):
+                        """安全转换为浮点数，处理 NaN"""
+                        try:
+                            if val is None or (isinstance(val, float) and math.isnan(val)):
+                                return default
+                            return float(val)
+                        except (ValueError, TypeError):
+                            return default
+                    
+                    price = safe_float(row.get("最新价", 0))
+                    change_percent = safe_float(row.get("涨跌幅", 0))
+                    volume = safe_float(row.get("成交量", 0))
+                    amount = safe_float(row.get("成交额", 0))
+                    turnover_rate = safe_float(row.get("换手率", 0))
+                    pe_ratio = safe_float(row.get("市盈率-动态", 0))
+                    market_cap = safe_float(row.get("总市值", 0)) / 100000000
                 except (ValueError, TypeError):
                     continue
 

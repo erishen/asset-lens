@@ -244,11 +244,15 @@ class StockDataFetcher:
         import requests  # type: ignore
 
         try:
+            from ..utils.http_client import get_json
+            
             api_key = config.finnhub_api_key or "demo"
             url = f"https://api.finnhub.io/api/v1/quote?symbol={symbol}&token={api_key}"
 
-            response = requests.get(url, timeout=10)
-            data = response.json()
+            data = get_json(url, timeout=10)
+
+            if data is None:
+                return None
 
             current_price = float(data.get("c", 0))
             prev_close = float(data.get("pc", 0))
