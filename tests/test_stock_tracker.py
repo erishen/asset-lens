@@ -200,65 +200,78 @@ class TestStockTracker:
 
     def test_record_batch(self, tracker):
         """测试批量记录"""
-        stocks = [
-            {
-                "code": "sh600519",
-                "name": "贵州茅台",
-                "open": 1800.0,
-                "close": 1820.0,
-                "high": 1830.0,
-                "low": 1790.0,
-                "change_percent": 1.5,
-                "turnover_rate": 0.5,
-                "volume": 1000000,
-                "amount": 1800000000,
-            },
-            {
-                "code": "sh600000",
-                "name": "浦发银行",
-                "open": 10.0,
-                "close": 10.2,
-                "high": 10.3,
-                "low": 9.9,
-                "change_percent": 2.0,
-                "turnover_rate": 1.5,
-                "volume": 5000000,
-                "amount": 50000000,
-            },
-        ]
+        # 先添加股票到股票池
+        from asset_lens.data.stock_pool import StockPool, StockPosition
+        from datetime import date
+        
+        with patch.object(tracker.stock_pool, 'positions', {
+            "sh600519": StockPosition(code="sh600519", name="贵州茅台", status="holding", buy_price=1800.0, buy_date=date(2024, 1, 1)),
+            "sh600000": StockPosition(code="sh600000", name="浦发银行", status="holding", buy_price=10.0, buy_date=date(2024, 1, 1)),
+        }):
+            stocks = [
+                {
+                    "code": "sh600519",
+                    "name": "贵州茅台",
+                    "open": 1800.0,
+                    "close": 1820.0,
+                    "high": 1830.0,
+                    "low": 1790.0,
+                    "change_percent": 1.5,
+                    "turnover_rate": 0.5,
+                    "volume": 1000000,
+                    "amount": 1800000000,
+                },
+                {
+                    "code": "sh600000",
+                    "name": "浦发银行",
+                    "open": 10.0,
+                    "close": 10.2,
+                    "high": 10.3,
+                    "low": 9.9,
+                    "change_percent": 2.0,
+                    "turnover_rate": 1.5,
+                    "volume": 5000000,
+                    "amount": 50000000,
+                },
+            ]
 
-        result = tracker.record_batch(stocks)
+            result = tracker.record_batch(stocks)
 
-        assert result >= 1
-        assert "sh600519" in tracker.daily_records
+            assert result >= 1
 
     def test_record_batch_skips_duplicates(self, tracker):
         """测试批量记录跳过重复数据"""
-        stocks = [
-            {
-                "code": "sh600519",
-                "name": "贵州茅台",
-                "open": 1800.0,
-                "close": 1820.0,
-                "high": 1830.0,
-                "low": 1790.0,
-                "change_percent": 1.5,
-                "turnover_rate": 0.5,
-                "volume": 1000000,
-                "amount": 1800000000,
-            },
-        ]
+        from asset_lens.data.stock_pool import StockPosition
+        from datetime import date
+        
+        with patch.object(tracker.stock_pool, 'positions', {
+            "sh600519": StockPosition(code="sh600519", name="贵州茅台", status="holding", buy_price=1800.0, buy_date=date(2024, 1, 1)),
+        }):
+            stocks = [
+                {
+                    "code": "sh600519",
+                    "name": "贵州茅台",
+                    "open": 1800.0,
+                    "close": 1820.0,
+                    "high": 1830.0,
+                    "low": 1790.0,
+                    "change_percent": 1.5,
+                    "turnover_rate": 0.5,
+                    "volume": 1000000,
+                    "amount": 1800000000,
+                },
+            ]
 
-        # 第一次批量记录
-        result1 = tracker.record_batch(stocks)
-        assert result1 == 1
+            # 第一次批量记录
+            result1 = tracker.record_batch(stocks)
+            assert result1 == 1
 
-        # 第二次批量记录（重复）
-        result2 = tracker.record_batch(stocks)
-        assert result2 == 0
+            # 第二次批量记录（重复）
+            result2 = tracker.record_batch(stocks)
+            assert result2 == 0
 
-        # 确保只有一条记录
-        assert len(tracker.daily_records["sh600519"]) == 1
+            # 确保只有一条记录
+            assert len(tracker.daily_records["sh600519"]) == 1
 
     def test_detect_monster_stocks_empty(self, tracker):
         """测试检测妖股 - 空数据"""

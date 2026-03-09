@@ -1108,13 +1108,13 @@ def pnl(data_mode, weekly):
 
         # 显示明细表格
         if result["details"]:
-            table = Table(title="\n产品盈亏明细", show_lines=False, expand=True)
-            table.add_column("产品名称", style="cyan", no_wrap=True, overflow="ellipsis", min_width=20)
-            table.add_column("类型", style="green", no_wrap=True, overflow="ellipsis", min_width=10)
-            table.add_column("金额", justify="right", style="yellow", min_width=10)
+            table = Table(title="\n产品盈亏明细", show_lines=False, expand=True, box=box.MINIMAL)
+            table.add_column("产品名称", style="cyan", no_wrap=True, overflow="ellipsis", min_width=18)
+            table.add_column("类型", style="green", no_wrap=True, overflow="ellipsis", min_width=8)
+            table.add_column("金额", justify="right", style="yellow", min_width=8)
             table.add_column("盈亏", justify="right", min_width=8)
-            table.add_column("收益率", justify="right", min_width=7)
-            table.add_column("指数", style="blue", no_wrap=True, min_width=6)
+            table.add_column("收益率", justify="right", min_width=6)
+            table.add_column("指数", style="blue", no_wrap=True, min_width=5)
 
             for detail in result["details"][:20]:
                 table.add_row(
@@ -3414,7 +3414,13 @@ def optimize_strategy_command(strategies, days, metric):
 
     stocks = market_stock_fetcher.get_cached_market_stocks()
     if not stocks:
-        click.echo("❌ 没有市场数据，请先运行 'make fetch-market-stocks'", err=True)
+        click.echo("⚠️ 没有缓存的市场数据，正在从市场获取...")
+        stocks = market_stock_fetcher.fetch_cn_stock_list()
+        if stocks:
+            market_stock_fetcher.save_market_stocks(stocks)
+            click.echo(f"✅ 获取 {len(stocks)} 只股票")
+        else:
+            click.echo("❌ 无法获取市场数据", err=True)
         return
 
     stock_codes = [s.get("code", "") for s in stocks[:100] if s.get("code")]
@@ -3892,6 +3898,70 @@ def stop_loss_command(code, buy_price, strategy):
     click.echo(f"止盈位: {result['take_profit_price']:.2f} ({result['take_profit']:.2%})")
     click.echo(f"风险收益比: {result['risk_reward_ratio']:.2f}")
     click.echo("=" * 60)
+
+
+@cli.command()
+def version():
+    """显示版本信息"""
+    click.echo("")
+    click.echo("  asset-lens v1.0.0")
+    click.echo("  个人资产操作系统")
+    click.echo("")
+
+
+@cli.command()
+def check():
+    """项目自检"""
+    click.echo("")
+    click.echo("  ╔════════════════════════════════════════════════════════════╗")
+    click.echo("  ║                  项目自检                                   ║")
+    click.echo("  ╚════════════════════════════════════════════════════════════╝")
+    click.echo("")
+    
+    checks_passed = 0
+    checks_failed = 0
+    
+    # 检查配置
+    try:
+        from .config import config
+        click.echo("  ✅ 配置模块正常")
+        checks_passed += 1
+    except Exception as e:
+        click.echo(f"  ❌ 配置模块失败: {e}")
+        checks_failed += 1
+    
+    # 检查数据加载
+    try:
+        from .data.csv_parser import CSVParser
+        CSVParser.load_data()
+        click.echo("  ✅ 数据加载正常")
+        checks_passed += 1
+    except Exception as e:
+        click.echo(f"  ❌ 数据加载失败: {e}")
+        checks_failed += 1
+    
+    # 检查市场数据获取器
+    try:
+        from .data.market_data_fetcher import MarketDataFetcher
+        MarketDataFetcher()
+        click.echo("  ✅ 市场数据获取器正常")
+        checks_passed += 1
+    except Exception as e:
+        click.echo(f"  ❌ 市场数据获取器失败: {e}")
+        checks_failed += 1
+    
+    # 检查 Web API
+    try:
+        from .web.api import app
+        click.echo("  ✅ Web API 正常")
+        checks_passed += 1
+    except Exception as e:
+        click.echo(f"  ❌ Web API 失败: {e}")
+        checks_failed += 1
+    
+    click.echo("")
+    click.echo(f"  检查结果: {checks_passed} 通过, {checks_failed} 失败")
+    click.echo("")
 
 
 if __name__ == "__main__":

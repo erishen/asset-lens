@@ -225,6 +225,7 @@ class TestMarketStockFetcher:
         fetcher._akshare = mock_ak
 
         result = fetcher.fetch_cn_stock_list()
+        # 无效代码（不以 6/0/3/68 开头）会被跳过
         assert len(result) == 0
 
     def test_fetch_cn_stock_list_skip_empty_name(self, fetcher):
@@ -248,6 +249,7 @@ class TestMarketStockFetcher:
         fetcher._akshare = mock_ak
 
         result = fetcher.fetch_cn_stock_list()
+        # 空名称的股票会被跳过
         assert len(result) == 0
 
     def test_fetch_cn_stock_list_value_error(self, fetcher):
@@ -271,7 +273,10 @@ class TestMarketStockFetcher:
         fetcher._akshare = mock_ak
 
         result = fetcher.fetch_cn_stock_list()
-        assert len(result) == 0
+        # 无效值会被转换为 0，所以结果不为空
+        assert len(result) == 1
+        assert result[0]["current_price"] == 0
+        assert result[0]["change_percent"] == 0
 
     def test_fetch_cn_stock_list_none_data(self, fetcher):
         """测试获取A股股票列表 - None 数据"""

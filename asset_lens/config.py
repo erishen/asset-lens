@@ -54,6 +54,7 @@ class Config:
         self.finnhub_api_key: str | None = os.getenv("FINNHUB_API_KEY")
         self.alphavantage_api_key: str | None = os.getenv("ALPHAVANTAGE_API_KEY")
         self.tushare_token: str | None = os.getenv("TUSHARE_TOKEN")
+        self.fred_api_key: str | None = os.getenv("FRED_API_KEY")
 
         self.project_root = Path(__file__).parent.parent
         self.sample_data_path = Path(os.getenv("SAMPLE_DATA_PATH", "data/sample_data"))

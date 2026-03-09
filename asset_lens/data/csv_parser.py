@@ -642,9 +642,26 @@ class CSVParser:
             return cashflows
 
         for trans in transactions:
-            # 解析交易日期
-            date_parts = trans["date"].split("/")
-            trans_date = date(int(date_parts[0]), int(date_parts[1]), int(date_parts[2]))
+            # 解析交易日期 - 支持多种格式
+            date_str = trans["date"]
+            try:
+                # 尝试 YYYY/MM/DD-MM/DD 范围格式
+                if "/" in date_str and "-" in date_str:
+                    # 格式: 2025/12/29-2025/12/31，取第一个日期
+                    date_parts = date_str.split("-")[0].split("/")
+                    trans_date = date(int(date_parts[0]), int(date_parts[1]), int(date_parts[2]))
+                elif "/" in date_str:
+                    date_parts = date_str.split("/")
+                    trans_date = date(int(date_parts[0]), int(date_parts[1]), int(date_parts[2]))
+                elif "-" in date_str and date_str.count("-") == 2:
+                    date_parts = date_str.split("-")
+                    trans_date = date(int(date_parts[0]), int(date_parts[1]), int(date_parts[2]))
+                else:
+                    continue
+            except (ValueError, IndexError) as e:
+                print(f"⚠️  日期解析失败: {date_str}, 错误: {e}")
+                continue
+
             trans_days = days360(start_date, trans_date)
 
             if trans["type"] == "buy":

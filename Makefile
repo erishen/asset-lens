@@ -10,7 +10,40 @@ VERSION := 1.0.0
 
 # 默认目标
 .PHONY: all
-all: help
+all: menu
+
+# ============================================
+# 交互式菜单
+# ============================================
+.PHONY: menu
+menu: ## 显示交互式菜单
+	@echo ""
+	@echo "  ╔════════════════════════════════════════════════════════════╗"
+	@echo "  ║           asset-lens - 个人资产操作系统 v$(VERSION)            ║"
+	@echo "  ╚════════════════════════════════════════════════════════════╝"
+	@echo ""
+	@echo "  🎯 快速开始:"
+	@echo "    make daily            📊 每日分析（更新数据+估算盈亏）"
+	@echo "    make weekly           📈 生成周报"
+	@echo "    make analyze          📋 分析投资组合"
+	@echo ""
+	@echo "  📊 股票基金查询:"
+	@echo "    make fetch-stock      📈 查询股票行情"
+	@echo "    make fetch-fund       📊 查询基金净值"
+	@echo "    make screen-stocks    🔍 股票筛选"
+	@echo ""
+	@echo "  📈 投资策略:"
+	@echo "    make strategy-list    📋 查看策略列表"
+	@echo "    make stock-pool-list  📊 查看股票池"
+	@echo "    make backtest         📊 策略回测"
+	@echo ""
+	@echo "  🌐 Web 界面:"
+	@echo "    make web              🚀 启动 Web Dashboard"
+	@echo ""
+	@echo "  📚 更多帮助:"
+	@echo "    make help             📖 显示完整帮助"
+	@echo "    make check            🔍 检查项目状态"
+	@echo ""
 
 # ============================================
 # 帮助信息
@@ -684,8 +717,8 @@ clean-all: clean clean-cache ## 清理所有生成的文件
 # ============================================
 # 其他
 # ============================================
-.PHONY: check
-check: ## 检查项目状态
+.PHONY: status
+status: ## 检查项目状态
 	@echo ""
 	@echo "  ╔════════════════════════════════════════════════════════════╗"
 	@echo "  ║                  项目状态检查                               ║"
@@ -802,3 +835,154 @@ web-stop: ## 停止 Web Dashboard
 	@echo "🛑 停止 Web Dashboard..."
 	@pkill -f "uvicorn asset_lens.web.api:app" 2>/dev/null || true
 	@echo "✅ Web Dashboard 已停止"
+
+# ============================================
+# 项目自检
+# ============================================
+.PHONY: check
+check: check-privacy check-git check-cache check-size ## 完整自检（隐私+Git+缓存+大小）
+
+.PHONY: check-privacy
+check-privacy: ## 检查隐私数据是否被 Git 追踪
+	@echo "🔒 检查隐私数据保护..."
+	@echo ""
+	@echo "=== 检查敏感目录是否被忽略 ==="
+	@git check-ignore -v data/real/ 2>/dev/null && echo "✅ data/real/ 已被忽略" || echo "⚠️ data/real/ 未被忽略！"
+	@git check-ignore -v cache/ 2>/dev/null && echo "✅ cache/ 已被忽略" || echo "⚠️ cache/ 未被忽略！"
+	@git check-ignore -v output/*.csv output/*.json 2>/dev/null && echo "✅ output/*.csv, *.json 已被忽略" || echo "⚠️ output 文件未被忽略！"
+	@git check-ignore -v .env 2>/dev/null && echo "✅ .env 已被忽略" || echo "⚠️ .env 未被忽略！"
+	@echo ""
+	@echo "=== 检查 Git 追踪的敏感文件 ==="
+	@tracked=$$(git ls-files | grep -E "money_csv|money_|投资产品|资产汇总|卖出记录|\.env$$" 2>/dev/null); \
+	if [ -z "$$tracked" ]; then \
+		echo "✅ 没有追踪敏感文件"; \
+	else \
+		echo "⚠️ 发现追踪的敏感文件:"; \
+		echo "$$tracked"; \
+	fi
+	@echo ""
+	@echo "=== 检查代码中的硬编码敏感数据 ==="
+	@found=$$(grep -rn "[0-9]\{7,\}" --include="*.py" asset_lens/ 2>/dev/null | grep -v "100000\|10000\|100000000\|test_\|_test\." | head -5); \
+	if [ -z "$$found" ]; then \
+		echo "✅ 没有发现硬编码的大额数字"; \
+	else \
+		echo "⚠️ 发现可能的硬编码数据:"; \
+		echo "$$found"; \
+	fi
+	@echo ""
+	@echo "🔒 隐私检查完成！"
+
+.PHONY: check-git
+check-git: ## 检查 Git 状态
+	@echo "📋 检查 Git 状态..."
+	@echo ""
+	@echo "=== 当前分支 ==="
+	@git branch --show-current
+	@echo ""
+	@echo "=== 未提交的更改 ==="
+	@git status --short
+	@echo ""
+	@echo "=== 最近 5 次提交 ==="
+	@git log --oneline -5
+	@echo ""
+	@echo "📋 Git 检查完成！"
+
+.PHONY: check-cache
+check-cache: ## 检查缓存目录
+	@echo "🗂️ 检查缓存目录..."
+	@echo ""
+	@echo "=== cache 目录内容 ==="
+	@ls -la cache/ 2>/dev/null || echo "cache/ 目录不存在"
+	@echo ""
+	@echo "=== 缓存大小 ==="
+	@du -sh cache/ 2>/dev/null || echo "无法计算"
+	@echo ""
+	@echo "=== 空目录 ==="
+	@find cache -type d -empty 2>/dev/null | while read dir; do echo "📁 $$dir (空)"; done || echo "无空目录"
+	@echo ""
+	@echo "🗂️ 缓存检查完成！"
+
+.PHONY: check-size
+check-size: ## 检查项目大小
+	@echo "📊 检查项目大小..."
+	@echo ""
+	@echo "=== 项目总大小 ==="
+	@du -sh .
+	@echo ""
+	@echo "=== 主要目录大小 ==="
+	@du -sh asset_lens/ cache/ config/ data/ docs/ output/ scripts/ tests/ web-react/ 2>/dev/null | sort -hr
+	@echo ""
+	@echo "=== 大文件 (>1MB) ==="
+	@find . -type f -size +1M -not -path "./.git/*" -not -path "./web-react/node_modules/*" 2>/dev/null | head -10
+	@echo ""
+	@echo "📊 大小检查完成！"
+
+.PHONY: check-clean
+check-clean: ## 清理缓存和临时文件
+	@echo "🧹 清理缓存和临时文件..."
+	@rm -rf .cache .mypy_cache .pytest_cache htmlcov 2>/dev/null
+	@rm -f .coverage coverage.json 2>/dev/null
+	@find . -name ".DS_Store" -delete 2>/dev/null
+	@rm -rf tests/__pycache__ 2>/dev/null
+	@rm -rf asset_lens/**/__pycache__ 2>/dev/null
+	@echo "✅ 清理完成！"
+	@echo ""
+	@du -sh .
+
+.PHONY: check-commands
+check-commands: ## 自检所有命令是否正常工作
+	@echo ""
+	@echo "  ╔════════════════════════════════════════════════════════════╗"
+	@echo "  ║                  命令自检                                   ║"
+	@echo "  ╚════════════════════════════════════════════════════════════╝"
+	@echo ""
+	@echo "  🔍 检查核心命令..."
+	@echo ""
+	@echo "  1️⃣  检查 CLI 帮助..."
+	@$(PYTHON) -m asset_lens.cli --help > /dev/null 2>&1 && echo "     ✅ CLI 帮助正常" || echo "     ❌ CLI 帮助失败"
+	@echo ""
+	@echo "  2️⃣  检查配置显示..."
+	@$(PYTHON) -m asset_lens.cli show-config > /dev/null 2>&1 && echo "     ✅ 配置显示正常" || echo "     ❌ 配置显示失败"
+	@echo ""
+	@echo "  3️⃣  检查版本显示..."
+	@$(PYTHON) -m asset_lens.cli version > /dev/null 2>&1 && echo "     ✅ 版本显示正常" || echo "     ❌ 版本显示失败"
+	@echo ""
+	@echo "  4️⃣  检查项目自检..."
+	@$(PYTHON) -m asset_lens.cli check > /dev/null 2>&1 && echo "     ✅ 项目自检正常" || echo "     ❌ 项目自检失败"
+	@echo ""
+	@echo "  5️⃣  检查数据加载..."
+	@$(PYTHON) -c "from asset_lens.data.csv_parser import CSVParser; CSVParser.load_data()" > /dev/null 2>&1 && echo "     ✅ 数据加载正常" || echo "     ❌ 数据加载失败"
+	@echo ""
+	@echo "  6️⃣  检查市场数据获取器..."
+	@$(PYTHON) -c "from asset_lens.data.market_data_fetcher import MarketDataFetcher; MarketDataFetcher()" > /dev/null 2>&1 && echo "     ✅ 市场数据获取器正常" || echo "     ❌ 市场数据获取器失败"
+	@echo ""
+	@echo "  7️⃣  检查股票筛选器..."
+	@$(PYTHON) -c "from asset_lens.data.stock_screener import StockScreener; StockScreener()" > /dev/null 2>&1 && echo "     ✅ 股票筛选器正常" || echo "     ❌ 股票筛选器失败"
+	@echo ""
+	@echo "  8️⃣  检查策略引擎..."
+	@$(PYTHON) -c "from asset_lens.data.strategy_engine import StrategyEngine; StrategyEngine()" > /dev/null 2>&1 && echo "     ✅ 策略引擎正常" || echo "     ❌ 策略引擎失败"
+	@echo ""
+	@echo "  9️⃣  检查 IRR 计算器..."
+	@$(PYTHON) -c "from asset_lens.core.irr_calculator import IRRCalculator; IRRCalculator()" > /dev/null 2>&1 && echo "     ✅ IRR 计算器正常" || echo "     ❌ IRR 计算器失败"
+	@echo ""
+	@echo "  🔟 检查 Web API..."
+	@$(PYTHON) -c "from asset_lens.web.api import app; print('OK')" > /dev/null 2>&1 && echo "     ✅ Web API 正常" || echo "     ❌ Web API 失败"
+	@echo ""
+	@echo "  ✅ 命令自检完成！"
+
+# ============================================
+# 周报和风向分析
+# ============================================
+.PHONY: weekly
+weekly: ## 一键生成周报（市场行情+选股+风向分析）
+	@echo "📊 生成投资周报..."
+	@$(PYTHON) -m asset_lens.cli weekly
+
+.PHONY: weekly-full
+weekly-full: ## 完整周报（同步数据+AI分析）
+	@echo "📊 生成完整投资周报..."
+	@$(PYTHON) -m asset_lens.cli weekly --sync --analyze
+
+.PHONY: sentiment
+sentiment: ## 分析市场风向
+	@$(PYTHON) -m asset_lens.cli sentiment

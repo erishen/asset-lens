@@ -68,7 +68,8 @@ class MarketDataFetcher:
             row = df[df["代码"] == code]
 
             if row.empty:
-                return None
+                # 尝试使用备用方法获取
+                return self._fetch_index_fallback(index_code)
 
             row = row.iloc[0]
 
@@ -99,7 +100,66 @@ class MarketDataFetcher:
 
         except Exception as e:
             print(f"获取指数数据失败 {index_code}: {e}")
-            return None
+            return self._fetch_index_fallback(index_code)
+
+    def _fetch_index_fallback(self, index_code: str) -> Optional[Dict[str, Any]]:
+        """备用方法获取指数数据"""
+        try:
+            # 尝试使用不同的 AkShare 接口
+            if index_code.startswith("sz"):
+                # 深圳指数
+                df = self.akshare.index_zh_a_hist(
+                    symbol=index_code[2:],
+                    period="daily",
+                    start_date=(datetime.now() - timedelta(days=7)).strftime("%Y%m%d"),
+                    end_date=datetime.now().strftime("%Y%m%d"),
+                )
+                if df is not None and not df.empty:
+                    latest = df.iloc[-1]
+                    prev = df.iloc[-2] if len(df) > 1 else latest
+                    
+                    current_price = float(latest.get("收盘", 0))
+                    prev_close = float(prev.get("收盘", 0))
+                    
+                    return {
+                        "name": index_code,
+                        "code": index_code,
+                        "current_price": current_price,
+                        "open": float(latest.get("开盘", 0)),
+                        "prev_close": prev_close,
+                        "high": float(latest.get("最高", 0)),
+                        "low": float(latest.get("最低", 0)),
+                        "volume": int(latest.get("成交量", 0)),
+                        "amount": 0,
+                        "change_amount": current_price - prev_close,
+                        "change_percent": ((current_price - prev_close) / prev_close * 100) if prev_close > 0 else 0,
+                    }
+            elif index_code == "sh518880":
+                # 黄金ETF - 使用 ETF 行情接口
+                df = self.akshare.fund_etf_spot_em()
+                if df is not None and not df.empty:
+                    row = df[df["代码"] == "518880"]
+                    if not row.empty:
+                        row = row.iloc[0]
+                        current_price = float(row.get("最新价", 0))
+                        prev_close = float(row.get("昨收", 0))
+                        return {
+                            "name": "黄金ETF",
+                            "code": index_code,
+                            "current_price": current_price,
+                            "open": float(row.get("今开", 0)),
+                            "prev_close": prev_close,
+                            "high": float(row.get("最高", 0)),
+                            "low": float(row.get("最低", 0)),
+                            "volume": int(float(row.get("成交量", 0))),
+                            "amount": float(row.get("成交额", 0)),
+                            "change_amount": current_price - prev_close,
+                            "change_percent": ((current_price - prev_close) / prev_close * 100) if prev_close > 0 else 0,
+                        }
+        except Exception as e:
+            print(f"备用方法获取失败 {index_code}: {e}")
+        
+        return None
 
     def _load_existing_history(self) -> Dict[str, List[Dict]]:
         """加载历史数据"""
@@ -361,39 +421,89 @@ class MarketDataFetcher:
 
         return cache_data
 
-    def fetch_foreign_index(self, symbol: str, api_key: str) -> Optional[Dict[str, Any]]:
+    def fetch_foreign_index(self, symbol: str, api_key: str, max_retries: int = 3) -> Optional[Dict[str, Any]]:
         """获取国外指数数据（Finnhub 正规 API）"""
-        import requests  # type: ignore
+        from ..utils.http_client import get_json
 
+        url = f"https://api.finnhub.io/api/v1/quote?symbol={symbol}&token={api_key}"
+        data = get_json(url, timeout=15)
+
+        if data is None:
+            # 尝试使用备用数据源
+            return self._fetch_foreign_index_fallback(symbol)
+
+        current_price = float(data.get("c", 0))
+        prev_close = float(data.get("pc", 0))
+        high = float(data.get("h", 0))
+        low = float(data.get("l", 0))
+        open_price = float(data.get("o", 0))
+
+        if current_price == 0 or prev_close == 0:
+            # 尝试使用备用数据源
+            return self._fetch_foreign_index_fallback(symbol)
+
+        change_amount = current_price - prev_close
+        change_percent = (change_amount / prev_close * 100) if prev_close > 0 else 0
+
+        return {
+            "current_price": current_price,
+            "open": open_price,
+            "prev_close": prev_close,
+            "high": high,
+            "low": low,
+            "change_amount": change_amount,
+            "change_percent": change_percent,
+        }
+
+    def _fetch_foreign_index_fallback(self, symbol: str) -> Optional[Dict[str, Any]]:
+        """备用方法获取国外指数数据"""
         try:
-            url = f"https://api.finnhub.io/api/v1/quote?symbol={symbol}&token={api_key}"
-            response = requests.get(url, timeout=10)
-            data = response.json()
-
-            current_price = float(data.get("c", 0))
-            prev_close = float(data.get("pc", 0))
-            high = float(data.get("h", 0))
-            low = float(data.get("l", 0))
-            open_price = float(data.get("o", 0))
-
+            # 使用 Yahoo Finance API 作为备用
+            from ..utils.http_client import get_json
+            
+            # Yahoo Finance symbol mapping
+            yahoo_symbols = {
+                "^DJI": "^DJI",
+                "^GSPC": "^GSPC",
+                "^IXIC": "^IXIC",
+                "^N225": "^N225",
+                "^HSI": "^HSI",
+            }
+            
+            yahoo_symbol = yahoo_symbols.get(symbol, symbol)
+            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{yahoo_symbol}?interval=1d&range=1d"
+            
+            data = get_json(url, timeout=15)
+            
+            if data is None:
+                return None
+            
+            result = data.get("chart", {}).get("result", [])
+            if not result:
+                return None
+            
+            meta = result[0].get("meta", {})
+            current_price = float(meta.get("regularMarketPrice", 0))
+            prev_close = float(meta.get("previousClose", 0))
+            
             if current_price == 0 or prev_close == 0:
                 return None
-
+            
             change_amount = current_price - prev_close
             change_percent = (change_amount / prev_close * 100) if prev_close > 0 else 0
-
+            
             return {
                 "current_price": current_price,
-                "open": open_price,
+                "open": float(meta.get("regularMarketOpen", 0)),
                 "prev_close": prev_close,
-                "high": high,
-                "low": low,
+                "high": float(meta.get("regularMarketDayHigh", 0)),
+                "low": float(meta.get("regularMarketDayLow", 0)),
                 "change_amount": change_amount,
                 "change_percent": change_percent,
             }
-
+            
         except Exception as e:
-            print(f"获取国外指数失败 {symbol}: {e}")
+            print(f"备用方法获取失败 {symbol}: {e}")
             return None
 
     def fetch_all_foreign_indexes(self) -> Dict[str, Any]:
