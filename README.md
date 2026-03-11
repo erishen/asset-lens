@@ -183,6 +183,147 @@ asset-lens/
 
 ---
 
+## 📊 行情数据获取
+
+asset-lens 支持多种数据源获取实时行情数据，采用多数据源冗余和故障转移机制，确保数据获取的稳定性。
+
+### 数据源优先级
+
+#### 国内指数
+
+| 优先级 | 数据源 | 类型 | 说明 |
+|--------|--------|------|------|
+| 1 | 腾讯财经 | 内部API | 免费、快速、稳定 |
+| 2 | 新浪财经 | 内部API | 备用数据源 |
+| 3 | AkShare | 开源库 | 正规数据源 |
+
+#### 国外指数
+
+| 优先级 | 数据源 | 类型 | 说明 |
+|--------|--------|------|------|
+| 1 | **AkShare** | 开源库 | ✅ 推荐，正规数据源 |
+| 2 | 东方财富 | 内部API | ⚠️ 备用，非官方接口 |
+| 3 | Alpha Vantage | 官方API | ✅ 正规，需要 Key |
+| 4 | Finnhub | 官方API | ✅ 正规，需要 Key |
+| 5 | Yahoo Finance | 官方API | ⚠️ 不稳定 |
+
+### API Key 配置
+
+编辑 `.env` 文件配置 API Key：
+
+```bash
+# Alpha Vantage (免费版每分钟5次请求)
+ALPHAVANTAGE_API_KEY=your_alphavantage_api_key
+
+# Finnhub (免费版功能有限)
+FINNHUB_API_KEY=your_finnhub_api_key
+```
+
+**获取 API Key：**
+- [Alpha Vantage](https://www.alphavantage.co/support/#api-key) - 免费注册即可获取
+- [Finnhub](https://finnhub.io/register) - 免费注册即可获取
+
+### 数据源说明
+
+#### ✅ 推荐数据源
+
+**AkShare** - 开源免费金融数据接口库
+- 官网：https://akshare.akfamily.xyz/
+- 特点：免费、无需注册、数据全面
+- 安装：`pip install akshare`
+
+**Alpha Vantage** - 官方金融数据 API
+- 官网：https://www.alphavantage.co/
+- 特点：官方接口、稳定可靠
+- 限制：免费版每分钟5次请求
+
+**Finnhub** - 官方金融数据 API
+- 官网：https://finnhub.io/
+- 特点：官方接口、数据实时
+- 限制：免费版功能有限
+
+#### ⚠️ 备用数据源（非官方）
+
+**东方财富 / 腾讯财经 / 新浪财经** - 内部 API
+- 特点：免费、无需注册、响应快速
+- 风险：
+  - 非官方接口，可能随时变更
+  - 无官方技术支持
+  - 不适合商业用途
+- 建议：仅作为备用数据源
+
+### 使用示例
+
+```python
+from asset_lens.data.enhanced_market_data_fetcher import enhanced_market_data_fetcher
+
+# 获取所有指数（国内+国外）
+data = enhanced_market_data_fetcher.fetch_all_indexes()
+
+# 获取国内指数
+domestic = enhanced_market_data_fetcher.fetch_all_domestic_indexes()
+
+# 获取国外指数
+foreign = enhanced_market_data_fetcher.fetch_all_foreign_indexes()
+
+# 获取单个指数
+spx = enhanced_market_data_fetcher.fetch_foreign_index('^GSPC')
+```
+
+### 命令行使用
+
+```bash
+# 更新市场指数数据
+python -m asset_lens update-market-data
+
+# 实时盈亏估算（需要市场数据）
+python -m asset_lens pnl
+
+# 周度盈亏估算
+python -m asset_lens pnl --weekly
+```
+
+### 故障转移机制
+
+当优先数据源获取失败时，系统会自动尝试下一个数据源：
+
+```
+尝试数据源 1: AkShare
+  ↓ 失败
+尝试数据源 2: 东方财富
+  ↓ 失败
+尝试数据源 3: Alpha Vantage
+  ↓ 失败
+尝试数据源 4: Finnhub
+  ↓ 全部失败
+返回错误信息
+```
+
+### 常见问题
+
+**Q: 为什么国外指数获取失败？**
+
+A: 可能原因：
+1. 网络问题 - 检查网络连接
+2. API 限流 - 等待后重试
+3. API Key 无效 - 检查 `.env` 配置
+
+**Q: 如何提高数据获取成功率？**
+
+A: 建议：
+1. 配置 Alpha Vantage API Key（免费）
+2. 配置 Finnhub API Key（免费）
+3. 确保网络稳定
+
+**Q: 数据源的合法性？**
+
+A: 说明：
+- AkShare、Alpha Vantage、Finnhub 是正规数据源
+- 东方财富、腾讯财经等是内部 API，仅供学习使用
+- 商业用途请使用官方 API
+
+---
+
 ## 🚀 快速开始
 
 ### 1. 安装依赖
