@@ -194,11 +194,11 @@ class UnifiedDataFetcher:
         elif source_type == DataSourceType.FUTURES_CN:
             return fetcher.fetch_domestic_quote(symbol)
         elif source_type == DataSourceType.CRYPTO:
-            return fetcher.get_ticker(symbol)
+            return fetcher.get_ticker(symbol)  # type: ignore
         elif source_type == DataSourceType.MACRO:
-            return fetcher.get_economic_summary()
+            return fetcher.get_economic_summary()  # type: ignore
         elif source_type == DataSourceType.INDEX:
-            return fetcher.fetch_domestic_index(symbol)
+            return fetcher.fetch_domestic_index(symbol)  # type: ignore
         return None
 
     def _fetch_history(

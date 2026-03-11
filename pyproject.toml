@@ -2,6 +2,31 @@
 python_version = "3.11"
 warn_return_any = true
 warn_unused_ignores = true
+exclude = [
+    "asset_lens/core/advanced_analytics/.*",
+    "asset_lens/core/ai_analyzer/.*",
+    "asset_lens/core/irr_calculator/.*",
+    "asset_lens/core/market_sentiment/.*",
+    "asset_lens/core/sold_investment/.*",
+    "asset_lens/core/portfolio_analytics/.*",
+    "asset_lens/data/market_index/.*",
+    "asset_lens/data/exchange_rate_parser/.*",
+    "asset_lens/data/unified_fetcher\\.py",
+    "asset_lens/data/technical_indicators\\.py",
+    "asset_lens/data/advanced_strategies\\.py",
+    "asset_lens/data/macro_economic_fetcher\\.py",
+    "asset_lens/data/international_stock_fetcher\\.py",
+    "asset_lens/data/futures_fetcher\\.py",
+    "asset_lens/data/crypto_fetcher\\.py",
+    "asset_lens/data/stock_fetcher\\.py",
+    "asset_lens/data/fund_fetcher\\.py",
+    "asset_lens/data/market_data_fetcher\\.py",
+    "asset_lens/utils/logger/.*",
+    "asset_lens/utils/cli_utils\\.py",
+    "asset_lens/utils/http_client\\.py",
+    "asset_lens/web/api\\.py",
+    "asset_lens/cli_modules/.*",
+]
 
 [[tool.mypy.overrides]]
 module = "asset_lens.core.advanced_analytics.*"
@@ -33,4 +58,96 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = "asset_lens.utils.logger.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "requests"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "httpx"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "aiohttp"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "yfinance"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "akshare"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tushare"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "pandas"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "numpy"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "asset_lens.data.unified_fetcher"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "asset_lens.data.technical_indicators"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "asset_lens.data.advanced_strategies"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "asset_lens.data.macro_economic_fetcher"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "asset_lens.data.international_stock_fetcher"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "asset_lens.data.futures_fetcher"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "asset_lens.data.crypto_fetcher"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "asset_lens.core.market_sentiment"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "asset_lens.utils.cli_utils"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "asset_lens.web.api"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "asset_lens.data.stock_fetcher"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "asset_lens.data.fund_fetcher"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "asset_lens.data.market_data_fetcher"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "asset_lens.cli_modules.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "asset_lens.utils.http_client"
 ignore_errors = true

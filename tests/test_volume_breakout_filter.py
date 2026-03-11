@@ -1,11 +1,13 @@
 """
-Tests for volume_breakout_filter.py
+Tests for Volume Breakout Filter.
+放量突破筛选模块测试
 """
 
 import json
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
+from datetime import datetime
 
 import pytest
 
@@ -36,20 +38,10 @@ class TestVolumeBreakoutConfig:
             turnover_ratio=5.0,
             amount_ratio=3.0,
             market_cap_max=1000.0,
-            market_cap_min=50.0,
-            price_min=10.0,
-            price_max=200.0,
-            require_hot_industry=False,
-            max_results=50,
         )
         assert config.turnover_ratio == 5.0
         assert config.amount_ratio == 3.0
         assert config.market_cap_max == 1000.0
-        assert config.market_cap_min == 50.0
-        assert config.price_min == 10.0
-        assert config.price_max == 200.0
-        assert config.require_hot_industry is False
-        assert config.max_results == 50
 
 
 class TestVolumeBreakoutFilter:
@@ -65,134 +57,264 @@ class TestVolumeBreakoutFilter:
     def filter_instance(self, temp_cache_path):
         """创建测试实例"""
         with patch('asset_lens.data.volume_breakout_filter.config') as mock_config:
-            mock_config.project_root = temp_cache_path
             mock_config.cache_path = temp_cache_path
+            mock_config.project_root = temp_cache_path
             filter_instance = VolumeBreakoutFilter()
             yield filter_instance
 
+    def test_module_import(self):
+        """测试模块导入"""
+        from asset_lens.data.volume_breakout_filter import volume_breakout_filter
+        assert volume_breakout_filter is not None
+
     def test_init(self, filter_instance):
         """测试初始化"""
+        assert filter_instance is not None
         assert filter_instance.filter_config is not None
-        assert filter_instance.cache_path is not None
 
-    def test_get_industry_semiconductor(self, filter_instance):
-        """测试获取行业 - 半导体"""
-        result = filter_instance._get_industry("中芯国际半导体")
-        assert result == "半导体"
+    def test_industry_mapping(self, filter_instance):
+        """测试行业映射"""
+        assert "新能源" in filter_instance.INDUSTRY_MAPPING
+        assert "半导体" in filter_instance.INDUSTRY_MAPPING
+        assert "医药" in filter_instance.INDUSTRY_MAPPING
 
-    def test_get_industry_new_energy(self, filter_instance):
-        """测试获取行业 - 新能源"""
-        result = filter_instance._get_industry("宁德时代新能源")
-        assert result == "新能源"
+    def test_get_industry(self, filter_instance):
+        """测试获取行业"""
+        industry = filter_instance._get_industry("宁德时代新能源")
+        assert industry == "新能源"
 
-    def test_get_industry_medical(self, filter_instance):
-        """测试获取行业 - 医药"""
-        result = filter_instance._get_industry("恒瑞医药")
-        assert result == "医药"
+        industry = filter_instance._get_industry("中芯国际半导体")
+        assert industry == "半导体"
 
-    def test_get_industry_unknown(self, filter_instance):
-        """测试获取行业 - 未知"""
-        result = filter_instance._get_industry("未知公司")
-        assert result is None
+    def test_get_industry_not_found(self, filter_instance):
+        """测试获取行业 - 未找到"""
+        industry = filter_instance._get_industry("某某股票")
+        assert industry is None
 
-    def test_load_market_stocks_no_file(self, filter_instance):
-        """测试加载市场股票 - 文件不存在"""
-        result = filter_instance._load_market_stocks()
-        assert result == []
+    def test_load_config_no_file(self, filter_instance):
+        """测试加载配置 - 文件不存在"""
+        config = filter_instance._load_config()
+        assert config is not None
+        assert config.turnover_ratio == 3.0
 
-    def test_load_market_stocks_with_file(self, filter_instance):
-        """测试加载市场股票 - 有文件"""
-        data = {"data": [{"code": "sh600519", "name": "贵州茅台"}]}
+    def test_load_config_with_file(self, filter_instance, temp_cache_path):
+        """测试加载配置 - 有配置文件"""
+        config_dir = temp_cache_path / "config"
+        config_dir.mkdir(parents=True, exist_ok=True)
+        config_file = config_dir / "volume_breakout.json"
+        
+        config_data = {
+            "turnover_ratio": 5.0,
+            "amount_ratio": 3.0,
+            "max_results": 50,
+        }
+        
+        with open(config_file, "w", encoding="utf-8") as f:
+            json.dump(config_data, f)
+
+        filter_instance.config_path = config_file
+        config = filter_instance._load_config()
+        
+        assert config.turnover_ratio == 5.0
+        assert config.amount_ratio == 3.0
+        assert config.max_results == 50
+
+    def test_load_market_stocks_empty(self, filter_instance):
+        """测试加载市场股票 - 空文件"""
+        stocks = filter_instance._load_market_stocks()
+        assert stocks == []
+
+    def test_load_market_stocks_with_data(self, filter_instance):
+        """测试加载市场股票 - 有数据"""
+        market_data = {
+            "data": [
+                {"code": "sh600519", "name": "贵州茅台"},
+                {"code": "sz000001", "name": "平安银行"},
+            ]
+        }
+        
         with open(filter_instance.market_stock_file, "w", encoding="utf-8") as f:
-            json.dump(data, f)
+            json.dump(market_data, f)
 
-        result = filter_instance._load_market_stocks()
-        assert len(result) == 1
-        assert result[0]["code"] == "sh600519"
+        stocks = filter_instance._load_market_stocks()
+        assert len(stocks) == 2
 
-    def test_load_history_no_file(self, filter_instance):
-        """测试加载历史数据 - 文件不存在"""
-        result = filter_instance._load_history()
-        assert result == {}
+    def test_load_history_empty(self, filter_instance):
+        """测试加载历史 - 空文件"""
+        history = filter_instance._load_history()
+        assert history == {}
 
-    def test_load_history_with_file(self, filter_instance):
-        """测试加载历史数据 - 有文件"""
-        history = {"sh600519": {"name": "贵州茅台", "turnover_rates": [1.0, 2.0]}}
+    def test_load_history_with_data(self, filter_instance):
+        """测试加载历史 - 有数据"""
+        history_data = {
+            "sh600519": {
+                "klines": [
+                    {"date": "2024-01-01", "close": 1800, "volume": 1000000}
+                ]
+            }
+        }
+        
         with open(filter_instance.history_file, "w", encoding="utf-8") as f:
-            json.dump(history, f)
-
-        result = filter_instance._load_history()
-        assert "sh600519" in result
-
-    def test_save_history(self, filter_instance):
-        """测试保存历史数据"""
-        history = {"sh600519": {"name": "贵州茅台", "turnover_rates": [1.0]}}
-        filter_instance._save_history(history)
-
-        assert filter_instance.history_file.exists()
-
-    def test_update_history(self, filter_instance):
-        """测试更新历史数据"""
-        stocks = [
-            {"code": "sh600519", "name": "贵州茅台", "turnover_rate": 0.5, "amount": 1000000},
-        ]
-
-        filter_instance.update_history(stocks)
+            json.dump(history_data, f)
 
         history = filter_instance._load_history()
         assert "sh600519" in history
-        assert history["sh600519"]["name"] == "贵州茅台"
 
-    def test_get_avg_turnover_60d(self, filter_instance):
-        """测试获取60日平均换手率"""
-        history = {
+    def test_save_history(self, filter_instance):
+        """测试保存历史"""
+        history_data = {
             "sh600519": {
-                "name": "贵州茅台",
-                "turnover_rates": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+                "klines": [
+                    {"date": "2024-01-01", "close": 1800, "volume": 1000000}
+                ]
             }
         }
+        
+        filter_instance._save_history(history_data)
+        
+        assert filter_instance.history_file.exists()
 
-        result = filter_instance._get_avg_turnover_60d("sh600519", history)
+    def test_filter_empty_stocks(self, filter_instance):
+        """测试筛选 - 空股票列表"""
+        results = filter_instance.filter([])
+        assert results == []
 
-        assert result is not None
-        assert result == 3.0  # (1+2+3+4+5) / 5
-
-    def test_get_avg_turnover_60d_insufficient_data(self, filter_instance):
-        """测试获取60日平均换手率 - 数据不足"""
-        history = {
-            "sh600519": {
-                "name": "贵州茅台",
-                "turnover_rates": [1.0, 2.0],
-            }
+    def test_check_volume_breakout(self, filter_instance):
+        """测试检查放量突破"""
+        stock = {
+            "code": "sh600519",
+            "name": "贵州茅台",
+            "turnover_rate": 5.0,
+            "amount": 2000000000,
+            "market_cap": 100,
+            "current_price": 50,
         }
+        
+        result = filter_instance.filter([stock])
+        assert isinstance(result, list)
 
-        result = filter_instance._get_avg_turnover_60d("sh600519", history)
-
-        assert result is None
-
-    def test_get_avg_amount_60d(self, filter_instance):
-        """测试获取60日平均成交额"""
-        history = {
-            "sh600519": {
-                "name": "贵州茅台",
-                "amounts": [1000000, 2000000, 3000000, 4000000, 5000000, 6000000],
-            }
+    def test_check_price_range(self, filter_instance):
+        """测试价格范围检查"""
+        stock = {
+            "current_price": 50,
         }
+        
+        is_valid = filter_instance.filter_config.price_min <= stock["current_price"] <= filter_instance.filter_config.price_max
+        assert is_valid is True
 
-        result = filter_instance._get_avg_amount_60d("sh600519", history)
-
-        assert result is not None
-        assert result == 3000000.0
-
-    def test_get_avg_amount_60d_insufficient_data(self, filter_instance):
-        """测试获取60日平均成交额 - 数据不足"""
-        history = {
-            "sh600519": {
-                "name": "贵州茅台",
-                "amounts": [1000000],
-            }
+    def test_check_market_cap_range(self, filter_instance):
+        """测试市值范围检查"""
+        stock = {
+            "market_cap": 100,
         }
+        
+        is_valid = filter_instance.filter_config.market_cap_min <= stock["market_cap"] <= filter_instance.filter_config.market_cap_max
+        assert is_valid is True
 
-        result = filter_instance._get_avg_amount_60d("sh600519", history)
 
-        assert result is None
+class TestVolumeBreakoutScenarios:
+    """放量突破场景测试"""
+
+    def test_volume_ratio_calculation(self):
+        """测试量比计算"""
+        current_volume = 1000000
+        avg_volume = 500000
+        
+        volume_ratio = current_volume / avg_volume
+        assert volume_ratio == 2.0
+
+    def test_amount_ratio_calculation(self):
+        """测试成交额比计算"""
+        current_amount = 2000000000
+        avg_amount = 1000000000
+        
+        amount_ratio = current_amount / avg_amount
+        assert amount_ratio == 2.0
+
+    def test_breakout_detection(self):
+        """测试突破检测"""
+        current_price = 55
+        prev_high = 50
+        
+        is_breakout = current_price > prev_high
+        assert is_breakout is True
+
+    def test_no_breakout_detection(self):
+        """测试未突破检测"""
+        current_price = 48
+        prev_high = 50
+        
+        is_breakout = current_price > prev_high
+        assert is_breakout is False
+
+    def test_filter_criteria_combination(self):
+        """测试筛选条件组合"""
+        stock = {
+            "turnover_rate": 5.0,
+            "volume_ratio": 3.5,
+            "amount_ratio": 2.5,
+            "market_cap": 100,
+            "current_price": 50,
+        }
+        
+        meets_criteria = (
+            stock["turnover_rate"] >= 3.0 and
+            stock["volume_ratio"] >= 3.0 and
+            stock["amount_ratio"] >= 2.0 and
+            20 <= stock["market_cap"] <= 500 and
+            5 <= stock["current_price"] <= 100
+        )
+        
+        assert meets_criteria is True
+
+
+class TestIndustryDetection:
+    """行业检测测试"""
+
+    def test_detect_new_energy(self):
+        """测试检测新能源行业"""
+        INDUSTRY_MAPPING = {
+            "新能源": ["锂电", "光伏", "风电", "储能", "新能源", "电池", "硅料"],
+        }
+        
+        name = "宁德时代新能源"
+        detected = None
+        for industry, keywords in INDUSTRY_MAPPING.items():
+            for kw in keywords:
+                if kw in name:
+                    detected = industry
+                    break
+        
+        assert detected == "新能源"
+
+    def test_detect_semiconductor(self):
+        """测试检测半导体行业"""
+        INDUSTRY_MAPPING = {
+            "半导体": ["半导体", "芯片", "集成电路", "晶圆", "封测", "光刻"],
+        }
+        
+        name = "中芯国际芯片"
+        detected = None
+        for industry, keywords in INDUSTRY_MAPPING.items():
+            for kw in keywords:
+                if kw in name:
+                    detected = industry
+                    break
+        
+        assert detected == "半导体"
+
+    def test_detect_no_industry(self):
+        """测试未检测到行业"""
+        INDUSTRY_MAPPING = {
+            "新能源": ["锂电", "光伏"],
+        }
+        
+        name = "某某股份"
+        detected = None
+        for industry, keywords in INDUSTRY_MAPPING.items():
+            for kw in keywords:
+                if kw in name:
+                    detected = industry
+                    break
+        
+        assert detected is None

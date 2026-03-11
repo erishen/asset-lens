@@ -806,8 +806,8 @@ async def get_portfolio_performance():
 
         # 按类型汇总收益
         type_performance: Dict[str, List[Dict]] = {}
-        total_initial = 0
-        total_current = 0
+        total_initial: float = 0.0
+        total_current: float = 0.0
 
         for product in products:
             # InvestmentType 枚举的 value 已经是中文名称
@@ -1168,7 +1168,7 @@ async def export_report():
     from ..data.csv_parser import CSVParser
 
     try:
-        products = CSVParser.load_investment_products()
+        products = CSVParser.load_data()
 
         total_assets = sum(float(p.current_amount or 0) for p in products)
         total_initial = sum(float(p.initial_amount or 0) for p in products)
@@ -1177,13 +1177,15 @@ async def export_report():
 
         rows_html = ""
         for p in products[:50]:
-            profit = float(p.profit or 0)
-            profit_rate = float(p.profit_rate or 0)
+            profit = float(getattr(p, 'profit', 0) or 0)
+            profit_rate = float(getattr(p, 'return_rate', 0) or 0)
             profit_class = "positive" if profit >= 0 else "negative"
+            ptype = getattr(p, 'investment_type', None)
+            ptype_str = ptype.value if ptype else "其他"
             rows_html += f"""
                 <tr>
                     <td>{p.name}</td>
-                    <td>{p.type}</td>
+                    <td>{ptype_str}</td>
                     <td>{float(p.current_amount or 0):,.2f} CNY</td>
                     <td class="{profit_class}">{profit:,.2f} CNY</td>
                     <td class="{profit_class}">{profit_rate:.2f}%</td>
