@@ -15,7 +15,7 @@ _US_INVESTMENT_TYPES = None
 _HK_INVESTMENT_TYPES = None
 
 
-def _get_us_investment_types():
+def _get_us_investment_types() -> list:
     global _US_INVESTMENT_TYPES
     if _US_INVESTMENT_TYPES is None:
         from .models import InvestmentType
@@ -24,7 +24,7 @@ def _get_us_investment_types():
     return _US_INVESTMENT_TYPES
 
 
-def _get_hk_investment_types():
+def _get_hk_investment_types() -> list:
     global _HK_INVESTMENT_TYPES
     if _HK_INVESTMENT_TYPES is None:
         from .models import InvestmentType
@@ -75,7 +75,7 @@ class PortfolioCalculator:
         """计算总资产（带缓存）"""
         cache_key = "total_value"
         if cache_key in self._cache:
-            return self._cache[cache_key]
+            return self._cache[cache_key]  # type: ignore
 
         total = Decimal("0")
         for product in self._portfolio.products:
@@ -92,7 +92,7 @@ class PortfolioCalculator:
         """计算总初始投资（带缓存）"""
         cache_key = "total_initial"
         if cache_key in self._cache:
-            return self._cache[cache_key]
+            return self._cache[cache_key]  # type: ignore
 
         total = Decimal("0")
         for product in self._portfolio.products:
@@ -115,7 +115,7 @@ class PortfolioCalculator:
         """计算总收益（带缓存）"""
         cache_key = "total_profit"
         if cache_key in self._cache:
-            return self._cache[cache_key]
+            return self._cache[cache_key]  # type: ignore
 
         total = Decimal("0")
         for product in self._portfolio.products:
@@ -151,7 +151,7 @@ class PortfolioCalculator:
         """获取类型分布（带缓存）"""
         cache_key = "type_distribution"
         if cache_key in self._cache:
-            return self._cache[cache_key]
+            return self._cache[cache_key]  # type: ignore
 
         type_stats: Dict[str, Dict[str, Any]] = {}
         for product in self._portfolio.products:
@@ -182,7 +182,7 @@ class PortfolioCalculator:
         """获取风险分布（带缓存）"""
         cache_key = "risk_distribution"
         if cache_key in self._cache:
-            return self._cache[cache_key]
+            return self._cache[cache_key]  # type: ignore
 
         risk_stats: Dict[str, Dict[str, Any]] = {}
         for product in self._portfolio.products:

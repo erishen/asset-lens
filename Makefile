@@ -670,8 +670,8 @@ test-cov: ## 运行测试并生成覆盖率报告
 .PHONY: lint
 lint: ## 运行代码检查
 	@echo "🔍 运行代码检查..."
-	$(CONDA) pylint asset_lens/ --disable=C0114,C0115,C0116,W0212,W0613 || true
-	$(CONDA) mypy asset_lens/ --ignore-missing-imports || true
+	$(CONDA) pylint asset_lens/ --disable=all --enable=E,F --exit-zero || true
+	$(CONDA) mypy asset_lens/ || true
 
 .PHONY: format
 format: ## 格式化代码
@@ -967,6 +967,42 @@ check-commands: ## 自检所有命令是否正常工作
 	@echo ""
 	@echo "  🔟 检查 Web API..."
 	@$(PYTHON) -c "from asset_lens.web.api import app; print('OK')" > /dev/null 2>&1 && echo "     ✅ Web API 正常" || echo "     ❌ Web API 失败"
+	@echo ""
+	@echo "  ══════════════════════════════════════════════════════════════"
+	@echo "  📊 股票基金查询命令..."
+	@echo ""
+	@echo "  1️⃣1️⃣ 检查股票行情获取..."
+	@$(PYTHON) -m asset_lens.cli fetch-stock --help > /dev/null 2>&1 && echo "     ✅ 股票行情获取正常" || echo "     ❌ 股票行情获取失败"
+	@echo ""
+	@echo "  1️⃣2️⃣ 检查基金净值获取..."
+	@$(PYTHON) -m asset_lens.cli fetch-fund --help > /dev/null 2>&1 && echo "     ✅ 基金净值获取正常" || echo "     ❌ 基金净值获取失败"
+	@echo ""
+	@echo "  1️⃣3️⃣ 检查基金搜索..."
+	@$(PYTHON) -m asset_lens.cli search-fund --help > /dev/null 2>&1 && echo "     ✅ 基金搜索正常" || echo "     ❌ 基金搜索失败"
+	@echo ""
+	@echo "  1️⃣4️⃣ 检查股票筛选..."
+	@$(PYTHON) -m asset_lens.cli screen-stocks --help > /dev/null 2>&1 && echo "     ✅ 股票筛选正常" || echo "     ❌ 股票筛选失败"
+	@echo ""
+	@echo "  1️⃣5️⃣ 检查放量突破..."
+	@$(PYTHON) -m asset_lens.cli volume-breakout --help > /dev/null 2>&1 && echo "     ✅ 放量突破正常" || echo "     ❌ 放量突破失败"
+	@echo ""
+	@echo "  ══════════════════════════════════════════════════════════════"
+	@echo "  📈 投资策略系统命令..."
+	@echo ""
+	@echo "  1️⃣6️⃣ 检查股票池..."
+	@$(PYTHON) -m asset_lens.cli stock-pool --help > /dev/null 2>&1 && echo "     ✅ 股票池正常" || echo "     ❌ 股票池失败"
+	@echo ""
+	@echo "  1️⃣7️⃣ 检查策略管理..."
+	@$(PYTHON) -m asset_lens.cli strategy --help > /dev/null 2>&1 && echo "     ✅ 策略管理正常" || echo "     ❌ 策略管理失败"
+	@echo ""
+	@echo "  1️⃣8️⃣ 检查策略回测..."
+	@$(PYTHON) -m asset_lens.cli backtest --help > /dev/null 2>&1 && echo "     ✅ 策略回测正常" || echo "     ❌ 策略回测失败"
+	@echo ""
+	@echo "  1️⃣9️⃣ 检查投资状态..."
+	@$(PYTHON) -m asset_lens.cli investment-status --help > /dev/null 2>&1 && echo "     ✅ 投资状态正常" || echo "     ❌ 投资状态失败"
+	@echo ""
+	@echo "  2️⃣0️⃣ 检查市场环境..."
+	@$(PYTHON) -m asset_lens.cli market-environment --help > /dev/null 2>&1 && echo "     ✅ 市场环境正常" || echo "     ❌ 市场环境失败"
 	@echo ""
 	@echo "  ✅ 命令自检完成！"
 

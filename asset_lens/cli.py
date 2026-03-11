@@ -1060,6 +1060,7 @@ def pnl(data_mode, weekly):
     """估算实时盈亏（基于市场指数）"""
     from rich.console import Console
     from rich.table import Table
+    from rich.box import box
 
     from .core.realtime_pnl import RealtimePnlEstimator
 
