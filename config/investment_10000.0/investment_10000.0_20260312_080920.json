@@ -1,0 +1,456 @@
+{
+  "timestamp": "2026-03-12 08:09:20",
+  "total_investment": 10000.0,
+  "total_products": 50,
+  "investment_summary": {
+    "total_amount": 9997.0,
+    "average_per_product": 199.94,
+    "max_investment": 8444.0,
+    "min_investment": 2.0
+  },
+  "by_type": {
+    "其他": {
+      "percentage": 84.44,
+      "amount": 8444.0,
+      "count": 1
+    },
+    "债券": {
+      "percentage": 7.41,
+      "amount": 741.0,
+      "count": 19
+    },
+    "美元基金（美元）": {
+      "percentage": 3.83,
+      "amount": 383.0,
+      "count": 1
+    },
+    "基金": {
+      "percentage": 2.45,
+      "amount": 245.0,
+      "count": 18
+    },
+    "美股（美元）": {
+      "percentage": 1.0,
+      "amount": 100.0,
+      "count": 3
+    },
+    "定投基金": {
+      "percentage": 0.47,
+      "amount": 47.0,
+      "count": 2
+    },
+    "个人养老金": {
+      "percentage": 0.16,
+      "amount": 16.0,
+      "count": 3
+    },
+    "ETF": {
+      "percentage": 0.11,
+      "amount": 11.0,
+      "count": 2
+    },
+    "股息基金（港元）": {
+      "percentage": 0.1,
+      "amount": 10.0,
+      "count": 1
+    }
+  },
+  "by_risk": {
+    "-": {
+      "percentage": 84.44,
+      "amount": 8444.0,
+      "count": 1
+    },
+    "中低": {
+      "percentage": 5.1000000000000005,
+      "amount": 510.0,
+      "count": 17
+    },
+    "低": {
+      "percentage": 3.83,
+      "amount": 383.0,
+      "count": 1
+    },
+    "中": {
+      "percentage": 3.52,
+      "amount": 352.0,
+      "count": 6
+    },
+    "中高": {
+      "percentage": 1.82,
+      "amount": 182.0,
+      "count": 16
+    },
+    "高": {
+      "percentage": 1.26,
+      "amount": 126.0,
+      "count": 9
+    }
+  },
+  "important_products": [
+    {
+      "name": "其他（理财/国债/现金等）",
+      "code": "-",
+      "type": "其他",
+      "risk": "-",
+      "percentage": 84.44,
+      "amount": 8444.0,
+      "monitoring_priority": "high"
+    },
+    {
+      "name": "高腾微金美元货币基金",
+      "code": "GSUSMM",
+      "type": "美元基金（美元）",
+      "risk": "低",
+      "percentage": 3.83,
+      "amount": 383.0,
+      "monitoring_priority": "high"
+    },
+    {
+      "name": "南方中债7-10年期国开行债券指数A",
+      "code": "006227",
+      "type": "债券",
+      "risk": "中",
+      "percentage": 1.34,
+      "amount": 134.0,
+      "monitoring_priority": "high"
+    },
+    {
+      "name": "广发中债7-10年国开债指数A",
+      "code": "003376",
+      "type": "债券",
+      "risk": "中",
+      "percentage": 0.97,
+      "amount": 97.0,
+      "monitoring_priority": "medium"
+    },
+    {
+      "name": "季季享-招商稳乐中短债90天持有期C",
+      "code": "013552",
+      "type": "债券",
+      "risk": "中低",
+      "percentage": 0.9,
+      "amount": 90.00000000000001,
+      "monitoring_priority": "medium"
+    },
+    {
+      "name": "纳指100ETF-Invesco QQQ Trust",
+      "code": "QQQ",
+      "type": "美股（美元）",
+      "risk": "高",
+      "percentage": 0.58,
+      "amount": 57.99999999999999,
+      "monitoring_priority": "medium"
+    },
+    {
+      "name": "兴证全球恒盛90天持有债券A",
+      "code": "011526",
+      "type": "债券",
+      "risk": "中低",
+      "percentage": 0.54,
+      "amount": 54.0,
+      "monitoring_priority": "medium"
+    },
+    {
+      "name": "华夏鼎泓债券型证券投资基金",
+      "code": "010468",
+      "type": "债券",
+      "risk": "中低",
+      "percentage": 0.53,
+      "amount": 53.0,
+      "monitoring_priority": "medium"
+    },
+    {
+      "name": "景顺长城景泰纯利债券型证券投资基金C",
+      "code": "006782",
+      "type": "债券",
+      "risk": "中低",
+      "percentage": 0.53,
+      "amount": 53.0,
+      "monitoring_priority": "medium"
+    },
+    {
+      "name": "国泰融丰外延增长灵活配置混合型证券投资基金A",
+      "code": "000633",
+      "type": "基金",
+      "risk": "中",
+      "percentage": 0.53,
+      "amount": 53.0,
+      "monitoring_priority": "medium"
+    }
+  ],
+  "high_risk_products": [
+    {
+      "name": "纳指100ETF-Invesco QQQ Trust",
+      "code": "QQQ",
+      "type": "美股（美元）",
+      "risk": "高",
+      "risk_level": 5,
+      "percentage": 0.58,
+      "amount": 57.99999999999999,
+      "monitoring_frequency": "daily"
+    },
+    {
+      "name": "可口可乐",
+      "code": "KO",
+      "type": "美股（美元）",
+      "risk": "高",
+      "risk_level": 5,
+      "percentage": 0.28,
+      "amount": 28.000000000000004,
+      "monitoring_frequency": "daily"
+    },
+    {
+      "name": "能源指数ETF-SPDR XLE",
+      "code": "XLE",
+      "type": "美股（美元）",
+      "risk": "高",
+      "risk_level": 5,
+      "percentage": 0.14,
+      "amount": 14.000000000000002,
+      "monitoring_frequency": "daily"
+    },
+    {
+      "name": "中证500ETF嘉实",
+      "code": "510500",
+      "type": "ETF",
+      "risk": "高",
+      "risk_level": 5,
+      "percentage": 0.09,
+      "amount": 9.0,
+      "monitoring_frequency": "daily"
+    },
+    {
+      "name": "易方达创业板ETF联接C",
+      "code": "004744",
+      "type": "基金",
+      "risk": "高",
+      "risk_level": 5,
+      "percentage": 0.05,
+      "amount": 5.0,
+      "monitoring_frequency": "daily"
+    },
+    {
+      "name": "广发科创50ETF发起式联接C",
+      "code": "013814",
+      "type": "基金",
+      "risk": "高",
+      "risk_level": 5,
+      "percentage": 0.04,
+      "amount": 4.0,
+      "monitoring_frequency": "daily"
+    },
+    {
+      "name": "广发创业板ETF联接Y",
+      "code": "021320",
+      "type": "个人养老金",
+      "risk": "高",
+      "risk_level": 5,
+      "percentage": 0.03,
+      "amount": 2.9999999999999996,
+      "monitoring_frequency": "daily"
+    },
+    {
+      "name": "易方达中证红利ETF联接发起式Y",
+      "code": "021219",
+      "type": "个人养老金",
+      "risk": "高",
+      "risk_level": 5,
+      "percentage": 0.03,
+      "amount": 2.9999999999999996,
+      "monitoring_frequency": "daily"
+    },
+    {
+      "name": "沪深300ETF中金",
+      "code": "510300",
+      "type": "ETF",
+      "risk": "高",
+      "risk_level": 5,
+      "percentage": 0.02,
+      "amount": 2.0,
+      "monitoring_frequency": "daily"
+    },
+    {
+      "name": "国联安沪深300指数增强A",
+      "code": "020220",
+      "type": "定投基金",
+      "risk": "中高",
+      "risk_level": 4,
+      "percentage": 0.25,
+      "amount": 25.0,
+      "monitoring_frequency": "weekly"
+    },
+    {
+      "name": "博道盛彦混合A",
+      "code": "012124",
+      "type": "基金",
+      "risk": "中高",
+      "risk_level": 4,
+      "percentage": 0.24,
+      "amount": 23.999999999999996,
+      "monitoring_frequency": "weekly"
+    },
+    {
+      "name": "易方达亚洲精选股票（QDII）",
+      "code": "118001",
+      "type": "定投基金",
+      "risk": "中高",
+      "risk_level": 4,
+      "percentage": 0.22,
+      "amount": 22.0,
+      "monitoring_frequency": "weekly"
+    },
+    {
+      "name": "海富通沪深300指数增强C",
+      "code": "004512",
+      "type": "基金",
+      "risk": "中高",
+      "risk_level": 4,
+      "percentage": 0.2,
+      "amount": 20.0,
+      "monitoring_frequency": "weekly"
+    },
+    {
+      "name": "海富通沪深300指数增强A",
+      "code": "004513",
+      "type": "基金",
+      "risk": "中高",
+      "risk_level": 4,
+      "percentage": 0.18,
+      "amount": 18.0,
+      "monitoring_frequency": "weekly"
+    },
+    {
+      "name": "国投瑞银中证500指数量化增强A",
+      "code": "005994",
+      "type": "基金",
+      "risk": "中高",
+      "risk_level": 4,
+      "percentage": 0.14,
+      "amount": 14.000000000000002,
+      "monitoring_frequency": "weekly"
+    },
+    {
+      "name": "兴全中证800六个月持有期指数增强A",
+      "code": "010723",
+      "type": "基金",
+      "risk": "中高",
+      "risk_level": 4,
+      "percentage": 0.12,
+      "amount": 11.999999999999998,
+      "monitoring_frequency": "weekly"
+    },
+    {
+      "name": "兴全安泰积极养老五年持有（FOF）Y",
+      "code": "017559",
+      "type": "个人养老金",
+      "risk": "中高",
+      "risk_level": 4,
+      "percentage": 0.1,
+      "amount": 10.0,
+      "monitoring_frequency": "weekly"
+    },
+    {
+      "name": "鹏华中证500指数增强C",
+      "code": "014345",
+      "type": "基金",
+      "risk": "中高",
+      "risk_level": 4,
+      "percentage": 0.08,
+      "amount": 8.0,
+      "monitoring_frequency": "weekly"
+    },
+    {
+      "name": "天弘纳斯达克100指数（QDII）C",
+      "code": "012873",
+      "type": "基金",
+      "risk": "中高",
+      "risk_level": 4,
+      "percentage": 0.07,
+      "amount": 7.000000000000001,
+      "monitoring_frequency": "weekly"
+    },
+    {
+      "name": "摩根港股红利指数A",
+      "code": "013726",
+      "type": "基金",
+      "risk": "中高",
+      "risk_level": 4,
+      "percentage": 0.07,
+      "amount": 7.000000000000001,
+      "monitoring_frequency": "weekly"
+    },
+    {
+      "name": "易方达科技创新混合",
+      "code": "007346",
+      "type": "基金",
+      "risk": "中高",
+      "risk_level": 4,
+      "percentage": 0.06,
+      "amount": 5.999999999999999,
+      "monitoring_frequency": "weekly"
+    },
+    {
+      "name": "易方达上证科创板芯片ETF联接A",
+      "code": "015621",
+      "type": "基金",
+      "risk": "中高",
+      "risk_level": 4,
+      "percentage": 0.03,
+      "amount": 2.9999999999999996,
+      "monitoring_frequency": "weekly"
+    },
+    {
+      "name": "华宝油气A（QDII-LOF）",
+      "code": "162411",
+      "type": "基金",
+      "risk": "中高",
+      "risk_level": 4,
+      "percentage": 0.02,
+      "amount": 2.0,
+      "monitoring_frequency": "weekly"
+    },
+    {
+      "name": "易方达国防军工混合C",
+      "code": "015035",
+      "type": "基金",
+      "risk": "中高",
+      "risk_level": 4,
+      "percentage": 0.02,
+      "amount": 2.0,
+      "monitoring_frequency": "weekly"
+    },
+    {
+      "name": "广发全球精选股票（QDII）A",
+      "code": "270023",
+      "type": "基金",
+      "risk": "中高",
+      "risk_level": 4,
+      "percentage": 0.02,
+      "amount": 2.0,
+      "monitoring_frequency": "weekly"
+    }
+  ],
+  "monitoring_suggestions": [
+    {
+      "priority": "high",
+      "suggestion": "重点关注投资金额 > 50元的产品",
+      "reason": "金额较大，对整体收益影响显著"
+    },
+    {
+      "priority": "high",
+      "suggestion": "每日监控高风险产品（风险等级5）",
+      "reason": "波动大，需要密切跟踪"
+    },
+    {
+      "priority": "medium",
+      "suggestion": "每周检查中高风险产品（风险等级4）",
+      "reason": "中等波动，需要定期评估"
+    },
+    {
+      "priority": "low",
+      "suggestion": "每月回顾低风险产品",
+      "reason": "波动小，长期持有为主"
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "timestamp": "2026-03-12 08:03:35",
+  "analysis_type": "fund_stock_investment",
+  "total_high_risk_funds": 25,
+  "us_stocks": [
+    {
+      "name": "纳指100ETF-Invesco QQQ Trust",
+      "code": "QQQ",
+      "risk": "高",
+      "weight": 0.58,
+      "monitoring_frequency": "daily",
+      "alert_threshold": 3.0
+    },
+    {
+      "name": "可口可乐",
+      "code": "KO",
+      "risk": "高",
+      "weight": 0.28,
+      "monitoring_frequency": "daily",
+      "alert_threshold": 3.0
+    },
+    {
+      "name": "能源指数ETF-SPDR XLE",
+      "code": "XLE",
+      "risk": "高",
+      "weight": 0.14,
+      "monitoring_frequency": "daily",
+      "alert_threshold": 3.0
+    }
+  ],
+  "etfs": [
+    {
+      "name": "中证500ETF嘉实",
+      "code": "510500",
+      "risk": "高",
+      "weight": 0.09,
+      "monitoring_frequency": "daily",
+      "alert_threshold": 2.5
+    },
+    {
+      "name": "沪深300ETF中金",
+      "code": "510300",
+      "risk": "高",
+      "weight": 0.02,
+      "monitoring_frequency": "daily",
+      "alert_threshold": 2.5
+    }
+  ],
+  "stock_funds": [
+    {
+      "name": "国联安沪深300指数增强A",
+      "code": "020220",
+      "type": "定投基金",
+      "risk": "中高",
+      "weight": 0.25,
+      "monitoring_frequency": "weekly",
+      "suggestion": "查看基金季报了解具体股票持仓"
+    },
+    {
+      "name": "博道盛彦混合A",
+      "code": "012124",
+      "type": "基金",
+      "risk": "中高",
+      "weight": 0.24,
+      "monitoring_frequency": "weekly",
+      "suggestion": "查看基金季报了解具体股票持仓"
+    },
+    {
+      "name": "易方达亚洲精选股票（QDII）",
+      "code": "118001",
+      "type": "定投基金",
+      "risk": "中高",
+      "weight": 0.22,
+      "monitoring_frequency": "weekly",
+      "suggestion": "查看基金季报了解具体股票持仓"
+    },
+    {
+      "name": "海富通沪深300指数增强C",
+      "code": "004512",
+      "type": "基金",
+      "risk": "中高",
+      "weight": 0.2,
+      "monitoring_frequency": "weekly",
+      "suggestion": "查看基金季报了解具体股票持仓"
+    },
+    {
+      "name": "海富通沪深300指数增强A",
+      "code": "004513",
+      "type": "基金",
+      "risk": "中高",
+      "weight": 0.18,
+      "monitoring_frequency": "weekly",
+      "suggestion": "查看基金季报了解具体股票持仓"
+    },
+    {
+      "name": "国投瑞银中证500指数量化增强A",
+      "code": "005994",
+      "type": "基金",
+      "risk": "中高",
+      "weight": 0.14,
+      "monitoring_frequency": "weekly",
+      "suggestion": "查看基金季报了解具体股票持仓"
+    },
+    {
+      "name": "兴全中证800六个月持有期指数增强A",
+      "code": "010723",
+      "type": "基金",
+      "risk": "中高",
+      "weight": 0.12,
+      "monitoring_frequency": "weekly",
+      "suggestion": "查看基金季报了解具体股票持仓"
+    }
+  ],
+  "monitoring_recommendations": [
+    {
+      "priority": "high",
+      "action": "每日监控美股和ETF价格",
+      "reason": "高风险、波动大"
+    },
+    {
+      "priority": "medium",
+      "action": "每周检查基金表现",
+      "reason": "通过基金间接投资股票"
+    },
+    {
+      "priority": "low",
+      "action": "每月查看基金持仓报告",
+      "reason": "了解基金的具体股票持仓"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "action": "add",
+  "job": {
+    "name": "投资监控测试提醒",
+    "schedule": {
+      "kind": "at",
+      "atMs": 1773271993585 + 300000
+    },
+    "sessionTarget": "isolated",
+    "wakeMode": "now",
+    "deleteAfterRun": true,
+    "payload": {
+      "kind": "agentTurn",
+      "message": "你是一个暖心的投资助手。请用温暖、专业的方式提醒用户：投资监控系统测试成功！🎉 你的投资组合包含9个重点产品，总投资占比99.97%。建议：(1) 关注债券类产品的稳定性 (2) 定期检查美股和基金表现 (3) 保持投资纪律。记住：耐心是投资者最好的朋友！💪",
+      "deliver": true,
+      "channel": "qqbot",
+      "to": "D83E1CC26A958C0C37C1CA8000C34490"
+    }
+  }
+}
