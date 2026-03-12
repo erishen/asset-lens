@@ -1,0 +1,20 @@
+{
+  "data_mode": "real",
+  "timeout": 30,
+  "retry_count": 3,
+  "use_cache": true,
+  "cache_days": 7,
+  "data_sources": {
+    "akshare": {
+      "enabled": true,
+      "timeout": 30
+    },
+    "tushare": {
+      "enabled": false,
+      "token": ""
+    },
+    "baostock": {
+      "enabled": false
+    }
+  }
+}

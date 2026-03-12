@@ -1,0 +1,28 @@
+{
+  "qq_trading_alerts": [
+    {
+      "name": "每日收盘提醒",
+      "schedule": "0 15 * * *",
+      "message": "📊 股票策略每日收盘提醒\\n🕒 时间: 15:00\\n📈 今日交易结束\\n💰 请检查持仓股票表现\\n💡 建议: 更新投资组合价值，检查止损止盈条件",
+      "priority": "medium"
+    },
+    {
+      "name": "止损止盈提醒",
+      "trigger": "price_alert",
+      "message": "🚨 止损止盈提醒！\\n📊 股票: {stock_name} ({stock_code})\\n📈 当前盈亏: {profit_rate}%\\n⏰ 触发条件: {condition}\\n💡 建议: {action}",
+      "priority": "high"
+    },
+    {
+      "name": "策略周报提醒",
+      "schedule": "0 17 * * 5",
+      "message": "📋 股票策略周报提醒\\n📅 时间: 周五 17:00\\n📊 本周策略表现回顾\\n💰 投资组合价值更新\\n💡 建议: 分析本周表现，调整下周策略",
+      "priority": "medium"
+    },
+    {
+      "name": "月度再平衡提醒",
+      "schedule": "0 20 28 * *",
+      "message": "🔄 月度投资组合再平衡提醒\\n📅 时间: 每月28日 20:00\\n📊 本月策略表现分析\\n💰 投资组合再平衡检查\\n💡 建议: 调整仓位分配，优化策略配置",
+      "priority": "high"
+    }
+  ]
+}

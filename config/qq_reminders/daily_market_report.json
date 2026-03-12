@@ -1,0 +1,21 @@
+{
+  "action": "add",
+  "job": {
+    "name": "每日收盘行情报告",
+    "schedule": {
+      "kind": "cron",
+      "expr": "30 15 * * 1-5",
+      "tz": "Asia/Shanghai"
+    },
+    "sessionTarget": "isolated",
+    "wakeMode": "now",
+    "deleteAfterRun": false,
+    "payload": {
+      "kind": "agentTurn",
+      "message": "你是一个专业的投资助手。请生成今日收盘行情报告，包括：1) 主要指数表现 2) 板块涨跌排名 3) 重点股票表现 4) 技术分析 5) 明日展望。要求：详细、专业、有数据支撑。",
+      "deliver": true,
+      "channel": "qqbot",
+      "to": "D83E1CC26A958C0C37C1CA8000C34490"
+    }
+  }
+}

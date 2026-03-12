@@ -1,0 +1,36 @@
+{
+  "schedules": [
+    {
+      "name": "高风险基金每日晨报",
+      "description": "每天上午9点发送高风险基金监控提醒",
+      "cron": "0 9 * * *",
+      "tz": "Asia/Shanghai",
+      "command": "cd /root/Github/asset-lens && source venv/bin/activate && python3 high_risk_fund_monitor.py",
+      "output": "output/high_risk_monitoring/daily_morning_report.log"
+    },
+    {
+      "name": "高风险基金午间检查",
+      "description": "每天中午12点检查高风险基金表现",
+      "cron": "0 12 * * *",
+      "tz": "Asia/Shanghai",
+      "command": "cd /root/Github/asset-lens && source venv/bin/activate && python3 -c \"from datetime import datetime; print(f'📊 高风险基金午间检查 - {datetime.now().strftime(\"%H:%M\")}')\"",
+      "output": "output/high_risk_monitoring/noon_check.log"
+    },
+    {
+      "name": "高风险基金收盘总结",
+      "description": "每天下午4点生成高风险基金收盘报告",
+      "cron": "0 16 * * *",
+      "tz": "Asia/Shanghai",
+      "command": "cd /root/Github/asset-lens && source venv/bin/activate && python3 high_risk_fund_monitor.py",
+      "output": "output/high_risk_monitoring/close_report.log"
+    },
+    {
+      "name": "中高风险基金周报",
+      "description": "每周五下午5点生成中高风险基金周报",
+      "cron": "0 17 * * 5",
+      "tz": "Asia/Shanghai",
+      "command": "cd /root/Github/asset-lens && source venv/bin/activate && python3 -c \"import json; from datetime import datetime; data = {'report_time': datetime.now().strftime('%Y-%m-%d %H:%M'), 'type': 'weekly_high_risk_report'}; print(json.dumps(data, indent=2, ensure_ascii=False))\"",
+      "output": "output/high_risk_monitoring/weekly_report.log"
+    }
+  ]
+}
