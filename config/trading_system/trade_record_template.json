@@ -1,0 +1,29 @@
+{
+  "trade_record": {
+    "trade_id": "",
+    "timestamp": "",
+    "strategy": "",
+    "action": "",
+    "stock_code": "",
+    "stock_name": "",
+    "quantity": 0,
+    "price": 0.0,
+    "amount": 0.0,
+    "commission": 0.0,
+    "reason": "",
+    "portfolio_value": 0.0,
+    "cash_balance": 0.0
+  },
+  "portfolio_snapshot": {
+    "timestamp": "",
+    "total_value": 0.0,
+    "cash": 0.0,
+    "positions": [],
+    "performance": {
+      "daily_return": 0.0,
+      "total_return": 0.0,
+      "max_drawdown": 0.0,
+      "sharpe_ratio": 0.0
+    }
+  }
+}

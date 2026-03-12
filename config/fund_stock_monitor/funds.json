@@ -1,0 +1,37 @@
+{
+  "funds_monitoring": [
+    {
+      "code": "020220",
+      "name": "国联安沪深300指数增强A",
+      "type": "定投基金",
+      "risk": "中高",
+      "weight": 0.25,
+      "monitoring": {
+        "frequency": "weekly",
+        "check_items": ["净值变化", "跟踪误差", "基金经理"]
+      }
+    },
+    {
+      "code": "012124",
+      "name": "博道盛彦混合A",
+      "type": "基金",
+      "risk": "中高",
+      "weight": 0.24,
+      "monitoring": {
+        "frequency": "weekly",
+        "check_items": ["净值变化", "持仓调整", "业绩比较"]
+      }
+    },
+    {
+      "code": "118001",
+      "name": "易方达亚洲精选股票（QDII）",
+      "type": "定投基金",
+      "risk": "中高",
+      "weight": 0.22,
+      "monitoring": {
+        "frequency": "weekly",
+        "check_items": ["净值变化", "汇率影响", "区域市场"]
+      }
+    }
+  ]
+}
