@@ -1,0 +1,15 @@
+[Unit]
+Description=Asset-Lens Investment Monitor
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/Github/asset-lens
+Environment=PATH=/root/Github/asset-lens/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/root/Github/asset-lens/venv/bin/python3 simple_investment_monitor.py
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

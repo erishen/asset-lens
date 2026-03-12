@@ -1,0 +1,128 @@
+{
+  "trading_strategies": {
+    "value_strategy": {
+      "name": "价值投资策略",
+      "description": "低估值、稳健增长，适合长期投资",
+      "position_size": 0.10,
+      "max_positions": 10,
+      "stop_loss": -0.10,
+      "take_profit": 0.30,
+      "buy_conditions": [
+        "pe_ratio < 20",
+        "50 <= market_cap <= 500",
+        "1 <= turnover_rate <= 5",
+        "change_percent > 0"
+      ],
+      "sell_conditions": [
+        "pe_ratio > 40",
+        "profit_rate < -0.10",
+        "profit_rate > 0.30"
+      ],
+      "recommended_stocks": [
+        "sh600036", "sh601318", "sz000725", "sh600703", "sz002241"
+      ]
+    },
+    "momentum_strategy": {
+      "name": "成长动量策略",
+      "description": "追踪强势股，适合趋势跟踪",
+      "position_size": 0.08,
+      "max_positions": 15,
+      "stop_loss": -0.08,
+      "take_profit": 0.15,
+      "buy_conditions": [
+        "volume_ratio > 2",
+        "3 <= change_percent <= 9",
+        "5 <= turnover_rate <= 15",
+        "30 <= market_cap <= 300"
+      ],
+      "sell_conditions": [
+        "volume_ratio > 3",
+        "profit_rate < -0.08",
+        "profit_rate > 0.15"
+      ],
+      "recommended_stocks": [
+        "sh600519", "sz300750", "sz002475", "sh688981", "sz002594"
+      ]
+    },
+    "dividend_strategy": {
+      "name": "稳健红利策略",
+      "description": "高股息、低波动，适合稳健收益",
+      "position_size": 0.15,
+      "max_positions": 8,
+      "stop_loss": -0.08,
+      "take_profit": 0.15,
+      "buy_conditions": [
+        "pe_ratio < 15",
+        "market_cap > 200",
+        "turnover_rate < 3",
+        "amplitude_20d < 5"
+      ],
+      "sell_conditions": [
+        "pe_ratio > 25",
+        "profit_rate < -0.08",
+        "profit_rate > 0.15"
+      ],
+      "recommended_stocks": [
+        "sh601988", "sh601328", "sh600028", "sh601857", "sh600900"
+      ]
+    },
+    "reversal_strategy": {
+      "name": "困境反转策略",
+      "description": "抄底超跌股，高风险高收益",
+      "position_size": 0.05,
+      "max_positions": 20,
+      "stop_loss": -0.05,
+      "take_profit": 0.20,
+      "buy_conditions": [
+        "change_percent_5d < -15",
+        "pb_ratio < 1.5",
+        "volume_ratio > 1.5",
+        "market_cap < 100"
+      ],
+      "sell_conditions": [
+        "profit_rate > 0.20",
+        "profit_rate < -0.05",
+        "volume_ratio > 3"
+      ],
+      "recommended_stocks": [
+        "sz000725", "sz000100", "sh600703", "sz002241", "sz002456"
+      ]
+    }
+  },
+  "portfolio_configs": {
+    "conservative": {
+      "name": "保守型组合",
+      "description": "低风险，稳健收益",
+      "allocation": {
+        "value_strategy": 0.50,
+        "dividend_strategy": 0.40,
+        "momentum_strategy": 0.10
+      },
+      "total_capital": 100000,
+      "max_drawdown": -0.10
+    },
+    "balanced": {
+      "name": "平衡型组合",
+      "description": "风险收益平衡",
+      "allocation": {
+        "value_strategy": 0.40,
+        "momentum_strategy": 0.30,
+        "dividend_strategy": 0.20,
+        "reversal_strategy": 0.10
+      },
+      "total_capital": 100000,
+      "max_drawdown": -0.15
+    },
+    "aggressive": {
+      "name": "进取型组合",
+      "description": "高风险，高收益潜力",
+      "allocation": {
+        "momentum_strategy": 0.50,
+        "reversal_strategy": 0.30,
+        "value_strategy": 0.20
+      },
+      "total_capital": 100000,
+      "max_drawdown": -0.20
+    }
+  }
+}

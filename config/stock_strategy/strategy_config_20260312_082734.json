@@ -1,0 +1,162 @@
+{
+  "timestamp": "2026-03-12 08:27:34",
+  "strategies": {
+    "value": {
+      "description": "价值投资策略 - 低估值、稳健增长",
+      "position_size": "10%",
+      "max_positions": 10,
+      "stop_loss": "-10%",
+      "take_profit": "30%",
+      "recommended_stocks": [
+        {
+          "code": "sz000100",
+          "name": "TCL科技",
+          "score": 95
+        },
+        {
+          "code": "sz002456",
+          "name": "欧菲光",
+          "score": 90
+        },
+        {
+          "code": "sh600036",
+          "name": "招商银行",
+          "score": 85
+        },
+        {
+          "code": "sh600028",
+          "name": "中国石化",
+          "score": 85
+        },
+        {
+          "code": "sh601857",
+          "name": "中国石油",
+          "score": 85
+        }
+      ]
+    },
+    "momentum": {
+      "description": "成长动量策略 - 追踪强势股",
+      "position_size": "8%",
+      "max_positions": 15,
+      "stop_loss": "-8%",
+      "take_profit": "15%",
+      "recommended_stocks": [
+        {
+          "code": "sh601328",
+          "name": "交通银行",
+          "score": 75
+        },
+        {
+          "code": "sz300782",
+          "name": "卓胜微",
+          "score": 75
+        }
+      ]
+    },
+    "dividend": {
+      "description": "稳健红利策略 - 高股息、低波动",
+      "position_size": "15%",
+      "max_positions": 8,
+      "stop_loss": "-8%",
+      "take_profit": "15%",
+      "recommended_stocks": [
+        {
+          "code": "sh600036",
+          "name": "招商银行",
+          "score": 95
+        },
+        {
+          "code": "sz000100",
+          "name": "TCL科技",
+          "score": 90
+        },
+        {
+          "code": "sz002241",
+          "name": "歌尔股份",
+          "score": 90
+        },
+        {
+          "code": "sh600028",
+          "name": "中国石化",
+          "score": 85
+        },
+        {
+          "code": "sh601857",
+          "name": "中国石油",
+          "score": 85
+        }
+      ]
+    },
+    "reversal": {
+      "description": "困境反转策略 - 抄底超跌股",
+      "position_size": "5%",
+      "max_positions": 20,
+      "stop_loss": "-5%",
+      "take_profit": "20%",
+      "recommended_stocks": []
+    }
+  },
+  "top_recommendations": [
+    {
+      "rank": 1,
+      "code": "sh601857",
+      "name": "中国石油",
+      "total_score": 70.0
+    },
+    {
+      "rank": 2,
+      "code": "sz002456",
+      "name": "欧菲光",
+      "total_score": 70.0
+    },
+    {
+      "rank": 3,
+      "code": "sh600036",
+      "name": "招商银行",
+      "total_score": 68.75
+    },
+    {
+      "rank": 4,
+      "code": "sz002241",
+      "name": "歌尔股份",
+      "total_score": 66.25
+    },
+    {
+      "rank": 5,
+      "code": "sz300782",
+      "name": "卓胜微",
+      "total_score": 62.5
+    },
+    {
+      "rank": 6,
+      "code": "sh600900",
+      "name": "长江电力",
+      "total_score": 61.25
+    },
+    {
+      "rank": 7,
+      "code": "sz000725",
+      "name": "京东方A",
+      "total_score": 61.25
+    },
+    {
+      "rank": 8,
+      "code": "sh600703",
+      "name": "三安光电",
+      "total_score": 61.25
+    },
+    {
+      "rank": 9,
+      "code": "sh601328",
+      "name": "交通银行",
+      "total_score": 60.0
+    },
+    {
+      "rank": 10,
+      "code": "sz000100",
+      "name": "TCL科技",
+      "total_score": 60.0
+    }
+  ]
+}

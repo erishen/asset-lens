@@ -1,0 +1,47 @@
+{
+  "simulation_rules": {
+    "trading_parameters": {
+      "initial_capital": 100000,
+      "commission_rate": 0.0003,
+      "stamp_tax": 0.001,
+      "min_trade_amount": 100,
+      "trade_frequency": "daily",
+      "rebalance_frequency": "monthly"
+    },
+    "risk_management": {
+      "max_position_size": 0.20,
+      "max_sector_exposure": 0.30,
+      "max_single_loss": 0.10,
+      "max_portfolio_loss": 0.20,
+      "stop_loss_triggers": [
+        "single_stock_loss > 10%",
+        "portfolio_loss > 15%",
+        "market_crash > 20%"
+      ]
+    },
+    "performance_metrics": {
+      "calculate_sharpe_ratio": true,
+      "calculate_max_drawdown": true,
+      "calculate_win_rate": true,
+      "calculate_annual_return": true,
+      "benchmark_index": "sh000300"
+    },
+    "simulation_periods": [
+      {
+        "name": "短期测试",
+        "duration_days": 30,
+        "description": "策略短期适应性测试"
+      },
+      {
+        "name": "中期测试",
+        "duration_days": 90,
+        "description": "策略稳定性测试"
+      },
+      {
+        "name": "长期测试",
+        "duration_days": 365,
+        "description": "策略长期有效性测试"
+      }
+    ]
+  }
+}

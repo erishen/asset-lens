@@ -1,0 +1,10 @@
+{
+  "timeout": 30,
+  "retry": 3,
+  "proxy": "",
+  "verify": true,
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+  "cache_enabled": true,
+  "cache_dir": "cache/akshare",
+  "cache_days": 7
+}

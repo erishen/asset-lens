@@ -1,0 +1,64 @@
+{
+  "monitoring_config": {
+    "daily_monitoring": {
+      "time": "15:30",
+      "tasks": [
+        "检查持仓股票收盘价",
+        "计算当日盈亏",
+        "检查止损止盈条件",
+        "更新投资组合价值"
+      ]
+    },
+    "weekly_review": {
+      "day": "friday",
+      "time": "17:00",
+      "tasks": [
+        "分析本周策略表现",
+        "检查持仓结构",
+        "评估风险暴露",
+        "生成周度报告"
+      ]
+    },
+    "monthly_rebalance": {
+      "day": "last_day",
+      "time": "20:00",
+      "tasks": [
+        "再平衡投资组合",
+        "评估策略有效性",
+        "调整仓位分配",
+        "生成月度报告"
+      ]
+    },
+    "alerts": {
+      "price_alerts": [
+        {
+          "type": "stop_loss",
+          "condition": "profit_rate < -0.10",
+          "action": "发送止损提醒，建议卖出"
+        },
+        {
+          "type": "take_profit",
+          "condition": "profit_rate > 0.30",
+          "action": "发送止盈提醒，建议卖出"
+        },
+        {
+          "type": "price_breakout",
+          "condition": "price_change > 0.05",
+          "action": "发送突破提醒，关注"
+        }
+      ],
+      "portfolio_alerts": [
+        {
+          "type": "max_drawdown",
+          "condition": "portfolio_drawdown > 0.15",
+          "action": "发送最大回撤警告"
+        },
+        {
+          "type": "sector_concentration",
+          "condition": "sector_exposure > 0.30",
+          "action": "发送行业集中度警告"
+        }
+      ]
+    }
+  }
+}

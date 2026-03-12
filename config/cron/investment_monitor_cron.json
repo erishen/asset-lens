@@ -1,0 +1,36 @@
+{
+  "schedules": [
+    {
+      "name": "每日投资提醒",
+      "description": "每天上午9点发送投资提醒",
+      "cron": "0 9 * * *",
+      "tz": "Asia/Shanghai",
+      "command": "cd /root/Github/asset-lens && source venv/bin/activate && python3 simple_investment_monitor.py",
+      "output": "output/monitoring_reports/daily_reminder.log"
+    },
+    {
+      "name": "午间市场检查",
+      "description": "每天中午12点检查市场状态",
+      "cron": "0 12 * * *",
+      "tz": "Asia/Shanghai",
+      "command": "cd /root/Github/asset-lens && source venv/bin/activate && python3 -c \"print('📈 午间市场检查完成')\"",
+      "output": "output/monitoring_reports/noon_check.log"
+    },
+    {
+      "name": "收盘总结",
+      "description": "每天下午4点生成收盘总结",
+      "cron": "0 16 * * *",
+      "tz": "Asia/Shanghai",
+      "command": "cd /root/Github/asset-lens && source venv/bin/activate && python3 simple_investment_monitor.py",
+      "output": "output/monitoring_reports/close_summary.log"
+    },
+    {
+      "name": "每周投资回顾",
+      "description": "每周五下午5点生成周报",
+      "cron": "0 17 * * 5",
+      "tz": "Asia/Shanghai",
+      "command": "cd /root/Github/asset-lens && source venv/bin/activate && python3 -c \"import datetime; print(f'📊 本周投资回顾 - {datetime.datetime.now().strftime(\"%Y-%m-%d\")}')\"",
+      "output": "output/monitoring_reports/weekly_review.log"
+    }
+  ]
+}

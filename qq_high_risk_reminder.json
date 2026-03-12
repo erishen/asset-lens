@@ -1,0 +1,21 @@
+{
+  "action": "add",
+  "job": {
+    "name": "高风险基金每日监控提醒",
+    "schedule": {
+      "kind": "cron",
+      "expr": "0 9 * * *",
+      "tz": "Asia/Shanghai"
+    },
+    "sessionTarget": "isolated",
+    "wakeMode": "now",
+    "deleteAfterRun": false,
+    "payload": {
+      "kind": "agentTurn",
+      "message": "你是一个专业的投资风险监控助手。请用专业、关注风险的方式提醒用户：现在是高风险基金每日监控时间。🎯 你的投资组合中有9个高风险基金需要密切监控，包括纳指ETF、可口可乐等。建议：(1) 检查高风险基金的价格波动 (2) 关注美股市场动态 (3) 评估是否需要调整仓位。风险提示：高风险基金波动较大，请保持警惕！⚠️",
+      "deliver": true,
+      "channel": "qqbot",
+      "to": "D83E1CC26A958C0C37C1CA8000C34490"
+    }
+  }
+}
