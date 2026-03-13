@@ -77,20 +77,18 @@ def search_fund_data(keyword: str):
 
 def update_market_data(api: str = "eastmoney"):
     """更新市场数据"""
-    from ..data.market_data_fetcher import MarketDataFetcher
+    from ..data.enhanced_market_data_fetcher import enhanced_market_data_fetcher
 
-    fetcher = MarketDataFetcher()
-
-    click.echo(f"\n🌍 更新市场数据（数据源: {api}）...")
+    click.echo(f"\n🌍 更新市场数据（数据源: 增强版多数据源）...")
     click.echo("=" * 60)
 
     try:
         if api == "finnhub":
-            data = fetcher.fetch_all_foreign_indexes()
-            click.echo(f"  ✅ 更新了 {len(data)} 个国外指数")
+            data = enhanced_market_data_fetcher.fetch_all_foreign_indexes()
+            click.echo(f"  ✅ 更新了 {len(data.get('国外指数', {}))} 个国外指数")
         else:
-            data = fetcher.fetch_all_domestic_indexes()
-            click.echo(f"  ✅ 更新了 {len(data)} 个国内指数")
+            data = enhanced_market_data_fetcher.fetch_all_domestic_indexes()
+            click.echo(f"  ✅ 更新了 {len(data.get('国内指数', {}))} 个国内指数")
     except Exception as e:
         click.echo(f"  ❌ 更新失败: {e}")
 
@@ -100,7 +98,7 @@ def update_market_data(api: str = "eastmoney"):
 def update_all_data():
     """更新所有数据"""
     from ..data.csv_parser import CSVParser
-    from ..data.market_data_fetcher import MarketDataFetcher
+    from ..data.enhanced_market_data_fetcher import enhanced_market_data_fetcher
     from ..data.fund_fetcher import FundDataFetcher
     from ..data.stock_fetcher import StockDataFetcher
 
@@ -109,10 +107,11 @@ def update_all_data():
 
     # 更新市场数据
     try:
-        fetcher = MarketDataFetcher()
-        domestic = fetcher.fetch_all_domestic_indexes()
-        foreign = fetcher.fetch_all_foreign_indexes()
-        click.echo(f"  ✅ 市场数据: 国内 {len(domestic)} 个, 国外 {len(foreign)} 个")
+        domestic = enhanced_market_data_fetcher.fetch_all_domestic_indexes()
+        foreign = enhanced_market_data_fetcher.fetch_all_foreign_indexes()
+        domestic_count = len(domestic.get('国内指数', {}))
+        foreign_count = len(foreign.get('国外指数', {}))
+        click.echo(f"  ✅ 市场数据: 国内 {domestic_count} 个, 国外 {foreign_count} 个")
     except Exception as e:
         click.echo(f"  ❌ 市场数据更新失败: {e}")
 

@@ -163,7 +163,7 @@ def calculate_irr(data_mode: Optional[str] = None):
 def estimate_returns(data_mode: Optional[str] = None):
     """估算收益"""
     from ..data.csv_parser import CSVParser
-    from ..data.market_data_fetcher import MarketDataFetcher
+    from ..data.enhanced_market_data_fetcher import enhanced_market_data_fetcher
     from ..config import config
 
     if data_mode:
@@ -178,7 +178,6 @@ def estimate_returns(data_mode: Optional[str] = None):
             click.echo("  未找到投资数据")
             return
 
-        fetcher = MarketDataFetcher()
         total_estimated: float = 0.0
 
         for product in products[:10]:

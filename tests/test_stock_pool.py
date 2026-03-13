@@ -261,3 +261,169 @@ class TestStockPool:
         pool._save_pool()
 
         assert len(pool.positions) == 0
+
+
+class TestStrategyStockPool:
+    """策略选股入池测试"""
+
+    @pytest.fixture
+    def temp_cache_path(self):
+        """临时缓存路径"""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            yield Path(tmp_dir)
+
+    @pytest.fixture
+    def pool(self, temp_cache_path):
+        """创建股票池实例"""
+        with patch('asset_lens.data.stock_pool.config') as mock_config:
+            mock_config.cache_path = temp_cache_path
+            from asset_lens.data.stock_pool import StockPool
+            pool = StockPool("strategy_test")
+            yield pool
+
+    def test_add_stocks_by_strategy(self, pool):
+        """测试策略选股入池"""
+        stocks = [
+            {
+                "code": "sh600519",
+                "name": "贵州茅台",
+                "pe_ratio": 15,
+                "market_cap": 200,
+                "turnover_rate": 3,
+                "change_percent": 2,
+            },
+            {
+                "code": "sz000001",
+                "name": "平安银行",
+                "pe_ratio": 8,
+                "market_cap": 150,
+                "turnover_rate": 5,
+                "change_percent": 1,
+            },
+            {
+                "code": "sh601318",
+                "name": "中国平安",
+                "pe_ratio": 50,
+                "market_cap": 500,
+                "turnover_rate": 20,
+                "change_percent": -5,
+            },
+        ]
+
+        result = pool.add_stocks_by_strategy(
+            strategy_name="value",
+            stocks=stocks,
+            min_score=60.0,
+            max_stocks=5,
+        )
+
+        assert result["success"] is True
+        assert result["strategy"] == "value"
+        assert result["added"] > 0
+        assert len(result["stocks_added"]) > 0
+
+    def test_add_stocks_by_strategy_with_auto_remove(self, pool):
+        """测试策略选股入池 - 自动移除低分"""
+        # 先添加一些股票
+        pool.add_stock("sh600000", "浦发银行", 10.0, status="watching")
+
+        stocks = [
+            {
+                "code": "sh600519",
+                "name": "贵州茅台",
+                "pe_ratio": 15,
+                "market_cap": 200,
+                "turnover_rate": 3,
+                "change_percent": 2,
+            },
+        ]
+
+        result = pool.add_stocks_by_strategy(
+            strategy_name="value",
+            stocks=stocks,
+            min_score=60.0,
+            max_stocks=5,
+            auto_remove_low_score=True,
+        )
+
+        assert result["success"] is True
+
+    def test_get_strategy_top_stocks(self, pool):
+        """测试获取策略评分最高的股票"""
+        # 先添加策略选股
+        stocks = [
+            {
+                "code": "sh600519",
+                "name": "贵州茅台",
+                "pe_ratio": 15,
+                "market_cap": 200,
+                "turnover_rate": 3,
+                "change_percent": 2,
+            },
+        ]
+
+        pool.add_stocks_by_strategy(
+            strategy_name="value",
+            stocks=stocks,
+            min_score=60.0,
+        )
+
+        result = pool.get_strategy_top_stocks("value", top_n=5)
+
+        assert isinstance(result, list)
+
+    def test_clear_strategy_stocks(self, pool):
+        """测试清除策略股票"""
+        # 先添加策略选股
+        stocks = [
+            {
+                "code": "sh600519",
+                "name": "贵州茅台",
+                "pe_ratio": 15,
+                "market_cap": 200,
+                "turnover_rate": 3,
+                "change_percent": 2,
+            },
+        ]
+
+        pool.add_stocks_by_strategy(
+            strategy_name="value",
+            stocks=stocks,
+            min_score=60.0,
+        )
+
+        result = pool.clear_strategy_stocks("value")
+
+        assert result["success"] is True
+        assert result["strategy"] == "value"
+
+    def test_add_stocks_by_strategy_empty_stocks(self, pool):
+        """测试策略选股入池 - 空股票列表"""
+        result = pool.add_stocks_by_strategy(
+            strategy_name="value",
+            stocks=[],
+            min_score=60.0,
+        )
+
+        assert result["success"] is True
+        assert result["added"] == 0
+
+    def test_add_stocks_by_strategy_invalid_strategy(self, pool):
+        """测试策略选股入池 - 无效策略"""
+        stocks = [
+            {
+                "code": "sh600519",
+                "name": "贵州茅台",
+                "pe_ratio": 15,
+            },
+        ]
+
+        result = pool.add_stocks_by_strategy(
+            strategy_name="invalid_strategy",
+            stocks=stocks,
+            min_score=60.0,
+        )
+
+        # 无效策略应该返回成功但添加0只
+        assert result["success"] is True
+        assert result["added"] == 0
