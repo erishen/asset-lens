@@ -1,17 +1,23 @@
 """
-Report generation module for asset-lens.
-报告生成模块
+Report Components - 报告组件模块
+
+提供可复用的报告生成组件，支持渐进式重构。
 """
 
-from asset_lens.report.charts import ChartGenerator, chart_generator
-from asset_lens.report.html_report import HTMLReportGenerator, html_report_generator
-from asset_lens.report.pdf_report import PDFReportGenerator, pdf_report_generator
+from .formatters import (
+    format_currency,
+    format_percentage,
+    format_date,
+    format_number,
+)
+from .charts import ChartGenerator
+from .data_collectors import ReportDataCollector
 
 __all__ = [
+    "format_currency",
+    "format_percentage",
+    "format_date",
+    "format_number",
     "ChartGenerator",
-    "chart_generator",
-    "PDFReportGenerator",
-    "pdf_report_generator",
-    "HTMLReportGenerator",
-    "html_report_generator",
+    "ReportDataCollector",
 ]
