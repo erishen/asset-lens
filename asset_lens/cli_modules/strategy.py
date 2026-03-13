@@ -141,3 +141,113 @@ def screen_stocks_with_strategy(strategy_name: str, limit: int = 20):
         click.echo(f"  ❌ 筛选失败: {e}")
 
     click.echo("=" * 60)
+
+
+def add_stocks_to_pool_by_strategy(
+    strategy_name: str,
+    stocks: list = None,
+    min_score: float = 60.0,
+    max_stocks: int = 10,
+    auto_remove: bool = False,
+):
+    """根据策略筛选股票并添加到股票池"""
+    from ..data.stock_pool import StockPool
+    from ..data.strategy_engine import StrategyEngine
+
+    pool = StockPool()
+    engine = StrategyEngine()
+
+    click.echo(f"\n📊 策略选股入池: {strategy_name}")
+    click.echo("=" * 60)
+
+    # 如果没有提供股票列表，尝试获取市场股票
+    if not stocks:
+        click.echo("  ⚠️  未提供股票列表，请先获取股票数据")
+        click.echo("  💡 使用 'make screen-stocks' 获取股票数据")
+        return
+
+    try:
+        result = pool.add_stocks_by_strategy(
+            strategy_name=strategy_name,
+            stocks=stocks,
+            min_score=min_score,
+            max_stocks=max_stocks,
+            auto_remove_low_score=auto_remove,
+        )
+
+        click.echo(f"\n  ✅ 筛选完成:")
+        click.echo(f"     - 符合条件: {result['total_screened']} 只")
+        click.echo(f"     - 新增入池: {result['added']} 只")
+        click.echo(f"     - 更新评分: {result['updated']} 只")
+        if result['removed'] > 0:
+            click.echo(f"     - 移除低分: {result['removed']} 只")
+
+        if result['stocks_added']:
+            click.echo(f"\n  📈 入池股票:")
+            for stock in result['stocks_added'][:10]:
+                click.echo(f"     - {stock['code']} {stock['name']} (评分: {stock['score']:.1f})")
+
+    except Exception as e:
+        click.echo(f"  ❌ 选股入池失败: {e}")
+
+    click.echo("=" * 60)
+
+
+def show_strategy_pool_status(strategy_name: str):
+    """显示股票池中某策略的股票状态"""
+    from ..data.stock_pool import StockPool
+
+    pool = StockPool()
+
+    click.echo(f"\n📊 股票池策略状态: {strategy_name}")
+    click.echo("=" * 60)
+
+    try:
+        stocks = pool.get_strategy_top_stocks(strategy_name, top_n=20)
+
+        if stocks:
+            click.echo(f"\n  {'代码':<12} {'名称':<10} {'状态':<8} {'评分':<8} {'收益率':<10}")
+            click.echo("  " + "-" * 50)
+
+            for stock in stocks:
+                code = stock.get("code", "")
+                name = stock.get("name", "")
+                status = stock.get("status", "")
+                score = stock.get("strategy_score", 0)
+                profit_rate = stock.get("profit_rate", 0)
+
+                click.echo(
+                    f"  {code:<12} {name:<10} {status:<8} {score:<8.1f} {profit_rate:+.2f}%"
+                )
+        else:
+            click.echo("  股票池中暂无该策略选入的股票")
+
+    except Exception as e:
+        click.echo(f"  ❌ 获取状态失败: {e}")
+
+    click.echo("=" * 60)
+
+
+def clear_strategy_from_pool(strategy_name: str):
+    """清除股票池中某策略选入的股票"""
+    from ..data.stock_pool import StockPool
+
+    pool = StockPool()
+
+    click.echo(f"\n🗑️  清除策略股票: {strategy_name}")
+    click.echo("=" * 60)
+
+    try:
+        result = pool.clear_strategy_stocks(strategy_name)
+
+        click.echo(f"  ✅ 已移除 {result['removed_count']} 只股票")
+
+        if result['removed_codes']:
+            click.echo(f"\n  移除的股票:")
+            for code in result['removed_codes'][:10]:
+                click.echo(f"     - {code}")
+
+    except Exception as e:
+        click.echo(f"  ❌ 清除失败: {e}")
+
+    click.echo("=" * 60)

@@ -1411,47 +1411,33 @@ def update_market_data(api, use_async):
     if use_async:
         import asyncio
 
-        from .data.async_market_data_fetcher import AsyncMarketDataFetcher
+        from .data.enhanced_market_data_fetcher import enhanced_market_data_fetcher
 
-        click.echo("🚀 使用异步并发模式")
+        click.echo("🚀 使用增强版数据获取器")
 
         try:
-            fetcher = AsyncMarketDataFetcher(max_concurrent=5, request_delay=0.3)
-
-            if api == "finnhub":
-                result: Dict[str, Any] = asyncio.run(fetcher.fetch_all_foreign_indexes_async())
-                success = bool(result.get("data"))
-            else:
-                domestic_success, foreign_success = asyncio.run(fetcher.update_all_caches_async())
-                success = bool(domestic_success) and bool(foreign_success)
+            domestic_result = enhanced_market_data_fetcher.fetch_all_domestic_indexes()
+            foreign_result = enhanced_market_data_fetcher.fetch_all_foreign_indexes()
+            success = bool(domestic_result) and bool(foreign_result)
 
             if success:
                 click.echo("\n✅ 市场指数数据更新成功！")
             else:
                 click.echo("\n❌ 市场指数数据更新失败！", err=True)
 
-        except ImportError:
-            click.echo("❌ 需要安装 aiohttp: pip install aiohttp", err=True)
         except Exception as e:
             click.echo(f"❌ 更新失败: {e}", err=True)
     else:
-        from .data.market_data_fetcher import MarketDataFetcher
+        from .data.enhanced_market_data_fetcher import enhanced_market_data_fetcher
 
-        if api == "alphavantage":
-            click.echo("📌 使用 Alpha Vantage API（获取完整历史数据）")
-            click.echo("   - 包含：历史走势、周期表现、技术状态")
-            click.echo("   - 限制：25次/天，每次请求间隔12秒")
-        else:
-            click.echo("📌 使用 Finnhub API（仅获取实时数据）")
-            click.echo("   - 包含：实时报价、涨跌幅")
-            click.echo("   - 限制：60次/分钟")
-
+        click.echo("📌 使用增强版数据获取器")
+        click.echo("   - 多数据源冗余（AkShare、腾讯财经、东方财富等）")
+        click.echo("   - 智能缓存（1小时有效期）")
         click.echo("")
 
         try:
-            sync_fetcher: Any = MarketDataFetcher()
-            domestic_result: Dict[str, Any] = sync_fetcher.fetch_all_domestic_indexes()  # type: ignore
-            foreign_result: Dict[str, Any] = sync_fetcher.fetch_all_foreign_indexes()  # type: ignore
+            domestic_result = enhanced_market_data_fetcher.fetch_all_domestic_indexes()
+            foreign_result = enhanced_market_data_fetcher.fetch_all_foreign_indexes()
             success = bool(domestic_result.get("data")) and bool(foreign_result.get("data"))
 
             if success:
@@ -2214,9 +2200,7 @@ def update_all_data(data_mode):
 
     一键更新所有需要的数据
     """
-    import asyncio
-
-    from .data.async_market_data_fetcher import AsyncMarketDataFetcher
+    from .data.enhanced_market_data_fetcher import enhanced_market_data_fetcher
     from .data.fund_fetcher import fetch_portfolio_fund_quotes
     from .data.stock_fetcher import stock_fetcher
 
@@ -2228,9 +2212,9 @@ def update_all_data(data_mode):
 
     click.echo("\n1️⃣ 更新市场指数数据...")
     try:
-        fetcher = AsyncMarketDataFetcher(max_concurrent=5, request_delay=0.3)
-        domestic_success, foreign_success = asyncio.run(fetcher.update_all_caches_async())
-        if domestic_success and foreign_success:
+        domestic_result = enhanced_market_data_fetcher.fetch_all_domestic_indexes()
+        foreign_result = enhanced_market_data_fetcher.fetch_all_foreign_indexes()
+        if domestic_result and foreign_result:
             click.echo("   ✅ 市场指数数据更新成功")
         else:
             click.echo("   ⚠️  市场指数数据部分更新失败")
@@ -2787,13 +2771,10 @@ def predict_etf_command(force_update, analyze_portfolio):
 
         # 更新指数市场数据
         if need_update_index:
-            import asyncio
+            from .data.enhanced_market_data_fetcher import enhanced_market_data_fetcher
 
-            from .data.async_market_data_fetcher import AsyncMarketDataFetcher
-
-            fetcher = AsyncMarketDataFetcher(max_concurrent=5, request_delay=0.3)
-            domestic_success, _ = asyncio.run(fetcher.update_all_caches_async())
-            if domestic_success:
+            domestic_result = enhanced_market_data_fetcher.fetch_all_domestic_indexes()
+            if domestic_result:
                 click.echo("✅ 指数市场数据更新完成\n")
             else:
                 click.echo("❌ 指数市场数据更新失败", err=True)
@@ -3943,8 +3924,8 @@ def check():
     
     # 检查市场数据获取器
     try:
-        from .data.market_data_fetcher import MarketDataFetcher
-        MarketDataFetcher()
+        from .data.enhanced_market_data_fetcher import enhanced_market_data_fetcher
+        enhanced_market_data_fetcher.fetch_all_domestic_indexes()
         click.echo("  ✅ 市场数据获取器正常")
         checks_passed += 1
     except Exception as e:
