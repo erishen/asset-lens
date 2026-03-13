@@ -133,9 +133,9 @@ class UnifiedDataFetcher:
 
     def _get_market_fetcher(self):
         """获取市场指数数据获取器"""
-        from .market_data_fetcher import MarketDataFetcher
+        from .enhanced_market_data_fetcher import enhanced_market_data_fetcher
 
-        return MarketDataFetcher()
+        return enhanced_market_data_fetcher
 
     def fetch(
         self,

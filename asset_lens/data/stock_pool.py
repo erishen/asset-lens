@@ -502,5 +502,163 @@ class StockPool:
         stocks.sort(key=lambda x: x.get("profit_rate", 0))
         return stocks[:top_n]
 
+    def add_stocks_by_strategy(
+        self,
+        strategy_name: str,
+        stocks: List[Dict[str, Any]],
+        min_score: float = 60.0,
+        max_stocks: int = 10,
+        auto_remove_low_score: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        根据策略筛选股票并添加到股票池
+
+        Args:
+            strategy_name: 策略名称
+            stocks: 待筛选的股票列表
+            min_score: 最低策略得分
+            max_stocks: 最大添加数量
+            auto_remove_low_score: 是否自动移除低分股票
+
+        Returns:
+            添加结果
+        """
+        from .strategy_engine import strategy_engine
+
+        # 使用策略筛选股票
+        screened_stocks = strategy_engine.screen_stocks(
+            stocks=stocks,
+            strategy_name=strategy_name,
+            min_score=min_score,
+        )
+
+        # 限制添加数量
+        stocks_to_add = screened_stocks[:max_stocks]
+
+        added_count = 0
+        updated_count = 0
+        skipped_count = 0
+
+        for stock in stocks_to_add:
+            code = stock.get("code", "")
+            name = stock.get("name", "")
+            score = stock.get("strategy_score", 0)
+
+            if code in self.positions:
+                # 更新现有股票的策略评分
+                existing = self.positions[code]
+                existing.selected_count += 1
+                existing.selected_history.append({
+                    "date": datetime.now().strftime("%Y-%m-%d"),
+                    "strategy": strategy_name,
+                    "score": score,
+                })
+                updated_count += 1
+            else:
+                # 添加新股票（使用策略评分作为价格占位）
+                self.add_stock(
+                    code=code,
+                    name=name,
+                    price=0.0,  # 价格稍后更新
+                    status="watching",
+                    notes=f"策略 {strategy_name} 选入，评分: {score:.1f}",
+                )
+                # 设置首次入选信息
+                self.positions[code].first_selected_date = datetime.now().strftime("%Y-%m-%d")
+                self.positions[code].selected_count = 1
+                self.positions[code].selected_history = [{
+                    "date": datetime.now().strftime("%Y-%m-%d"),
+                    "strategy": strategy_name,
+                    "score": score,
+                }]
+                added_count += 1
+
+        # 自动移除低分股票
+        removed_count = 0
+        if auto_remove_low_score:
+            for code, position in list(self.positions.items()):
+                if position.status == "watching":
+                    # 检查是否在本次筛选中得分过低
+                    found = False
+                    for stock in stocks_to_add:
+                        if stock.get("code") == code:
+                            found = True
+                            break
+                    if not found:
+                        self.remove_stock(code, reason=f"策略 {strategy_name} 得分低于 {min_score}")
+                        removed_count += 1
+
+        self._save_pool()
+
+        return {
+            "success": True,
+            "strategy": strategy_name,
+            "total_screened": len(screened_stocks),
+            "added": added_count,
+            "updated": updated_count,
+            "removed": removed_count,
+            "stocks_added": [
+                {"code": s.get("code"), "name": s.get("name"), "score": s.get("strategy_score")}
+                for s in stocks_to_add
+            ],
+        }
+
+    def get_strategy_top_stocks(self, strategy_name: str, top_n: int = 10) -> List[Dict[str, Any]]:
+        """
+        获取股票池中某策略评分最高的股票
+
+        Args:
+            strategy_name: 策略名称
+            top_n: 返回数量
+
+        Returns:
+            股票列表
+        """
+        stocks = self.list_stocks()
+        
+        # 筛选包含该策略历史的股票
+        strategy_stocks = []
+        for stock in stocks:
+            history = stock.get("selected_history", [])
+            for entry in history:
+                if entry.get("strategy") == strategy_name:
+                    strategy_stocks.append({
+                        **stock,
+                        "strategy_score": entry.get("score", 0),
+                    })
+                    break
+
+        # 按策略评分排序
+        strategy_stocks.sort(key=lambda x: x.get("strategy_score", 0), reverse=True)
+        return strategy_stocks[:top_n]
+
+    def clear_strategy_stocks(self, strategy_name: str) -> Dict[str, Any]:
+        """
+        清除股票池中某策略选入的股票
+
+        Args:
+            strategy_name: 策略名称
+
+        Returns:
+            清除结果
+        """
+        removed_codes = []
+        
+        for code, position in list(self.positions.items()):
+            if position.status == "watching":
+                # 检查是否由该策略选入
+                for entry in position.selected_history:
+                    if entry.get("strategy") == strategy_name:
+                        self.remove_stock(code, reason=f"清除策略 {strategy_name} 股票")
+                        removed_codes.append(code)
+                        break
+
+        return {
+            "success": True,
+            "strategy": strategy_name,
+            "removed_count": len(removed_codes),
+            "removed_codes": removed_codes,
+        }
+
 
 stock_pool = StockPool()
