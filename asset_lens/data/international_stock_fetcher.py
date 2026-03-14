@@ -475,7 +475,7 @@ class InternationalStockFetcher:
         def _fetch():
             import akshare as ak
 
-            df = ak.futures_sina_main_sina()
+            df = ak.futures_main_sina()
 
             if df is None or df.empty:
                 return None

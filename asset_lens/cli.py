@@ -3802,7 +3802,7 @@ def report_command(report_type, strategy, pool_name):
         asset-lens report comparison
         asset-lens report risk --pool-name momentum
     """
-    from .data.report_generator import investment_report_generator
+    from .report.investment_report import investment_report_generator
 
     if report_type == "strategy":
         report = investment_report_generator.generate_strategy_report(strategy, pool_name)
