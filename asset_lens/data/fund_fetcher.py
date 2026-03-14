@@ -32,13 +32,15 @@ def timeout_context(seconds: int, message: str = "操作超时"):
     def signal_handler(signum, frame):
         raise TimeoutError(message)
 
+    original_handler = None
     try:
         original_handler = signal.signal(signal.SIGALRM, signal_handler)
         signal.alarm(seconds)
         yield
     finally:
         signal.alarm(0)
-        signal.signal(signal.SIGALRM, original_handler)
+        if original_handler is not None:
+            signal.signal(signal.SIGALRM, original_handler)
 
 
 class FundDataFetcher:
@@ -295,7 +297,7 @@ class FundDataFetcher:
         """
         try:
             # 使用 AkShare 的基金搜索接口
-            df = self.akshare.fund_open_fund_daily_em(symbol="全部")
+            df = self.akshare.fund_open_fund_daily_em()
 
             if df is None or df.empty:
                 return []

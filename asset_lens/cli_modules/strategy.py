@@ -81,7 +81,7 @@ def show_stock_pool(pool_name: Optional[str] = None):
     click.echo("=" * 60)
 
     try:
-        stocks = pool.get_stocks(pool_name)
+        stocks = pool.list_stocks(pool_name)
         if stocks:
             for stock in stocks[:20]:
                 click.echo(f"  {stock.get('code', '')} - {stock.get('name', '')} ({stock.get('status', '')})")
@@ -95,14 +95,14 @@ def show_stock_pool(pool_name: Optional[str] = None):
     click.echo("=" * 60)
 
 
-def add_to_stock_pool(code: str, name: Optional[str] = None, status: str = "watching"):
+def add_to_stock_pool(code: str, name: Optional[str] = None, status: str = "watching", price: float = 0.0):
     """添加股票到股票池"""
     from ..data.stock_pool import StockPool
 
     pool = StockPool()
 
     try:
-        pool.add_stock(code, name=name, status=status)
+        pool.add_stock(code, name=name or code, price=price, status=status)
         click.echo(f"✅ 已添加 {code} 到股票池")
     except Exception as e:
         click.echo(f"❌ 添加失败: {e}")

@@ -12,6 +12,7 @@ from .formatters import (
 )
 from .charts import ChartGenerator
 from .data_collectors import ReportDataCollector
+from .investment_report import InvestmentReportGenerator, investment_report_generator
 
 __all__ = [
     "format_currency",
@@ -20,4 +21,6 @@ __all__ = [
     "format_number",
     "ChartGenerator",
     "ReportDataCollector",
+    "InvestmentReportGenerator",
+    "investment_report_generator",
 ]

@@ -15,7 +15,7 @@ class TestReportGenerator:
     def test_module_import(self):
         """测试模块导入"""
         try:
-            from asset_lens.data.report_generator import ReportGenerator
+            from asset_lens.report.analyzer import ReportGenerator
             assert ReportGenerator is not None
         except ImportError:
             pytest.skip("ReportGenerator not available")
@@ -29,8 +29,8 @@ class TestReportGenerator:
     def test_init(self, temp_output_path):
         """测试初始化"""
         try:
-            from asset_lens.data.report_generator import ReportGenerator
-            generator = ReportGenerator(output_path=temp_output_path)
+            from asset_lens.report.analyzer import ReportGenerator
+            generator = ReportGenerator()
             assert generator is not None
         except ImportError:
             pytest.skip("ReportGenerator not available")

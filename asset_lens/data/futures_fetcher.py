@@ -114,7 +114,7 @@ class FuturesFetcher:
         try:
 
             def _fetch():
-                df = self.akshare.futures_sina_main_sina()
+                df = self.akshare.futures_main_sina()
                 if df is None or df.empty:
                     return None
                 row = df[df["symbol"] == symbol]
@@ -165,7 +165,7 @@ class FuturesFetcher:
         try:
 
             def _fetch():
-                df = self.akshare.futures_sina_main_sina()
+                df = self.akshare.futures_main_sina()
                 if df is None or df.empty:
                     return []
                 result = []
@@ -256,7 +256,7 @@ class FuturesFetcher:
             商品指数数据
         """
         try:
-            df = self.akshare.futures_index_main_sina()
+            df = self.akshare.futures_display_main_sina()
             if df is None or df.empty:
                 return {}
 

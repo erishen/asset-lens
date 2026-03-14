@@ -1,5 +1,5 @@
 """
-Tests for report_generator.py
+Tests for investment_report.py
 """
 
 import json
@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from asset_lens.data.report_generator import (
+from asset_lens.report.investment_report import (
     InvestmentReportGenerator,
     ReportConfig,
 )
@@ -49,7 +49,7 @@ class TestInvestmentReportGenerator:
     @pytest.fixture
     def generator(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.data.report_generator.config') as mock_config:
+        with patch('asset_lens.report.investment_report.config') as mock_config:
             mock_config.cache_path = temp_cache_path
             generator = InvestmentReportGenerator()
             yield generator
