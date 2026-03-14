@@ -190,3 +190,6 @@ stock_history_cache/
 
 .serena
 .gitnexus
+
+# OpenClaw skill dependencies
+openclaw/skill/node_modules/

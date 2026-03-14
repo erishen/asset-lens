@@ -212,6 +212,21 @@ class Config:
         """是否使用真实数据模式"""
         return self.data_mode == "real"
 
+    def set_data_mode(self, mode: str) -> None:
+        """
+        设置数据模式
+
+        Args:
+            mode: 数据模式，'sample' 或 'real'
+        """
+        from .core.exceptions import ConfigurationError
+
+        if mode not in ("sample", "real"):
+            raise ConfigurationError(
+                f"无效的数据模式: {mode}。必须是 'sample' 或 'real'", config_key="data_mode"
+            )
+        self.data_mode = mode
+
     def ensure_directories(self) -> None:
         """确保所有必要的目录存在"""
         directories = [
