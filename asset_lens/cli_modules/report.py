@@ -113,7 +113,7 @@ def show_exchange_rate_history(data_mode: Optional[str] = None):
 
 def show_sell_records(data_mode: Optional[str] = None):
     """显示卖出记录"""
-    from ..core.sold_investment import SoldInvestmentParser
+    from ..data.sell_record_parser import SellRecordParser
 
     data_dir = get_data_dir(data_mode)
     if not data_dir:
@@ -127,15 +127,15 @@ def show_sell_records(data_mode: Optional[str] = None):
         return
 
     try:
-        records = SoldInvestmentParser.parse_csv_file(csv_file)
+        records = SellRecordParser.parse_csv_file(csv_file)
         click.echo(f"\n📊 卖出记录（共 {len(records)} 条）")
         click.echo("=" * 80)
 
         for record in records[-10:]:
-            click.echo(f"产品: {record.product_name}")
+            click.echo(f"产品: {record.name}")
             click.echo(f"  卖出日期: {record.sell_date.strftime('%Y-%m-%d')}")
-            click.echo(f"  卖出金额: ¥{record.sell_amount:,.2f}")
-            click.echo(f"  收益: ¥{record.profit:,.2f}")
+            click.echo(f"  初始金额: ¥{record.initial_amount:,.2f}")
+            click.echo(f"  收益: ¥{record.profit_amount:,.2f}")
             click.echo(f"  收益率: {record.return_rate:.2f}%")
 
         if len(records) > 10:
@@ -211,7 +211,7 @@ def export_asset_summary(output_format: str = "csv", data_mode: Optional[str] = 
 
 def export_sell_records(output_format: str = "csv", data_mode: Optional[str] = None):
     """导出卖出记录"""
-    from ..core.sold_investment import SoldInvestmentParser
+    from ..data.sell_record_parser import SellRecordParser
 
     data_dir = get_data_dir(data_mode)
     if not data_dir:
@@ -225,7 +225,7 @@ def export_sell_records(output_format: str = "csv", data_mode: Optional[str] = N
         return
 
     try:
-        records = SoldInvestmentParser.parse_csv_file(csv_file)
+        records = SellRecordParser.parse_csv_file(csv_file)
         output_path = config.output_path
         output_path.mkdir(parents=True, exist_ok=True)
 
@@ -234,13 +234,13 @@ def export_sell_records(output_format: str = "csv", data_mode: Optional[str] = N
         if output_format in ["csv", "all"]:
             output_file = output_path / f"sell_records_{timestamp}.csv"
             with open(output_file, "w", encoding="utf-8") as f:
-                f.write("产品名称,卖出日期,卖出金额,收益,收益率\n")
+                f.write("产品名称,卖出日期,初始金额,收益,收益率\n")
                 for r in records:
                     f.write(
-                        f"{r.product_name},"
+                        f"{r.name},"
                         f"{r.sell_date.strftime('%Y-%m-%d')},"
-                        f"{r.sell_amount},"
-                        f"{r.profit},"
+                        f"{r.initial_amount},"
+                        f"{r.profit_amount},"
                         f"{r.return_rate}\n"
                     )
             click.echo(f"✅ CSV 导出成功: {output_file}")

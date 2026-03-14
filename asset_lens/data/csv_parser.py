@@ -13,38 +13,10 @@ from ..config import config
 from ..data.models import Currency, InvestmentProduct, InvestmentType, RiskLevel
 from .parser_utils import parse_date as _parse_date
 from .parser_utils import parse_decimal as _parse_decimal
+from .parsers.investment_calculator import days360, InvestmentCalculator
 
 
-def days360(start_date: date, end_date: date, european: bool = False) -> int:
-    """
-    计算360天日历法的天数（金融计算方法）
-    Args:
-        start_date: 开始日期
-        end_date: 结束日期
-        european: 是否使用欧洲方法（31日改为30日）
-    Returns:
-        天数
-    """
-    start_year = start_date.year
-    start_month = start_date.month
-    start_day = start_date.day
-
-    end_year = end_date.year
-    end_month = end_date.month
-    end_day = end_date.day
-
-    if european:
-        if start_day == 31:
-            start_day = 30
-        if end_day == 31:
-            end_day = 30
-    else:
-        if start_day == 31:
-            start_day = 30
-        if end_day == 31 and start_day == 30:
-            end_day = 30
-
-    return (end_year - start_year) * 360 + (end_month - start_month) * 30 + (end_day - start_day)
+__all__ = ["CSVParser", "days360"]
 
 
 class CSVParser:

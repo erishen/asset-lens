@@ -17,7 +17,6 @@ from .models import (
     Transaction,
 )
 from .personal_data_integrator import PersonalDataIntegrator, personal_data_integrator
-from .report_generator import InvestmentReportGenerator, investment_report_generator
 from .risk_manager import RiskManager, risk_manager
 from .scheduler import TaskScheduler, task_scheduler
 from .stock_pool import StockPool, StockPosition, stock_pool
@@ -64,9 +63,6 @@ __all__ = [
     # Scheduler
     "TaskScheduler",
     "task_scheduler",
-    # Report Generator
-    "InvestmentReportGenerator",
-    "investment_report_generator",
     # Chart Generator
     "ChartGenerator",
     "chart_generator",

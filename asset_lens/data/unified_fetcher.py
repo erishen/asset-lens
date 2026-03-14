@@ -109,9 +109,9 @@ class UnifiedDataFetcher:
 
     def _get_fund_fetcher(self):
         """获取基金数据获取器"""
-        from .fund_fetcher import FundFetcher
+        from .fund_fetcher import FundDataFetcher
 
-        return FundFetcher()
+        return FundDataFetcher()
 
     def _get_futures_fetcher(self):
         """获取期货数据获取器"""
