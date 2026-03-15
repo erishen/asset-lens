@@ -145,7 +145,7 @@ def screen_stocks_with_strategy(strategy_name: str, limit: int = 20):
 
 def add_stocks_to_pool_by_strategy(
     strategy_name: str,
-    stocks: list = None,
+    stocks: Optional[list] = None,
     min_score: float = 60.0,
     max_stocks: int = 10,
     auto_remove: bool = False,

@@ -9,11 +9,47 @@ Stock data fetcher for asset-lens.
 
 import json
 import time
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from functools import wraps
 
 from ..config import config
+
+logger = logging.getLogger(__name__)
+
+
+def with_retry(max_retries: int = 3, retry_delay: float = 2.0, backoff_factor: float = 2.0):
+    """
+    重试装饰器
+    
+    Args:
+        max_retries: 最大重试次数
+        retry_delay: 初始重试延迟（秒）
+        backoff_factor: 退避因子
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            last_error = None
+            
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    last_error = e
+                    if attempt < max_retries - 1:
+                        delay = retry_delay * (backoff_factor ** attempt)
+                        logger.warning(f"第 {attempt + 1} 次尝试失败: {e}，{delay:.1f} 秒后重试...")
+                        time.sleep(delay)
+                    else:
+                        logger.error(f"所有重试失败: {e}")
+            
+            raise last_error if last_error else Exception("Unknown error")
+        
+        return wrapper
+    return decorator
 
 
 class StockDataFetcher:
@@ -86,56 +122,333 @@ class StockDataFetcher:
 
     def fetch_stock_quote_akshare(self, stock_code: str) -> Optional[Dict[str, Any]]:
         """
-        获取股票实时行情（AkShare）
-
+        获取股票实时行情（AkShare）- 支持多数据源故障切换
+        
         Args:
             stock_code: 股票代码（如 sh600519, sz000001, hk00700）
-
+            
+        Returns:
+            股票行情数据
+        """
+        if stock_code.startswith(("sh", "sz")):
+            result = self._fetch_cn_stock_with_fallback(stock_code)
+            return result if isinstance(result, dict) else None
+        elif stock_code.startswith("hk"):
+            result = self._fetch_hk_stock_quote(stock_code)
+            return result if isinstance(result, dict) else None
+        else:
+            return None
+    
+    def _fetch_cn_stock_with_fallback(self, stock_code: str) -> Optional[Dict[str, Any]]:
+        """
+        获取A股实时行情 - 支持多数据源故障切换
+        
+        数据源优先级说明：
+        1. eastmoney - 免费，实时性好，数据全面（优先）
+        2. sina - 免费，实时行情
+        3. baostock - 免费，稳定可靠
+        
+        Args:
+            stock_code: 股票代码（如 sh600519, sz000001）
+            
+        Returns:
+            股票行情数据
+        """
+        sources = [
+            ("eastmoney", self._fetch_cn_stock_quote),
+            ("sina", self._fetch_cn_stock_quote_sina),
+            ("baostock", self._fetch_cn_stock_quote_baostock),
+        ]
+        
+        for source_name, fetch_func in sources:
+            try:
+                logger.info(f"尝试从 {source_name} 获取 {stock_code} 行情...")
+                result = fetch_func(stock_code)
+                if result and isinstance(result, dict):
+                    result['source'] = f"AkShare-{source_name}"
+                    return dict(result)
+            except Exception as e:
+                logger.warning(f"{source_name} 获取失败: {e}，尝试下一个数据源...")
+                continue
+        
+        logger.error(f"所有数据源都失败: {stock_code}")
+        return None
+    
+    @with_retry(max_retries=3, retry_delay=2.0, backoff_factor=2.0)
+    def _fetch_cn_stock_quote_sina(self, stock_code: str) -> Optional[Dict[str, Any]]:
+        """
+        获取A股实时行情（新浪数据源）
+        
+        Args:
+            stock_code: 股票代码（如 sh600519, sz000001）
+            
         Returns:
             股票行情数据
         """
         try:
-            # A股股票
-            if stock_code.startswith(("sh", "sz")):
-                return self._fetch_cn_stock_quote(stock_code)
-            # 港股
-            elif stock_code.startswith("hk"):
-                return self._fetch_hk_stock_quote(stock_code)
-            else:
+            logger.info(f"正在从新浪获取 {stock_code} 行情...")
+            
+            df = self.akshare.stock_zh_a_spot()
+            
+            if df is None or df.empty:
+                logger.warning(f"新浪数据为空: {stock_code}")
                 return None
-
+            
+            code = stock_code[2:]
+            
+            row = df[df["代码"] == code]
+            
+            if row.empty:
+                logger.warning(f"新浪未找到股票: {stock_code}")
+                return None
+            
+            row = row.iloc[0]
+            
+            current_price = float(row.get("最新价", 0))
+            prev_close = float(row.get("昨收", 0))
+            open_price = float(row.get("今开", 0))
+            high = float(row.get("最高", 0))
+            low = float(row.get("最低", 0))
+            volume = float(row.get("成交量", 0))
+            amount = float(row.get("成交额", 0))
+            
+            change_amount = current_price - prev_close if prev_close > 0 else 0
+            change_percent = (change_amount / prev_close * 100) if prev_close > 0 else 0
+            
+            logger.info(f"新浪成功获取 {stock_code} 行情: {row.get('名称', '')} {change_percent:+.2f}%")
+            
+            return {
+                "code": stock_code,
+                "name": row.get("名称", ""),
+                "current_price": current_price,
+                "open": open_price,
+                "prev_close": prev_close,
+                "high": high,
+                "low": low,
+                "volume": int(volume),
+                "amount": amount,
+                "change_amount": change_amount,
+                "change_percent": change_percent,
+                "amplitude": 0,
+                "market_cap": 0,
+                "turnover_rate": 0,
+                "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "source": "AkShare-sina",
+            }
+            
         except Exception as e:
-            print(f"获取股票行情失败 {stock_code}: {e}")
-            return None
+            logger.error(f"新浪获取A股行情失败 {stock_code}: {e}")
+            raise
+    
+    @with_retry(max_retries=2, retry_delay=1.0, backoff_factor=2.0)
+    def _fetch_cn_stock_quote_baostock(self, stock_code: str) -> Optional[Dict[str, Any]]:
+        """
+        获取A股实时行情（Baostock数据源）
+        
+        Args:
+            stock_code: 股票代码（如 sh600519, sz000001）
+            
+        Returns:
+            股票行情数据
+        """
+        try:
+            import baostock as bs
+            import pandas as pd
+            from datetime import datetime, timedelta
+            
+            logger.info(f"正在从Baostock获取 {stock_code} 行情...")
+            
+            lg = bs.login()
+            if lg.error_code != "0":
+                logger.warning(f"Baostock登录失败: {lg.error_msg}")
+                return None
+            
+            try:
+                stock_code_num = stock_code[2:]
+                baostock_code = f"{stock_code[:2]}.{stock_code_num}"
+                rs = bs.query_history_k_data_plus(
+                    baostock_code,
+                    "date,code,open,high,low,close,volume,amount,turn",
+                    start_date=(datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d"),
+                    end_date=datetime.now().strftime("%Y-%m-%d"),
+                    frequency="d",
+                    adjustflag="2",
+                )
+                
+                if rs.error_code != "0":
+                    logger.warning(f"Baostock查询失败: {rs.error_msg}")
+                    return None
+                
+                data_list = []
+                while (rs.error_code == "0") & rs.next():
+                    data_list.append(rs.get_row_data())
+                
+                if not data_list:
+                    logger.warning(f"Baostock数据为空: {stock_code}")
+                    return None
+                
+                df = pd.DataFrame(data_list, columns=rs.fields)
+                row = df.iloc[-1]
+                
+                current_price = float(row.get("close", 0)) if row.get("close") else 0
+                prev_close = float(df.iloc[-2].get("close", 0)) if len(df) > 1 else current_price
+                change_amount = current_price - prev_close if prev_close > 0 else 0
+                change_percent = (change_amount / prev_close * 100) if prev_close > 0 else 0
+                
+                logger.info(f"Baostock成功获取 {stock_code} 行情: {change_percent:+.2f}%")
+                
+                return {
+                    "code": stock_code,
+                    "name": "",
+                    "current_price": current_price,
+                    "open": float(row.get("open", 0)) if row.get("open") else 0,
+                    "prev_close": prev_close,
+                    "high": float(row.get("high", 0)) if row.get("high") else 0,
+                    "low": float(row.get("low", 0)) if row.get("low") else 0,
+                    "volume": int(float(row.get("volume", 0))) if row.get("volume") else 0,
+                    "amount": float(row.get("amount", 0)) if row.get("amount") else 0,
+                    "change_amount": change_amount,
+                    "change_percent": change_percent,
+                    "amplitude": 0,
+                    "market_cap": 0,
+                    "turnover_rate": float(row.get("turn", 0)) if row.get("turn") else 0,
+                    "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "source": "Baostock",
+                }
+                
+            finally:
+                bs.logout()
+                
+        except Exception as e:
+            logger.error(f"Baostock获取A股行情失败 {stock_code}: {e}")
+            raise
+    
+    @with_retry(max_retries=2, retry_delay=1.0, backoff_factor=2.0)
+    def _fetch_cn_stock_quote_joinquant(self, stock_code: str) -> Optional[Dict[str, Any]]:
+        """
+        获取A股实时行情（聚宽数据源）
+        
+        Args:
+            stock_code: 股票代码（如 sh600519, sz000001）
+            
+        Returns:
+            股票行情数据
+        """
+        try:
+            import jqdatasdk as jq
+            import pandas as pd
+            from datetime import datetime, timedelta
+            
+            logger.info(f"正在从聚宽获取 {stock_code} 行情...")
+            
+            if not config.joinquant_username or not config.joinquant_password:
+                logger.warning("聚宽账号密码未配置，请设置环境变量 JOINQUANT_USERNAME 和 JOINQUANT_PASSWORD")
+                return None
+            
+            jq.auth(config.joinquant_username, config.joinquant_password)
+            
+            jq_code = self._convert_to_jq_code(stock_code)
+            
+            try:
+                df = jq.get_price(
+                    jq_code,
+                    count=2,
+                    end_date=datetime.now().strftime("%Y-%m-%d"),
+                    frequency='daily',
+                    fields=['open', 'close', 'high', 'low', 'volume', 'money']
+                )
+                
+                if df is None or df.empty or len(df) == 0:
+                    logger.warning(f"聚宽数据为空: {stock_code}")
+                    return None
+                
+                current_row = df.iloc[-1]
+                prev_close = df.iloc[-2]['close'] if len(df) > 1 else current_row['close']
+                
+                current_price = float(current_row['close'])
+                change_amount = current_price - prev_close
+                change_percent = (change_amount / prev_close * 100) if prev_close > 0 else 0
+                
+                logger.info(f"聚宽成功获取 {stock_code} 行情: {change_percent:+.2f}%")
+                
+                return {
+                    "code": stock_code,
+                    "name": "",
+                    "current_price": current_price,
+                    "open": float(current_row['open']),
+                    "prev_close": float(prev_close),
+                    "high": float(current_row['high']),
+                    "low": float(current_row['low']),
+                    "volume": int(current_row['volume']),
+                    "amount": float(current_row['money']),
+                    "change_amount": change_amount,
+                    "change_percent": change_percent,
+                    "amplitude": 0,
+                    "market_cap": 0,
+                    "turnover_rate": 0,
+                    "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "source": "JoinQuant",
+                }
+                
+            except Exception as e:
+                logger.error(f"聚宽查询失败: {e}")
+                raise
+                
+        except ImportError:
+            logger.warning("jqdatasdk 未安装，请运行: pip install jqdatasdk")
+            raise
+        except Exception as e:
+            logger.error(f"聚宽获取A股行情失败 {stock_code}: {e}")
+            raise
+    
+    def _convert_to_jq_code(self, stock_code: str) -> str:
+        """
+        将股票代码转换为聚宽格式
+        
+        Args:
+            stock_code: 股票代码（如 sh600519, sz000001）
+            
+        Returns:
+            聚宽格式股票代码（如 600519.XSHG, 000001.XSHE）
+        """
+        code = stock_code[2:]
+        if stock_code.startswith('sh'):
+            return f"{code}.XSHG"
+        elif stock_code.startswith('sz'):
+            return f"{code}.XSHE"
+        else:
+            return stock_code
 
+    @with_retry(max_retries=3, retry_delay=2.0, backoff_factor=2.0)
     def _fetch_cn_stock_quote(self, stock_code: str) -> Optional[Dict[str, Any]]:
         """
         获取A股实时行情（AkShare）
-
+        
         Args:
             stock_code: 股票代码（如 sh600519, sz000001）
-
+            
         Returns:
             股票行情数据
         """
         try:
-            # 获取A股实时行情
+            logger.info(f"正在获取 {stock_code} 行情...")
+            
             df = self.akshare.stock_zh_a_spot_em()
-
+            
             if df is None or df.empty:
+                logger.warning(f"获取A股数据为空: {stock_code}")
                 return None
-
-            # 提取股票代码（去掉前缀）
+            
             code = stock_code[2:]
-
-            # 查找对应股票
+            
             row = df[df["代码"] == code]
-
+            
             if row.empty:
+                logger.warning(f"未找到股票: {stock_code}")
                 return None
-
+            
             row = row.iloc[0]
-
+            
             current_price = float(row.get("最新价", 0))
             prev_close = float(row.get("昨收", 0))
             open_price = float(row.get("今开", 0))
@@ -148,7 +461,9 @@ class StockDataFetcher:
             change_amount = float(row.get("涨跌额", 0))
             turnover_rate = float(row.get("换手率", 0))
             market_cap = float(row.get("总市值", 0)) / 100000000 if row.get("总市值") else 0
-
+            
+            logger.info(f"成功获取 {stock_code} 行情: {row.get('名称', '')} {change_percent:+.2f}%")
+            
             return {
                 "code": stock_code,
                 "name": row.get("名称", ""),
@@ -167,39 +482,41 @@ class StockDataFetcher:
                 "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "source": "AkShare",
             }
-
+            
         except Exception as e:
-            print(f"获取A股行情失败 {stock_code}: {e}")
-            return None
+            logger.error(f"获取A股行情失败 {stock_code}: {e}")
+            raise
 
+    @with_retry(max_retries=3, retry_delay=2.0, backoff_factor=2.0)
     def _fetch_hk_stock_quote(self, stock_code: str) -> Optional[Dict[str, Any]]:
         """
         获取港股实时行情（AkShare）
-
+        
         Args:
             stock_code: 股票代码（如 hk00700）
-
+            
         Returns:
             股票行情数据
         """
         try:
-            # 获取港股实时行情
+            logger.info(f"正在获取 {stock_code} 行情...")
+            
             df = self.akshare.stock_hk_spot_em()
-
+            
             if df is None or df.empty:
+                logger.warning(f"获取港股数据为空: {stock_code}")
                 return None
-
-            # 提取股票代码（去掉前缀）
+            
             code = stock_code[2:]
-
-            # 查找对应股票
+            
             row = df[df["代码"] == code]
-
+            
             if row.empty:
+                logger.warning(f"未找到股票: {stock_code}")
                 return None
-
+            
             row = row.iloc[0]
-
+            
             current_price = float(row.get("最新价", 0))
             prev_close = float(row.get("昨收", 0))
             open_price = float(row.get("今开", 0))
@@ -207,10 +524,12 @@ class StockDataFetcher:
             low = float(row.get("最低", 0))
             volume = float(row.get("成交量", 0)) if row.get("成交量") else 0
             amount = float(row.get("成交额", 0)) if row.get("成交额") else 0
-
+            
             change_amount = current_price - prev_close if prev_close > 0 else 0
             change_percent = (change_amount / prev_close * 100) if prev_close > 0 else 0
-
+            
+            logger.info(f"成功获取 {stock_code} 行情: {row.get('名称', '')} {change_percent:+.2f}%")
+            
             return {
                 "code": stock_code,
                 "name": row.get("名称", ""),
@@ -226,10 +545,10 @@ class StockDataFetcher:
                 "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "source": "AkShare",
             }
-
+            
         except Exception as e:
-            print(f"获取港股行情失败 {stock_code}: {e}")
-            return None
+            logger.error(f"获取港股行情失败 {stock_code}: {e}")
+            raise
 
     def fetch_us_stock_quote(self, symbol: str) -> Optional[Dict[str, Any]]:
         """
@@ -330,6 +649,85 @@ class StockDataFetcher:
             with open(self.stock_cache_file, "r", encoding="utf-8") as f:
                 return json.load(f)  # type: ignore
         return {}
+
+    def fetch_multiple_stocks_concurrent(
+        self, 
+        stock_codes: List[str],
+        max_concurrent: int = 10,
+        use_cache: bool = True
+    ) -> Dict[str, Any]:
+        """
+        并发获取股票行情（性能优化版本）
+        
+        Args:
+            stock_codes: 股票代码列表
+            max_concurrent: 最大并发数
+            use_cache: 是否使用缓存
+            
+        Returns:
+            股票行情数据字典
+        """
+        from ..core.intelligent_cache import intelligent_cache
+        
+        results = {}
+        cached_count = 0
+        fetch_count = 0
+        
+        # 第一阶段：检查缓存
+        if use_cache:
+            for code in stock_codes:
+                cache_key = f"stock_quote_{code}"
+                cached_data = intelligent_cache.get(cache_key)
+                
+                if cached_data is not None:
+                    results[code] = cached_data
+                    cached_count += 1
+                    logger.info(f"✅ {code}: 使用缓存数据")
+        
+        # 第二阶段：并发获取未缓存的数据
+        uncached_codes = [code for code in stock_codes if code not in results]
+        
+        if uncached_codes:
+            logger.info(f"开始并发获取 {len(uncached_codes)} 只股票数据...")
+            
+            from .concurrent_fetcher import fetch_stocks_concurrently, FetchResult
+            
+            fetch_results: List[FetchResult] = fetch_stocks_concurrently(
+                uncached_codes, max_concurrent
+            )
+            
+            for result in fetch_results:
+                if result.success and result.data:
+                    results[result.code] = result.data
+                    fetch_count += 1
+                    
+                    # 缓存结果
+                    if use_cache:
+                        cache_key = f"stock_quote_{result.code}"
+                        intelligent_cache.set(cache_key, result.data, ttl=60)
+                    
+                    logger.info(f"✅ {result.code}: {result.data.get('name', 'N/A')} - 获取成功")
+                else:
+                    logger.error(f"❌ {result.code}: {result.error}")
+        
+        # 保存到文件缓存
+        cache_data = {
+            "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "data": results,
+            "stats": {
+                "total": len(stock_codes),
+                "cached": cached_count,
+                "fetched": fetch_count,
+                "failed": len(stock_codes) - cached_count - fetch_count
+            }
+        }
+        
+        with open(self.stock_cache_file, "w", encoding="utf-8") as f:
+            json.dump(cache_data, f, ensure_ascii=False, indent=2)
+        
+        logger.info(f"批量获取完成: 总计 {len(stock_codes)} 只, 缓存 {cached_count} 只, 新获取 {fetch_count} 只")
+        
+        return cache_data
 
 
 stock_fetcher = StockDataFetcher()

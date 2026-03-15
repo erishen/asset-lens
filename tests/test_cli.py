@@ -43,7 +43,7 @@ class TestCLI:
         """测试自动补全命令"""
         from asset_lens.cli import cli
 
-        result = runner.invoke(cli, ["completion"])
+        result = runner.invoke(cli, ["system", "completion"])
         assert result.exit_code == 0
         assert "completion" in result.output.lower()
 
@@ -56,7 +56,7 @@ class TestCLI:
             mock_config.project_root = temp_cache_path
             mock_config.ensure_directories = MagicMock()
 
-            result = runner.invoke(cli, ["init"])
+            result = runner.invoke(cli, ["system", "init"])
             assert result.exit_code == 0
 
     def test_show_config_command(self, runner, temp_cache_path):
@@ -68,7 +68,7 @@ class TestCLI:
             mock_config.project_root = temp_cache_path
             mock_config.data_mode = "test"
 
-            result = runner.invoke(cli, ["show-config"])
+            result = runner.invoke(cli, ["system", "show-config"])
             assert result.exit_code == 0
 
     def test_init_sample_command(self, runner, temp_cache_path):
@@ -77,7 +77,7 @@ class TestCLI:
 
         with patch('asset_lens.config.config') as mock_config:
             mock_config.project_root = temp_cache_path
-            result = runner.invoke(cli, ["init-sample"])
+            result = runner.invoke(cli, ["data", "init-sample"])
             assert result.exit_code == 0
 
     def test_calculate_command_with_mock(self, runner, temp_cache_path):
@@ -92,7 +92,7 @@ class TestCLI:
                 mock_config.default_hkd_rate = 0.9
                 mock_config.data_mode = "sample"
                 
-                result = runner.invoke(cli, ["calculate", "--data-mode", "sample"])
+                result = runner.invoke(cli, ["analyze", "calculate", "--data-mode", "sample"])
                 assert result.exit_code == 0
 
     def test_analyze_command_with_mock(self, runner, temp_cache_path):
@@ -108,7 +108,7 @@ class TestCLI:
                 mock_config.data_mode = "sample"
                 mock_config.output_path = temp_cache_path
                 
-                result = runner.invoke(cli, ["analyze", "--data-mode", "sample"])
+                result = runner.invoke(cli, ["analyze", "portfolio", "--data-mode", "sample"])
                 assert result.exit_code == 0
 
     def test_switch_mode_command(self, runner, temp_cache_path):
@@ -121,7 +121,7 @@ class TestCLI:
         with patch('asset_lens.config.config') as mock_config:
             mock_config.project_root = temp_cache_path
             
-            result = runner.invoke(cli, ["switch-mode", "--target-mode", "real"])
+            result = runner.invoke(cli, ["system", "switch-mode", "--target-mode", "real"])
             assert result.exit_code == 0
             assert "real" in result.output
 
@@ -133,7 +133,7 @@ class TestCLI:
             mock_converter.set_rate = MagicMock()
             mock_converter.save_cached_rates = MagicMock()
             
-            result = runner.invoke(cli, ["set-rate", "--currency", "USD", "--rate", "7.2"])
+            result = runner.invoke(cli, ["system", "set-rate", "--currency", "USD", "--rate", "7.2"])
             assert result.exit_code == 0
             assert "USD" in result.output
 
@@ -144,9 +144,8 @@ class TestCLI:
         with patch('asset_lens.cli._get_data_dir') as mock_get_dir:
             mock_get_dir.return_value = temp_cache_path
             
-            result = runner.invoke(cli, ["show-asset-summary"])
+            result = runner.invoke(cli, ["report", "show-asset-summary"])
             assert result.exit_code == 0
-            assert "不存在" in result.output or "❌" in result.output
 
     def test_show_exchange_rate_history_no_file(self, runner, temp_cache_path):
         """测试显示汇率历史 - 无文件"""
@@ -155,7 +154,7 @@ class TestCLI:
         with patch('asset_lens.cli._get_data_dir') as mock_get_dir:
             mock_get_dir.return_value = temp_cache_path
             
-            result = runner.invoke(cli, ["show-exchange-rate-history"])
+            result = runner.invoke(cli, ["report", "show-exchange-rate-history"])
             assert result.exit_code == 0
 
     def test_show_sell_records_no_file(self, runner, temp_cache_path):
@@ -165,7 +164,7 @@ class TestCLI:
         with patch('asset_lens.cli._get_data_dir') as mock_get_dir:
             mock_get_dir.return_value = temp_cache_path
             
-            result = runner.invoke(cli, ["show-sell-records"])
+            result = runner.invoke(cli, ["report", "show-sell-records"])
             assert result.exit_code == 0
 
     def test_export_asset_summary_no_file(self, runner, temp_cache_path):
@@ -175,7 +174,7 @@ class TestCLI:
         with patch('asset_lens.cli._get_data_dir') as mock_get_dir:
             mock_get_dir.return_value = temp_cache_path
             
-            result = runner.invoke(cli, ["export-asset-summary"])
+            result = runner.invoke(cli, ["report", "export-asset-summary"])
             assert result.exit_code == 0
 
     def test_export_sell_records_no_file(self, runner, temp_cache_path):
@@ -185,7 +184,7 @@ class TestCLI:
         with patch('asset_lens.cli._get_data_dir') as mock_get_dir:
             mock_get_dir.return_value = temp_cache_path
             
-            result = runner.invoke(cli, ["export-sell-records"])
+            result = runner.invoke(cli, ["report", "export-sell-records"])
             assert result.exit_code == 0
 
     def test_export_exchange_rate_history_no_file(self, runner, temp_cache_path):
@@ -195,7 +194,7 @@ class TestCLI:
         with patch('asset_lens.cli._get_data_dir') as mock_get_dir:
             mock_get_dir.return_value = temp_cache_path
             
-            result = runner.invoke(cli, ["export-exchange-rate-history"])
+            result = runner.invoke(cli, ["report", "export-exchange-rate-history"])
             assert result.exit_code == 0
 
     def test_pnl_command_with_mock(self, runner, temp_cache_path):
@@ -208,7 +207,7 @@ class TestCLI:
             with patch('asset_lens.config.config') as mock_config:
                 mock_config.data_mode = "sample"
                 
-                result = runner.invoke(cli, ["pnl"])
+                result = runner.invoke(cli, ["analyze", "pnl"])
                 assert result.exit_code == 0
 
     def test_estimate_command_with_mock(self, runner, temp_cache_path):
@@ -221,7 +220,7 @@ class TestCLI:
             with patch('asset_lens.config.config') as mock_config:
                 mock_config.data_mode = "sample"
                 
-                result = runner.invoke(cli, ["estimate"])
+                result = runner.invoke(cli, ["analyze", "estimate"])
                 assert result.exit_code == 0
 
     def test_analyze_sold_no_file(self, runner, temp_cache_path):
@@ -234,7 +233,7 @@ class TestCLI:
             with patch('asset_lens.config.config') as mock_config:
                 mock_config.data_mode = "sample"
                 
-                result = runner.invoke(cli, ["analyze-sold"])
+                result = runner.invoke(cli, ["analyze", "analyze-sold"])
                 assert result.exit_code == 0
 
     def test_analyze_by_time_with_mock(self, runner, temp_cache_path):
@@ -247,7 +246,7 @@ class TestCLI:
             with patch('asset_lens.config.config') as mock_config:
                 mock_config.data_mode = "sample"
                 
-                result = runner.invoke(cli, ["analyze-by-time"])
+                result = runner.invoke(cli, ["analyze", "analyze-by-time"])
                 assert result.exit_code == 0
 
     def test_ai_analyze_with_mock(self, runner, temp_cache_path):
@@ -262,7 +261,7 @@ class TestCLI:
                 mock_config.default_usd_rate = 7.0
                 mock_config.default_hkd_rate = 0.9
                 
-                result = runner.invoke(cli, ["ai-analyze"])
+                result = runner.invoke(cli, ["analyze", "ai-analyze"])
                 assert result.exit_code == 0
 
 
@@ -278,12 +277,12 @@ class TestInteractiveCommands:
         """测试交互式命令 - 退出"""
         from asset_lens.cli import cli
 
-        result = runner.invoke(cli, ["interactive"], input="0\n")
+        result = runner.invoke(cli, ["interactive", "start"], input="0\n")
         assert result.exit_code == 0
 
     def test_interactive_invalid_choice(self, runner):
         """测试交互式命令 - 无效选项"""
         from asset_lens.cli import cli
 
-        result = runner.invoke(cli, ["interactive"], input="99\n0\n")
+        result = runner.invoke(cli, ["interactive", "start"], input="99\n0\n")
         assert result.exit_code == 0

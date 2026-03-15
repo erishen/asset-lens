@@ -203,7 +203,7 @@ class HTTPClient:
             jitter = random.uniform(0, 0.3 * backoff)
             backoff += jitter
         
-        return min(backoff, 30.0)
+        return float(min(backoff, 30.0))
 
     def _get_timeout(self, timeout: Optional[int], attempt: int) -> int:
         """获取超时时间"""
@@ -282,7 +282,8 @@ class HTTPClient:
         response = self.get(url, params=params, headers=headers, timeout=timeout, **kwargs)
         if response is not None:
             try:
-                return response.json()
+                result = response.json()
+                return result if isinstance(result, dict) else None
             except ValueError as e:
                 logger.error(f"JSON 解析失败: {e}")
         return None
