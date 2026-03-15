@@ -99,7 +99,7 @@ class AkshareProvider(BaseProvider):
     def _fetch_fund_quote(self, symbol: str) -> Optional[Dict[str, Any]]:
         """获取基金净值"""
         try:
-            df = self.akshare.fund_open_fund_info_em(fund=symbol, indicator="单位净值走势")
+            df = self.akshare.fund_open_fund_info_em(symbol=symbol, indicator="单位净值走势")
             if df is None or df.empty:
                 return None
             
