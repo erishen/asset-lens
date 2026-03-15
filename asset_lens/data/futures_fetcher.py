@@ -63,7 +63,7 @@ class FuturesFetcher:
     }
 
     def __init__(self):
-        self._cache: Dict[str, Dict[str, Any]] = {}
+        self._cache: Dict[str, Any] = {}
         self._cache_time: Dict[str, float] = {}
         self._akshare = None
 
@@ -85,13 +85,13 @@ class FuturesFetcher:
             return False
         return time.time() - self._cache_time[cache_key] < self.CACHE_DURATION
 
-    def _get_cached(self, cache_key: str) -> Optional[Dict[str, Any]]:
+    def _get_cached(self, cache_key: str) -> Optional[Any]:
         """获取缓存数据"""
         if self._is_cache_valid(cache_key):
             return self._cache.get(cache_key)
         return None
 
-    def _set_cache(self, cache_key: str, data: Dict[str, Any]):
+    def _set_cache(self, cache_key: str, data: Any) -> None:
         """设置缓存"""
         self._cache[cache_key] = data
         self._cache_time[cache_key] = time.time()
@@ -109,7 +109,7 @@ class FuturesFetcher:
         cache_key = f"domestic_{symbol}"
         cached = self._get_cached(cache_key)
         if cached:
-            return cached
+            return dict(cached)
 
         try:
 
@@ -144,7 +144,8 @@ class FuturesFetcher:
             result = self._fetch_with_retry(_fetch)
             if result:
                 self._set_cache(cache_key, result)
-            return result
+                return dict(result)
+            return None
 
         except Exception as e:
             print(f"获取期货 {symbol} 行情失败: {e}")
@@ -160,7 +161,7 @@ class FuturesFetcher:
         cache_key = "all_domestic"
         cached = self._get_cached(cache_key)
         if cached:
-            return cached
+            return list(cached)  # type: ignore
 
         try:
 

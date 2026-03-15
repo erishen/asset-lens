@@ -87,7 +87,7 @@ class IRRCalculator:
     _cache_hits = 0
     _cache_misses = 0
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.use_numpy = HAS_NUMPY
 
     @classmethod
@@ -111,7 +111,7 @@ class IRRCalculator:
         }
 
     @classmethod
-    def clear_cache(cls):
+    def clear_cache(cls) -> None:
         """清除所有缓存"""
         _calculate_irr_with_days_cached.cache_clear()
         _calculate_irr_numpy_cached.cache_clear()
