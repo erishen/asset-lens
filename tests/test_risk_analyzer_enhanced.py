@@ -1,6 +1,6 @@
 """
-Tests for Risk Manager.
-风险管理系统测试
+Tests for Risk Analyzer.
+风险分析系统测试
 """
 
 import pytest
@@ -10,75 +10,75 @@ from pathlib import Path
 import tempfile
 import shutil
 
-from asset_lens.monitoring.risk_manager import (
-    RiskManager,
+from asset_lens.monitoring.risk_analyzer import (
+    RiskAnalyzer,
     RiskMetrics,
     RiskAlert
 )
 
 
-class TestRiskManager:
-    """测试风险管理系统"""
+class TestRiskAnalyzer:
+    """测试风险分析系统"""
 
     def setup_method(self):
         self.temp_dir = Path(tempfile.mkdtemp())
-        self.risk_manager = RiskManager()
+        self.risk_analyzer = RiskAnalyzer()
 
     def teardown_method(self):
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_calculate_volatility(self):
         returns = [0.01, -0.02, 0.03, -0.01, 0.02, -0.03, 0.01]
-        volatility = self.risk_manager.calculate_volatility(returns)
+        volatility = self.risk_analyzer.calculate_volatility(returns)
         
         assert volatility > 0
         assert isinstance(volatility, float)
 
     def test_calculate_volatility_empty(self):
-        volatility = self.risk_manager.calculate_volatility([])
+        volatility = self.risk_analyzer.calculate_volatility([])
         assert volatility == 0.0
 
     def test_calculate_max_drawdown(self):
         values = [100, 105, 110, 108, 112, 115, 110, 105, 108, 112]
-        max_dd = self.risk_manager.calculate_max_drawdown(values)
+        max_dd = self.risk_analyzer.calculate_max_drawdown(values)
         
         assert max_dd > 0
         assert isinstance(max_dd, float)
 
     def test_calculate_max_drawdown_empty(self):
-        max_dd = self.risk_manager.calculate_max_drawdown([])
+        max_dd = self.risk_analyzer.calculate_max_drawdown([])
         assert max_dd == 0.0
 
     def test_calculate_sharpe_ratio(self):
         returns = [0.01, -0.02, 0.03, -0.01, 0.02, -0.03, 0.01]
-        sharpe = self.risk_manager.calculate_sharpe_ratio(returns, risk_free_rate=0.03)
+        sharpe = self.risk_analyzer.calculate_sharpe_ratio(returns, risk_free_rate=0.03)
         
         assert isinstance(sharpe, float)
 
     def test_calculate_sharpe_ratio_empty(self):
-        sharpe = self.risk_manager.calculate_sharpe_ratio([])
+        sharpe = self.risk_analyzer.calculate_sharpe_ratio([])
         assert sharpe == 0.0
 
     def test_calculate_beta(self):
         stock_returns = [0.01, -0.02, 0.03, -0.01, 0.02]
         market_returns = [0.005, -0.01, 0.02, -0.005, 0.01]
-        beta = self.risk_manager.calculate_beta(stock_returns, market_returns)
+        beta = self.risk_analyzer.calculate_beta(stock_returns, market_returns)
         
         assert isinstance(beta, float)
 
     def test_calculate_beta_empty(self):
-        beta = self.risk_manager.calculate_beta([], [])
+        beta = self.risk_analyzer.calculate_beta([], [])
         assert beta == 0.0
 
     def test_calculate_var_95(self):
         returns = [0.01, -0.02, 0.03, -0.01, 0.02, -0.03, 0.01, -0.05, 0.04, -0.02]
-        var_95 = self.risk_manager.calculate_var_95(returns)
+        var_95 = self.risk_analyzer.calculate_var_95(returns)
         
         assert var_95 > 0
         assert isinstance(var_95, float)
 
     def test_calculate_var_95_empty(self):
-        var_95 = self.risk_manager.calculate_var_95([])
+        var_95 = self.risk_analyzer.calculate_var_95([])
         assert var_95 == 0.0
 
     def test_calculate_concentration_risk(self):
@@ -88,20 +88,20 @@ class TestRiskManager:
             'stock3': 30000,
             'stock4': 40000
         }
-        concentration = self.risk_manager.calculate_concentration_risk(holdings)
+        concentration = self.risk_analyzer.calculate_concentration_risk(holdings)
         
         assert concentration > 0
         assert isinstance(concentration, float)
 
     def test_calculate_concentration_risk_empty(self):
-        concentration = self.risk_manager.calculate_concentration_risk({})
+        concentration = self.risk_analyzer.calculate_concentration_risk({})
         assert concentration == 0.0
 
     def test_calculate_all_metrics(self):
         returns = [0.01, -0.02, 0.03, -0.01, 0.02, -0.03, 0.01]
         values = [100, 105, 110, 108, 112, 115, 110, 105, 108, 112]
         
-        metrics = self.risk_manager.calculate_all_metrics(returns, values)
+        metrics = self.risk_analyzer.calculate_all_metrics(returns, values)
         
         assert isinstance(metrics, RiskMetrics)
         assert metrics.volatility > 0
@@ -126,7 +126,7 @@ class TestRiskManager:
             'concentration_risk': 30.0
         }
         
-        alerts = self.risk_manager.check_risk_thresholds(metrics, thresholds)
+        alerts = self.risk_analyzer.check_risk_thresholds(metrics, thresholds)
         
         assert len(alerts) > 0
         assert any(alert.type == 'volatility' for alert in alerts)
@@ -151,7 +151,7 @@ class TestRiskManager:
             'concentration_risk': 30.0
         }
         
-        alerts = self.risk_manager.check_risk_thresholds(metrics, thresholds)
+        alerts = self.risk_analyzer.check_risk_thresholds(metrics, thresholds)
         assert len(alerts) == 0
 
     def test_generate_risk_report(self):
@@ -176,7 +176,7 @@ class TestRiskManager:
             )
         ]
         
-        report = self.risk_manager.generate_risk_report(metrics, alerts)
+        report = self.risk_analyzer.generate_risk_report(metrics, alerts)
         
         assert "风险管理报告" in report
         assert "波动率: 20.00%" in report
@@ -193,8 +193,8 @@ class TestRiskManager:
             concentration_risk=25.0
         )
         
-        self.risk_manager.save_risk_metrics(metrics)
-        assert len(self.risk_manager.risk_history) == 1
+        self.risk_analyzer.save_risk_metrics(metrics)
+        assert len(self.risk_analyzer.risk_history) == 1
 
 
 class TestRiskMetrics:
