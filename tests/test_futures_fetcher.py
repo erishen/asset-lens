@@ -72,7 +72,7 @@ class TestFuturesFetcherWithMock:
                 "昨结算": [448.0, 67900.0],
             }
         )
-        mock_akshare.futures_sina_main_sina.return_value = mock_df
+        mock_akshare.futures_main_sina.return_value = mock_df
 
         result = fetcher.fetch_domestic_quote("AU0")
 
@@ -89,7 +89,7 @@ class TestFuturesFetcherWithMock:
         import pandas as pd
 
         mock_df = pd.DataFrame({"symbol": ["CU0"], "最新价": [68000.0]})
-        mock_akshare.futures_sina_main_sina.return_value = mock_df
+        mock_akshare.futures_main_sina.return_value = mock_df
 
         result = fetcher.fetch_domestic_quote("AU0")
         assert result is None
@@ -114,7 +114,7 @@ class TestFuturesFetcherWithMock:
                 "持仓量": [200000, 100000],
             }
         )
-        mock_akshare.futures_sina_main_sina.return_value = mock_df
+        mock_akshare.futures_main_sina.return_value = mock_df
 
         result = fetcher.fetch_all_domestic_quotes()
 

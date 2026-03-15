@@ -702,7 +702,7 @@ async def get_stock_kline(
         else:
             scale = "240"
 
-        params = {
+        params: Dict[str, Any] = {
             "symbol": code,
             "scale": scale,
             "ma": "no",
@@ -717,7 +717,7 @@ async def get_stock_kline(
         if response.status_code == 200:
             data = response.json()
             if data and isinstance(data, list):
-                kline_data = []
+                kline_data: List[Dict[str, Any]] = []
                 for item in data:
                     kline_data.append({
                         "date": item.get("day", ""),

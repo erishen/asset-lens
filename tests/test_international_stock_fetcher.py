@@ -575,7 +575,7 @@ class TestFetchFuturesQuote:
         })
 
         mock_ak = MagicMock()
-        mock_ak.futures_sina_main_sina.return_value = mock_df
+        mock_ak.futures_main_sina.return_value = mock_df
 
         with patch.dict('sys.modules', {'akshare': mock_ak}):
             result = fetcher.fetch_futures_quote("AU0")
@@ -592,7 +592,7 @@ class TestFetchFuturesQuote:
         })
 
         mock_ak = MagicMock()
-        mock_ak.futures_sina_main_sina.return_value = mock_df
+        mock_ak.futures_main_sina.return_value = mock_df
 
         with patch.dict('sys.modules', {'akshare': mock_ak}):
             result = fetcher.fetch_futures_quote("NOTEXIST")
@@ -601,7 +601,7 @@ class TestFetchFuturesQuote:
     def test_fetch_futures_quote_exception(self, fetcher):
         """Test fetch_futures_quote with exception"""
         mock_ak = MagicMock()
-        mock_ak.futures_sina_main_sina.side_effect = Exception("API error")
+        mock_ak.futures_main_sina.side_effect = Exception("API error")
 
         with patch.dict('sys.modules', {'akshare': mock_ak}):
             result = fetcher.fetch_futures_quote("AU0")

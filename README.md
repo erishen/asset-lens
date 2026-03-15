@@ -447,28 +447,28 @@ cp config/investment_types.json.example config/investment_types.json
 
 ```bash
 # 使用示例数据进行分析
-python -m asset_lens analyze --data-mode sample
+python -m asset_lens analyze portfolio --data-mode sample
 
 # 或使用真实数据
-python -m asset_lens analyze --data-mode real
+python -m asset_lens analyze portfolio --data-mode real
 
 # 只输出控制台报告
-python -m asset_lens analyze --data-mode sample --output-format console
+python -m asset_lens analyze portfolio --data-mode sample --output-format console
 
 # 输出所有格式
-python -m asset_lens analyze --data-mode sample --output-format all
+python -m asset_lens analyze portfolio --data-mode sample --output-format all
 ```
 
 ### 6. AI 分析（新功能）
 
 ```bash
 # AI 分析投资组合（需要配置 OPENAI_API_KEY）
-python -m asset_lens ai-analyze
+python -m asset_lens analyze ai-analyze
 
 # 指定风险偏好
-python -m asset_lens ai-analyze --risk-preference conservative  # 保守型
-python -m asset_lens ai-analyze --risk-preference balanced      # 平衡型（默认）
-python -m asset_lens ai-analyze --risk-preference aggressive    # 激进型
+python -m asset_lens analyze ai-analyze --risk-preference conservative  # 保守型
+python -m asset_lens analyze ai-analyze --risk-preference balanced      # 平衡型（默认）
+python -m asset_lens analyze ai-analyze --risk-preference aggressive    # 激进型
 
 # 使用 Makefile 命令
 make ai-analyze
@@ -478,7 +478,7 @@ make ai-analyze
 
 ```bash
 # 计算投资组合专业指标
-python -m asset_lens portfolio-metrics
+python -m asset_lens analyze portfolio-metrics
 
 # 使用 Makefile 命令
 make portfolio-metrics
@@ -488,25 +488,28 @@ make portfolio-metrics
 
 ```bash
 # 查看资产汇总
-python -m asset_lens show-asset-summary --data-mode real
+python -m asset_lens report show-asset-summary --data-mode real
 
 # 查看汇率历史
-python -m asset_lens show-exchange-rate-history --data-mode real
+python -m asset_lens report show-exchange-rate-history --data-mode real
 
 # 查看卖出记录
-python -m asset_lens show-sell-records --data-mode real
+python -m asset_lens report show-sell-records --data-mode real
 
 # 实时盈亏估算
-python -m asset_lens estimate-pnl
+python -m asset_lens analyze pnl
 
 # 已卖出投资分析
-python -m asset_lens analyze-sold
+python -m asset_lens analyze analyze-sold
 
 # 按投资时间分组分析
-python -m asset_lens analyze-by-time
+python -m asset_lens analyze analyze-by-time
 
 # 更新市场指数数据
-python -m asset_lens update-market-data
+python -m asset_lens data update-market-data
+
+# 获取股票行情（性能优化版本）
+python -m asset_lens data fetch-stock --codes "sh600519 sz000001" --concurrent
 ```
 
 ---
