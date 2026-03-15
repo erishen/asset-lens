@@ -688,6 +688,115 @@ class StrategyEngine:
             "source_strategies": strategy_names,
             "message": f"策略组合 {combined_name} 创建成功",
         }
+    
+    def evaluate_strategy_portfolio(
+        self,
+        stock: Dict[str, Any],
+        strategy_weights: Optional[Dict[str, float]] = None,
+    ) -> Dict[str, Any]:
+        """
+        使用策略组合评估股票
+        
+        Args:
+            stock: 股票数据
+            strategy_weights: 策略权重字典 {"value": 0.4, "momentum": 0.3, ...}
+            
+        Returns:
+            组合评分结果
+        """
+        if strategy_weights is None:
+            strategy_weights = {
+                "value": 0.3,
+                "momentum": 0.25,
+                "reversal": 0.2,
+                "dividend": 0.25,
+            }
+        
+        total_weight = sum(strategy_weights.values())
+        if total_weight == 0:
+            return {"combined_score": 0, "strategies": {}}
+        
+        normalized_weights = {k: v / total_weight for k, v in strategy_weights.items()}
+        
+        strategy_scores: Dict[str, Dict[str, Any]] = {}
+        weighted_score = 0.0
+        
+        for strategy_name, weight in normalized_weights.items():
+            if strategy_name not in self.strategies:
+                continue
+            
+            evaluation = self.evaluate_stock(stock, strategy_name)
+            strategy_scores[strategy_name] = {
+                "score": evaluation["score"],
+                "match": evaluation["match"],
+                "weight": weight,
+                "weighted_score": evaluation["score"] * weight,
+                "matched_conditions": evaluation["matched_conditions"],
+                "total_conditions": evaluation["total_conditions"],
+            }
+            
+            weighted_score += evaluation["score"] * weight
+        
+        sorted_strategies = sorted(
+            strategy_scores.items(),
+            key=lambda x: x[1]["score"],
+            reverse=True,
+        )
+        
+        best_strategy = sorted_strategies[0] if sorted_strategies else (None, {})
+        
+        return {
+            "combined_score": round(weighted_score, 2),
+            "best_strategy": best_strategy[0],
+            "best_score": best_strategy[1].get("score", 0),
+            "strategies": strategy_scores,
+            "recommendation": self._get_portfolio_recommendation(weighted_score, best_strategy[0]),
+        }
+    
+    def _get_portfolio_recommendation(self, combined_score: float, best_strategy: Optional[str]) -> str:
+        """获取组合推荐"""
+        if combined_score >= 80:
+            return f"强烈推荐 - 综合得分 {combined_score:.1f}，最佳策略: {best_strategy}"
+        elif combined_score >= 60:
+            return f"推荐 - 综合得分 {combined_score:.1f}，最佳策略: {best_strategy}"
+        elif combined_score >= 40:
+            return f"观望 - 综合得分 {combined_score:.1f}，建议等待更好时机"
+        else:
+            return f"不推荐 - 综合得分 {combined_score:.1f}，不符合多数策略条件"
+    
+    def screen_with_portfolio(
+        self,
+        stocks: List[Dict[str, Any]],
+        strategy_weights: Optional[Dict[str, float]] = None,
+        min_combined_score: float = 50.0,
+    ) -> List[Dict[str, Any]]:
+        """
+        使用策略组合筛选股票
+        
+        Args:
+            stocks: 股票列表
+            strategy_weights: 策略权重
+            min_combined_score: 最低综合得分
+            
+        Returns:
+            筛选后的股票列表
+        """
+        results = []
+        
+        for stock in stocks:
+            portfolio_result = self.evaluate_strategy_portfolio(stock, strategy_weights)
+            
+            if portfolio_result["combined_score"] >= min_combined_score:
+                results.append({
+                    **stock,
+                    "portfolio_score": portfolio_result["combined_score"],
+                    "best_strategy": portfolio_result["best_strategy"],
+                    "strategy_scores": portfolio_result["strategies"],
+                    "recommendation": portfolio_result["recommendation"],
+                })
+        
+        results.sort(key=lambda x: x.get("portfolio_score", 0), reverse=True)
+        return results
 
 
 strategy_engine = StrategyEngine()
