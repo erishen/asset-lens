@@ -54,7 +54,7 @@ class ChartGenerator:
         Returns:
             图表数据
         """
-        from .stock_pool import StockPool
+        from ..trading.stock_pool import StockPool
         from .stock_tracker import StockTracker
 
         pool = StockPool(pool_name)
@@ -149,7 +149,7 @@ class ChartGenerator:
         Returns:
             图表数据
         """
-        from .stock_pool import StockPool
+        from ..trading.stock_pool import StockPool
 
         if not strategies:
             strategies = ["value", "momentum", "reversal", "dividend"]
@@ -274,7 +274,7 @@ class ChartGenerator:
             图表数据
         """
         from .market_environment import market_environment_analyzer
-        from .stock_pool import StockPool
+        from ..trading.stock_pool import StockPool
 
         pool = StockPool(pool_name)
         status = pool.get_performance()

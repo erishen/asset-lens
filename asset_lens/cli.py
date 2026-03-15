@@ -2264,7 +2264,7 @@ def filter_stocks_command(config_file, stocks_file, fetch_market, max_pages):
     """
     from pathlib import Path
 
-    from .data.stock_filter import StockFilter
+    from .strategy.stock_filter import StockFilter
 
     click.echo("\n📊 股票筛选")
     click.echo("=" * 60)
@@ -2362,7 +2362,7 @@ def volume_breakout_command(update_history, fetch_market, use_api, days):
     - 可选：行业属于热点
     """
     from .data.market_stock_fetcher import market_stock_fetcher
-    from .data.volume_breakout_filter import volume_breakout_filter
+    from .strategy.volume_breakout import volume_breakout_filter
 
     click.echo("\n📊 放量突破股票筛选")
     click.echo("=" * 60)
@@ -2498,7 +2498,7 @@ def screen_stocks_command(
         python -m asset_lens screen-stocks --pe-max 20 --market-cap-min 50
     """
     from .data.market_stock_fetcher import market_stock_fetcher
-    from .data.stock_screener import stock_screener
+    from .strategy.screener import stock_screener
 
     click.echo("\n📊 股票综合筛选")
     click.echo("=" * 60)
@@ -3036,7 +3036,7 @@ def stock_pool_command(action, code, name, price, shares, status_filter, pool_na
         asset-lens stock-pool buy --code sh600519 --price 1800 --shares 100
         asset-lens stock-pool sell --code sh600519 --price 1900
     """
-    from .data.stock_pool import StockPool
+    from .trading.stock_pool import StockPool
 
     pool = StockPool(pool_name)
 
@@ -3122,7 +3122,7 @@ def strategy_command(action, name, min_score, max_results, fetch_market):
         asset-lens strategy screen --name value --min-score 70
     """
     from .data.investment_system import investment_system
-    from .data.strategy_engine import strategy_engine
+    from .strategy.engine import strategy_engine
 
     if action == "list":
         strategies = strategy_engine.list_strategies()
@@ -3246,7 +3246,7 @@ def backtest_command(strategy, start_date, end_date, capital, days):
     """
     from datetime import datetime, timedelta
 
-    from .data.backtester import backtester
+    from .strategy.backtester import backtester
     from .data.market_stock_fetcher import market_stock_fetcher
     from .data.stock_history_fetcher import stock_history_fetcher
 
@@ -3525,8 +3525,8 @@ def momentum_screen_command(min_score, max_results, add_to_pool, pool_name, use_
         asset-lens momentum-screen --min-score 70 --max-results 10
     """
     from .data.market_stock_fetcher import market_stock_fetcher
-    from .data.stock_pool import StockPool
-    from .data.strategy_engine import strategy_engine
+    from .trading.stock_pool import StockPool
+    from .strategy.engine import strategy_engine
 
     click.echo("\n📊 动量策略选股")
     click.echo("=" * 60)
@@ -3820,7 +3820,7 @@ def report_command(report_type, strategy, pool_name):
 @click.option("--pool-name", default="momentum", help="股票池名称")
 def risk_summary_command(pool_name):
     """查看风险摘要"""
-    from .data.risk_manager import risk_manager
+    from .trading.risk_manager import risk_manager
 
     risk_manager.print_risk_summary(pool_name)
 
@@ -3830,7 +3830,7 @@ def risk_summary_command(pool_name):
 @click.option("--capital", type=float, default=100000, help="总资金")
 def position_advice_command(pool_name, capital):
     """获取仓位建议"""
-    from .data.risk_manager import risk_manager
+    from .trading.risk_manager import risk_manager
 
     advices = risk_manager.calculate_position_advice(pool_name, capital)
 
@@ -3866,7 +3866,7 @@ def position_advice_command(pool_name, capital):
 @click.option("--strategy", help="策略名称")
 def stop_loss_command(code, buy_price, strategy):
     """计算止损止盈位"""
-    from .data.risk_manager import risk_manager
+    from .trading.risk_manager import risk_manager
 
     result = risk_manager.calculate_stop_loss_take_profit(code, buy_price, strategy_name=strategy)
 

@@ -11,7 +11,7 @@ from datetime import datetime
 
 import pytest
 
-from asset_lens.data.volume_breakout_filter import (
+from asset_lens.strategy.volume_breakout import (
     VolumeBreakoutConfig,
     VolumeBreakoutFilter,
 )
@@ -56,7 +56,7 @@ class TestVolumeBreakoutFilter:
     @pytest.fixture
     def filter_instance(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.data.volume_breakout_filter.config') as mock_config:
+        with patch('asset_lens.strategy.volume_breakout.config') as mock_config:
             mock_config.cache_path = temp_cache_path
             mock_config.project_root = temp_cache_path
             filter_instance = VolumeBreakoutFilter()

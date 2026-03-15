@@ -75,7 +75,7 @@ class TestStockAPI:
 
     def test_search_stocks(self, client):
         """测试搜索股票"""
-        with patch('asset_lens.data.stock_screener.stock_screener') as mock_screener:
+        with patch('asset_lens.strategy.screener.stock_screener') as mock_screener:
             mock_screener._load_market_stocks.return_value = [
                 {"code": "sh600519", "name": "贵州茅台", "market": "A股"},
                 {"code": "sh600000", "name": "浦发银行", "market": "A股"},
@@ -124,7 +124,7 @@ class TestStrategyAPI:
 
     def test_list_strategies(self, client):
         """测试获取策略列表"""
-        with patch('asset_lens.data.strategy_engine.strategy_engine') as mock_engine:
+        with patch('asset_lens.strategy.engine.strategy_engine') as mock_engine:
             mock_engine.list_strategies.return_value = [
                 {
                     "name": "value",
