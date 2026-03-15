@@ -122,6 +122,7 @@ class InvestmentProduct:
     default_order: int | None = None  # 默认顺序
     usd_rate: Decimal | None = None  # 美元汇率
     hkd_rate: Decimal | None = None  # 港元汇率
+    owner: str = "personal"  # 所有者: personal, family, shared
 
     # 计算字段
     current_amount: Decimal | None = None  # 当前金额
