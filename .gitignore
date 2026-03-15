@@ -194,6 +194,7 @@ stock_history_cache/
 .serena
 .gitnexus
 .trae/
+.claude/
 
 # OpenClaw skill dependencies
 openclaw/skill/node_modules/
