@@ -1,0 +1,44 @@
+# {{ title }}
+
+生成时间: {{ timestamp | datetime }}
+
+## 📊 资产概览
+
+| 指标 | 数值 |
+|------|------|
+| 总资产 | {{ summary.total_assets | currency }} |
+| 总收益 | {{ summary.total_profit | currency }} |
+| 收益率 | {{ summary.return_rate | percent }} |
+| 持仓数量 | {{ summary.position_count }} |
+
+## 📈 持仓明细
+
+{% for position in positions %}
+### {{ position.name }} ({{ position.code }})
+
+- 当前价格: {{ position.current_price | currency }}
+- 持仓成本: {{ position.cost_price | currency }}
+- 持仓数量: {{ position.shares }}
+- 持仓市值: {{ position.market_value | currency }}
+- 盈亏: {{ position.profit | currency }} ({{ position.profit_rate | percent }})
+
+{% endfor %}
+
+## ⚠️ 风险提示
+
+{% if risk_alerts %}
+{% for alert in risk_alerts %}
+- [{{ alert.level }}] {{ alert.message }}
+{% endfor %}
+{% else %}
+- 暂无风险预警
+{% endif %}
+
+## 💡 建议
+
+{% for suggestion in suggestions %}
+- {{ suggestion }}
+{% endfor %}
+
+---
+*报告由 Asset Lens 自动生成*
