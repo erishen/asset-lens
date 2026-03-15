@@ -105,7 +105,7 @@ class MarketSentimentAnalyzer:
                 "上证50": "sh000016",
             }
 
-            total_score = 0
+            total_score = 0.0
             descriptions = []
             count = 0
 
@@ -419,8 +419,8 @@ class MarketSentimentAnalyzer:
             "成交量": 0.05,
         }
 
-        total_score = 0
-        total_weight = 0
+        total_score = 0.0
+        total_weight = 0.0
 
         for indicator in indicators:
             weight = weights.get(indicator.name, 0.1)

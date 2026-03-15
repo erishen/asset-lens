@@ -118,10 +118,9 @@ cython_debug/
 logs/
 
 # Output files (can contain sensitive data)
-output/*.csv
-output/*.json
-output/*.xlsx
-output/*.html
+output/
+!output/.gitkeep
+openclaw/output/
 
 # Cache files
 cache/
@@ -144,12 +143,16 @@ config/platforms.json
 config/stock_filter.json
 config/stock_screener.json
 config/volume_breakout.json
+config/fund_monitor_config.json
 !config/*.json.example
 
 # Private data - NEVER commit real financial data
 data/real/
 data/money_csv_*/
 data/money_*/
+data/real_time_analysis/
+data/real_trading_data/
+data/trading_records/
 
 # Keep demo/sample data
 !data/demo/
@@ -193,3 +196,13 @@ stock_history_cache/
 
 # OpenClaw skill dependencies
 openclaw/skill/node_modules/
+
+# OpenClaw sensitive config (contains real investment data)
+openclaw/config/investment_10000_monitor/
+openclaw/config/fund_monitor_config.json
+
+# OpenClaw knowledge docs (personal investment notes)
+openclaw/docs/knowledge/
+
+# OpenClaw data (contains real investment data)
+openclaw/data/

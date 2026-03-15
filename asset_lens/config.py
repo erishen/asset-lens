@@ -55,6 +55,9 @@ class Config:
         self.alphavantage_api_key: str | None = os.getenv("ALPHAVANTAGE_API_KEY")
         self.tushare_token: str | None = os.getenv("TUSHARE_TOKEN")
         self.fred_api_key: str | None = os.getenv("FRED_API_KEY")
+        
+        self.joinquant_username: str | None = os.getenv("JOINQUANT_USERNAME")
+        self.joinquant_password: str | None = os.getenv("JOINQUANT_PASSWORD")
 
         self.project_root = Path(__file__).parent.parent
         self.sample_data_path = Path(os.getenv("SAMPLE_DATA_PATH", "data/sample_data"))

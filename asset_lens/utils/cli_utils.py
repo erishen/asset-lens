@@ -282,7 +282,8 @@ def prompt_input(message: str, default: Optional[str] = None) -> Optional[str]:
     Returns:
         用户输入的值
     """
-    return click.prompt(message, default=default)
+    result = click.prompt(message, default=default)
+    return str(result) if result is not None else None
 
 
 def calculate_profit_metrics(
