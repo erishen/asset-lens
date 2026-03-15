@@ -35,7 +35,7 @@ def register_stock_pool_commands(cli: click.Group) -> None:
                 if not code:
                     click.echo("❌ 请提供股票代码", err=True)
                     return
-                pool.buy_stock(code=code, price=0.0, name=name or "")
+                pool.buy_stock(code=code, price=0.0)
                 click.echo(f"✅ 已添加股票: {code}")
 
             elif action == "remove":
