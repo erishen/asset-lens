@@ -25,7 +25,7 @@ class TestCLICommands:
     def test_show_config_command(self, runner):
         """测试显示配置命令"""
         from asset_lens.cli import cli
-        result = runner.invoke(cli, ["system", "show-config"])
+        result = runner.invoke(cli, ["show-config"])
         assert result.exit_code == 0
 
     def test_strategy_list_command(self, runner):
@@ -37,13 +37,13 @@ class TestCLICommands:
     def test_sentiment_command(self, runner):
         """测试风向分析命令"""
         from asset_lens.cli import cli
-        result = runner.invoke(cli, ["monitor", "status"])
+        result = runner.invoke(cli, ["monitor-status"])
         assert result.exit_code in [0, 2]
 
     def test_weekly_command(self, runner):
         """测试周报命令"""
         from asset_lens.cli import cli
-        result = runner.invoke(cli, ["report", "weekly"])
+        result = runner.invoke(cli, ["weekly"])
         assert result.exit_code in [0, 2]
 
 
@@ -64,7 +64,7 @@ class TestCLIAnalyzeCommands:
     def test_calculate_command(self, runner):
         """测试计算命令"""
         from asset_lens.cli import cli
-        result = runner.invoke(cli, ["analyze", "calculate", "--help"])
+        result = runner.invoke(cli, ["calculate", "--help"])
         assert result.exit_code == 0
 
 
