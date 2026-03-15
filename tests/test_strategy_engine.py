@@ -35,7 +35,7 @@ class TestStrategyCondition:
 
     def test_strategy_condition_defaults(self):
         """测试策略条件默认值"""
-        from asset_lens.data.strategy_engine import StrategyCondition
+        from asset_lens.strategy.engine import StrategyCondition
         
         condition = StrategyCondition(
             name="test",
@@ -53,7 +53,7 @@ class TestStrategyConfig:
 
     def test_strategy_config_creation(self):
         """测试策略配置创建"""
-        from asset_lens.data.strategy_engine import StrategyConfig, StrategyCondition
+        from asset_lens.strategy.engine import StrategyConfig, StrategyCondition
         
         buy_conditions = [
             StrategyCondition(name="低PE", field="pe_ratio", operator="<", value=20)
@@ -76,7 +76,7 @@ class TestStrategyConfig:
 
     def test_strategy_config_defaults(self):
         """测试策略配置默认值"""
-        from asset_lens.data.strategy_engine import StrategyConfig
+        from asset_lens.strategy.engine import StrategyConfig
         
         config = StrategyConfig(name="test")
         
@@ -103,13 +103,13 @@ class TestStrategyEngine:
         """创建策略引擎实例"""
         with patch('asset_lens.strategy.engine.config') as mock_config:
             mock_config.cache_path = temp_cache_path
-            from asset_lens.data.strategy_engine import StrategyEngine
+            from asset_lens.strategy.engine import StrategyEngine
             engine = StrategyEngine()
             yield engine
 
     def test_module_import(self):
         """测试模块导入"""
-        from asset_lens.data.strategy_engine import strategy_engine
+        from asset_lens.strategy.engine import strategy_engine
         assert strategy_engine is not None
 
     def test_engine_init(self, engine):
@@ -291,7 +291,7 @@ class TestStrategyBacktest:
 
     def test_validate_strategy_not_found(self):
         """测试验证策略 - 策略不存在"""
-        from asset_lens.data.strategy_engine import StrategyEngine
+        from asset_lens.strategy.engine import StrategyEngine
         
         with patch('asset_lens.strategy.engine.config') as mock_config:
             mock_config.cache_path = Path(tempfile.mkdtemp())
