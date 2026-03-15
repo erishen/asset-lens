@@ -14,6 +14,7 @@ from .charts import ChartGenerator
 from .data_collectors import ReportDataCollector
 from .investment_report import InvestmentReportGenerator, investment_report_generator
 from .template_engine import ReportTemplateEngine, template_engine
+from .daily_pusher import DailyReportPusher, daily_report_pusher
 
 __all__ = [
     "format_currency",
@@ -26,4 +27,6 @@ __all__ = [
     "investment_report_generator",
     "ReportTemplateEngine",
     "template_engine",
+    "DailyReportPusher",
+    "daily_report_pusher",
 ]
