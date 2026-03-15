@@ -270,27 +270,39 @@ class ProviderRegistry:
         data_type: DataType,
         symbol: str,
         fallback: bool = True,
+        use_cache: bool = True,
         **kwargs,
     ) -> Optional[Dict[str, Any]]:
         """
         获取数据
         
-        按优先级尝试获取数据，支持自动降级
+        按优先级尝试获取数据，支持自动降级和缓存
         
         Args:
             data_type: 数据类型
             symbol: 代码/符号
             fallback: 是否自动降级到下一个数据源
+            use_cache: 是否使用缓存
             **kwargs: 其他参数
             
         Returns:
             数据字典
         """
+        from .cache import provider_cache
+        
         providers = self._providers.get(data_type, [])
         
         for info in providers:
             if not info.provider.is_available():
                 continue
+            
+            provider_name = info.provider.name
+            
+            if use_cache:
+                cached = provider_cache.get(data_type.value, provider_name, symbol, **kwargs)
+                if cached is not None:
+                    result: Optional[Dict[str, Any]] = cached
+                    return result
             
             start_time = time.time()
             try:
@@ -301,6 +313,10 @@ class ProviderRegistry:
                     info.success_count += 1
                     info.total_response_time += response_time
                     info.last_success_time = datetime.now()
+                    
+                    if use_cache:
+                        provider_cache.set(data_type.value, provider_name, symbol, result, **kwargs)
+                    
                     return result
             except Exception as e:
                 info.error_count += 1
@@ -456,6 +472,9 @@ def register_default_providers() -> None:
     provider_registry.register(ccxt_provider)
 
 
+from .cache import provider_cache  # noqa: E402
+
+
 __all__ = [
     "ProviderType",
     "DataType",
@@ -465,4 +484,5 @@ __all__ = [
     "ProviderRegistry",
     "provider_registry",
     "register_default_providers",
+    "provider_cache",
 ]
