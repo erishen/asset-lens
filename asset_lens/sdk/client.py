@@ -220,10 +220,9 @@ class AssetLensClient:
             风险指标数据
         """
         try:
-            from asset_lens.monitoring.risk_analyzer import RiskAnalyzer
+            from asset_lens.risk import risk_service
             
-            risk_analyzer = RiskAnalyzer()
-            metrics = risk_analyzer.calculate_all_metrics(returns)
+            metrics = risk_service.calculate_metrics(returns)
             
             return {
                 'success': True,

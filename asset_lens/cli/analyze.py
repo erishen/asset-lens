@@ -48,15 +48,15 @@ def register_analyze_commands(cli: click.Group) -> None:
         
         if data_mode:
             config.data_mode = data_mode
-            print(f"使用数据模式: {data_mode}")
+            click.echo(f"使用数据模式: {data_mode}")
 
-        print("\n📊 正在加载数据...")
+        click.echo("\n📊 正在加载数据...")
         try:
             if data_path:
                 products = CSVParser.load_data(Path(data_path))
             else:
                 products = CSVParser.load_data()
-            print(f"✅ 成功加载 {len(products)} 个投资产品")
+            click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
         except Exception as e:
             click.echo(f"❌ 加载数据失败: {e}", err=True)
             raise click.Abort()
@@ -67,7 +67,7 @@ def register_analyze_commands(cli: click.Group) -> None:
             hkd_rate=Decimal(str(config.default_hkd_rate)),
         )
 
-        print("\n🔢 正在计算收益率...")
+        click.echo("\n🔢 正在计算收益率...")
         reference_date = datetime.now()
 
         for product in portfolio.products:
@@ -94,18 +94,18 @@ def register_analyze_commands(cli: click.Group) -> None:
                     )
                     product.annualized_return_irr = simple_return
 
-        print("✅ 收益率计算完成")
+        click.echo("✅ 收益率计算完成")
 
         sell_records = []
         try:
             from asset_lens.data.sell_record_parser import SellRecordParser
             sell_records = SellRecordParser.load_sell_records()
             if sell_records:
-                print(f"✅ 成功加载 {len(sell_records)} 条卖出记录")
+                click.echo(f"✅ 成功加载 {len(sell_records)} 条卖出记录")
         except Exception as e:
-            print(f"⚠️  加载卖出记录失败: {e}")
+            click.echo(f"⚠️  加载卖出记录失败: {e}")
 
-        print("\n📝 正在生成分析报告...")
+        click.echo("\n📝 正在生成分析报告...")
         report_data = report_generator.generate_analysis_report(portfolio, sell_records)
 
         report_data["products"] = [
@@ -121,7 +121,7 @@ def register_analyze_commands(cli: click.Group) -> None:
         if output_format in ["json", "all"]:
             report_generator.save_json_report(report_data, config.output_path)
 
-        print("\n✅ 分析完成!")
+        click.echo("\n✅ 分析完成!")
 
     @cli.command()
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
@@ -136,12 +136,12 @@ def register_analyze_commands(cli: click.Group) -> None:
 
         if data_mode:
             config.data_mode = data_mode
-            print(f"使用数据模式: {data_mode}")
+            click.echo(f"使用数据模式: {data_mode}")
 
-        print("\n📊 正在加载数据...")
+        click.echo("\n📊 正在加载数据...")
         try:
             products = CSVParser.load_data()
-            print(f"✅ 成功加载 {len(products)} 个投资产品")
+            click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
         except Exception as e:
             click.echo(f"❌ 加载数据失败: {e}", err=True)
             raise click.Abort()
@@ -152,7 +152,7 @@ def register_analyze_commands(cli: click.Group) -> None:
             hkd_rate=Decimal(str(config.default_hkd_rate)),
         )
 
-        print("\n🔢 正在计算收益率...")
+        click.echo("\n🔢 正在计算收益率...")
         reference_date = datetime.now()
 
         for product in portfolio.products:
@@ -179,13 +179,13 @@ def register_analyze_commands(cli: click.Group) -> None:
                     )
                     product.annualized_return_irr = simple_return
 
-        print("✅ 收益率计算完成")
+        click.echo("✅ 收益率计算完成")
 
-        print("\n📝 正在生成计算报告...")
+        click.echo("\n📝 正在生成计算报告...")
         report = calculate_report_generator.generate_calculate_report(portfolio)
         calculate_report_generator.print_calculate_report(report)
 
-        print("\n✅ 计算完成!")
+        click.echo("\n✅ 计算完成!")
 
     @cli.command()
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
