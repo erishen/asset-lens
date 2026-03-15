@@ -109,7 +109,7 @@ class UnifiedDataFetcher:
         
         new_type = type_map.get(source_type)
         if new_type is None:
-            print(f"不支持的数据源类型: {source_type}")
+            warnings.warn(f"不支持的数据源类型: {source_type}", RuntimeWarning, stacklevel=2)
             return None
         
         fetcher = self._get_new_fetcher()
