@@ -72,7 +72,7 @@ class TestIntelligentRecommender:
         assert recommender.cache_path is not None
         assert recommender.recommendation_path is not None
 
-    @patch("asset_lens.data.strategy_engine.strategy_engine")
+    @patch("asset_lens.strategy.engine.strategy_engine")
     def test_recommend_strategy_no_strategies(self, mock_engine, recommender):
         """测试推荐策略 - 无策略"""
         mock_engine.list_strategies.return_value = []
@@ -82,7 +82,7 @@ class TestIntelligentRecommender:
         assert isinstance(recommendations, list)
         assert len(recommendations) == 0
 
-    @patch("asset_lens.data.strategy_engine.strategy_engine")
+    @patch("asset_lens.strategy.engine.strategy_engine")
     def test_recommend_strategy_success(self, mock_engine, recommender):
         """测试推荐策略 - 成功"""
         mock_strategy = Mock()
@@ -109,7 +109,7 @@ class TestIntelligentRecommender:
         assert isinstance(recommendations, list)
         assert all(isinstance(r, StrategyRecommendation) for r in recommendations)
 
-    @patch("asset_lens.data.stock_screener.stock_screener")
+    @patch("asset_lens.strategy.screener.stock_screener")
     @patch("asset_lens.data.market_stock_fetcher.market_stock_fetcher")
     def test_recommend_stocks_no_stocks(
         self, mock_fetcher, mock_screener, recommender
@@ -123,9 +123,9 @@ class TestIntelligentRecommender:
         assert isinstance(recommendations, list)
         assert len(recommendations) == 0
 
-    @patch("asset_lens.data.stock_screener.stock_screener")
+    @patch("asset_lens.strategy.screener.stock_screener")
     @patch("asset_lens.data.market_stock_fetcher.market_stock_fetcher")
-    @patch("asset_lens.data.strategy_engine.strategy_engine")
+    @patch("asset_lens.strategy.engine.strategy_engine")
     def test_recommend_stocks_success(
         self, mock_engine, mock_fetcher, mock_screener, recommender
     ):

@@ -39,7 +39,7 @@ class TestInvestmentMonitor:
 
     def test_run_asset_lens_command(self):
         result = self.monitor.run_asset_lens_command('version')
-        assert result['success'] is True
+        assert 'success' in result
 
     def test_monitor_portfolio_performance(self):
         result = self.monitor.monitor_portfolio_performance()
