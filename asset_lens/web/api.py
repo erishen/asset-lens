@@ -637,9 +637,10 @@ async def get_portfolio_items():
 @app.get("/api/risk/summary")
 async def get_risk_summary():
     """获取风险摘要"""
-    from ..core.risk_manager import risk_manager
+    from ..trading.risk_manager import RiskManager
 
     try:
+        risk_manager = RiskManager()
         summary = risk_manager.get_risk_summary()
         return summary
     except Exception as e:
