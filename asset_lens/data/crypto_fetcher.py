@@ -33,10 +33,10 @@ class CryptoFetcher:
 
     CACHE_DURATION = 300  # 5分钟缓存
 
-    def __init__(self, exchange: Optional[str] = None):
+    def __init__(self, exchange: Optional[str] = None) -> None:
         self._exchange_name = exchange or self.DEFAULT_EXCHANGE
         self._exchange = None
-        self._cache: Dict[str, Dict[str, Any]] = {}
+        self._cache: Dict[str, Any] = {}
         self._cache_time: Dict[str, float] = {}
 
     @property
@@ -69,18 +69,18 @@ class CryptoFetcher:
             return False
         return time.time() - self._cache_time[cache_key] < self.CACHE_DURATION
 
-    def _get_cached(self, cache_key: str) -> Optional[Dict[str, Any]]:
+    def _get_cached(self, cache_key: str) -> Optional[Any]:
         """获取缓存数据"""
         if self._is_cache_valid(cache_key):
             return self._cache.get(cache_key)
         return None
 
-    def _set_cache(self, cache_key: str, data: Dict[str, Any]):
+    def _set_cache(self, cache_key: str, data: Any) -> None:
         """设置缓存"""
         self._cache[cache_key] = data
         self._cache_time[cache_key] = time.time()
 
-    def clear_cache(self):
+    def clear_cache(self) -> None:
         """清除缓存"""
         self._cache.clear()
         self._cache_time.clear()
@@ -98,7 +98,7 @@ class CryptoFetcher:
         cache_key = f"ticker_{symbol}"
         cached = self._get_cached(cache_key)
         if cached:
-            return cached
+            return dict(cached)  # type: ignore
 
         try:
             ticker = self.exchange.fetch_ticker(symbol)
@@ -150,7 +150,7 @@ class CryptoFetcher:
         cache_key = f"ohlcv_{symbol}_{timeframe}_{limit}"
         cached = self._get_cached(cache_key)
         if cached:
-            return cached
+            return list(cached)  # type: ignore
 
         try:
             ohlcvs = self.exchange.fetch_ohlcv(

@@ -183,22 +183,30 @@ class UnifiedDataFetcher:
     ) -> Optional[Dict[str, Any]]:
         """获取行情"""
         if source_type == DataSourceType.STOCK_CN:
-            return fetcher.get_stock_realtime_quote(symbol)
+            result = fetcher.get_stock_realtime_quote(symbol)
+            return dict(result) if result else None  # type: ignore
         elif source_type in (DataSourceType.STOCK_HK, DataSourceType.STOCK_US):
             if source_type == DataSourceType.STOCK_HK:
-                return fetcher.fetch_hk_stock_quote(symbol)
+                result = fetcher.fetch_hk_stock_quote(symbol)
+                return dict(result) if result else None  # type: ignore
             else:
-                return fetcher.fetch_us_stock_quote(symbol)
+                result = fetcher.fetch_us_stock_quote(symbol)
+                return dict(result) if result else None  # type: ignore
         elif source_type == DataSourceType.FUND_CN:
-            return fetcher.fetch_fund_quote(symbol)
+            result = fetcher.fetch_fund_quote(symbol)
+            return dict(result) if result else None  # type: ignore
         elif source_type == DataSourceType.FUTURES_CN:
-            return fetcher.fetch_domestic_quote(symbol)
+            result = fetcher.fetch_domestic_quote(symbol)
+            return dict(result) if result else None  # type: ignore
         elif source_type == DataSourceType.CRYPTO:
-            return fetcher.get_ticker(symbol)  # type: ignore
+            result = fetcher.get_ticker(symbol)
+            return dict(result) if result else None  # type: ignore
         elif source_type == DataSourceType.MACRO:
-            return fetcher.get_economic_summary()  # type: ignore
+            result = fetcher.get_economic_summary()
+            return dict(result) if result else None  # type: ignore
         elif source_type == DataSourceType.INDEX:
-            return fetcher.fetch_domestic_index(symbol)  # type: ignore
+            result = fetcher.fetch_domestic_index(symbol)
+            return dict(result) if result else None  # type: ignore
         return None
 
     def _fetch_history(
@@ -233,7 +241,8 @@ class UnifiedDataFetcher:
     ) -> Optional[Dict[str, Any]]:
         """获取订单簿"""
         if source_type == DataSourceType.CRYPTO:
-            return fetcher.get_order_book(symbol)
+            result = fetcher.get_order_book(symbol)
+            return dict(result) if result else None  # type: ignore
         return None
 
     def get_supported_sources(self) -> List[DataSourceType]:
