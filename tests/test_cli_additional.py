@@ -73,13 +73,13 @@ class TestCLIStockCommands:
     def test_screen_stocks_help(self, runner):
         """测试股票筛选帮助"""
         runner, cli = runner
-        result = runner.invoke(cli, ["strategy", "screen", "--help"])
+        result = runner.invoke(cli, ["screen-stocks", "--help"])
         assert result.exit_code == 0
 
     def test_volume_breakout_help(self, runner):
         """测试放量突破帮助"""
         runner, cli = runner
-        result = runner.invoke(cli, ["strategy", "screen", "--help"])
+        result = runner.invoke(cli, ["volume-breakout", "--help"])
         assert result.exit_code == 0
 
 
@@ -102,13 +102,13 @@ class TestCLIStrategyCommands:
     def test_stock_pool_help(self, runner):
         """测试股票池帮助"""
         runner, cli = runner
-        result = runner.invoke(cli, ["strategy", "list", "--help"])
+        result = runner.invoke(cli, ["stock-pool", "--help"])
         assert result.exit_code == 0
 
     def test_backtest_help(self, runner):
         """测试回测帮助"""
         runner, cli = runner
-        result = runner.invoke(cli, ["strategy", "backtest", "--help"])
+        result = runner.invoke(cli, ["backtest", "--help"])
         assert result.exit_code == 0
 
     def test_investment_status_help(self, runner):
@@ -135,7 +135,7 @@ class TestCLITaskCommands:
         return runner, cli
 
     def test_run_daily_tasks_help(self, runner):
-        """测试运行日常任务帮助"""
+        """测试每日任务帮助"""
         runner, cli = runner
         result = runner.invoke(cli, ["run-daily-tasks", "--help"])
         assert result.exit_code == 0
