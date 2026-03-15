@@ -20,7 +20,6 @@ exclude = [
     "asset_lens/data/crypto_fetcher\\.py",
     "asset_lens/data/stock_fetcher\\.py",
     "asset_lens/data/fund_fetcher\\.py",
-    "asset_lens/data/market_data_fetcher\\.py",
     "asset_lens/utils/logger/.*",
     "asset_lens/utils/cli_utils\\.py",
     "asset_lens/utils/http_client\\.py",
@@ -138,10 +137,6 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = "asset_lens.data.fund_fetcher"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "asset_lens.data.market_data_fetcher"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
