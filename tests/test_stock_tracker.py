@@ -201,7 +201,7 @@ class TestStockTracker:
     def test_record_batch(self, tracker):
         """测试批量记录"""
         # 先添加股票到股票池
-        from asset_lens.data.stock_pool import StockPool, StockPosition
+        from asset_lens.trading.stock_pool import StockPool, StockPosition
         from datetime import date
         
         with patch.object(tracker.stock_pool, 'positions', {
@@ -241,7 +241,7 @@ class TestStockTracker:
 
     def test_record_batch_skips_duplicates(self, tracker):
         """测试批量记录跳过重复数据"""
-        from asset_lens.data.stock_pool import StockPosition
+        from asset_lens.trading.stock_pool import StockPosition
         from datetime import date
         
         with patch.object(tracker.stock_pool, 'positions', {
