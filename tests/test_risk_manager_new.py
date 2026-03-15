@@ -20,7 +20,7 @@ class TestRiskManager:
     def manager(self):
         """创建管理器实例"""
         from asset_lens.data.risk_manager import RiskManager
-        with patch('asset_lens.data.risk_manager.config') as mock_config:
+        with patch('asset_lens.trading.risk_manager.config') as mock_config:
             mock_config.cache_path = MagicMock()
             return RiskManager()
 

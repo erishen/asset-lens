@@ -135,7 +135,7 @@ class TestChartGenerator:
 
     def test_generate_profit_curve_empty(self, generator):
         """测试生成收益曲线 - 空数据"""
-        with patch('asset_lens.data.stock_pool.StockPool') as mock_pool:
+        with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool:
             with patch('asset_lens.data.stock_tracker.StockTracker') as mock_tracker:
                 mock_tracker_instance = MagicMock()
                 mock_tracker_instance.daily_records = {}
@@ -159,7 +159,7 @@ class TestChartGenerator:
         mock_position.status = "holding"
         mock_position.buy_price = 90
 
-        with patch('asset_lens.data.stock_pool.StockPool') as mock_pool:
+        with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool:
             with patch('asset_lens.data.stock_tracker.StockTracker') as mock_tracker:
                 mock_tracker_instance = MagicMock()
                 mock_tracker_instance.daily_records = {"sh600519": [mock_record]}
@@ -175,7 +175,7 @@ class TestChartGenerator:
 
     def test_generate_strategy_comparison_chart(self, generator):
         """测试生成策略对比图"""
-        with patch('asset_lens.data.stock_pool.StockPool') as mock_pool:
+        with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool:
             mock_pool_instance = MagicMock()
             mock_pool_instance.get_performance.return_value = {
                 "total_profit_rate": 0.1,
@@ -189,7 +189,7 @@ class TestChartGenerator:
 
     def test_generate_strategy_comparison_chart_default(self, generator):
         """测试生成策略对比图 - 默认策略"""
-        with patch('asset_lens.data.stock_pool.StockPool') as mock_pool:
+        with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool:
             mock_pool_instance = MagicMock()
             mock_pool_instance.get_performance.return_value = {
                 "total_profit_rate": 0.1,
@@ -228,7 +228,7 @@ class TestChartGenerator:
 
     def test_generate_risk_dashboard(self, generator):
         """测试生成风险仪表盘"""
-        with patch('asset_lens.data.stock_pool.StockPool') as mock_pool:
+        with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool:
             with patch('asset_lens.data.market_environment.market_environment_analyzer') as mock_analyzer:
                 mock_pool_instance = MagicMock()
                 mock_pool_instance.get_performance.return_value = {
@@ -251,7 +251,7 @@ class TestChartGenerator:
 
     def test_generate_risk_dashboard_high_risk(self, generator):
         """测试生成风险仪表盘 - 高风险"""
-        with patch('asset_lens.data.stock_pool.StockPool') as mock_pool:
+        with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool:
             with patch('asset_lens.data.market_environment.market_environment_analyzer') as mock_analyzer:
                 mock_pool_instance = MagicMock()
                 mock_pool_instance.get_performance.return_value = {

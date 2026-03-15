@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import pytest
 
-from asset_lens.data.stock_filter import StockFilter, StockFilterConfig
+from asset_lens.strategy.stock_filter import StockFilter, StockFilterConfig
 
 
 class TestStockFilterConfig:
@@ -66,7 +66,7 @@ class TestStockFilter:
     @pytest.fixture
     def stock_filter(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.data.stock_filter.config') as mock_config:
+        with patch('asset_lens.strategy.stock_filter.config') as mock_config:
             mock_config.project_root = temp_cache_path
             stock_filter = StockFilter()
             yield stock_filter

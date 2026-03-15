@@ -189,7 +189,7 @@ async def search_stocks(keyword: str = Query(..., description="搜索关键词")
     Args:
         keyword: 搜索关键词
     """
-    from ..data.stock_screener import stock_screener
+    from ..strategy.screener import stock_screener
 
     stocks = stock_screener._load_market_stocks()
 
@@ -244,7 +244,7 @@ async def get_portfolio_summary():
 @app.get("/api/strategies", response_model=List[StrategyInfo])
 async def list_strategies():
     """获取策略列表"""
-    from ..data.strategy_engine import strategy_engine
+    from ..strategy.engine import strategy_engine
 
     strategies = strategy_engine.list_strategies()
 
@@ -266,7 +266,7 @@ async def list_strategies():
 @app.get("/api/strategies/{strategy_name}")
 async def get_strategy(strategy_name: str):
     """获取策略详情"""
-    from ..data.strategy_engine import strategy_engine
+    from ..strategy.engine import strategy_engine
 
     strategy = strategy_engine.get_strategy(strategy_name)
 
@@ -293,7 +293,7 @@ async def get_strategy(strategy_name: str):
 async def evaluate_stock(strategy_name: str, code: str):
     """评估股票"""
     from ..data.multi_source_fetcher import multi_source_fetcher
-    from ..data.strategy_engine import strategy_engine
+    from ..strategy.engine import strategy_engine
 
     strategy = strategy_engine.get_strategy(strategy_name)
     if strategy is None:
@@ -1065,7 +1065,7 @@ async def get_realtime_status():
 @app.get("/api/stock-pool")
 async def get_stock_pool():
     """获取股票池数据"""
-    from ..data.stock_pool import StockPool
+    from ..trading.stock_pool import StockPool
     from ..config import config
 
     try:

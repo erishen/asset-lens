@@ -141,7 +141,7 @@ class RiskManager:
         Returns:
             仓位建议列表
         """
-        from .market_environment import market_environment_analyzer
+        from ..data.market_environment import market_environment_analyzer
         from .stock_pool import StockPool
 
         pool = StockPool(pool_name)
@@ -214,7 +214,7 @@ class RiskManager:
         Returns:
             止损止盈建议
         """
-        from .strategy_engine import strategy_engine
+        from ..strategy.engine import strategy_engine
 
         result = {
             "code": code,
@@ -367,7 +367,7 @@ class RiskManager:
         Returns:
             风险预警列表
         """
-        from .market_environment import market_environment_analyzer
+        from ..data.market_environment import market_environment_analyzer
         from .stock_pool import StockPool
 
         pool = StockPool(pool_name)
@@ -436,7 +436,7 @@ class RiskManager:
         Returns:
             风险摘要
         """
-        from .market_environment import market_environment_analyzer
+        from ..data.market_environment import market_environment_analyzer
         from .stock_pool import StockPool
 
         pool = StockPool(pool_name)

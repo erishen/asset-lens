@@ -174,8 +174,8 @@ class TestTaskSchedulerTasks:
         mock_pool = MagicMock()
         mock_pool.add_stock.return_value = True
 
-        with patch('asset_lens.data.strategy_engine.strategy_engine') as mock_engine:
-            with patch('asset_lens.data.stock_pool.StockPool') as mock_pool_class:
+        with patch('asset_lens.strategy.engine.strategy_engine') as mock_engine:
+            with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool_class:
                 with patch('asset_lens.data.market_stock_fetcher.market_stock_fetcher') as mock_fetcher:
                     mock_engine.screen_stocks.return_value = screened_stocks
                     mock_pool_class.return_value = mock_pool
@@ -195,8 +195,8 @@ class TestTaskSchedulerTasks:
         mock_pool = MagicMock()
         mock_pool.add_stock.return_value = True
 
-        with patch('asset_lens.data.strategy_engine.strategy_engine') as mock_engine:
-            with patch('asset_lens.data.stock_pool.StockPool') as mock_pool_class:
+        with patch('asset_lens.strategy.engine.strategy_engine') as mock_engine:
+            with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool_class:
                 with patch('asset_lens.data.market_stock_fetcher.market_stock_fetcher') as mock_fetcher:
                     mock_engine.screen_stocks.return_value = screened_stocks
                     mock_pool_class.return_value = mock_pool
