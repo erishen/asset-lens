@@ -1,6 +1,23 @@
 """
 Risk Analyzer System - 风险分析系统
 计算风险指标、生成风险预警、提供风险控制建议
+
+职责说明:
+    此模块 (monitoring/risk_analyzer.py) - RiskAnalyzer:
+    - 风险指标计算 - 波动率、夏普比率、最大回撤、VaR 等
+    - 风险预警生成 - 基于阈值的风险预警
+    - 风险报告生成 - 生成风险分析报告
+    - 适用于: 风险分析报告、投资组合评估
+
+    另请参阅: trading/risk_manager.py - RiskManager
+    - 仓位管理建议 - 根据市场环境和风险偏好建议仓位
+    - 止损止盈提醒 - 自动计算和提醒止损止盈位
+    - 适用于: 交易决策、仓位控制
+
+使用示例:
+    from asset_lens.monitoring.risk_analyzer import RiskAnalyzer
+    analyzer = RiskAnalyzer()
+    metrics = analyzer.calculate_all_metrics(returns)
 """
 
 import json
