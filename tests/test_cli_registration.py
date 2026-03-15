@@ -99,7 +99,7 @@ class TestCLIRegistration:
         
         commands = cli.list_commands(None)
         
-        provider_commands = ["provider-info", "fetch-unified", "provider-health"]
+        provider_commands = ["provider-info", "fetch-unified", "provider-health", "cache-stats", "cache-clear"]
         for cmd in provider_commands:
             assert cmd in commands, f"Provider 命令 {cmd} 应该已注册"
 
