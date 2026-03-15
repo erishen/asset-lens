@@ -323,7 +323,7 @@ class MacroEconomicFetcher:
         Returns:
             GDP 数据
         """
-        result = {
+        result: Dict[str, Any] = {
             "us_gdp": None,
             "china_gdp": None,
             "world_gdp_growth": None,
