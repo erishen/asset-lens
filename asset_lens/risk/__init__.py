@@ -172,6 +172,50 @@ class RiskService:
         """
         result: str = self.analyzer.generate_risk_report(metrics, alerts)
         return result
+    
+    def detect_market_regime(self, index_returns: List[float]) -> str:
+        """
+        判断市场环境
+        
+        Args:
+            index_returns: 指数收益率序列
+            
+        Returns:
+            市场环境类型 (bull/bear/sideways/crisis)
+        """
+        from asset_lens.monitoring.risk_analyzer import MarketRegime
+        regime = self.analyzer.detect_market_regime(index_returns)
+        return regime.value
+    
+    def adjust_for_market_regime(
+        self,
+        index_returns: Optional[List[float]] = None,
+    ) -> Dict[str, Any]:
+        """
+        根据市场环境调整风险阈值
+        
+        Args:
+            index_returns: 指数收益率序列
+            
+        Returns:
+            调整结果字典
+        """
+        result: Dict[str, Any] = self.manager.adjust_for_market_regime(index_returns)
+        return result
+    
+    def get_regime_description(self, regime: str) -> str:
+        """
+        获取市场环境描述
+        
+        Args:
+            regime: 市场环境类型
+            
+        Returns:
+            市场环境描述
+        """
+        from asset_lens.monitoring.risk_analyzer import MarketRegime
+        regime_enum = MarketRegime(regime)
+        return self.analyzer.get_regime_description(regime_enum)
 
 
 risk_service = RiskService()
