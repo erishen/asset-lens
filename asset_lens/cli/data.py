@@ -335,3 +335,47 @@ def register_data_commands(cli: click.Group) -> None:
         click.echo(f"   总数据源: {summary['total_providers']}")
         click.echo(f"   可用数据源: {summary['available_providers']}")
         click.echo(f"   整体成功率: {summary['overall_success_rate']}%")
+
+    @cli.command("cache-stats")
+    def cache_stats():
+        """显示缓存统计信息"""
+        from asset_lens.data.providers.cache import provider_cache
+        from rich.console import Console
+        from rich.table import Table
+
+        console = Console()
+
+        click.echo("\n📊 缓存统计")
+        click.echo("=" * 60)
+
+        stats = provider_cache.stats()
+
+        memory_stats = stats["memory"]
+        file_stats = stats["file"]
+
+        click.echo("\n🔥 内存缓存:")
+        click.echo(f"   条目数: {memory_stats['size']}/{memory_stats['max_size']}")
+        click.echo(f"   总命中: {memory_stats['total_hits']}")
+
+        click.echo("\n📁 文件缓存:")
+        click.echo(f"   文件数: {file_stats['file_count']}")
+        click.echo(f"   总大小: {file_stats['total_size_bytes'] / 1024:.1f} KB")
+        click.echo(f"   缓存目录: {file_stats['cache_dir']}")
+
+    @cli.command("cache-clear")
+    @click.option("--type", "data_type", default=None, help="指定数据类型")
+    def cache_clear(data_type: Optional[str]):
+        """清空缓存
+        
+        示例:
+            asset-lens cache-clear
+            asset-lens cache-clear --type stock_quote
+        """
+        from asset_lens.data.providers.cache import provider_cache
+
+        provider_cache.clear(data_type)
+        
+        if data_type:
+            click.echo(f"✅ 已清空 {data_type} 缓存")
+        else:
+            click.echo("✅ 已清空所有缓存")
