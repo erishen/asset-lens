@@ -1,6 +1,11 @@
 """
 Data module for asset-lens.
 数据模块，包含数据模型和数据处理逻辑
+
+注意：策略和交易相关模块已迁移到各自的目录：
+- 策略: asset_lens.strategy
+- 交易: asset_lens.trading
+- 风险: asset_lens.risk
 """
 
 from .chart_generator import ChartGenerator, chart_generator
@@ -19,15 +24,8 @@ from .personal_data_integrator import PersonalDataIntegrator, personal_data_inte
 from .scheduler import TaskScheduler, task_scheduler
 from .stock_tracker import StockTracker, stock_tracker
 
-from ..strategy import strategy_engine, backtester, stock_screener
-from ..strategy.engine import StrategyConfig, StrategyEngine
-from ..strategy.backtester import Backtester, BacktestResult
-from ..strategy.screener import StockScreener
-from ..trading import auto_trader, stock_pool_manager, risk_manager
-from ..trading.stock_pool import StockPool, StockPosition, stock_pool
-from ..trading.risk_manager import RiskManager
-
 __all__ = [
+    # 数据模型
     "InvestmentProduct",
     "Transaction",
     "Portfolio",
@@ -35,17 +33,7 @@ __all__ = [
     "RiskLevel",
     "Platform",
     "Currency",
-    "StockPool",
-    "StockPosition",
-    "stock_pool",
-    "StrategyConfig",
-    "StrategyEngine",
-    "strategy_engine",
-    "StockScreener",
-    "stock_screener",
-    "Backtester",
-    "BacktestResult",
-    "backtester",
+    # 数据处理
     "InvestmentSystem",
     "investment_system",
     "StockTracker",
@@ -58,8 +46,4 @@ __all__ = [
     "task_scheduler",
     "ChartGenerator",
     "chart_generator",
-    "RiskManager",
-    "risk_manager",
-    "auto_trader",
-    "stock_pool_manager",
 ]
