@@ -2,11 +2,22 @@
 Risk management module for asset-lens.
 风险管理模块 - 仓位管理、风险预警、止损止盈提醒
 
-功能:
-1. 仓位管理建议 - 根据市场环境和风险偏好建议仓位
-2. 风险预警系统 - 监控风险指标，触发预警
-3. 止损止盈提醒 - 自动计算和提醒止损止盈位
-4. 持仓集中度分析 - 分析持仓分散度
+职责说明:
+    此模块 (trading/risk_manager.py) - RiskManager:
+    - 仓位管理建议 - 根据市场环境和风险偏好建议仓位
+    - 风险预警系统 - 监控风险指标，触发预警
+    - 止损止盈提醒 - 自动计算和提醒止损止盈位
+    - 持仓集中度分析 - 分析持仓分散度
+    - 适用于: 交易决策、仓位控制、止损止盈
+
+    另请参阅: monitoring/risk_analyzer.py - RiskAnalyzer
+    - 风险指标计算 - 波动率、夏普比率、最大回撤等
+    - 适用于: 风险分析报告、投资组合评估
+
+使用示例:
+    from asset_lens.trading.risk_manager import RiskManager
+    manager = RiskManager()
+    summary = manager.get_risk_summary()
 """
 
 import json
