@@ -27,19 +27,59 @@ make analyze
 ### 前置要求
 
 - Python 3.9+ 
-- conda 或 pip
+- conda（推荐）或 pip
 
-### 步骤 1: 安装
+### 安装 Conda
+
+#### macOS
+
+```bash
+# 方式 1: Homebrew（推荐）
+brew install --cask anaconda
+# 添加到 PATH (选择其一)
+echo 'export PATH="/opt/homebrew/anaconda3/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+
+# 方式 2: 官方安装包
+# 下载: https://www.anaconda.com/download#downloads
+# 或使用 Miniconda（更轻量）
+brew install --cask miniconda
+echo 'export PATH="/opt/homebrew/Caskroom/miniconda/base/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+#### Linux
+
+```bash
+# 方式 1: 官方脚本（推荐）
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh
+# 按提示完成安装，重启终端
+
+# 方式 2: Ubuntu/Debian APT
+sudo apt update
+sudo apt install python3-pip
+# 然后使用 pip 安装（见下方）
+
+# 方式 3: CentOS/RHEL
+sudo yum install python3-pip
+# 然后使用 pip 安装（见下方）
+```
+
+### 步骤 1: 安装项目
 
 ```bash
 # 克隆项目
 git clone https://github.com/yourusername/asset-lens.git
 cd asset-lens
 
-# 安装（推荐使用 conda）
+# 方式 A: 使用 conda（推荐）
 make setup
 
-# 或手动安装
+# 方式 B: 使用 pip
+python -m venv venv
+source venv/bin/activate  # Linux/macOS
+# venv\Scripts\activate   # Windows
 pip install -r requirements.txt
 python -m asset_lens system init
 ```
