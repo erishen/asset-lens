@@ -15,7 +15,7 @@ class TestScreenerConfig:
 
     def test_fundamental_config_defaults(self):
         """测试基本面配置默认值"""
-        from asset_lens.data.stock_screener import FundamentalConfig
+        from asset_lens.strategy.screener import FundamentalConfig
         
         config = FundamentalConfig()
         
@@ -29,7 +29,7 @@ class TestScreenerConfig:
 
     def test_technical_config_defaults(self):
         """测试技术面配置默认值"""
-        from asset_lens.data.stock_screener import TechnicalConfig
+        from asset_lens.strategy.screener import TechnicalConfig
         
         config = TechnicalConfig()
         
@@ -43,7 +43,7 @@ class TestScreenerConfig:
 
     def test_scoring_weights_defaults(self):
         """测试评分权重默认值"""
-        from asset_lens.data.stock_screener import ScoringWeights
+        from asset_lens.strategy.screener import ScoringWeights
         
         weights = ScoringWeights()
         
@@ -54,7 +54,7 @@ class TestScreenerConfig:
 
     def test_screener_config_defaults(self):
         """测试筛选器配置默认值"""
-        from asset_lens.data.stock_screener import ScreenerConfig
+        from asset_lens.strategy.screener import ScreenerConfig
         
         config = ScreenerConfig()
         
@@ -77,13 +77,13 @@ class TestStockScreener:
         with patch('asset_lens.strategy.screener.config') as mock_config:
             mock_config.cache_path = temp_cache_path
             mock_config.project_root = temp_cache_path
-            from asset_lens.data.stock_screener import StockScreener
+            from asset_lens.strategy.screener import StockScreener
             screener = StockScreener()
             yield screener
 
     def test_module_import(self):
         """测试模块导入"""
-        from asset_lens.data.stock_screener import StockScreener, stock_screener
+        from asset_lens.strategy.screener import StockScreener, stock_screener
         assert StockScreener is not None
 
     def test_screener_init(self, screener):
@@ -251,7 +251,7 @@ class TestStockScreener:
 
     def test_check_technical_conditions(self, screener):
         """测试检查技术面条件"""
-        from asset_lens.data.stock_screener import TechnicalConfig
+        from asset_lens.strategy.screener import TechnicalConfig
         
         stock = {"change_percent": 3}
         klines = [

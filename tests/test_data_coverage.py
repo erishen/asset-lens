@@ -38,12 +38,12 @@ class TestStockScreener:
 
     def test_module_import(self):
         """测试模块导入"""
-        from asset_lens.data.stock_screener import StockScreener
+        from asset_lens.strategy.screener import StockScreener
         assert StockScreener is not None
 
     def test_screener_init(self):
         """测试初始化"""
-        from asset_lens.data.stock_screener import StockScreener
+        from asset_lens.strategy.screener import StockScreener
         with patch('asset_lens.strategy.screener.config') as mock_config:
             mock_config.cache_path = MagicMock()
             screener = StockScreener()
@@ -70,23 +70,23 @@ class TestVolumeBreakoutFilter:
 
     def test_module_import(self):
         """测试模块导入"""
-        from asset_lens.data.volume_breakout_filter import VolumeBreakoutFilter
+        from asset_lens.strategy.volume_breakout import VolumeBreakoutFilter
         assert VolumeBreakoutFilter is not None
 
     def test_config_import(self):
         """测试配置导入"""
-        from asset_lens.data.volume_breakout_filter import VolumeBreakoutConfig
+        from asset_lens.strategy.volume_breakout import VolumeBreakoutConfig
         assert VolumeBreakoutConfig is not None
 
     def test_config_default_values(self):
         """测试配置默认值"""
-        from asset_lens.data.volume_breakout_filter import VolumeBreakoutConfig
+        from asset_lens.strategy.volume_breakout import VolumeBreakoutConfig
         config = VolumeBreakoutConfig()
         assert config is not None
 
     def test_filter_init(self):
         """测试筛选器初始化"""
-        from asset_lens.data.volume_breakout_filter import VolumeBreakoutFilter
+        from asset_lens.strategy.volume_breakout import VolumeBreakoutFilter
         with patch('asset_lens.strategy.volume_breakout.config') as mock_config:
             mock_config.cache_path = MagicMock()
             filter_instance = VolumeBreakoutFilter()
@@ -134,12 +134,12 @@ class TestRiskManager:
 
     def test_module_import(self):
         """测试模块导入"""
-        from asset_lens.data.risk_manager import RiskManager
+        from asset_lens.trading.risk_manager import RiskManager
         assert RiskManager is not None
 
     def test_manager_init(self):
         """测试初始化"""
-        from asset_lens.data.risk_manager import RiskManager
+        from asset_lens.trading.risk_manager import RiskManager
         with patch('asset_lens.trading.risk_manager.config') as mock_config:
             mock_config.cache_path = MagicMock()
             manager = RiskManager()
@@ -151,15 +151,15 @@ class TestStrategyEngine:
 
     def test_module_import(self):
         """测试模块导入"""
-        from asset_lens.data.strategy_engine import strategy_engine
+        from asset_lens.strategy.engine import strategy_engine
         assert strategy_engine is not None
 
     def test_get_strategies(self):
         """测试获取策略列表"""
-        from asset_lens.data.strategy_engine import strategy_engine
+        from asset_lens.strategy.engine import strategy_engine
         assert hasattr(strategy_engine, 'get_strategies') or hasattr(strategy_engine, 'strategies')
 
     def test_screen_stocks_method(self):
         """测试筛选股票方法"""
-        from asset_lens.data.strategy_engine import strategy_engine
+        from asset_lens.strategy.engine import strategy_engine
         assert hasattr(strategy_engine, 'screen_stocks')

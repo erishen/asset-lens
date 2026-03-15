@@ -64,7 +64,7 @@ class TestVolumeBreakoutFilter:
 
     def test_module_import(self):
         """测试模块导入"""
-        from asset_lens.data.volume_breakout_filter import volume_breakout_filter
+        from asset_lens.strategy.volume_breakout import volume_breakout_filter
         assert volume_breakout_filter is not None
 
     def test_init(self, filter_instance):
