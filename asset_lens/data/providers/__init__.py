@@ -3,7 +3,9 @@ Data Provider Registry for asset-lens.
 数据源注册中心 - 统一管理数据源选择策略
 """
 
+import time
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
 
@@ -72,9 +74,47 @@ class ProviderInfo:
     provider: DataProvider
     data_type: DataType
     priority: int
-    is_available: bool = True
-    last_check_time: Optional[float] = None
+    is_available: bool
     error_count: int = 0
+    success_count: int = 0
+    total_response_time: float = 0.0
+    last_success_time: Optional[datetime] = None
+    last_error_time: Optional[datetime] = None
+    last_error_message: Optional[str] = None
+
+
+@dataclass
+class ProviderHealth:
+    """数据源健康状态"""
+    name: str
+    provider_type: str
+    is_available: bool
+    total_requests: int
+    success_count: int
+    error_count: int
+    success_rate: float
+    avg_response_time: float
+    last_success_time: Optional[datetime]
+    last_error_time: Optional[datetime]
+    last_error_message: Optional[str]
+    supported_data_types: List[str]
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """转换为字典"""
+        return {
+            "name": self.name,
+            "provider_type": self.provider_type,
+            "is_available": self.is_available,
+            "total_requests": self.total_requests,
+            "success_count": self.success_count,
+            "error_count": self.error_count,
+            "success_rate": round(self.success_rate * 100, 2),
+            "avg_response_time_ms": round(self.avg_response_time * 1000, 2),
+            "last_success_time": self.last_success_time.isoformat() if self.last_success_time else None,
+            "last_error_time": self.last_error_time.isoformat() if self.last_error_time else None,
+            "last_error_message": self.last_error_message,
+            "supported_data_types": self.supported_data_types,
+        }
 
 
 class ProviderRegistry:
@@ -252,12 +292,20 @@ class ProviderRegistry:
             if not info.provider.is_available():
                 continue
             
+            start_time = time.time()
             try:
                 result = info.provider.fetch(data_type, symbol, **kwargs)
+                response_time = time.time() - start_time
+                
                 if result is not None:
+                    info.success_count += 1
+                    info.total_response_time += response_time
+                    info.last_success_time = datetime.now()
                     return result
             except Exception as e:
                 info.error_count += 1
+                info.last_error_time = datetime.now()
+                info.last_error_message = str(e)
                 if not fallback:
                     raise
                 continue
@@ -297,6 +345,97 @@ class ProviderRegistry:
         
         return result
     
+    def get_health(self, provider_name: Optional[str] = None) -> Dict[str, ProviderHealth]:
+        """
+        获取数据源健康状态
+        
+        Args:
+            provider_name: 指定数据源名称（可选，默认返回所有）
+            
+        Returns:
+            数据源健康状态字典
+        """
+        result: Dict[str, ProviderHealth] = {}
+        
+        provider_infos: Dict[str, List[ProviderInfo]] = {}
+        for data_type, providers in self._providers.items():
+            for info in providers:
+                name = info.provider.name
+                if name not in provider_infos:
+                    provider_infos[name] = []
+                provider_infos[name].append(info)
+        
+        for name, infos in provider_infos.items():
+            if provider_name is not None and name != provider_name:
+                continue
+            
+            total_requests = sum(i.success_count + i.error_count for i in infos)
+            success_count = sum(i.success_count for i in infos)
+            error_count = sum(i.error_count for i in infos)
+            total_response_time = sum(i.total_response_time for i in infos)
+            
+            success_rate = success_count / total_requests if total_requests > 0 else 0.0
+            avg_response_time = total_response_time / success_count if success_count > 0 else 0.0
+            
+            last_success = max(
+                (i.last_success_time for i in infos if i.last_success_time),
+                default=None,
+            )
+            last_error = max(
+                (i.last_error_time for i in infos if i.last_error_time),
+                default=None,
+            )
+            last_error_message = next(
+                (i.last_error_message for i in infos if i.last_error_message),
+                None,
+            )
+            
+            provider = infos[0].provider
+            result[name] = ProviderHealth(
+                name=name,
+                provider_type=provider.provider_type.value,
+                is_available=provider.is_available(),
+                total_requests=total_requests,
+                success_count=success_count,
+                error_count=error_count,
+                success_rate=success_rate,
+                avg_response_time=avg_response_time,
+                last_success_time=last_success,
+                last_error_time=last_error,
+                last_error_message=last_error_message,
+                supported_data_types=[i.data_type.value for i in infos],
+            )
+        
+        return result
+    
+    def get_health_summary(self) -> Dict[str, Any]:
+        """
+        获取数据源健康摘要
+        
+        Returns:
+            健康摘要字典
+        """
+        health_data = self.get_health()
+        
+        if not health_data:
+            return {
+                "total_providers": 0,
+                "available_providers": 0,
+                "overall_success_rate": 0.0,
+                "providers": [],
+            }
+        
+        available_count = sum(1 for h in health_data.values() if h.is_available)
+        total_requests = sum(h.total_requests for h in health_data.values())
+        total_success = sum(h.success_count for h in health_data.values())
+        
+        return {
+            "total_providers": len(health_data),
+            "available_providers": available_count,
+            "overall_success_rate": round(total_success / total_requests * 100, 2) if total_requests > 0 else 0.0,
+            "providers": [h.to_dict() for h in health_data.values()],
+        }
+    
     def clear(self) -> None:
         """清空所有注册的数据源"""
         self._providers.clear()
@@ -322,6 +461,7 @@ __all__ = [
     "DataType",
     "DataProvider",
     "ProviderInfo",
+    "ProviderHealth",
     "ProviderRegistry",
     "provider_registry",
     "register_default_providers",

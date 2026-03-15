@@ -269,3 +269,69 @@ def register_data_commands(cli: click.Group) -> None:
                 click.echo(f"  {key}: {value}")
         else:
             click.echo(f"\n❌ 未能获取数据", err=True)
+
+    @cli.command("provider-health")
+    @click.option("--provider", "provider_name", default=None, help="指定数据源名称")
+    @click.option("--json", "output_json", is_flag=True, help="输出 JSON 格式")
+    def provider_health(provider_name: Optional[str], output_json: bool):
+        """显示数据源健康状态
+
+        示例:
+            asset-lens provider-health
+            asset-lens provider-health --provider akshare
+            asset-lens provider-health --json
+        """
+        from asset_lens.data.providers import provider_registry
+        from rich.console import Console
+        from rich.table import Table
+
+        if provider_name:
+            health_data = provider_registry.get_health(provider_name)
+        else:
+            health_data = provider_registry.get_health()
+
+        if not health_data:
+            click.echo("\n⚠️ 没有注册的数据源")
+            return
+
+        if output_json:
+            import json
+            output = {name: h.to_dict() for name, h in health_data.items()}
+            click.echo(json.dumps(output, indent=2, ensure_ascii=False))
+            return
+
+        console = Console()
+
+        click.echo("\n📊 数据源健康状态")
+        click.echo("=" * 60)
+
+        table = Table(title="Provider Health")
+        table.add_column("数据源", style="cyan")
+        table.add_column("类型", style="blue")
+        table.add_column("状态", style="green")
+        table.add_column("成功率", style="yellow")
+        table.add_column("平均响应", style="magenta")
+        table.add_column("总请求", style="white")
+
+        for name, health in health_data.items():
+            status = "✅ 可用" if health.is_available else "❌ 不可用"
+            success_rate = f"{health.success_rate * 100:.1f}%"
+            avg_time = f"{health.avg_response_time * 1000:.0f}ms" if health.avg_response_time > 0 else "-"
+            total = str(health.total_requests)
+
+            table.add_row(
+                name,
+                health.provider_type,
+                status,
+                success_rate,
+                avg_time,
+                total,
+            )
+
+        console.print(table)
+
+        summary = provider_registry.get_health_summary()
+        click.echo(f"\n📈 汇总:")
+        click.echo(f"   总数据源: {summary['total_providers']}")
+        click.echo(f"   可用数据源: {summary['available_providers']}")
+        click.echo(f"   整体成功率: {summary['overall_success_rate']}%")
