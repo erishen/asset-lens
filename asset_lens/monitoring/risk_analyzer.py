@@ -1,5 +1,5 @@
 """
-Risk Management System - 风险管理系统
+Risk Analyzer System - 风险分析系统
 计算风险指标、生成风险预警、提供风险控制建议
 """
 
@@ -37,8 +37,8 @@ class RiskAlert:
     suggestion: str
 
 
-class RiskManager:
-    """风险管理系统"""
+class RiskAnalyzer:
+    """风险分析系统"""
     
     def __init__(self):
         self._cache_path = Path("cache")
@@ -288,6 +288,6 @@ class RiskManager:
             json.dump(history_data, f, ensure_ascii=False, indent=2)
 
 
-def create_risk_manager() -> RiskManager:
-    """创建风险管理实例"""
-    return RiskManager()
+def create_risk_analyzer() -> RiskAnalyzer:
+    """创建风险分析实例"""
+    return RiskAnalyzer()
