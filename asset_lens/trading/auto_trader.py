@@ -382,3 +382,5 @@ class AutoTrader:
             lines.append("  ⚠️ 需要调整策略或暂停交易")
         
         return "\n".join(lines)
+
+auto_trader = AutoTrader()

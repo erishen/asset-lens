@@ -284,7 +284,7 @@ class VolumeBreakoutFilter:
         Returns:
             符合条件的股票列表
         """
-        from .stock_history_fetcher import stock_history_fetcher
+        from ..data.stock_history_fetcher import stock_history_fetcher
 
         if stocks is None:
             stocks = self._load_market_stocks()

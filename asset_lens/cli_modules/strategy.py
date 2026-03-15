@@ -9,7 +9,7 @@ from typing import Optional
 
 def list_strategies():
     """列出所有策略"""
-    from ..data.strategy_engine import StrategyEngine
+    from ..strategy.engine import StrategyEngine
 
     engine = StrategyEngine()
     strategies = engine.list_strategies()
@@ -25,7 +25,7 @@ def list_strategies():
 
 def show_strategy(name: str):
     """显示策略详情"""
-    from ..data.strategy_engine import StrategyEngine
+    from ..strategy.engine import StrategyEngine
 
     engine = StrategyEngine()
     strategy = engine.get_strategy(name)
@@ -50,7 +50,7 @@ def show_strategy(name: str):
 
 def run_backtest(strategy_name: str, days: int = 365):
     """运行策略回测"""
-    from ..data.strategy_engine import StrategyEngine
+    from ..strategy.engine import StrategyEngine
 
     engine = StrategyEngine()
 
@@ -73,7 +73,7 @@ def run_backtest(strategy_name: str, days: int = 365):
 
 def show_stock_pool(pool_name: Optional[str] = None):
     """显示股票池"""
-    from ..data.stock_pool import StockPool
+    from ..trading.stock_pool import StockPool
 
     pool = StockPool()
 
@@ -97,7 +97,7 @@ def show_stock_pool(pool_name: Optional[str] = None):
 
 def add_to_stock_pool(code: str, name: Optional[str] = None, status: str = "watching", price: float = 0.0):
     """添加股票到股票池"""
-    from ..data.stock_pool import StockPool
+    from ..trading.stock_pool import StockPool
 
     pool = StockPool()
 
@@ -110,7 +110,7 @@ def add_to_stock_pool(code: str, name: Optional[str] = None, status: str = "watc
 
 def remove_from_stock_pool(code: str):
     """从股票池移除股票"""
-    from ..data.stock_pool import StockPool
+    from ..trading.stock_pool import StockPool
 
     pool = StockPool()
 
@@ -123,7 +123,7 @@ def remove_from_stock_pool(code: str):
 
 def screen_stocks_with_strategy(strategy_name: str, limit: int = 20):
     """使用策略筛选股票"""
-    from ..data.strategy_engine import StrategyEngine
+    from ..strategy.engine import StrategyEngine
 
     engine = StrategyEngine()
 
@@ -151,8 +151,8 @@ def add_stocks_to_pool_by_strategy(
     auto_remove: bool = False,
 ):
     """根据策略筛选股票并添加到股票池"""
-    from ..data.stock_pool import StockPool
-    from ..data.strategy_engine import StrategyEngine
+    from ..trading.stock_pool import StockPool
+    from ..strategy.engine import StrategyEngine
 
     pool = StockPool()
     engine = StrategyEngine()
@@ -195,7 +195,7 @@ def add_stocks_to_pool_by_strategy(
 
 def show_strategy_pool_status(strategy_name: str):
     """显示股票池中某策略的股票状态"""
-    from ..data.stock_pool import StockPool
+    from ..trading.stock_pool import StockPool
 
     pool = StockPool()
 
@@ -230,7 +230,7 @@ def show_strategy_pool_status(strategy_name: str):
 
 def clear_strategy_from_pool(strategy_name: str):
     """清除股票池中某策略选入的股票"""
-    from ..data.stock_pool import StockPool
+    from ..trading.stock_pool import StockPool
 
     pool = StockPool()
 

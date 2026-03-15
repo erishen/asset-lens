@@ -44,7 +44,7 @@ class TestStockScreener:
     def test_screener_init(self):
         """测试初始化"""
         from asset_lens.data.stock_screener import StockScreener
-        with patch('asset_lens.data.stock_screener.config') as mock_config:
+        with patch('asset_lens.strategy.screener.config') as mock_config:
             mock_config.cache_path = MagicMock()
             screener = StockScreener()
             assert screener is not None
@@ -87,7 +87,7 @@ class TestVolumeBreakoutFilter:
     def test_filter_init(self):
         """测试筛选器初始化"""
         from asset_lens.data.volume_breakout_filter import VolumeBreakoutFilter
-        with patch('asset_lens.data.volume_breakout_filter.config') as mock_config:
+        with patch('asset_lens.strategy.volume_breakout.config') as mock_config:
             mock_config.cache_path = MagicMock()
             filter_instance = VolumeBreakoutFilter()
             assert filter_instance is not None
@@ -140,7 +140,7 @@ class TestRiskManager:
     def test_manager_init(self):
         """测试初始化"""
         from asset_lens.data.risk_manager import RiskManager
-        with patch('asset_lens.data.risk_manager.config') as mock_config:
+        with patch('asset_lens.trading.risk_manager.config') as mock_config:
             mock_config.cache_path = MagicMock()
             manager = RiskManager()
             assert manager is not None

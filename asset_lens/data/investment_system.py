@@ -12,9 +12,9 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from ..config import config
-from .backtester import Backtester, BacktestResult
-from .stock_pool import StockPool, StockPosition
-from .strategy_engine import StrategyConfig, StrategyEngine, strategy_engine
+from ..strategy.backtester import Backtester, BacktestResult
+from ..trading.stock_pool import StockPool, StockPosition
+from ..strategy.engine import StrategyConfig, StrategyEngine, strategy_engine
 
 
 class InvestmentSystem:

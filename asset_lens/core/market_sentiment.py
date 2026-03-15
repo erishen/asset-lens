@@ -190,7 +190,7 @@ class MarketSentimentAnalyzer:
     def _analyze_sector_heat(self) -> SentimentIndicator:
         """分析板块热度"""
         try:
-            from ..data.stock_pool import StockPool
+            from ..trading.stock_pool import StockPool
             from ..config import config
 
             pool_path = config.cache_path / "stock_pools"
@@ -342,7 +342,7 @@ class MarketSentimentAnalyzer:
     def _analyze_stock_pool(self) -> SentimentIndicator:
         """分析股票池表现"""
         try:
-            from ..data.stock_pool import StockPool
+            from ..trading.stock_pool import StockPool
             from ..config import config
 
             pool_path = config.cache_path / "stock_pools"

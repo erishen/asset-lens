@@ -15,7 +15,7 @@ class TestStrategyCondition:
 
     def test_strategy_condition_creation(self):
         """测试策略条件创建"""
-        from asset_lens.data.strategy_engine import StrategyCondition
+        from asset_lens.strategy.engine import StrategyCondition
         
         condition = StrategyCondition(
             name="低PE",
@@ -101,7 +101,7 @@ class TestStrategyEngine:
     @pytest.fixture
     def engine(self, temp_cache_path):
         """创建策略引擎实例"""
-        with patch('asset_lens.data.strategy_engine.config') as mock_config:
+        with patch('asset_lens.strategy.engine.config') as mock_config:
             mock_config.cache_path = temp_cache_path
             from asset_lens.data.strategy_engine import StrategyEngine
             engine = StrategyEngine()
@@ -293,7 +293,7 @@ class TestStrategyBacktest:
         """测试验证策略 - 策略不存在"""
         from asset_lens.data.strategy_engine import StrategyEngine
         
-        with patch('asset_lens.data.strategy_engine.config') as mock_config:
+        with patch('asset_lens.strategy.engine.config') as mock_config:
             mock_config.cache_path = Path(tempfile.mkdtemp())
             engine = StrategyEngine()
             

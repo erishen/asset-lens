@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from ..config import config
-from ..data.stock_pool import StockPool
+from ..trading.stock_pool import StockPool
 
 
 @dataclass
@@ -52,9 +52,9 @@ class InvestmentReportGenerator:
         Returns:
             报告数据
         """
-        from ..data.stock_pool import StockPool
+        from ..trading.stock_pool import StockPool
         from ..data.stock_tracker import StockTracker
-        from ..data.strategy_engine import strategy_engine
+        from ..strategy.engine import strategy_engine
 
         report: Dict[str, Any] = {
             "report_type": "strategy_report",
@@ -138,7 +138,7 @@ class InvestmentReportGenerator:
         Returns:
             报告数据
         """
-        from ..data.stock_pool import StockPool
+        from ..trading.stock_pool import StockPool
         from ..data.stock_tracker import StockTracker
 
         report: Dict[str, Any] = {
@@ -217,7 +217,7 @@ class InvestmentReportGenerator:
         Returns:
             报告数据
         """
-        from ..data.strategy_engine import strategy_engine
+        from ..strategy.engine import strategy_engine
 
         if not strategies:
             strategies = ["value", "momentum", "reversal", "dividend"]
@@ -284,7 +284,7 @@ class InvestmentReportGenerator:
             报告数据
         """
         from ..data.market_environment import market_environment_analyzer
-        from ..data.stock_pool import StockPool
+        from ..trading.stock_pool import StockPool
 
         report: Dict[str, Any] = {
             "report_type": "risk_report",
