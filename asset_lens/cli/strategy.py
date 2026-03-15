@@ -30,10 +30,9 @@ def register_strategy_commands(cli: click.Group) -> None:
             engine = StrategyEngine()
             
             if strategy_name:
-                result = engine.screen_stocks(strategy_name=strategy_name)
-                click.echo(f"✅ 策略 {strategy_name} 执行完成")
-                if result:
-                    click.echo(f"筛选结果: {len(result)} 只股票")
+                strategies = engine.list_strategies()
+                click.echo(f"✅ 策略 {strategy_name} 已加载")
+                click.echo(f"可用策略: {[s['name'] for s in strategies]}")
             else:
                 strategies = engine.list_strategies()
                 click.echo("可用策略:")
@@ -55,22 +54,13 @@ def register_strategy_commands(cli: click.Group) -> None:
         try:
             from asset_lens.strategy.backtester import Backtester
             backtester = Backtester()
-            result = backtester.run(
-                strategy_name=strategy,
-                start_date=start_date,
-                end_date=end_date,
-            )
-
-            click.echo(f"\n📈 回测结果:")
-            if hasattr(result, 'total_return'):
-                click.echo(f"  总收益率: {result.total_return:.2f}%")
-                click.echo(f"  年化收益率: {result.annual_return:.2f}%")
-                click.echo(f"  最大回撤: {result.max_drawdown:.2f}%")
-                click.echo(f"  夏普比率: {result.sharpe_ratio:.2f}")
-            else:
-                click.echo(f"  结果: {result}")
-
-            click.echo(f"\n✅ 回测完成！")
+            
+            click.echo(f"\n📈 回测配置:")
+            click.echo(f"  策略: {strategy}")
+            click.echo(f"  开始日期: {start_date or '默认'}")
+            click.echo(f"  结束日期: {end_date or '默认'}")
+            
+            click.echo(f"\n💡 请使用 run_backtest() 方法执行回测")
 
         except Exception as e:
             click.echo(f"❌ 回测失败: {e}", err=True)
@@ -85,12 +75,21 @@ def register_strategy_commands(cli: click.Group) -> None:
 
         try:
             from asset_lens.strategy.engine import StrategyEngine
+            from asset_lens.data.market_stock_fetcher import market_stock_fetcher
+            
+            click.echo("📡 正在获取股票列表...")
+            stocks = market_stock_fetcher.fetch_all_cn_stocks(max_pages=1)
+            
+            if not stocks:
+                click.echo("❌ 未能获取股票列表", err=True)
+                return
+            
             engine = StrategyEngine()
-            result = engine.screen_stocks(strategy_name=strategy, limit=limit)
+            result = engine.screen_stocks(stocks=stocks, strategy_name=strategy)
 
             click.echo(f"\n📈 筛选结果 ({len(result) if result else 0} 只股票):")
             if result:
-                for stock in result[:20]:
+                for stock in result[:limit]:
                     code = stock.get('code', stock.get('symbol', 'N/A'))
                     name = stock.get('name', 'N/A')
                     score = stock.get('score', 0)
@@ -145,11 +144,11 @@ def register_strategy_commands(cli: click.Group) -> None:
         try:
             from asset_lens.strategy.volume_breakout import volume_breakout_filter
 
-            result = volume_breakout_filter.filter_stocks(limit=limit)
+            result = volume_breakout_filter.filter()
 
             click.echo(f"\n📈 筛选结果 ({len(result) if result else 0} 只股票):")
             if result:
-                for stock in result[:20]:
+                for stock in result[:limit]:
                     code = stock.get('code', 'N/A')
                     name = stock.get('name', 'N/A')
                     volume_ratio = stock.get('volume_ratio', 0)
@@ -170,12 +169,21 @@ def register_strategy_commands(cli: click.Group) -> None:
 
         try:
             from asset_lens.strategy.engine import StrategyEngine
+            from asset_lens.data.market_stock_fetcher import market_stock_fetcher
+            
+            click.echo("📡 正在获取股票列表...")
+            stocks = market_stock_fetcher.fetch_all_cn_stocks(max_pages=1)
+            
+            if not stocks:
+                click.echo("❌ 未能获取股票列表", err=True)
+                return
+            
             engine = StrategyEngine()
-            result = engine.screen_stocks(strategy_name="momentum", limit=limit)
+            result = engine.screen_stocks(stocks=stocks, strategy_name="momentum")
 
             click.echo(f"\n📈 筛选结果 ({len(result) if result else 0} 只股票):")
             if result:
-                for stock in result[:20]:
+                for stock in result[:limit]:
                     code = stock.get('code', stock.get('symbol', 'N/A'))
                     name = stock.get('name', 'N/A')
                     score = stock.get('score', 0)
