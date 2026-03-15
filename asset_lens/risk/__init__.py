@@ -19,8 +19,12 @@ Risk Module - 统一风险入口
     metrics = risk.calculate_metrics(returns)
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 from dataclasses import dataclass
+
+if TYPE_CHECKING:
+    from asset_lens.trading.risk_manager import RiskManager
+    from asset_lens.monitoring.risk_analyzer import RiskAnalyzer
 
 
 @dataclass
@@ -33,16 +37,6 @@ class RiskSummary:
     suggestions: List[str]
 
 
-@dataclass
-class RiskMetrics:
-    """风险指标"""
-    volatility: float = 0.0
-    max_drawdown: float = 0.0
-    sharpe_ratio: float = 0.0
-    beta: float = 0.0
-    var_95: float = 0.0
-
-
 class RiskService:
     """
     风险服务 - 统一风险入口
@@ -51,12 +45,12 @@ class RiskService:
     提供一站式的风险管理与分析服务。
     """
     
-    def __init__(self):
-        self._manager = None
-        self._analyzer = None
+    def __init__(self) -> None:
+        self._manager: Optional["RiskManager"] = None
+        self._analyzer: Optional["RiskAnalyzer"] = None
     
     @property
-    def manager(self):
+    def manager(self) -> "RiskManager":
         """获取风险管理器（仓位、止损止盈）"""
         if self._manager is None:
             from asset_lens.trading.risk_manager import RiskManager
@@ -64,107 +58,123 @@ class RiskService:
         return self._manager
     
     @property
-    def analyzer(self):
+    def analyzer(self) -> "RiskAnalyzer":
         """获取风险分析器（指标计算）"""
         if self._analyzer is None:
             from asset_lens.monitoring.risk_analyzer import RiskAnalyzer
             self._analyzer = RiskAnalyzer()
         return self._analyzer
     
-    def get_risk_summary(self) -> Dict[str, Any]:
+    def get_risk_summary(self, pool_name: str = "default") -> Dict[str, Any]:
         """
         获取风险摘要
         
         包含仓位、止损止盈、风险预警等信息
         
+        Args:
+            pool_name: 股票池名称
+            
         Returns:
             风险摘要字典
         """
-        result: Dict[str, Any] = self.manager.get_risk_summary()
-        return result
-    
-    def get_position_advice(self) -> Dict[str, Any]:
-        """
-        获取仓位建议
-        
-        Returns:
-            仓位建议字典
-        """
-        result: Dict[str, Any] = self.manager.get_position_advice()
+        result: Dict[str, Any] = self.manager.get_risk_summary(pool_name)
         return result
     
     def calculate_metrics(
         self,
         returns: List[float],
-        benchmark_returns: Optional[List[float]] = None,
-    ) -> RiskMetrics:
+        values: Optional[List[float]] = None,
+    ) -> Any:
         """
         计算风险指标
         
         Args:
             returns: 收益率序列
-            benchmark_returns: 基准收益率序列（可选）
+            values: 净值序列（可选）
             
         Returns:
             RiskMetrics 对象
         """
-        metrics_dict = self.analyzer.calculate_all_metrics(returns)
-        
-        return RiskMetrics(
-            volatility=metrics_dict.get("volatility", 0.0),
-            max_drawdown=metrics_dict.get("max_drawdown", 0.0),
-            sharpe_ratio=metrics_dict.get("sharpe_ratio", 0.0),
-            beta=metrics_dict.get("beta", 0.0),
-            var_95=metrics_dict.get("var_95", 0.0),
-        )
+        return self.analyzer.calculate_all_metrics(returns, values)
     
-    def check_stop_loss(
-        self,
-        entry_price: float,
-        current_price: float,
-        stop_loss_pct: float = -0.08,
-    ) -> Dict[str, Any]:
+    def calculate_volatility(self, returns: List[float]) -> float:
         """
-        检查止损
+        计算波动率
         
         Args:
-            entry_price: 入场价格
-            current_price: 当前价格
-            stop_loss_pct: 止损比例（负数）
+            returns: 收益率序列
             
         Returns:
-            止损检查结果
+            波动率
         """
-        result: Dict[str, Any] = self.manager.check_stop_loss(entry_price, current_price, stop_loss_pct)
+        result: float = self.analyzer.calculate_volatility(returns)
         return result
     
-    def calculate_stop_loss_levels(
-        self,
-        entry_price: float,
-        stop_loss_pct: float = -0.08,
-        take_profit_pct: float = 0.15,
-    ) -> Dict[str, float]:
+    def calculate_max_drawdown(self, values: List[float]) -> float:
         """
-        计算止损止盈位
+        计算最大回撤
         
         Args:
-            entry_price: 入场价格
-            stop_loss_pct: 止损比例
-            take_profit_pct: 止盈比例
+            values: 净值序列
             
         Returns:
-            止损止盈位字典
+            最大回撤
         """
-        return {
-            "entry_price": entry_price,
-            "stop_loss_price": entry_price * (1 + stop_loss_pct),
-            "take_profit_price": entry_price * (1 + take_profit_pct),
-            "stop_loss_pct": stop_loss_pct,
-            "take_profit_pct": take_profit_pct,
-        }
+        result: float = self.analyzer.calculate_max_drawdown(values)
+        return result
+    
+    def calculate_sharpe_ratio(
+        self,
+        returns: List[float],
+        risk_free_rate: float = 0.03,
+    ) -> float:
+        """
+        计算夏普比率
+        
+        Args:
+            returns: 收益率序列
+            risk_free_rate: 无风险利率
+            
+        Returns:
+            夏普比率
+        """
+        result: float = self.analyzer.calculate_sharpe_ratio(returns, risk_free_rate)
+        return result
+    
+    def check_risk_thresholds(
+        self,
+        metrics: Any,
+        thresholds: Optional[Dict[str, float]] = None,
+    ) -> List[Any]:
+        """
+        检查风险阈值
+        
+        Args:
+            metrics: 风险指标
+            thresholds: 阈值字典
+            
+        Returns:
+            风险预警列表
+        """
+        result: List[Any] = self.analyzer.check_risk_thresholds(metrics, thresholds)
+        return result
+    
+    def generate_risk_report(self, metrics: Any, alerts: List[Any]) -> str:
+        """
+        生成风险报告
+        
+        Args:
+            metrics: 风险指标
+            alerts: 风险预警列表
+            
+        Returns:
+            风险报告文本
+        """
+        result: str = self.analyzer.generate_risk_report(metrics, alerts)
+        return result
 
 
 risk_service = RiskService()
 
 
-__all__ = ["RiskService", "RiskSummary", "RiskMetrics", "risk_service"]
+__all__ = ["RiskService", "RiskSummary", "risk_service"]
