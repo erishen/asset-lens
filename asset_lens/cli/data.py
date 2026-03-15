@@ -217,3 +217,55 @@ def register_data_commands(cli: click.Group) -> None:
 
         click.echo("\n✅ 所有数据更新完成！")
         click.echo("💡 运行 'make pnl' 查看更准确的盈亏估算")
+
+    @cli.command("provider-info")
+    def provider_info():
+        """显示数据源信息（Provider Registry）"""
+        from asset_lens.data.unified_data_fetcher import unified_data_fetcher
+
+        click.echo("\n📊 数据源信息（Provider Registry）")
+        click.echo("=" * 60)
+
+        info = unified_data_fetcher.get_provider_info()
+        
+        if info:
+            click.echo("\n可用数据源:")
+            for data_type, providers in info.items():
+                click.echo(f"  {data_type}: {', '.join(providers)}")
+        else:
+            click.echo("\n⚠️ 没有可用的数据源")
+
+        click.echo("\n💡 使用 Provider Registry 自动选择最佳数据源")
+
+    @cli.command("fetch-unified")
+    @click.option("--type", "data_type", type=click.Choice(["stock_cn", "stock_us", "fund_cn", "index"]), required=True, help="数据类型")
+    @click.argument("symbol")
+    def fetch_unified(data_type: str, symbol: str):
+        """使用 Provider Registry 获取数据
+
+        示例:
+            asset-lens fetch-unified --type stock_cn 600519
+            asset-lens fetch-unified --type fund_cn 000001
+            asset-lens fetch-unified --type stock_us AAPL
+        """
+        from asset_lens.data.unified_data_fetcher import unified_data_fetcher
+        from asset_lens.data.providers import DataType
+
+        click.echo(f"\n📊 获取 {data_type} 数据: {symbol}")
+        click.echo("=" * 60)
+
+        type_map = {
+            "stock_cn": DataType.STOCK_CN,
+            "stock_us": DataType.STOCK_US,
+            "fund_cn": DataType.FUND_CN,
+            "index": DataType.INDEX,
+        }
+
+        result = unified_data_fetcher.fetch(type_map[data_type], symbol)
+
+        if result:
+            click.echo(f"\n✅ 成功获取数据:")
+            for key, value in result.items():
+                click.echo(f"  {key}: {value}")
+        else:
+            click.echo(f"\n❌ 未能获取数据", err=True)
