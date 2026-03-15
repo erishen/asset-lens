@@ -11,7 +11,7 @@ from datetime import datetime
 
 import pytest
 
-from asset_lens.data.risk_manager import (
+from asset_lens.trading.risk_manager import (
     PositionAdvice,
     RiskConfig,
     RiskManager,
@@ -138,14 +138,14 @@ class TestRiskManager:
     @pytest.fixture
     def manager(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.data.risk_manager.config') as mock_config:
+        with patch('asset_lens.trading.risk_manager.config') as mock_config:
             mock_config.cache_path = temp_cache_path
             manager = RiskManager()
             yield manager
 
     def test_module_import(self):
         """测试模块导入"""
-        from asset_lens.data.risk_manager import risk_manager
+        from asset_lens.trading.risk_manager import risk_manager
         assert risk_manager is not None
 
     def test_init(self, manager):
@@ -259,7 +259,7 @@ class TestRiskManager:
 
     def test_check_position_concentration_empty(self, manager):
         """测试检查持仓集中度 - 空持仓"""
-        with patch('asset_lens.data.stock_pool.StockPool') as mock_pool:
+        with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool:
             mock_instance = MagicMock()
             mock_instance.positions = {}
             mock_pool.return_value = mock_instance
@@ -271,7 +271,7 @@ class TestRiskManager:
 
     def test_check_position_concentration_with_positions(self, manager):
         """测试检查持仓集中度 - 有持仓"""
-        with patch('asset_lens.data.stock_pool.StockPool') as mock_pool:
+        with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool:
             mock_instance = MagicMock()
             
             pos1 = MagicMock()
@@ -301,7 +301,7 @@ class TestRiskManager:
 
     def test_get_risk_summary(self, manager):
         """测试获取风险摘要"""
-        with patch('asset_lens.data.stock_pool.StockPool') as mock_pool, \
+        with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool, \
              patch('asset_lens.data.market_environment.market_environment_analyzer') as mock_env:
             
             mock_pool_instance = MagicMock()
@@ -324,7 +324,7 @@ class TestRiskManager:
 
     def test_generate_risk_warnings(self, manager):
         """测试生成风险预警"""
-        with patch('asset_lens.data.stock_pool.StockPool') as mock_pool, \
+        with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool, \
              patch('asset_lens.data.market_environment.market_environment_analyzer') as mock_env:
             
             mock_pool_instance = MagicMock()
@@ -343,7 +343,7 @@ class TestRiskManager:
 
     def test_calculate_position_advice_empty(self, manager):
         """测试计算仓位建议 - 空持仓"""
-        with patch('asset_lens.data.stock_pool.StockPool') as mock_pool, \
+        with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool, \
              patch('asset_lens.data.market_environment.market_environment_analyzer') as mock_env:
             
             mock_pool_instance = MagicMock()
@@ -361,7 +361,7 @@ class TestRiskManager:
 
     def test_calculate_position_advice_with_positions(self, manager):
         """测试计算仓位建议 - 有持仓"""
-        with patch('asset_lens.data.stock_pool.StockPool') as mock_pool, \
+        with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool, \
              patch('asset_lens.data.market_environment.market_environment_analyzer') as mock_env:
             
             mock_pool_instance = MagicMock()

@@ -70,8 +70,8 @@ class IntelligentRecommender:
         Returns:
             策略推荐列表
         """
-        from .backtester import Backtester
-        from .strategy_engine import strategy_engine
+        from ..strategy.backtester import Backtester
+        from ..strategy.engine import strategy_engine
 
         strategies = strategy_engine.list_strategies()
         recommendations = []
@@ -135,7 +135,7 @@ class IntelligentRecommender:
             股票推荐列表
         """
         from .market_stock_fetcher import market_stock_fetcher
-        from .stock_screener import stock_screener
+        from ..strategy.screener import stock_screener
 
         stocks = market_stock_fetcher.get_cached_market_stocks()
         if not stocks:
@@ -197,7 +197,7 @@ class IntelligentRecommender:
         investment_period: str,
     ) -> Dict[str, Any]:
         """计算策略评分"""
-        from .strategy_engine import strategy_engine
+        from ..strategy.engine import strategy_engine
 
         strategy = strategy_engine.get_strategy(strategy_name)
         if not strategy:
@@ -266,7 +266,7 @@ class IntelligentRecommender:
         strategy_name: Optional[str],
     ) -> Dict[str, Any]:
         """计算股票评分"""
-        from .strategy_engine import strategy_engine
+        from ..strategy.engine import strategy_engine
 
         score = 0
         strategy_match = []

@@ -74,7 +74,7 @@ class TestStockScreener:
     @pytest.fixture
     def screener(self, temp_cache_path):
         """创建筛选器实例"""
-        with patch('asset_lens.data.stock_screener.config') as mock_config:
+        with patch('asset_lens.strategy.screener.config') as mock_config:
             mock_config.cache_path = temp_cache_path
             mock_config.project_root = temp_cache_path
             from asset_lens.data.stock_screener import StockScreener

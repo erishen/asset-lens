@@ -87,7 +87,7 @@ class AIStockAdvisor:
             股票建议
         """
         from ..data.multi_source_fetcher import multi_source_fetcher
-        from ..data.strategy_engine import strategy_engine
+        from ..strategy.engine import strategy_engine
 
         quote = multi_source_fetcher.fetch_stock_quote(code)
         if quote is None:
@@ -224,7 +224,7 @@ class AIStockAdvisor:
         Returns:
             策略建议
         """
-        from ..data.strategy_engine import strategy_engine
+        from ..strategy.engine import strategy_engine
 
         strategy = strategy_engine.get_strategy(strategy_name)
         if strategy is None:
@@ -420,7 +420,7 @@ class AIStockAdvisor:
         Returns:
             推荐列表
         """
-        from ..data.stock_screener import stock_screener
+        from ..strategy.screener import stock_screener
 
         stocks = stock_screener._load_market_stocks()
         codes = [s.get("code", "") for s in stocks[:100] if s.get("code")]

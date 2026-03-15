@@ -239,8 +239,8 @@ class TaskScheduler:
             执行结果
         """
         from .market_stock_fetcher import market_stock_fetcher
-        from .stock_pool import StockPool
-        from .strategy_engine import strategy_engine
+        from ..trading.stock_pool import StockPool
+        from ..strategy.engine import strategy_engine
 
         result: Dict[str, Any] = {
             "task": "momentum_screen",

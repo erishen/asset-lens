@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from ..config import config
 
 if TYPE_CHECKING:
-    from .strategy_engine import StrategyEngine
+    from .engine import StrategyEngine
 
 
 @dataclass
@@ -93,7 +93,7 @@ class Backtester:
         Returns:
             回测结果
         """
-        from .strategy_engine import strategy_engine
+        from .engine import strategy_engine
 
         strategy = strategy_engine.get_strategy(strategy_name)
         if not strategy:

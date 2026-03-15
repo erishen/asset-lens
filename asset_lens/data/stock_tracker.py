@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from ..config import config
-from .stock_pool import StockPool
+from ..trading.stock_pool import StockPool
 
 
 @dataclass

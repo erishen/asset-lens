@@ -523,7 +523,7 @@ class StockPool:
         Returns:
             添加结果
         """
-        from .strategy_engine import strategy_engine
+        from ..strategy.engine import strategy_engine
 
         # 使用策略筛选股票
         screened_stocks = strategy_engine.screen_stocks(

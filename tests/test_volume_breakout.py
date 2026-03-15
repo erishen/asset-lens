@@ -30,7 +30,7 @@ class TestVolumeBreakoutFilter:
     def test_filter_init(self):
         """测试筛选器初始化"""
         from asset_lens.data.volume_breakout_filter import VolumeBreakoutFilter
-        with patch('asset_lens.data.volume_breakout_filter.config') as mock_config:
+        with patch('asset_lens.strategy.volume_breakout.config') as mock_config:
             mock_config.cache_path = MagicMock()
             filter_instance = VolumeBreakoutFilter()
             assert filter_instance is not None
@@ -38,7 +38,7 @@ class TestVolumeBreakoutFilter:
     def test_filter_has_methods(self):
         """测试筛选器方法存在"""
         from asset_lens.data.volume_breakout_filter import VolumeBreakoutFilter
-        with patch('asset_lens.data.volume_breakout_filter.config') as mock_config:
+        with patch('asset_lens.strategy.volume_breakout.config') as mock_config:
             mock_config.cache_path = MagicMock()
             filter_instance = VolumeBreakoutFilter()
             
