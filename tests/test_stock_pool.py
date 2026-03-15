@@ -277,7 +277,7 @@ class TestStrategyStockPool:
         """创建股票池实例"""
         with patch('asset_lens.trading.stock_pool.config') as mock_config:
             mock_config.cache_path = temp_cache_path
-            from asset_lens.data.stock_pool import StockPool
+            from asset_lens.trading.stock_pool import StockPool
             pool = StockPool("strategy_test")
             yield pool
 
