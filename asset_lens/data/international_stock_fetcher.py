@@ -64,8 +64,8 @@ class InternationalStockFetcher:
         self,
         fetch_func: Callable,
         *args,
-        max_retries: int = None,
-        retry_delay: float = None,
+        max_retries: Optional[int] = None,
+        retry_delay: Optional[float] = None,
         **kwargs,
     ) -> Optional[Any]:
         """
@@ -524,7 +524,7 @@ class InternationalStockFetcher:
         try:
             with open(self.hk_stock_cache, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                return data.get("data", [])
+                return list(data.get("data", []))
         except Exception:
             return []
 
@@ -544,7 +544,7 @@ class InternationalStockFetcher:
         try:
             with open(self.us_stock_cache, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                return data.get("data", [])
+                return list(data.get("data", []))
         except Exception:
             return []
 

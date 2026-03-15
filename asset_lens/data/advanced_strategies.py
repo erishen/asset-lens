@@ -333,8 +333,8 @@ class AdvancedStrategies:
         if weights is None:
             weights = default_weights
         
-        total_score = 0
-        total_weight = 0
+        total_score: float = 0
+        total_weight: float = 0
         
         for factor, score in factors.items():
             weight = weights.get(factor, 0.1)
