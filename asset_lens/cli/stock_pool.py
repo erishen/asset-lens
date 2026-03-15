@@ -26,27 +26,27 @@ def register_stock_pool_commands(cli: click.Group) -> None:
             pool = StockPool()
             
             if action == "list":
-                positions = pool.list_positions()
-                click.echo(f"\n股票池 ({len(positions)} 只股票):")
-                for pos in positions:
-                    click.echo(f"  {pos.code} - {pos.name}")
+                stocks = pool.list_stocks()
+                click.echo(f"\n股票池 ({len(stocks)} 只股票):")
+                for stock in stocks:
+                    click.echo(f"  {stock.get('code')} - {stock.get('name')}")
 
             elif action == "add":
                 if not code:
                     click.echo("❌ 请提供股票代码", err=True)
                     return
-                pool.add_position(code=code, name=name or "")
+                pool.buy_stock(code=code, price=0.0, name=name or "")
                 click.echo(f"✅ 已添加股票: {code}")
 
             elif action == "remove":
                 if not code:
                     click.echo("❌ 请提供股票代码", err=True)
                     return
-                pool.remove_position(code)
+                pool.remove_stock(code)
                 click.echo(f"✅ 已移除股票: {code}")
 
             elif action == "update":
-                pool.update_prices()
+                pool.update_prices({})
                 click.echo("✅ 股票池数据已更新")
 
         except Exception as e:
@@ -66,23 +66,23 @@ def register_stock_pool_commands(cli: click.Group) -> None:
             pool = StockPool("tracked")
             
             if action == "list":
-                positions = pool.list_positions()
-                click.echo(f"\n跟踪股票 ({len(positions)} 只):")
-                for pos in positions:
-                    click.echo(f"  {pos.code} - {pos.name}")
+                stocks = pool.list_stocks()
+                click.echo(f"\n跟踪股票 ({len(stocks)} 只):")
+                for stock in stocks:
+                    click.echo(f"  {stock.get('code')} - {stock.get('name')}")
 
             elif action == "add":
                 if not code:
                     click.echo("❌ 请提供股票代码", err=True)
                     return
-                pool.add_position(code=code, name="")
+                pool.buy_stock(code=code, price=0.0)
                 click.echo(f"✅ 已开始跟踪: {code}")
 
             elif action == "remove":
                 if not code:
                     click.echo("❌ 请提供股票代码", err=True)
                     return
-                pool.remove_position(code)
+                pool.remove_stock(code)
                 click.echo(f"✅ 已停止跟踪: {code}")
 
         except Exception as e:
