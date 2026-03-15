@@ -13,6 +13,7 @@ from .formatters import (
 from .charts import ChartGenerator
 from .data_collectors import ReportDataCollector
 from .investment_report import InvestmentReportGenerator, investment_report_generator
+from .template_engine import ReportTemplateEngine, template_engine
 
 __all__ = [
     "format_currency",
@@ -23,4 +24,6 @@ __all__ = [
     "ReportDataCollector",
     "InvestmentReportGenerator",
     "investment_report_generator",
+    "ReportTemplateEngine",
+    "template_engine",
 ]

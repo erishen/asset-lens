@@ -8,16 +8,19 @@ Risk management module for asset-lens.
     - 风险预警系统 - 监控风险指标，触发预警
     - 止损止盈提醒 - 自动计算和提醒止损止盈位
     - 持仓集中度分析 - 分析持仓分散度
+    - 市场环境自适应 - 根据市场环境自动调整风险阈值
     - 适用于: 交易决策、仓位控制、止损止盈
 
     另请参阅: monitoring/risk_analyzer.py - RiskAnalyzer
     - 风险指标计算 - 波动率、夏普比率、最大回撤等
+    - 市场环境判断 - 牛市/熊市/震荡/危机
     - 适用于: 风险分析报告、投资组合评估
 
 使用示例:
     from asset_lens.trading.risk_manager import RiskManager
     manager = RiskManager()
     summary = manager.get_risk_summary()
+    manager.adjust_for_market_regime(index_returns)
 """
 
 import json
@@ -80,7 +83,62 @@ class RiskManager:
         self.warnings_file = self.risk_path / "risk_warnings.json"
         self.config = RiskConfig()
         self.warnings: List[RiskWarning] = []
+        self._current_regime = None
+        self._regime_thresholds: Dict[str, float] = {}
         self._load_warnings()
+    
+    def adjust_for_market_regime(
+        self,
+        index_returns: Optional[List[float]] = None,
+        regime = None,
+    ) -> Dict[str, Any]:
+        """
+        根据市场环境调整风险阈值
+        
+        Args:
+            index_returns: 指数收益率序列（用于判断市场环境）
+            regime: 直接指定市场环境（可选）
+            
+        Returns:
+            调整结果字典
+        """
+        from ..monitoring.risk_analyzer import MarketRegime, RiskAnalyzer
+        
+        analyzer = RiskAnalyzer()
+        
+        if regime is None and index_returns is not None:
+            regime = analyzer.detect_market_regime(index_returns)
+        elif regime is None:
+            regime = MarketRegime.SIDEWAYS
+        
+        self._current_regime = regime
+        self._regime_thresholds = analyzer.get_regime_thresholds(regime)
+        
+        if 'stop_loss' in self._regime_thresholds:
+            self.config.stop_loss_default = self._regime_thresholds['stop_loss']
+        
+        if 'position_limit' in self._regime_thresholds:
+            self.config.max_total_position = self._regime_thresholds['position_limit']
+        
+        return {
+            "regime": regime.value if isinstance(regime, MarketRegime) else regime,
+            "description": analyzer.get_regime_description(regime),
+            "thresholds": self._regime_thresholds,
+            "adjusted_config": {
+                "stop_loss_default": self.config.stop_loss_default,
+                "max_total_position": self.config.max_total_position,
+            },
+        }
+    
+    def get_current_regime(self) -> Optional[str]:
+        """获取当前市场环境"""
+        if self._current_regime is None:
+            return None
+        return self._current_regime.value if hasattr(self._current_regime, 'value') else str(self._current_regime)
+    
+    def get_regime_adjusted_thresholds(self) -> Dict[str, float]:
+        """获取市场环境调整后的阈值"""
+        return self._regime_thresholds
 
     def _load_warnings(self) -> None:
         """加载预警历史"""

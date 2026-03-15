@@ -1,0 +1,64 @@
+# {{ title }}
+
+报告周期: {{ start_date }} ~ {{ end_date }}
+生成时间: {{ timestamp | datetime }}
+
+## 📊 本周概览
+
+| 指标 | 本周 | 上周 | 变化 |
+|------|------|------|------|
+| 总资产 | {{ summary.total_assets | currency }} | {{ summary.last_week_assets | currency }} | {{ summary.weekly_change | currency }} |
+| 收益率 | {{ summary.weekly_return | percent }} | {{ summary.last_week_return | percent }} | {{ summary.return_change | percent }} |
+| 最大回撤 | {{ summary.max_drawdown | percent }} | - | - |
+
+## 📈 市场环境
+
+- 当前环境: {{ market_regime.description }}
+- 波动率: {{ market_regime.volatility | percent }}
+- 建议仓位: {{ market_regime.position_limit | percent }}
+
+## 🏆 本周表现最佳
+
+{% for top in top_performers %}
+| 名称 | 代码 | 收益率 |
+|------|------|--------|
+| {{ top.name }} | {{ top.code }} | {{ top.return_rate | percent }} |
+{% endfor %}
+
+## 📉 本周表现最差
+
+{% for bottom in bottom_performers %}
+| 名称 | 代码 | 收益率 |
+|------|------|--------|
+| {{ bottom.name }} | {{ bottom.code }} | {{ bottom.return_rate | percent }} |
+{% endfor %}
+
+## ⚠️ 风险预警
+
+{% if risk_alerts %}
+{% for alert in risk_alerts %}
+### {{ alert.type }}
+
+- 级别: {{ alert.level }}
+- 消息: {{ alert.message }}
+- 建议: {{ alert.suggestion }}
+
+{% endfor %}
+{% else %}
+本周无风险预警
+{% endif %}
+
+## 📋 下周计划
+
+{% for task in next_week_tasks %}
+- [ ] {{ task }}
+{% endfor %}
+
+## 💡 投资建议
+
+{% for suggestion in suggestions %}
+{{ loop.index }}. {{ suggestion }}
+{% endfor %}
+
+---
+*报告由 Asset Lens 自动生成*

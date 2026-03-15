@@ -1,0 +1,52 @@
+# {{ title }}
+
+生成时间: {{ timestamp | datetime }}
+
+## 📊 风险指标
+
+| 指标 | 当前值 | 阈值 | 状态 |
+|------|--------|------|------|
+| 波动率 | {{ metrics.volatility | percent }} | {{ thresholds.volatility | percent }} | {{ status.volatility }} |
+| 最大回撤 | {{ metrics.max_drawdown | percent }} | {{ thresholds.max_drawdown | percent }} | {{ status.max_drawdown }} |
+| 夏普比率 | {{ metrics.sharpe_ratio }} | {{ thresholds.sharpe_ratio }} | {{ status.sharpe_ratio }} |
+| VaR(95%) | {{ metrics.var_95 | percent }} | - | - |
+| 集中度风险 | {{ metrics.concentration_risk | percent }} | {{ thresholds.concentration_risk | percent }} | {{ status.concentration_risk }} |
+
+## 🌍 市场环境
+
+- 当前环境: {{ market_regime.description }}
+- 环境类型: {{ market_regime.type }}
+- 建议操作: {{ market_regime.suggestion }}
+
+## ⚠️ 风险预警
+
+{% if alerts %}
+{% for alert in alerts %}
+### {{ alert.type }}
+
+- **级别**: {{ alert.level }}
+- **消息**: {{ alert.message }}
+- **当前值**: {{ alert.value }}
+- **阈值**: {{ alert.threshold }}
+- **建议**: {{ alert.suggestion }}
+- **时间**: {{ alert.timestamp }}
+
+{% endfor %}
+{% else %}
+✅ 当前无风险预警
+{% endif %}
+
+## 📋 风险控制建议
+
+{% for suggestion in suggestions %}
+{{ loop.index }}. {{ suggestion }}
+{% endfor %}
+
+## 📈 历史趋势
+
+{% for record in history %}
+- {{ record.date }}: 波动率 {{ record.volatility | percent }}, 回撤 {{ record.max_drawdown | percent }}
+{% endfor %}
+
+---
+*报告由 Asset Lens 风险管理系统生成*

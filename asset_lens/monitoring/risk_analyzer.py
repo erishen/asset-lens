@@ -7,6 +7,7 @@ Risk Analyzer System - 风险分析系统
     - 风险指标计算 - 波动率、夏普比率、最大回撤、VaR 等
     - 风险预警生成 - 基于阈值的风险预警
     - 风险报告生成 - 生成风险分析报告
+    - 市场环境判断 - 判断牛市/熊市/震荡/危机
     - 适用于: 风险分析报告、投资组合评估
 
     另请参阅: trading/risk_manager.py - RiskManager
@@ -18,17 +19,27 @@ Risk Analyzer System - 风险分析系统
     from asset_lens.monitoring.risk_analyzer import RiskAnalyzer
     analyzer = RiskAnalyzer()
     metrics = analyzer.calculate_all_metrics(returns)
+    regime = analyzer.detect_market_regime(index_returns)
 """
 
 import json
 import logging
 from datetime import datetime, timedelta
+from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass
 import numpy as np
 
 logger = logging.getLogger(__name__)
+
+
+class MarketRegime(Enum):
+    """市场环境类型"""
+    BULL = "bull"          # 牛市 - 上涨趋势
+    BEAR = "bear"          # 熊市 - 下跌趋势
+    SIDEWAYS = "sideways"  # 震荡 - 横盘整理
+    CRISIS = "crisis"      # 危机 - 极端波动
 
 
 @dataclass
@@ -303,6 +314,114 @@ class RiskAnalyzer:
         
         with open(history_file, 'w', encoding='utf-8') as f:
             json.dump(history_data, f, ensure_ascii=False, indent=2)
+    
+    def detect_market_regime(
+        self,
+        index_returns: List[float],
+        lookback_periods: int = 20,
+    ) -> MarketRegime:
+        """
+        判断市场环境
+        
+        基于指数收益率判断当前市场环境:
+        - 牛市: 收益率 > 10%, 波动率 < 25%
+        - 熊市: 收益率 < -10%, 波动率 < 30%
+        - 危机: 波动率 > 40% 或 最大回撤 > 20%
+        - 震荡: 其他情况
+        
+        Args:
+            index_returns: 指数收益率序列
+            lookback_periods: 回看期数
+            
+        Returns:
+            MarketRegime 市场环境类型
+        """
+        if not index_returns or len(index_returns) < lookback_periods:
+            return MarketRegime.SIDEWAYS
+        
+        try:
+            recent_returns = index_returns[-lookback_periods:]
+            returns_array = np.array(recent_returns)
+            
+            cumulative_return = (1 + returns_array).prod() - 1
+            volatility = np.std(returns_array) * np.sqrt(252) * 100
+            
+            values = np.cumprod(1 + returns_array) * 100
+            peak = np.maximum.accumulate(values)
+            drawdown = (peak - values) / peak * 100
+            max_drawdown = np.max(drawdown)
+            
+            if volatility > 40 or max_drawdown > 20:
+                return MarketRegime.CRISIS
+            
+            if cumulative_return > 0.10 and volatility < 25:
+                return MarketRegime.BULL
+            
+            if cumulative_return < -0.10 and volatility < 30:
+                return MarketRegime.BEAR
+            
+            return MarketRegime.SIDEWAYS
+            
+        except Exception as e:
+            logger.error(f"判断市场环境失败: {e}")
+            return MarketRegime.SIDEWAYS
+    
+    def get_regime_thresholds(self, regime: MarketRegime) -> Dict[str, float]:
+        """
+        根据市场环境获取风险阈值
+        
+        Args:
+            regime: 市场环境类型
+            
+        Returns:
+            风险阈值字典
+        """
+        REGIME_THRESHOLDS = {
+            MarketRegime.BULL: {
+                'volatility': 30.0,
+                'max_drawdown': 15.0,
+                'sharpe_ratio': 0.5,
+                'concentration_risk': 40.0,
+                'stop_loss': -0.10,
+                'position_limit': 0.8,
+            },
+            MarketRegime.BEAR: {
+                'volatility': 20.0,
+                'max_drawdown': 10.0,
+                'sharpe_ratio': 0.3,
+                'concentration_risk': 25.0,
+                'stop_loss': -0.05,
+                'position_limit': 0.5,
+            },
+            MarketRegime.SIDEWAYS: {
+                'volatility': 25.0,
+                'max_drawdown': 12.0,
+                'sharpe_ratio': 0.4,
+                'concentration_risk': 30.0,
+                'stop_loss': -0.08,
+                'position_limit': 0.6,
+            },
+            MarketRegime.CRISIS: {
+                'volatility': 15.0,
+                'max_drawdown': 5.0,
+                'sharpe_ratio': 0.0,
+                'concentration_risk': 20.0,
+                'stop_loss': -0.03,
+                'position_limit': 0.3,
+            },
+        }
+        
+        return REGIME_THRESHOLDS.get(regime, REGIME_THRESHOLDS[MarketRegime.SIDEWAYS])
+    
+    def get_regime_description(self, regime: MarketRegime) -> str:
+        """获取市场环境描述"""
+        descriptions = {
+            MarketRegime.BULL: "🐂 牛市 - 市场上涨趋势，可适当提高仓位",
+            MarketRegime.BEAR: "🐻 熊市 - 市场下跌趋势，建议降低仓位",
+            MarketRegime.SIDEWAYS: "📊 震荡 - 市场横盘整理，保持中性仓位",
+            MarketRegime.CRISIS: "⚠️ 危机 - 市场极端波动，建议大幅降低仓位",
+        }
+        return descriptions.get(regime, "未知市场环境")
 
 
 def create_risk_analyzer() -> RiskAnalyzer:
