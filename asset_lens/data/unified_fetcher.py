@@ -2,6 +2,20 @@
 Unified data source interface for asset-lens.
 数据源统一接口 - 提供统一的数据获取 API
 
+⚠️ DEPRECATED: 此模块已弃用，请使用 unified_data_fetcher.py 中的 UnifiedDataFetcher。
+此模块保留仅为向后兼容，将在未来版本中移除。
+
+新版本使用 Provider Registry 架构，支持自动选择最佳数据源。
+
+迁移指南:
+    # 旧版 (已弃用)
+    from asset_lens.data.unified_fetcher import UnifiedDataFetcher
+    fetcher = UnifiedDataFetcher()
+    
+    # 新版 (推荐)
+    from asset_lens.data.unified_data_fetcher import unified_data_fetcher
+    result = unified_data_fetcher.fetch_stock_cn("600519")
+
 支持的数据源:
 - 股票: A股、港股、美股
 - 基金: 场内基金、场外基金
@@ -10,6 +24,7 @@ Unified data source interface for asset-lens.
 - 宏观经济: GDP、CPI、利率等
 """
 
+import warnings
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
@@ -72,9 +87,18 @@ class DataSource(Protocol):
 
 
 class UnifiedDataFetcher:
-    """统一数据获取器"""
+    """
+    统一数据获取器
+    
+    ⚠️ DEPRECATED: 请使用 unified_data_fetcher.py 中的 unified_data_fetcher 实例。
+    """
 
     def __init__(self):
+        warnings.warn(
+            "UnifiedDataFetcher 已弃用，请使用 unified_data_fetcher.py 中的 unified_data_fetcher",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self._fetchers: Dict[DataSourceType, Any] = {}
         self._initialized = False
 
