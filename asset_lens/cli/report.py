@@ -1,6 +1,6 @@
 """
 Report CLI commands for asset-lens.
-报告命令模块 - 包含 report, show-asset-summary, show-exchange-rate-history, show-sell-records, export-*, generate-* 等命令
+报告命令模块 - 包含 report, show-asset-summary, show-exchange-rate-history, show-sell-records, export-asset-summary, risk-summary, position-advice, stop-loss
 """
 
 from pathlib import Path
@@ -226,7 +226,6 @@ def register_report_commands(cli: click.Group) -> None:
         """显示风险摘要"""
         from asset_lens.config import config
         from asset_lens.data.csv_parser import CSVParser
-        from asset_lens.core.risk_analyzer import risk_analyzer
 
         if data_mode:
             config.data_mode = data_mode
@@ -238,12 +237,16 @@ def register_report_commands(cli: click.Group) -> None:
             products = CSVParser.load_data()
             click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
 
-            summary = risk_analyzer.analyze_portfolio_risk(products)
+            total_value = sum(p.current_amount or 0 for p in products)
+            risk_distribution = {}
+            for p in products:
+                risk = p.risk_level or "未知"
+                risk_distribution[risk] = risk_distribution.get(risk, 0) + (p.current_amount or 0)
 
             click.echo(f"\n📈 风险统计:")
-            click.echo(f"  总资产: ¥{summary['total_assets']:,.2f}")
+            click.echo(f"  总资产: ¥{total_value:,.2f}")
             click.echo(f"  风险等级分布:")
-            for level, amount in summary["risk_distribution"].items():
+            for level, amount in risk_distribution.items():
                 click.echo(f"    {level}: ¥{amount:,.2f}")
 
             click.echo(f"\n✅ 风险分析完成！")
@@ -257,7 +260,6 @@ def register_report_commands(cli: click.Group) -> None:
         """显示仓位建议"""
         from asset_lens.config import config
         from asset_lens.data.csv_parser import CSVParser
-        from asset_lens.strategy.position_advisor import position_advisor
 
         if data_mode:
             config.data_mode = data_mode
@@ -269,11 +271,15 @@ def register_report_commands(cli: click.Group) -> None:
             products = CSVParser.load_data()
             click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
 
-            advice = position_advisor.get_position_advice(products)
-
             click.echo(f"\n📈 仓位建议:")
-            for item in advice:
-                click.echo(f"  {item['name']}: {item['advice']}")
+            for product in products[:10]:
+                advice = "持有"
+                if product.annual_return is not None:
+                    if product.annual_return > 20:
+                        advice = "考虑止盈"
+                    elif product.annual_return < -10:
+                        advice = "考虑止损"
+                click.echo(f"  {product.name}: {advice}")
 
             click.echo(f"\n✅ 分析完成！")
 
@@ -286,7 +292,6 @@ def register_report_commands(cli: click.Group) -> None:
         """计算止损止盈位"""
         from asset_lens.config import config
         from asset_lens.data.csv_parser import CSVParser
-        from asset_lens.strategy.stop_loss import stop_loss_calculator
 
         if data_mode:
             config.data_mode = data_mode
@@ -300,14 +305,14 @@ def register_report_commands(cli: click.Group) -> None:
 
             for product in products[:10]:
                 if product.current_amount and product.initial_amount:
-                    result = stop_loss_calculator.calculate(
-                        entry_price=float(product.initial_amount),
-                        current_price=float(product.current_amount),
-                        risk_level=product.risk_level,
-                    )
+                    entry_price = float(product.initial_amount)
+                    current_price = float(product.current_amount)
+                    stop_loss_price = entry_price * 0.9
+                    take_profit_price = entry_price * 1.2
+                    
                     click.echo(f"\n{product.name}:")
-                    click.echo(f"  止损位: ¥{result['stop_loss_price']:.2f} ({result['stop_loss']:.2%})")
-                    click.echo(f"  止盈位: ¥{result['take_profit_price']:.2f} ({result['take_profit']:.2%})")
+                    click.echo(f"  止损位: ¥{stop_loss_price:.2f} (-10%)")
+                    click.echo(f"  止盈位: ¥{take_profit_price:.2f} (+20%)")
 
             click.echo(f"\n✅ 计算完成！")
 
