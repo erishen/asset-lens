@@ -11,7 +11,7 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Any
 from dataclasses import dataclass, asdict
 from enum import Enum
 
@@ -104,14 +104,14 @@ class AutoTrader:
             }
         }
     
-    def _load_json(self, file_path: Path, default) -> any:
+    def _load_json(self, file_path: Path, default: Any) -> Any:
         """加载JSON文件"""
         if file_path.exists():
             with open(file_path, "r", encoding="utf-8") as f:
                 return json.load(f)
         return default
     
-    def _save_json(self, file_path: Path, data: any):
+    def _save_json(self, file_path: Path, data: Any):
         """保存JSON文件"""
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
