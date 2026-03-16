@@ -1,13 +1,20 @@
 """
-Web Routes Package - Web 路由模块
-将 API 端点按功能分组
+Web Routes - API 路由模块
 """
 
+from .stock import router as stock_router
+from .portfolio import router as portfolio_router
+from .strategy import router as strategy_router
+from .market import router as market_router
 from .compare import router as compare_router
 from .risk import router as risk_router
 from .system import router as system_router
 
 __all__ = [
+    "stock_router",
+    "portfolio_router",
+    "strategy_router",
+    "market_router",
     "compare_router",
     "risk_router",
     "system_router",
