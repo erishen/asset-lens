@@ -135,6 +135,8 @@ backup/
 # Project specific
 *.tmp
 *.temp
+tail
+head
 
 # Config files (keep .example templates, ignore local config)
 config/fund_stock_codes.json
