@@ -668,10 +668,10 @@ test-cov: ## 运行测试并生成覆盖率报告
 	@echo "✅ 测试完成，覆盖率报告已生成: htmlcov/index.html"
 
 .PHONY: lint
-lint: ## 运行代码检查
-	@echo "🔍 运行代码检查..."
-	$(CONDA) pylint asset_lens/ --disable=all --enable=E,F --exit-zero || true
-	$(CONDA) mypy asset_lens/ || true
+lint: ## 运行代码检查（并行执行）
+	@echo "🔍 运行代码检查（并行执行）..."
+	@$(CONDA) pylint asset_lens/ --disable=all --enable=E,F --exit-zero -j 0; \
+	 $(CONDA) mypy asset_lens/
 
 .PHONY: format
 format: ## 格式化代码
