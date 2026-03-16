@@ -74,6 +74,10 @@ class SimulatedPosition:
     highest_price: float = 0.0
     stop_loss_price: float = 0.0
     take_profit_price: float = 0.0
+    stop_loss_type: StopLossType = StopLossType.FIXED
+    stop_loss_pct: float = 0.08
+    _atr: Optional[float] = None
+    _atr_multiplier: float = 2.0
     
     def update_price(self, new_price: float) -> None:
         """更新价格"""
@@ -84,6 +88,22 @@ class SimulatedPosition:
         
         if new_price > self.highest_price:
             self.highest_price = new_price
+        
+        self._update_stop_loss_price(new_price)
+    
+    def _update_stop_loss_price(self, new_price: float) -> None:
+        """更新止损价格"""
+        if self.stop_loss_type == StopLossType.TRAILING:
+            if new_price > self.highest_price:
+                trailing_price = self.highest_price * (1 - self.stop_loss_pct)
+                self.stop_loss_price = trailing_price
+        elif self.stop_loss_type == StopLossType.ATR_BASED:
+            if self._atr is not None:
+                self.stop_loss_price = new_price - self._atr * self._atr_multiplier
+            else:
+                self.stop_loss_price = self.entry_price * (1 - self.stop_loss_pct)
+        else:
+            self.stop_loss_price = self.entry_price * (1 - self.stop_loss_pct)
     
     def should_stop_loss(self) -> bool:
         """是否触发止损"""
@@ -235,6 +255,8 @@ class StrategySimulator:
             highest_price=price,
             stop_loss_price=price * (1 - self.config.stop_loss_pct),
             take_profit_price=price * (1 + self.config.take_profit_pct),
+            stop_loss_type=self.config.stop_loss_type,
+            stop_loss_pct=self.config.stop_loss_pct,
         )
         self.positions[code] = position
         
@@ -298,7 +320,10 @@ class StrategySimulator:
         return trade
     
     def check_stop_loss_take_profit(self, date: str, prices: Dict[str, float]) -> List[SimulatedTrade]:
-        """检查止损止盈"""
+        """检查止损止盈
+        
+        根据配置的止损类型动态计算止损价格
+        """
         trades: List[SimulatedTrade] = []
         
         for code, position in list(self.positions.items()):
@@ -362,6 +387,7 @@ class StrategySimulator:
         start_date: str,
         end_date: str,
         selection_func: Optional[Callable] = None,
+        benchmark_prices: Optional[Dict[str, float]] = None,
     ) -> SimulationResult:
         """
         运行模拟
@@ -372,6 +398,7 @@ class StrategySimulator:
             start_date: 开始日期
             end_date: 结束日期
             selection_func: 选股函数
+            benchmark_prices: 基准指数价格序列 {date: price}
             
         Returns:
             模拟结果
@@ -445,10 +472,21 @@ class StrategySimulator:
             
             current += timedelta(days=1)
         
-        return self._calculate_result(start_date, end_date)
+        return self._calculate_result(start_date, end_date, benchmark_prices)
     
-    def _calculate_result(self, start_date: str, end_date: str) -> SimulationResult:
-        """计算模拟结果"""
+    def _calculate_result(
+        self, 
+        start_date: str, 
+        end_date: str,
+        benchmark_prices: Optional[Dict[str, float]] = None,
+    ) -> SimulationResult:
+        """计算模拟结果
+        
+        Args:
+            start_date: 开始日期
+            end_date: 结束日期
+            benchmark_prices: 基准指数价格序列 {date: price}
+        """
         final_capital = self.daily_values[-1]["total_value"] if self.daily_values else self.config.initial_capital
         total_return = (final_capital - self.config.initial_capital) / self.config.initial_capital * 100
         
@@ -492,6 +530,16 @@ class StrategySimulator:
             if std_return > 0:
                 sharpe_ratio = avg_return / std_return * (252 ** 0.5)
         
+        benchmark_return = 0.0
+        excess_return = total_return
+        
+        if benchmark_prices:
+            benchmark_start = benchmark_prices.get(start_date)
+            benchmark_end = benchmark_prices.get(end_date)
+            if benchmark_start and benchmark_end:
+                benchmark_return = (benchmark_end - benchmark_start) / benchmark_start * 100
+                excess_return = total_return - benchmark_return
+        
         return SimulationResult(
             start_date=start_date,
             end_date=end_date,
@@ -499,8 +547,8 @@ class StrategySimulator:
             final_capital=round(final_capital, 2),
             total_return=round(total_return, 2),
             annual_return=round(annual_return, 2),
-            benchmark_return=0.0,
-            excess_return=round(total_return, 2),
+            benchmark_return=round(benchmark_return, 4),
+            excess_return=round(excess_return, 4),
             max_drawdown=round(max_drawdown, 2),
             sharpe_ratio=round(sharpe_ratio, 2),
             win_rate=round(win_rate, 2),
