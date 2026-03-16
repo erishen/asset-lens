@@ -406,16 +406,16 @@ pip install -e ".[dev]"
 ### 基本使用
 
 ```bash
-# 交互式界面
-make interactive
+# 显示交互式菜单
+make menu
 
 # 分析投资组合
 make analyze
 
-# 策略筛选
+# 动量策略选股
 make momentum-screen
 
-# 启动 Web API
+# 启动 Web Dashboard
 make web
 
 # 运行测试
