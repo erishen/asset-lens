@@ -186,7 +186,7 @@ class EnhancedMarketDataFetcher:
                 "source": "akshare_spot",
             }
         except Exception as e:
-            logger.warning(f"AkShare spot 获取失败 {index_code}: {e}")
+            logger.debug(f"AkShare spot 获取失败 {index_code}: {e}")
             return None
 
     def _fetch_from_akshare_hist(self, index_code: str) -> Optional[Dict[str, Any]]:
@@ -227,7 +227,7 @@ class EnhancedMarketDataFetcher:
                 "source": "akshare_hist",
             }
         except Exception as e:
-            logger.warning(f"AkShare hist 获取失败 {index_code}: {e}")
+            logger.debug(f"AkShare hist 获取失败 {index_code}: {e}")
             return None
 
     def _fetch_from_sina(self, index_code: str) -> Optional[Dict[str, Any]]:
@@ -281,7 +281,7 @@ class EnhancedMarketDataFetcher:
                 "source": "sina",
             }
         except Exception as e:
-            logger.warning(f"新浪财经获取失败 {index_code}: {e}")
+            logger.debug(f"新浪财经获取失败 {index_code}: {e}")
             return None
 
     def _fetch_from_tencent(self, index_code: str) -> Optional[Dict[str, Any]]:
@@ -341,7 +341,7 @@ class EnhancedMarketDataFetcher:
                 "source": "tencent",
             }
         except Exception as e:
-            logger.warning(f"腾讯财经获取失败 {index_code}: {e}")
+            logger.debug(f"腾讯财经获取失败 {index_code}: {e}")
             return None
 
     def _fetch_from_akshare_global(self, symbol: str) -> Optional[Dict[str, Any]]:
@@ -389,7 +389,7 @@ class EnhancedMarketDataFetcher:
                 "source": "akshare",
             }
         except Exception as e:
-            logger.warning(f"AkShare 获取失败 {symbol}: {e}")
+            logger.debug(f"AkShare 获取失败 {symbol}: {e}")
             return None
 
     def _fetch_from_eastmoney(self, symbol: str) -> Optional[Dict[str, Any]]:
@@ -458,7 +458,7 @@ class EnhancedMarketDataFetcher:
                 "source": "eastmoney",
             }
         except Exception as e:
-            logger.warning(f"东方财富获取失败 {symbol}: {e}")
+            logger.debug(f"东方财富获取失败 {symbol}: {e}")
             return None
 
     def _fetch_from_sina_global(self, symbol: str) -> Optional[Dict[str, Any]]:
@@ -548,7 +548,7 @@ class EnhancedMarketDataFetcher:
                 "source": "sina_global",
             }
         except Exception as e:
-            logger.warning(f"新浪全球指数获取失败 {symbol}: {e}")
+            logger.debug(f"新浪全球指数获取失败 {symbol}: {e}")
             return None
 
     def _fetch_from_finnhub(self, symbol: str) -> Optional[Dict[str, Any]]:
@@ -582,7 +582,7 @@ class EnhancedMarketDataFetcher:
                 "source": "finnhub",
             }
         except Exception as e:
-            logger.warning(f"Finnhub 获取失败 {symbol}: {e}")
+            logger.debug(f"Finnhub 获取失败 {symbol}: {e}")
             return None
 
     def _fetch_from_yahoo(self, symbol: str) -> Optional[Dict[str, Any]]:
@@ -620,7 +620,7 @@ class EnhancedMarketDataFetcher:
                 "source": "yahoo",
             }
         except Exception as e:
-            logger.warning(f"Yahoo Finance 获取失败 {symbol}: {e}")
+            logger.debug(f"Yahoo Finance 获取失败 {symbol}: {e}")
             return None
 
     def _fetch_from_alpha_vantage(self, symbol: str) -> Optional[Dict[str, Any]]:
@@ -677,7 +677,7 @@ class EnhancedMarketDataFetcher:
                 "source": "alpha_vantage",
             }
         except Exception as e:
-            logger.warning(f"Alpha Vantage 获取失败 {symbol}: {e}")
+            logger.debug(f"Alpha Vantage 获取失败 {symbol}: {e}")
             return None
 
     def fetch_domestic_index(self, index_code: str) -> Optional[Dict[str, Any]]:
@@ -702,7 +702,7 @@ class EnhancedMarketDataFetcher:
                     logger.info(f"成功从 {source_name} 获取 {index_code}")
                     return data
             except Exception as e:
-                logger.warning(f"{source_name} 获取失败: {e}")
+                logger.debug(f"{source_name} 获取失败: {e}")
                 continue
         
         logger.error(f"所有数据源都失败: {index_code}")
@@ -740,7 +740,7 @@ class EnhancedMarketDataFetcher:
                     logger.info(f"成功从 {source_name} 获取 {symbol}")
                     return data
             except Exception as e:
-                logger.warning(f"{source_name} 获取失败: {e}")
+                logger.debug(f"{source_name} 获取失败: {e}")
                 continue
 
         logger.error(f"所有数据源都失败: {symbol}")
