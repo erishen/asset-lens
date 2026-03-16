@@ -228,13 +228,13 @@ def register_analyze_commands(cli: click.Group) -> None:
                 click.echo(f"  {index_key}: {move:+.2f}%")
 
             if result["details"]:
-                table = Table(title="\n产品盈亏明细", show_lines=False, expand=True, box=box.MINIMAL)
-                table.add_column("产品名称", style="cyan", no_wrap=True, overflow="ellipsis", min_width=18)
-                table.add_column("类型", style="green", no_wrap=True, overflow="ellipsis", min_width=8)
-                table.add_column("金额", justify="right", style="yellow", min_width=8)
-                table.add_column("盈亏", justify="right", min_width=8)
-                table.add_column("收益率", justify="right", min_width=6)
-                table.add_column("指数", style="blue", no_wrap=True, min_width=5)
+                table = Table(title="\n产品盈亏明细", show_lines=False, expand=False, box=box.SIMPLE)
+                table.add_column("产品名称", style="cyan", no_wrap=True, overflow="ellipsis", width=25)
+                table.add_column("类型", style="green", no_wrap=True, width=10)
+                table.add_column("金额", justify="right", style="yellow", width=12)
+                table.add_column("盈亏", justify="right", width=10)
+                table.add_column("收益率", justify="right", width=8)
+                table.add_column("指数", style="blue", no_wrap=True, width=8)
 
                 for detail in result["details"][:20]:
                     table.add_row(
