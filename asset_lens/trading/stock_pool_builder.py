@@ -48,23 +48,26 @@ class FilterCondition:
         if field_value is None:
             return False
         
-        if self.operator == ">":
-            return float(field_value) > float(self.value)
-        elif self.operator == "<":
-            return float(field_value) < float(self.value)
-        elif self.operator == ">=":
-            return float(field_value) >= float(self.value)
-        elif self.operator == "<=":
-            return float(field_value) <= float(self.value)
-        elif self.operator == "==":
-            return bool(field_value == self.value)
-        elif self.operator == "!=":
-            return bool(field_value != self.value)
-        elif self.operator == "between":
-            if isinstance(self.value, (list, tuple)) and len(self.value) == 2:
-                return float(self.value[0]) <= float(field_value) <= float(self.value[1])
-        elif self.operator == "in":
-            return field_value in self.value
+        try:
+            if self.operator == ">":
+                return float(field_value) > float(self.value)
+            elif self.operator == "<":
+                return float(field_value) < float(self.value)
+            elif self.operator == ">=":
+                return float(field_value) >= float(self.value)
+            elif self.operator == "<=":
+                return float(field_value) <= float(self.value)
+            elif self.operator == "==":
+                return bool(field_value == self.value)
+            elif self.operator == "!=":
+                return bool(field_value != self.value)
+            elif self.operator == "between":
+                if isinstance(self.value, (list, tuple)) and len(self.value) == 2:
+                    return float(self.value[0]) <= float(field_value) <= float(self.value[1])
+            elif self.operator == "in":
+                return field_value in self.value
+        except (ValueError, TypeError):
+            return False
         
         return False
 
@@ -282,8 +285,10 @@ class StockPoolBuilder:
         min_pass_rate: Optional[float] = None,
     ) -> List[StockEntryMatrix]:
         """构建股票池"""
-        min_score = min_score or self.min_score
-        min_pass_rate = min_pass_rate or self.min_pass_rate
+        if min_score is None:
+            min_score = self.min_score
+        if min_pass_rate is None:
+            min_pass_rate = self.min_pass_rate
         
         results: List[StockEntryMatrix] = []
         
