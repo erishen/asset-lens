@@ -13,8 +13,10 @@ from asset_lens.data.multi_source_fetcher import (
 
 @pytest.fixture
 def fetcher():
-    """创建多数据源获取器实例"""
-    return MultiSourceDataFetcher()
+    """创建多数据源获取器实例 - Mock 网络请求"""
+    with patch.object(MultiSourceDataFetcher, '_initialize_sources'):
+        with patch.object(MultiSourceDataFetcher, '_check_source_health', return_value=True):
+            return MultiSourceDataFetcher()
 
 
 class TestDataSourceConfig:
