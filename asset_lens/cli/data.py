@@ -149,7 +149,7 @@ def register_data_commands(cli: click.Group) -> None:
             try:
                 domestic_result = enhanced_market_data_fetcher.fetch_all_domestic_indexes()
                 foreign_result = enhanced_market_data_fetcher.fetch_all_foreign_indexes()
-                success = bool(domestic_result.get("data")) and bool(foreign_result.get("data"))
+                success = bool(domestic_result.get("指数数据")) and bool(foreign_result.get("指数数据"))
 
                 if success:
                     click.echo("\n✅ 市场指数数据更新成功！")
