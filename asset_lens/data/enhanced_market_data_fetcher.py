@@ -470,7 +470,7 @@ class EnhancedMarketDataFetcher:
         - 日本: gb_n225 (日经225)
         """
         try:
-            import subprocess
+            import requests
             
             sina_codes = {
                 "^DJI": "gb_dji",
@@ -490,19 +490,15 @@ class EnhancedMarketDataFetcher:
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             }
             
-            header_str = " ".join([f"-H '{k}: {v}'" for k, v in headers.items()])
-            cmd = f"curl -s --max-time 15 '{url}' {header_str}"
+            response = requests.get(url, headers=headers, timeout=15)
+            response.encoding = 'gbk'
+            content = response.text
             
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, encoding='gbk')
-            
-            if result.returncode != 0:
-                return None
-            
-            content = result.stdout
             pattern = f'var hq_str_{sina_code}="'
             start = content.find(pattern)
             
             if start == -1:
+                logger.warning(f"新浪全球指数 pattern 未找到 {symbol}")
                 return None
             
             start += len(pattern)
@@ -516,17 +512,19 @@ class EnhancedMarketDataFetcher:
             
             if sina_code.startswith("hk"):
                 current_price = float(parts[6]) if len(parts) > 6 else 0
-                prev_close = float(parts[3]) if len(parts) > 3 else 0
-                open_price = float(parts[4]) if len(parts) > 4 else 0
-                high = float(parts[5]) if len(parts) > 5 else 0
-                low = float(parts[6]) if len(parts) > 6 else 0
+                prev_close = float(parts[2]) if len(parts) > 2 else 0
+                open_price = float(parts[3]) if len(parts) > 3 else 0
+                high = float(parts[4]) if len(parts) > 4 else 0
+                low = float(parts[5]) if len(parts) > 5 else 0
                 name = parts[1] if len(parts) > 1 else ""
             else:
                 current_price = float(parts[1]) if len(parts) > 1 else 0
-                prev_close = float(parts[26]) if len(parts) > 26 else 0
-                open_price = float(parts[7]) if len(parts) > 7 else 0
-                high = float(parts[5]) if len(parts) > 5 else 0
-                low = float(parts[6]) if len(parts) > 6 else 0
+                change_percent = float(parts[2]) if len(parts) > 2 else 0
+                change_amount = float(parts[4]) if len(parts) > 4 else 0
+                open_price = float(parts[5]) if len(parts) > 5 else 0
+                high = float(parts[6]) if len(parts) > 6 else 0
+                low = float(parts[7]) if len(parts) > 7 else 0
+                prev_close = current_price - change_amount if change_amount else current_price
                 name = parts[0] if len(parts) > 0 else ""
             
             if current_price == 0:
