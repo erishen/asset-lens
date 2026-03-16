@@ -15,6 +15,9 @@ from .data_collectors import ReportDataCollector
 from .investment_report import InvestmentReportGenerator, investment_report_generator
 from .template_engine import ReportTemplateEngine, template_engine
 from .daily_pusher import DailyReportPusher, daily_report_pusher
+from .summary import PortfolioSummaryAnalyzer, portfolio_summary_analyzer
+from .risk_analysis import RiskAnalyzer, risk_analyzer
+from .performance import PerformanceAnalyzer, performance_analyzer
 
 __all__ = [
     "format_currency",
@@ -29,4 +32,10 @@ __all__ = [
     "template_engine",
     "DailyReportPusher",
     "daily_report_pusher",
+    "PortfolioSummaryAnalyzer",
+    "portfolio_summary_analyzer",
+    "RiskAnalyzer",
+    "risk_analyzer",
+    "PerformanceAnalyzer",
+    "performance_analyzer",
 ]
