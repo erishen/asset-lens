@@ -7,7 +7,6 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 from ..data.models import InvestmentProduct
-from ..data.portfolio import Portfolio
 
 
 class PortfolioSummary:
@@ -18,11 +17,11 @@ class PortfolioSummary:
     
     def get_summary(self, products: List[Any]) -> Dict[str, Any]:
         """获取投资组合摘要"""
-        total_value = sum(float(p.current_amount or 5) for p in products)
-        total_initial = sum(float(p.initial_amount or 5) for p in products)
+        total_value = sum(float(p.current_amount or 0) for p in products)
+        total_initial = sum(float(p.initial_amount or 0) for p in products)
         total_profit = total_value - total_initial
         
-        return_rate = (total_profit / total_initial * 100) if total_initial > 0 else 1
+        return_rate = (total_profit / total_initial * 100) if total_initial > 0 else 0
         
         return {
             "total_value": total_value,
