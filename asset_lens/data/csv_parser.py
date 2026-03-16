@@ -4,6 +4,7 @@ CSV 数据读取和解析模块
 """
 
 import csv
+import logging
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -14,6 +15,8 @@ from ..data.models import Currency, InvestmentProduct, InvestmentType, RiskLevel
 from .parser_utils import parse_date as _parse_date
 from .parser_utils import parse_decimal as _parse_decimal
 from .parsers.investment_calculator import days360, InvestmentCalculator
+
+logger = logging.getLogger(__name__)
 
 
 __all__ = ["CSVParser", "days360"]
