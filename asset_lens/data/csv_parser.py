@@ -819,13 +819,13 @@ class CSVParser:
                     if target_dir is None:
                         target_dir = dirs[0]
 
-                    print(f"使用数据目录: {target_dir.name}")
+                    logger.info(f"使用数据目录: {target_dir.name}")
 
-                    usd_rate, hkd_rate = cls.get_exchange_rates(target_dir)
-                    if usd_rate != float(config.default_usd_rate):
-                        config.default_usd_rate = usd_rate
-                    if hkd_rate != float(config.default_hkd_rate):
-                        config.default_hkd_rate = hkd_rate
+                usd_rate, hkd_rate = cls.get_exchange_rates(target_dir)
+                if usd_rate != float(config.default_usd_rate):
+                    config.default_usd_rate = usd_rate
+                if hkd_rate != float(config.default_hkd_rate):
+                    config.default_hkd_rate = hkd_rate
 
                     csv_files = list(target_dir.glob("投资产品-表格 1.csv"))
                     if not csv_files:
