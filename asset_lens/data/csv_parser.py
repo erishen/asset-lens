@@ -824,6 +824,8 @@ class CSVParser:
 
                     logger.info(f"使用数据目录: {target_dir.name}")
 
+                
+                    usd_rate, hkd_rate = cls.get_exchange_rates(target_dir)
                     csv_files = list(target_dir.glob("投资产品-表格 1.csv"))
                     if not csv_files:
                         csv_files = list(target_dir.glob("投资产品.csv"))
