@@ -461,6 +461,98 @@ class EnhancedMarketDataFetcher:
             logger.warning(f"东方财富获取失败 {symbol}: {e}")
             return None
 
+    def _fetch_from_sina_global(self, symbol: str) -> Optional[Dict[str, Any]]:
+        """从新浪财经获取全球指数（备份源）
+        
+        新浪财经全球指数 API:
+        - 美股: gb_dji (道琼斯), gb_ixic (纳斯达克), gb_inx (标普500)
+        - 港股: hkHSI (恒生指数)
+        - 日本: gb_n225 (日经225)
+        """
+        try:
+            import subprocess
+            
+            sina_codes = {
+                "^DJI": "gb_dji",
+                "^GSPC": "gb_inx",
+                "^IXIC": "gb_ixic",
+                "^N225": "gb_n225",
+                "^HSI": "hkHSI",
+            }
+            
+            sina_code = sina_codes.get(symbol)
+            if not sina_code:
+                return None
+            
+            url = f"http://hq.sinajs.cn/list={sina_code}"
+            headers = {
+                "Referer": "http://finance.sina.com.cn",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            }
+            
+            header_str = " ".join([f"-H '{k}: {v}'" for k, v in headers.items()])
+            cmd = f"curl -s --max-time 15 '{url}' {header_str}"
+            
+            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, encoding='gbk')
+            
+            if result.returncode != 0:
+                return None
+            
+            content = result.stdout
+            pattern = f'var hq_str_{sina_code}="'
+            start = content.find(pattern)
+            
+            if start == -1:
+                return None
+            
+            start += len(pattern)
+            end = content.find('";', start)
+            data_str = content[start:end]
+            
+            if not data_str:
+                return None
+            
+            parts = data_str.split(",")
+            
+            if sina_code.startswith("hk"):
+                current_price = float(parts[6]) if len(parts) > 6 else 0
+                prev_close = float(parts[3]) if len(parts) > 3 else 0
+                open_price = float(parts[4]) if len(parts) > 4 else 0
+                high = float(parts[5]) if len(parts) > 5 else 0
+                low = float(parts[6]) if len(parts) > 6 else 0
+                name = parts[1] if len(parts) > 1 else ""
+            else:
+                current_price = float(parts[1]) if len(parts) > 1 else 0
+                prev_close = float(parts[26]) if len(parts) > 26 else 0
+                open_price = float(parts[7]) if len(parts) > 7 else 0
+                high = float(parts[5]) if len(parts) > 5 else 0
+                low = float(parts[6]) if len(parts) > 6 else 0
+                name = parts[0] if len(parts) > 0 else ""
+            
+            if current_price == 0:
+                return None
+            
+            change_amount = current_price - prev_close if prev_close > 0 else 0
+            change_percent = (change_amount / prev_close * 100) if prev_close > 0 else 0
+            
+            return {
+                "name": name,
+                "code": symbol,
+                "current_price": current_price,
+                "open": open_price,
+                "prev_close": prev_close,
+                "high": high,
+                "low": low,
+                "volume": 0,
+                "amount": 0,
+                "change_amount": change_amount,
+                "change_percent": change_percent,
+                "source": "sina_global",
+            }
+        except Exception as e:
+            logger.warning(f"新浪全球指数获取失败 {symbol}: {e}")
+            return None
+
     def _fetch_from_finnhub(self, symbol: str) -> Optional[Dict[str, Any]]:
         """从 Finnhub 获取"""
         try:
@@ -634,6 +726,7 @@ class EnhancedMarketDataFetcher:
             return cached
         
         fetchers = [
+            ("sina_global", self._fetch_from_sina_global),
             ("akshare", self._fetch_from_akshare_global),
             ("eastmoney", self._fetch_from_eastmoney),
             ("alpha_vantage", self._fetch_from_alpha_vantage),
