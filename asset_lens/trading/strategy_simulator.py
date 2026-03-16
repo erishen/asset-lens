@@ -198,6 +198,9 @@ class StrategySimulator:
         if code in self.positions:
             return None
         
+        if price <= 0:
+            return None
+        
         target_value = self.cash * weight
         shares = int(target_value / price / 100) * 100
         
@@ -314,7 +317,7 @@ class StrategySimulator:
         return trades
     
     def check_holding_period(self, date: str) -> List[str]:
-        """检查持有期限"""
+        """检查持有期限，返回因超过最大持有期需要卖出的股票"""
         to_sell: List[str] = []
         current = datetime.strptime(date, "%Y-%m-%d")
         
@@ -327,6 +330,22 @@ class StrategySimulator:
                 to_sell.append(code)
         
         return to_sell
+    
+    def can_sell_position(self, code: str, date: str, reason: str = "rebalance") -> bool:
+        """检查是否可以卖出持仓（考虑最小持有天数）"""
+        if code not in self.positions:
+            return False
+        
+        position = self.positions[code]
+        
+        if reason in ("stop_loss", "take_profit", "max_holding"):
+            return True
+        
+        entry = datetime.strptime(position.entry_date, "%Y-%m-%d")
+        current = datetime.strptime(date, "%Y-%m-%d")
+        holding_days = (current - entry).days
+        
+        return holding_days >= self.config.min_holding_days
     
     def get_total_value(self, prices: Dict[str, float]) -> float:
         """获取总资产"""

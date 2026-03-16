@@ -41,16 +41,18 @@ class FactorContribution:
     """因子贡献"""
     factor_name: str
     category: str
-    contribution_pct: float
-    win_rate: float
-    avg_return: float
-    correlation: float
-    importance_rank: int
+    total_profit: float
+    contribution_pct: float = 0.0
+    win_rate: float = 0.0
+    avg_return: float = 0.0
+    correlation: float = 0.0
+    importance_rank: int = 0
     
     def to_dict(self) -> Dict[str, Any]:
         return {
             "factor_name": self.factor_name,
             "category": self.category,
+            "total_profit": round(self.total_profit, 2),
             "contribution_pct": round(self.contribution_pct, 2),
             "win_rate": round(self.win_rate, 2),
             "avg_return": round(self.avg_return, 2),
@@ -164,6 +166,8 @@ class StrategyEvaluator:
         """分析因子贡献"""
         contributions: List[FactorContribution] = []
         
+        total_all_profit = sum(t.get("profit", 0) for t in trades if t.get("action") == "sell")
+        
         for factor_name, factor_values in factor_data.items():
             factor_trades = []
             for trade in trades:
@@ -183,17 +187,20 @@ class StrategyEvaluator:
             total_profit = sum(t.get("profit", 0) for t in factor_trades)
             avg_return = sum(t.get("profit_rate", 0) for t in factor_trades) / len(factor_trades)
             
+            contribution_pct = (total_profit / total_all_profit * 100) if total_all_profit != 0 else 0.0
+            
             contributions.append(FactorContribution(
                 factor_name=factor_name,
                 category=factor_values[0].get("category", "unknown") if factor_values else "unknown",
-                contribution_pct=total_profit,
+                total_profit=total_profit,
+                contribution_pct=contribution_pct,
                 win_rate=len(win_trades) / len(factor_trades) * 100 if factor_trades else 0,
                 avg_return=avg_return * 100,
                 correlation=0.0,
                 importance_rank=0,
             ))
         
-        contributions.sort(key=lambda x: x.contribution_pct, reverse=True)
+        contributions.sort(key=lambda x: x.total_profit, reverse=True)
         for i, c in enumerate(contributions):
             c.importance_rank = i + 1
         
