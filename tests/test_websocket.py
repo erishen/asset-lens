@@ -48,14 +48,22 @@ class TestWebSocketAPI:
 
     def test_websocket_get_market_indexes(self, client):
         """测试 WebSocket 获取市场指数"""
-        with client.websocket_connect("/ws/market") as websocket:
-            # 请求市场指数
-            websocket.send_text(json.dumps({"action": "get_market_indexes"}))
-            # 接收响应
-            response = websocket.receive_json()
-            assert response["type"] == "market_indexes"
-            assert "data" in response
-            assert "timestamp" in response
+        mock_indexes = [
+            {"code": "sh000001", "name": "上证指数", "price": 3000.0, "change": 10.0, "changePercent": 0.33},
+            {"code": "sz399001", "name": "深证成指", "price": 10000.0, "change": 50.0, "changePercent": 0.5},
+        ]
+        
+        with patch("asset_lens.web.api._get_market_indexes", new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = mock_indexes
+            
+            with client.websocket_connect("/ws/market") as websocket:
+                # 请求市场指数
+                websocket.send_text(json.dumps({"action": "get_market_indexes"}))
+                # 接收响应
+                response = websocket.receive_json()
+                assert response["type"] == "market_indexes"
+                assert "data" in response
+                assert "timestamp" in response
 
     def test_websocket_subscribe(self, client):
         """测试 WebSocket 订阅"""
