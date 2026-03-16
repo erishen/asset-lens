@@ -157,13 +157,28 @@ class TestMarketSentimentAnalyzer:
 
     def test_get_report(self):
         """测试生成报告"""
-        analyzer = MarketSentimentAnalyzer()
-        report = analyzer.get_report()
-        assert "市场风向分析报告" in report
-        assert "综合评分" in report
-        assert "市场趋势" in report
-        assert "风险等级" in report
-        assert "投资建议" in report
+        from asset_lens.core.market_sentiment import MarketSentiment, SentimentIndicator
+        
+        mock_sentiment = MarketSentiment(
+            overall_score=75.0,
+            trend="bullish",
+            risk_level="medium",
+            indicators=[
+                SentimentIndicator("指数趋势", 80.0, "bullish", "市场上涨"),
+                SentimentIndicator("板块热度", 70.0, "bullish", "板块活跃"),
+            ],
+            suggestions=["建议加仓", "关注科技板块"],
+            analysis_time="2024-01-01 12:00:00",
+        )
+        
+        with patch.object(MarketSentimentAnalyzer, "analyze", return_value=mock_sentiment):
+            analyzer = MarketSentimentAnalyzer()
+            report = analyzer.get_report()
+            assert "市场风向分析报告" in report
+            assert "综合评分" in report
+            assert "市场趋势" in report
+            assert "风险等级" in report
+            assert "投资建议" in report
 
     def test_analyze_index_trend_success(self):
         """测试指数趋势分析 - 成功"""
