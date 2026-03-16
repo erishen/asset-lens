@@ -376,6 +376,12 @@ class StrategySimulator:
         Returns:
             模拟结果
         """
+        self.positions = {}
+        self.trades = []
+        self.daily_values = []
+        self.cash = self.config.initial_capital
+        self.last_rebalance_date = None
+        
         start = datetime.strptime(start_date, "%Y-%m-%d")
         end = datetime.strptime(end_date, "%Y-%m-%d")
         
@@ -406,7 +412,7 @@ class StrategySimulator:
                 
                 for code in list(self.positions.keys()):
                     if code not in [s.get("code") for s in selected]:
-                        if code in prices:
+                        if code in prices and self.can_sell_position(code, date_str, "rebalance"):
                             self.execute_sell(code, prices[code], date_str, "rebalance")
                 
                 total_score = sum(s.get("score", 0) for s in selected)
