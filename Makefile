@@ -665,13 +665,13 @@ show-config: ## 显示当前配置
 # ============================================
 .PHONY: test
 test: ## 运行测试（并行执行）
-	@echo "🧪 运行测试（并行执行）..."
-	python -m pytest -v --tb=short -n auto
+	@echo "🧪 运行测试..."
+	@python -m pytest -v --tb=short -n auto 2>/dev/null || python -m pytest -v --tb=short
 
 .PHONY: test-cov
 test-cov: ## 运行测试并生成覆盖率报告
 	@echo "🧪 运行测试并生成覆盖率报告..."
-	$(CONDA) python -m pytest --cov=asset_lens --cov-report=html --cov-report=term -n auto
+	@$(CONDA) python -m pytest --cov=asset_lens --cov-report=html --cov-report=term -n auto 2>/dev/null || $(CONDA) python -m pytest --cov=asset_lens --cov-report=html --cov-report=term
 	@echo "✅ 测试完成，覆盖率报告已生成: htmlcov/index.html"
 
 .PHONY: lint
