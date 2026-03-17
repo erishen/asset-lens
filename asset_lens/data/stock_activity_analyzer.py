@@ -310,7 +310,7 @@ class StockActivityAnalyzer:
             activity_score=metrics.activity_score,
             up_ratio=up_ratio,
             down_ratio=down_ratio,
-            related_stocks=len(related_stocks),
+            related_stocks=related_stocks,
             top_gainers=[
                 {"code": s.get("code"), "name": s.get("name"), "change": s.get("change_percent")}
                 for s in top_gainers
@@ -401,7 +401,7 @@ class StockActivityAnalyzer:
                 activity_score=0,
                 up_ratio=0,
                 down_ratio=0,
-                related_stocks=0,
+                related_stocks=[],
                 top_gainers=[],
                 top_losers=[],
             )
