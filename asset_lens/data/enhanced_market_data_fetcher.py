@@ -748,7 +748,7 @@ class EnhancedMarketDataFetcher:
 
     def fetch_all_domestic_indexes(self) -> Dict[str, Any]:
         """并发获取所有国内指数"""
-        print("📊 正在获取国内市场指数...")
+        logger.info("正在获取国内市场指数...")
         
         indexes = {}
         
@@ -780,11 +780,11 @@ class EnhancedMarketDataFetcher:
                             "数据日期": datetime.now().strftime("%Y-%m-%d"),
                             "数据来源": data.get("source", "未知"),
                         }
-                        print(f"  ✅ {name}: {data['change_percent']:+.2f}%")
+                        logger.info(f"✅ {name}: {data['change_percent']:+.2f}%")
                     else:
-                        print(f"  ❌ {name}: 获取失败")
+                        logger.warning(f"❌ {name}: 获取失败")
                 except Exception as e:
-                    print(f"  ❌ {name}: {e}")
+                    logger.error(f"❌ {name}: {e}")
         
         cache_data = {
             "更新时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -798,7 +798,7 @@ class EnhancedMarketDataFetcher:
 
     def fetch_all_foreign_indexes(self) -> Dict[str, Any]:
         """并发获取所有国外指数"""
-        print("📊 正在获取国外市场指数...")
+        logger.info("正在获取国外市场指数...")
         
         indexes = {}
         
@@ -830,11 +830,11 @@ class EnhancedMarketDataFetcher:
                             "数据日期": datetime.now().strftime("%Y-%m-%d"),
                             "数据来源": data.get("source", "未知"),
                         }
-                        print(f"  ✅ {name}: {data['change_percent']:+.2f}%")
+                        logger.info(f"✅ {name}: {data['change_percent']:+.2f}%")
                     else:
-                        print(f"  ❌ {name}: 获取失败")
+                        logger.warning(f"❌ {name}: 获取失败")
                 except Exception as e:
-                    print(f"  ❌ {name}: {e}")
+                    logger.error(f"❌ {name}: {e}")
         
         cache_data = {
             "更新时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
