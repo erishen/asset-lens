@@ -655,9 +655,9 @@ def register_analyze_commands(cli: click.Group) -> None:
             table.add_column("数值", justify="right", style="green")
             table.add_column("说明", style="yellow")
 
-            table.add_row("总资产", f"¥{metrics.total_amount:,.2f}", "投资组合总市值")
+            table.add_row("总资产", f"¥{metrics.total_amount:,.2f}", "投资组合总市值")  # pylint: disable=no-member
             table.add_row("总收益", f"¥{metrics.total_return:,.2f}", "总盈亏金额")
-            table.add_row("总收益率", f"{metrics.total_return_rate:.2f}%", "总收益率")
+            table.add_row("总收益率", f"{metrics.total_return_rate:.2f}%", "总收益率")  # pylint: disable=no-member
             table.add_row("年化收益率", f"{metrics.annualized_return:.2f}%", "年化收益率")
             table.add_row("夏普比率", f"{metrics.sharpe_ratio:.2f}", "风险调整后收益")
             table.add_row("最大回撤", f"{metrics.max_drawdown:.2f}%", "最大亏损幅度")
@@ -740,7 +740,7 @@ def register_analyze_commands(cli: click.Group) -> None:
 
             output_path = Path(output)
             report_gen = PDFReportGenerator(output_path.parent)
-            report_path = report_gen.generate(products, output_path.name, include_ai=include_ai)
+            report_path = report_gen.generate(products, output_path.name, include_ai=include_ai)  # pylint: disable=no-member
 
             click.echo(f"\n✅ 报告已生成: {report_path}")
 
@@ -770,7 +770,7 @@ def register_analyze_commands(cli: click.Group) -> None:
 
             output_path = Path(output)
             report_gen = HTMLReportGenerator(output_path.parent)
-            report_path = report_gen.generate(products, output_path.name, include_ai=include_ai)
+            report_path = report_gen.generate(products, output_path.name, include_ai=include_ai)  # pylint: disable=no-member
 
             click.echo(f"\n✅ 报告已生成: {report_path}")
 
