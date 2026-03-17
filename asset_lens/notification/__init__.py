@@ -141,6 +141,9 @@ class EmailHandler(NotificationHandler):
         if not self.is_available():
             return False
         
+        if not self.from_addr:
+            return False
+        
         try:
             msg = MIMEMultipart()
             msg["From"] = self.from_addr
@@ -159,7 +162,6 @@ class EmailHandler(NotificationHandler):
             assert self.smtp_server is not None
             assert self.smtp_user is not None
             assert self.smtp_password is not None
-            assert self.from_addr is not None
             
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
                 server.starttls()
