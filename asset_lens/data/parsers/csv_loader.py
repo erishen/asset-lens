@@ -3,6 +3,11 @@ CSV Loader - CSV 文件加载器
 """
 
 import csv
+import logging
+from pathlib import Path
+from typing import List, Optional
+
+logger = logging.getLogger(__name__)
 from datetime import date
 from pathlib import Path
 from typing import List, Optional
@@ -34,7 +39,7 @@ class CSVLoader:
                     if product:
                         products.append(product)
         except Exception as e:
-            print(f"解析文件 {file_path} 失败: {e}")
+            logger.error(f"解析文件 {file_path} 失败: {e}")
 
         return products
 
