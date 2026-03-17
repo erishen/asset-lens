@@ -559,16 +559,37 @@ class StockDataFetcher:
 
         Returns:
             股票行情数据
+            
+        Raises:
+            ConfigurationError: 如果 API 密钥未配置
         """
-        import requests  # type: ignore
+        import requests
 
         try:
-            from ..utils.http_client import get_json
-            
-            api_key = config.finnhub_api_key or "demo"
-            url = f"https://api.finnhub.io/api/v1/quote?symbol={symbol}&token={api_key}"
+            if not config.finnhub_api_key:
+                logger.warning("FINNHUB_API_KEY 未配置，无法获取美股行情")
+                return None
 
-            data = get_json(url, timeout=10)
+            if len(config.finnhub_api_key) < 10:
+                logger.warning("FINNHUB_API_KEY 格式不正确，密钥长度应该至少 10 个字符")
+                return None
+
+            headers = {
+                "Authorization": f"Bearer {config.finnhub_api_key}",
+                "User-Agent": "asset-lens/1.0",
+                "Accept": "application/json"
+            }
+
+            url = "https://api.finnhub.io/api/v1/quote"
+            params = {"symbol": symbol}
+
+            response = requests.get(url, params=params, headers=headers, timeout=10)
+
+            if response.status_code != 200:
+                logger.warning(f"获取美股行情失败: {symbol}, HTTP {response.status_code}")
+                return None
+
+            data = response.json()
 
             if data is None:
                 return None
@@ -584,6 +605,8 @@ class StockDataFetcher:
 
             change_amount = current_price - prev_close
             change_percent = (change_amount / prev_close * 100) if prev_close > 0 else 0
+
+            logger.debug(f"成功获取美股行情: {symbol}")
 
             return {
                 "code": symbol,
@@ -602,7 +625,7 @@ class StockDataFetcher:
             }
 
         except Exception as e:
-            print(f"获取美股行情失败 {symbol}: {e}")
+            logger.error(f"获取美股行情失败 {symbol}: {e}", exc_info=True)
             return None
 
     def fetch_multiple_stocks(self, stock_codes: List[str]) -> Dict[str, Any]:
