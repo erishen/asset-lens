@@ -115,7 +115,7 @@ class StockDataFetcher:
                 self._stock_codes_map = result
                 return result
             except Exception as e:
-                print(f"加载股票代码配置失败: {e}")
+                logger.error(f"加载股票代码配置失败: {e}", exc_info=True)
 
         self._stock_codes_map = {}
         return {}
@@ -641,7 +641,7 @@ class StockDataFetcher:
         results = {}
 
         for code in stock_codes:
-            print(f"正在获取 {code} 行情...")
+            logger.info(f"正在获取 {code} 行情...")
 
             if code.startswith(("sh", "sz", "hk")):
                 data = self.fetch_stock_quote_akshare(code)
@@ -650,9 +650,9 @@ class StockDataFetcher:
 
             if data:
                 results[code] = data
-                print(f"  ✅ {data['name']}: {data['change_percent']:+.2f}%")
+                logger.info(f"✅ {data['name']}: {data['change_percent']:+.2f}%")
             else:
-                print(f"  ❌ {code}: 获取失败")
+                logger.warning(f"❌ {code}: 获取失败")
 
             time.sleep(0.1)
 

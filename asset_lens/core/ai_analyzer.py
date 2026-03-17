@@ -5,6 +5,7 @@ AI 分析模块 - 使用 LiteLLM 支持多种 AI 后端
 
 import hashlib
 import json
+import logging
 import os
 from dataclasses import dataclass
 from datetime import datetime
@@ -15,6 +16,8 @@ from typing import Any, Dict, List, Optional
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -149,7 +152,7 @@ class AIAnalyzer:
             return result
 
         except Exception as e:
-            print(f"AI 分析失败: {e}")
+            logger.error(f"AI 分析失败: {e}", exc_info=True)
             return self._rule_based_analyze(portfolio_data)
 
     def _rule_based_analyze(self, portfolio_data: Dict[str, Any]) -> AIAnalysisResult:
