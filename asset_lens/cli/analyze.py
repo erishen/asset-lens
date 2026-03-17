@@ -448,8 +448,8 @@ def register_analyze_commands(cli: click.Group) -> None:
             if code:
                 result = analyzer.predict_etf(code, days)
                 click.echo(f"\n📈 {code} 预测结果:")
-                click.echo(f"  当前价格: ¥{result.current_price:.2f}")
-                click.echo(f"  预测价格: ¥{result.predicted_price:.2f}")
+                click.echo(f"  当前价格: ¥{result.current_price:.2f}")  # pylint: disable=no-member
+                click.echo(f"  预测价格: ¥{result.predicted_price:.2f}")  # pylint: disable=no-member
                 click.echo(f"  预测涨跌: {result.predicted_change:.2f}%")
                 click.echo(f"  置信度: {result.confidence:.1f}%")
                 click.echo(f"  趋势: {result.trend}")
@@ -462,12 +462,12 @@ def register_analyze_commands(cli: click.Group) -> None:
                     table.add_column("涨跌幅", justify="right")
                     table.add_column("市值", justify="right")
                     
-                    for stock in result.related_stocks[:10]:
+                    for stock in result.related_stocks[:10]:  # pylint: disable=unsubscriptable-object
                         table.add_row(
                             stock.get("code", ""),
                             stock.get("name", ""),
                             f"{stock.get('change_percent', 0):.2f}%",
-                            f"¥{stock.get('market_cap', 0):,.0f}",
+                            f"¥{stock.get('market_cap', 1):,.1f}",
                         )
                     console.print(table)
             else:
