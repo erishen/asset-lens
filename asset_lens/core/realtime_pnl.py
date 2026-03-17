@@ -1,9 +1,5 @@
-"""
-Real-time PnL estimation for asset-lens.
-实时盈亏估算模块
-"""
-
 import json
+import logging
 from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
@@ -12,6 +8,8 @@ from typing import Any, Dict, List, Optional
 from ..config import config
 from ..data.market_index import MarketIndex, MarketIndexCache
 from ..data.models import InvestmentProduct, InvestmentType, RiskLevel
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -190,19 +188,51 @@ class RealtimePnlEstimator:
         self._stock_codes_map: Optional[Dict[str, str]] = None
 
     def _load_fund_codes_config(self) -> Dict[str, str]:
-        """加载基金代码配置"""
+        """加载基金代码配置
+        
+        Returns:
+            基金代码映射字典 {关键词: 代码}
+            
+        Note:
+            如果加载失败，返回空字典并记录警告
+        """
         if self._fund_codes_map is not None:
             return self._fund_codes_map
 
         config_file = config.project_root / "config" / "fund_stock_codes.json"
         result = {}
 
-        if config_file.exists():
-            try:
-                with open(config_file, "r", encoding="utf-8") as f:
-                    data = json.load(f)
+        if not config_file.exists():
+            logger.warning(
+                f"基金代码配置文件不存在: {config_file}",
+                extra={"config_file": str(config_file)}
+            )
+            self._fund_codes_map = {}
+            return {}
 
-                for fund in data.get("funds", []):
+        try:
+            with open(config_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            if not isinstance(data, dict):
+                logger.error(
+                    f"基金代码配置格式错误: 期望 dict，得到 {type(data).__name__}",
+                    extra={"config_file": str(config_file)}
+                )
+                self._fund_codes_map = {}
+                return {}
+
+            funds = data.get("funds", [])
+            if not isinstance(funds, list):
+                logger.warning(
+                    f"基金列表格式错误: 期望 list，得到 {type(funds).__name__}",
+                    extra={"config_file": str(config_file)}
+                )
+                self._fund_codes_map = {}
+                return {}
+
+            for fund in funds:
+                try:
                     name = fund.get("name", "")
                     code = fund.get("code", "")
                     if name and code:
@@ -211,29 +241,94 @@ class RealtimePnlEstimator:
                     for keyword in fund.get("keywords", []):
                         if keyword and code:
                             result[keyword] = code
+                except Exception as e:
+                    logger.warning(
+                        f"处理基金数据失败: {fund}",
+                        exc_info=True,
+                        extra={"fund": str(fund), "error": str(e)}
+                    )
+                    continue
 
-                self._fund_codes_map = result
-                return result
-            except Exception:
-                pass
+            logger.info(
+                f"成功加载 {len(result)} 个基金代码映射",
+                extra={"count": len(result)}
+            )
+            self._fund_codes_map = result
+            return result
 
-        self._fund_codes_map = {}
-        return {}
+        except json.JSONDecodeError as e:
+            logger.error(
+                f"基金代码配置 JSON 解析失败: {e}",
+                exc_info=True,
+                extra={"config_file": str(config_file), "error": str(e)}
+            )
+            self._fund_codes_map = {}
+            return {}
+
+        except IOError as e:
+            logger.error(
+                f"读取基金代码配置文件失败: {e}",
+                exc_info=True,
+                extra={"config_file": str(config_file), "error": str(e)}
+            )
+            self._fund_codes_map = {}
+            return {}
+
+        except Exception as e:
+            logger.error(
+                f"加载基金代码配置时发生未知错误: {e}",
+                exc_info=True,
+                extra={"config_file": str(config_file), "error": str(e)}
+            )
+            self._fund_codes_map = {}
+            return {}
 
     def _load_stock_codes_config(self) -> Dict[str, str]:
-        """加载股票代码配置"""
+        """加载股票代码配置
+        
+        Returns:
+            股票代码映射字典 {关键词: 代码}
+            
+        Note:
+            如果加载失败，返回空字典并记录警告
+        """
         if self._stock_codes_map is not None:
             return self._stock_codes_map
 
         config_file = config.project_root / "config" / "fund_stock_codes.json"
         result = {}
 
-        if config_file.exists():
-            try:
-                with open(config_file, "r", encoding="utf-8") as f:
-                    data = json.load(f)
+        if not config_file.exists():
+            logger.warning(
+                f"股票代码配置文件不存在: {config_file}",
+                extra={"config_file": str(config_file)}
+            )
+            self._stock_codes_map = {}
+            return {}
 
-                for stock in data.get("stocks", []):
+        try:
+            with open(config_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            if not isinstance(data, dict):
+                logger.error(
+                    f"股票代码配置格式错误: 期望 dict，得到 {type(data).__name__}",
+                    extra={"config_file": str(config_file)}
+                )
+                self._stock_codes_map = {}
+                return {}
+
+            stocks = data.get("stocks", [])
+            if not isinstance(stocks, list):
+                logger.warning(
+                    f"股票列表格式错误: 期望 list，得到 {type(stocks).__name__}",
+                    extra={"config_file": str(config_file)}
+                )
+                self._stock_codes_map = {}
+                return {}
+
+            for stock in stocks:
+                try:
                     name = stock.get("name", "")
                     code = stock.get("code", "")
                     if name and code:
@@ -242,14 +337,47 @@ class RealtimePnlEstimator:
                     for keyword in stock.get("keywords", []):
                         if keyword and code:
                             result[keyword] = code
+                except Exception as e:
+                    logger.warning(
+                        f"处理股票数据失败: {stock}",
+                        exc_info=True,
+                        extra={"stock": str(stock), "error": str(e)}
+                    )
+                    continue
 
-                self._stock_codes_map = result
-                return result
-            except Exception:
-                pass
+            logger.info(
+                f"成功加载 {len(result)} 个股票代码映射",
+                extra={"count": len(result)}
+            )
+            self._stock_codes_map = result
+            return result
 
-        self._stock_codes_map = {}
-        return {}
+        except json.JSONDecodeError as e:
+            logger.error(
+                f"股票代码配置 JSON 解析失败: {e}",
+                exc_info=True,
+                extra={"config_file": str(config_file), "error": str(e)}
+            )
+            self._stock_codes_map = {}
+            return {}
+
+        except IOError as e:
+            logger.error(
+                f"读取股票代码配置文件失败: {e}",
+                exc_info=True,
+                extra={"config_file": str(config_file), "error": str(e)}
+            )
+            self._stock_codes_map = {}
+            return {}
+
+        except Exception as e:
+            logger.error(
+                f"加载股票代码配置时发生未知错误: {e}",
+                exc_info=True,
+                extra={"config_file": str(config_file), "error": str(e)}
+            )
+            self._stock_codes_map = {}
+            return {}
 
     def _read_fund_quotes_from_cache(self) -> Dict[str, Decimal]:
         """从缓存读取基金净值涨跌幅"""
@@ -266,7 +394,7 @@ class RealtimePnlEstimator:
                 change_percent = fund_data.get("change_percent", 0)
                 moves[code] = Decimal(str(change_percent))
         except Exception as e:
-            print(f"读取基金净值数据失败: {e}")
+            logger.warning(f"读取基金净值数据失败: {e}", exc_info=True)
 
         return moves
 
@@ -285,7 +413,7 @@ class RealtimePnlEstimator:
                 change_percent = stock_data.get("change_percent", 0)
                 moves[code] = Decimal(str(change_percent))
         except Exception as e:
-            print(f"读取股票行情数据失败: {e}")
+            logger.warning(f"读取股票行情数据失败: {e}", exc_info=True)
 
         return moves
 
@@ -302,14 +430,13 @@ class RealtimePnlEstimator:
             if not summary_file.exists():
                 summary_file = data_dir / "资产汇总.csv"
             if not summary_file.exists():
-                # 兼容旧文件名
                 summary_file = data_dir / "备份-表格 1.csv"
             if summary_file.exists():
                 summaries = AssetSummaryParser.parse_csv_file(summary_file)
                 if summaries:
                     return summaries[-1].total_amount or Decimal("0")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"从资产汇总获取总金额失败: {e}", exc_info=True)
         return Decimal("0")
 
     def read_index_moves_from_cache(self, is_weekly: bool = False) -> Dict[str, Decimal]:
@@ -351,7 +478,7 @@ class RealtimePnlEstimator:
                         else:
                             moves[en_code] = Decimal(str(index_data.get("涨跌幅", 0)))
             except Exception as e:
-                print(f"读取国内市场数据失败: {e}")
+                logger.warning(f"读取国内市场数据失败: {e}", exc_info=True)
 
         if self.foreign_cache_file.exists():
             try:
@@ -387,7 +514,7 @@ class RealtimePnlEstimator:
                                 moves[index_code] = Decimal(str(index_data.get("涨跌幅", 0)))
                             break
             except Exception as e:
-                print(f"读取海外市场数据失败: {e}")
+                logger.warning(f"读取海外市场数据失败: {e}", exc_info=True)
 
         if "黄金ETF" in domestic_data.get("指数数据", {}):
             try:
@@ -400,7 +527,7 @@ class RealtimePnlEstimator:
                 else:
                     moves["Gold"] = Decimal(str(gold_data.get("涨跌幅", 0)))
             except Exception as e:
-                print(f"读取国内黄金数据失败: {e}")
+                logger.warning(f"读取国内黄金数据失败: {e}", exc_info=True)
 
         return moves
 

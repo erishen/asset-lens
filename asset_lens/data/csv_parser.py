@@ -5,10 +5,10 @@ CSV 数据读取和解析模块
 
 import csv
 import logging
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from ..config import config
 from ..data.models import Currency, InvestmentProduct, InvestmentType, RiskLevel
@@ -17,6 +17,58 @@ from .parser_utils import parse_decimal as _parse_decimal
 from .parsers.investment_calculator import days360, InvestmentCalculator
 
 logger = logging.getLogger(__name__)
+
+
+class ExchangeRateCache:
+    """汇率缓存管理器"""
+
+    def __init__(self, ttl_seconds: int = 3600):
+        """
+        初始化缓存
+
+        Args:
+            ttl_seconds: 缓存有效期（秒），默认 1 小时
+        """
+        self._cache: Dict[str, Tuple[float, float]] = {}
+        self._timestamps: Dict[str, datetime] = {}
+        self._ttl = ttl_seconds
+
+    def get(self, key: str) -> Optional[Tuple[float, float]]:
+        """获取缓存的汇率"""
+        if key not in self._cache:
+            return None
+
+        if datetime.now() - self._timestamps[key] > timedelta(seconds=self._ttl):
+            logger.debug(f"汇率缓存已过期: {key}")
+            del self._cache[key]
+            del self._timestamps[key]
+            return None
+
+        logger.debug(f"使用缓存的汇率: {key}")
+        return self._cache[key]
+
+    def set(self, key: str, value: Tuple[float, float]) -> None:
+        """缓存汇率"""
+        self._cache[key] = value
+        self._timestamps[key] = datetime.now()
+        logger.debug(f"缓存汇率: {key} = {value}")
+
+    def clear(self) -> None:
+        """清空缓存"""
+        self._cache.clear()
+        self._timestamps.clear()
+        logger.debug("汇率缓存已清空")
+
+    def get_stats(self) -> Dict[str, Any]:
+        """获取缓存统计信息"""
+        return {
+            "size": len(self._cache),
+            "ttl": self._ttl,
+            "entries": list(self._cache.keys())
+        }
+
+
+_exchange_rate_cache = ExchangeRateCache(ttl_seconds=3600)
 
 
 __all__ = ["CSVParser", "days360"]
@@ -58,18 +110,26 @@ class CSVParser:
     @staticmethod
     def get_exchange_rates(data_dir: Path) -> tuple[float, float]:
         """
-        从数据文件中读取美元和港元汇率
+        从数据文件中读取美元和港元汇率（带缓存）
+        
         优先从投资产品表格中读取，其次从工作表2中读取
+        
         Args:
             data_dir: 数据目录路径
+            
         Returns:
             (美元汇率, 港元汇率)
         """
+        cache_key = str(data_dir)
+
+        cached = _exchange_rate_cache.get(cache_key)
+        if cached:
+            return cached
+
         default_usd = float(config.default_usd_rate)
         default_hkd = float(config.default_hkd_rate)
 
         try:
-            # 首先尝试从投资产品表格中读取汇率
             csv_files = list(data_dir.glob("投资产品*.csv"))
             if csv_files:
                 csv_path = csv_files[0]
@@ -117,9 +177,11 @@ class CSVParser:
                                 break
 
                         if usd_rate != default_usd or hkd_rate != default_hkd:
-                            return usd_rate, hkd_rate
+                            rates = (usd_rate, hkd_rate)
+                            _exchange_rate_cache.set(cache_key, rates)
+                            logger.info(f"加载汇率: USD={usd_rate}, HKD={hkd_rate}")
+                            return rates
 
-            # 其次尝试从工作表2文件读取
             ws2_files = list(data_dir.glob("*工作表 2*.csv"))
             if not ws2_files:
                 ws2_files = list(data_dir.glob("*工作表*2*.csv"))
@@ -135,7 +197,6 @@ class CSVParser:
             if len(lines) < 2:
                 return default_usd, default_hkd
 
-            # 解析表头
             header = lines[0].strip().split(",")
             usd_idx = -1
             hkd_idx = -1
@@ -150,7 +211,6 @@ class CSVParser:
             if usd_idx == -1 and hkd_idx == -1:
                 return default_usd, default_hkd
 
-            # 从最后一行往上找有数据的汇率
             usd_rate = default_usd
             hkd_rate = default_hkd
 
@@ -178,9 +238,13 @@ class CSVParser:
                 if usd_rate != default_usd and hkd_rate != default_hkd:
                     break
 
-            return usd_rate, hkd_rate
+            rates = (usd_rate, hkd_rate)
+            _exchange_rate_cache.set(cache_key, rates)
+            logger.info(f"加载汇率: USD={usd_rate}, HKD={hkd_rate}")
+            return rates
 
-        except Exception:
+        except Exception as e:
+            logger.error(f"加载汇率失败: {data_dir}", exc_info=True, extra={"error": str(e)})
             return default_usd, default_hkd
 
     @staticmethod
@@ -384,7 +448,7 @@ class CSVParser:
             return product
 
         except Exception as e:
-            print(f"解析行数据时出错: {e}, 行数据: {row}")
+            logger.error(f"解析行数据时出错: {e}, 行数据: {row}")
             return None
 
     @classmethod
@@ -433,12 +497,16 @@ class CSVParser:
                 if net_invest > 0 and abs(net_invest - float(product.initial_amount)) > 1:
                     diff = net_invest - float(product.initial_amount)
                     diff_days = abs(diff) / 100 if abs(diff) >= 100 else abs(diff) / 50
-                    print(f"⚠️  定投产品数据不一致: {product.name}")
-                    print(f"    CSV 初始金额: {product.initial_amount}")
-                    print(f"    交易记录净投入: {net_invest:.2f}")
-                    print(f"    差异: {diff:.2f} (约 {diff_days:.0f} 个交易日)")
-                    print(f"    将使用 CSV 初始金额计算收益率")
-                    print()
+                    logger.warning(
+                        f"定投产品数据不一致: {product.name}",
+                        extra={
+                            "product_name": product.name,
+                            "csv_amount": float(product.initial_amount),
+                            "transaction_amount": net_invest,
+                            "difference": diff,
+                            "diff_days": diff_days
+                        }
+                    )
 
                 current_value = float(product.current_amount or 0)
                 initial_value = float(product.initial_amount)
@@ -634,7 +702,7 @@ class CSVParser:
                 else:
                     continue
             except (ValueError, IndexError) as e:
-                print(f"⚠️  日期解析失败: {date_str}, 错误: {e}")
+                logger.warning(f"日期解析失败: {date_str}", exc_info=True)
                 continue
 
             trans_days = days360(start_date, trans_date)
@@ -810,9 +878,8 @@ class CSVParser:
                 if not csv_files:
                     raise FileNotFoundError(f"数据目录中没有找到 CSV 文件: {data_path}")
 
-                # 使用第一个找到的 CSV 文件
                 csv_path = csv_files[0]
-                print(f"使用数据文件: {csv_path.name}")
+                logger.info(f"使用数据文件: {csv_path.name}")
             else:
                 csv_path = data_path
 
@@ -871,19 +938,16 @@ class CSVParser:
                         csv_path = csv_files[0]
                         try:
                             products = cls.parse_csv_file(csv_path)
-                            # 提取数据目录日期作为参考日期
                             dir_date_str = target_dir.name.split("_")[-1]
                             reference_date = datetime.strptime(dir_date_str, "%Y%m%d")
-                            # 对有交易记录的产品使用简单年化收益率计算
                             products = cls._calculate_irr_for_products(products, reference_date)
-                            print(f"✅ 成功加载 {len(products)} 个投资产品")
-                            print(f"    美元汇率: {usd_rate}, 港元汇率: {hkd_rate}")
+                            logger.info(f"成功加载 {len(products)} 个投资产品, 美元汇率: {usd_rate}, 港元汇率: {hkd_rate}")
                             return products
                         except Exception as e:
-                            print(f"❌ 加载数据失败: {e}")
+                            logger.error(f"加载数据失败: {e}", exc_info=True)
                             raise
 
-                    print(f"❌ 未找到 CSV 文件")
+                    logger.warning(f"未找到 CSV 文件: {target_dir}")
                     return []
 
         # 如果传入的是目录，查找投资产品的 CSV 文件
@@ -907,9 +971,8 @@ class CSVParser:
             if not csv_files:
                 raise FileNotFoundError(f"数据目录中没有找到 CSV 文件: {data_path}")
 
-            # 使用第一个找到的 CSV 文件
             csv_path = csv_files[0]
-            print(f"使用数据文件: {csv_path.name}")
+            logger.info(f"使用数据文件: {csv_path.name}")
         else:
             csv_path = data_path
 
