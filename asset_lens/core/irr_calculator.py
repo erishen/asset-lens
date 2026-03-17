@@ -1,12 +1,15 @@
 """
-IRR (Internal Rate of Return) calculator for asset-lens.
-IRR（内部收益率）计算核心逻辑
+IRR Calculator - 内部收益率计算器
+支持多种算法和缓存优化
 """
 
+import logging
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from functools import lru_cache
-from typing import List, Tuple
+from typing import Dict, List, Optional, Tuple
+
+logger = logging.getLogger(__name__)
 
 try:
     from numpy import irr as numpy_irr  # type: ignore
@@ -77,7 +80,8 @@ def _calculate_irr_numpy_cached(cashflows_hash: Tuple[float, ...]) -> float | No
     try:
         irr_value = numpy_irr(cashflows)
         return irr_value * 100 if irr_value is not None else None
-    except Exception:
+    except Exception as e:
+        logger.warning(f"numpy IRR 计算失败: {e}")
         return None
 
 

@@ -430,6 +430,510 @@ def register_analyze_commands(cli: click.Group) -> None:
         except Exception as e:
             click.echo(f"❌ 分析失败: {e}", err=True)
 
+    @cli.command("predict-etf")
+    @click.option("--code", type=str, help="ETF 代码")
+    @click.option("--days", type=int, default=5, help="预测天数")
+    def predict_etf(code: Optional[str], days: int):
+        """预测 ETF 走势"""
+        from rich.console import Console
+        from rich.table import Table
+        from asset_lens.data.stock_activity_analyzer import StockActivityAnalyzer
+
+        click.echo("\n📊 ETF 走势预测")
+        click.echo("=" * 60)
+
+        try:
+            analyzer = StockActivityAnalyzer()
+            
+            if code:
+                result = analyzer.predict_etf(code, days)
+                click.echo(f"\n📈 {code} 预测结果:")
+                click.echo(f"  当前价格: ¥{result.current_price:.2f}")
+                click.echo(f"  预测价格: ¥{result.predicted_price:.2f}")
+                click.echo(f"  预测涨跌: {result.predicted_change:.2f}%")
+                click.echo(f"  置信度: {result.confidence:.1f}%")
+                click.echo(f"  趋势: {result.trend}")
+                
+                if result.related_stocks:
+                    console = Console()
+                    table = Table(title="相关股票")
+                    table.add_column("代码", style="cyan")
+                    table.add_column("名称", style="green")
+                    table.add_column("涨跌幅", justify="right")
+                    table.add_column("市值", justify="right")
+                    
+                    for stock in result.related_stocks[:10]:
+                        table.add_row(
+                            stock.get("code", ""),
+                            stock.get("name", ""),
+                            f"{stock.get('change_percent', 0):.2f}%",
+                            f"¥{stock.get('market_cap', 0):,.0f}",
+                        )
+                    console.print(table)
+            else:
+                click.echo("请使用 --code 参数指定 ETF 代码")
+                click.echo("示例: asset-lens predict-etf --code 510050 --days 5")
+
+            click.echo(f"\n✅ 预测完成！")
+
+        except Exception as e:
+            click.echo(f"❌ 预测失败: {e}", err=True)
+
+    @cli.command("weekly")
+    @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
+    @click.option("--output", type=str, default="output/weekly_report.md", help="输出文件")
+    def weekly(data_mode: Optional[str], output: str):
+        """生成周度投资报告"""
+        from pathlib import Path
+        from asset_lens.config import config
+        from asset_lens.data.csv_parser import CSVParser
+
+        if data_mode:
+            config.data_mode = data_mode
+
+        click.echo("\n📊 生成周度投资报告")
+        click.echo("=" * 60)
+
+        try:
+            products = CSVParser.load_data()
+            click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
+
+            output_path = Path(output)
+            
+            report_lines = [
+                "# 周度投资报告",
+                "",
+                f"**报告日期**: {datetime.now().strftime('%Y-%m-%d')}",
+                "",
+                "## 投资组合概览",
+                "",
+                f"- 总产品数: {len(products)}",
+                f"- 总金额: ¥{sum(float(p.current_amount or 0) for p in products):,.2f}",
+                f"- 总收益: ¥{sum(float(p.current_amount or 0) - float(p.initial_amount or 0) for p in products):,.2f}",
+                "",
+                "## 本周重点关注",
+                "",
+                "### 涨幅前5",
+                "",
+            ]
+            
+            sorted_products = sorted(
+                products, 
+                key=lambda p: float(p.return_rate or 0), 
+                reverse=True
+            )[:5]
+            
+            for p in sorted_products:
+                report_lines.append(f"- {p.name}: {float(p.return_rate or 0):.2f}%")
+            
+            report_lines.extend([
+                "",
+                "### 跌幅前5",
+                "",
+            ])
+            
+            sorted_products = sorted(
+                products, 
+                key=lambda p: float(p.return_rate or 0)
+            )[:5]
+            
+            for p in sorted_products:
+                report_lines.append(f"- {p.name}: {float(p.return_rate or 0):.2f}%")
+            
+            report_lines.extend([
+                "",
+                "## 下周计划",
+                "",
+                "- 继续关注市场动态",
+                "- 定期调整投资组合",
+                "",
+                "---",
+                f"*报告生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*",
+            ])
+            
+            report_content = "\n".join(report_lines)
+            
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(report_content, encoding="utf-8")
+            
+            click.echo(f"\n✅ 周报已生成: {output_path}")
+
+        except Exception as e:
+            click.echo(f"❌ 生成周报失败: {e}", err=True)
+
+    @cli.command("sentiment")
+    def sentiment():
+        """分析市场风向"""
+        from rich.console import Console
+        from rich.table import Table
+        from rich.panel import Panel
+        from asset_lens.core.market_sentiment import MarketSentimentAnalyzer
+
+        click.echo("\n📊 市场风向分析")
+        click.echo("=" * 60)
+
+        try:
+            analyzer = MarketSentimentAnalyzer()
+            result = analyzer.analyze()
+
+            console = Console()
+            
+            trend_color = {
+                "bullish": "green",
+                "bearish": "red",
+                "neutral": "yellow"
+            }.get(result.trend, "white")
+            
+            console.print(Panel(
+                f"[bold]综合评分[/bold]: {result.overall_score:.1f}/100\n"
+                f"[bold]市场趋势[/bold]: [{trend_color}]{result.trend}[/{trend_color}]\n"
+                f"[bold]风险等级[/bold]: {result.risk_level}\n"
+                f"[bold]分析时间[/bold]: {result.analysis_time}",
+                title="市场风向",
+                border_style="blue"
+            ))
+
+            if result.indicators:
+                table = Table(title="情绪指标")
+                table.add_column("指标名称", style="cyan")
+                table.add_column("数值", justify="right")
+                table.add_column("状态", style="green")
+                table.add_column("说明", style="yellow")
+
+                for indicator in result.indicators:
+                    level_color = {
+                        "bullish": "green",
+                        "bearish": "red",
+                        "neutral": "yellow"
+                    }.get(indicator.level, "white")
+                    
+                    table.add_row(
+                        indicator.name,
+                        f"{indicator.value:.1f}",
+                        f"[{level_color}]{indicator.level}[/{level_color}]",
+                        indicator.description
+                    )
+
+                console.print(table)
+
+            if result.suggestions:
+                click.echo("\n💡 投资建议:")
+                for i, suggestion in enumerate(result.suggestions, 1):
+                    click.echo(f"  {i}. {suggestion}")
+
+            click.echo(f"\n✅ 分析完成！")
+
+        except Exception as e:
+            click.echo(f"❌ 分析失败: {e}", err=True)
+
+    @cli.command("portfolio-metrics")
+    @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
+    def portfolio_metrics(data_mode: Optional[str]):
+        """计算投资组合专业指标（夏普比率、最大回撤等）"""
+        from rich.console import Console
+        from rich.table import Table
+        from asset_lens.config import config
+        from asset_lens.data.csv_parser import CSVParser
+        from asset_lens.core.portfolio_analytics import PortfolioAnalytics
+
+        if data_mode:
+            config.data_mode = data_mode
+
+        click.echo("\n📊 投资组合专业指标分析")
+        click.echo("=" * 60)
+
+        try:
+            products = CSVParser.load_data()
+            click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
+
+            analytics = PortfolioAnalytics()
+            metrics = analytics.calculate_metrics(products)
+
+            console = Console()
+            table = Table(title="投资组合指标", show_lines=False)
+            table.add_column("指标名称", style="cyan")
+            table.add_column("数值", justify="right", style="green")
+            table.add_column("说明", style="yellow")
+
+            table.add_row("总资产", f"¥{metrics.total_amount:,.2f}", "投资组合总市值")
+            table.add_row("总收益", f"¥{metrics.total_return:,.2f}", "总盈亏金额")
+            table.add_row("总收益率", f"{metrics.total_return_rate:.2f}%", "总收益率")
+            table.add_row("年化收益率", f"{metrics.annualized_return:.2f}%", "年化收益率")
+            table.add_row("夏普比率", f"{metrics.sharpe_ratio:.2f}", "风险调整后收益")
+            table.add_row("最大回撤", f"{metrics.max_drawdown:.2f}%", "最大亏损幅度")
+            table.add_row("波动率", f"{metrics.volatility:.2f}%", "收益波动程度")
+            table.add_row("胜率", f"{metrics.win_rate:.1f}%", "盈利产品占比")
+
+            console.print(table)
+
+            click.echo(f"\n✅ 指标计算完成！")
+
+        except Exception as e:
+            click.echo(f"❌ 指标计算失败: {e}", err=True)
+
+    @cli.command("generate-charts")
+    @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
+    @click.option("--output", type=str, default="output/charts", help="输出目录")
+    def generate_charts(data_mode: Optional[str], output: str):
+        """生成投资分析图表（资产配置、风险分布等）"""
+        from pathlib import Path
+        from asset_lens.config import config
+        from asset_lens.data.csv_parser import CSVParser
+        from asset_lens.report.charts import ChartGenerator
+
+        if data_mode:
+            config.data_mode = data_mode
+
+        click.echo("\n📊 生成投资分析图表")
+        click.echo("=" * 60)
+
+        try:
+            products = CSVParser.load_data()
+            click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
+
+            output_dir = Path(output)
+            chart_gen = ChartGenerator(output_dir)
+
+            portfolio_data = {
+                "products": [
+                    {
+                        "name": p.name,
+                        "type": p.investment_type.value if p.investment_type else "未知",
+                        "amount": float(p.current_amount or 0),
+                        "return_rate": float(p.return_rate or 0),
+                    }
+                    for p in products
+                ]
+            }
+
+            charts = chart_gen.generate_all_charts(portfolio_data)
+
+            click.echo(f"\n✅ 已生成 {len(charts)} 个图表:")
+            for name, path in charts.items():
+                click.echo(f"  📈 {name}: {path}")
+
+            click.echo(f"\n✅ 图表生成完成！")
+
+        except Exception as e:
+            click.echo(f"❌ 图表生成失败: {e}", err=True)
+
+    @cli.command("generate-report")
+    @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
+    @click.option("--output", type=str, default="output/report.pdf", help="输出文件")
+    @click.option("--include-ai", is_flag=True, help="包含 AI 分析")
+    def generate_report(data_mode: Optional[str], output: str, include_ai: bool):
+        """生成投资分析报告（PDF）"""
+        from pathlib import Path
+        from asset_lens.config import config
+        from asset_lens.data.csv_parser import CSVParser
+        from asset_lens.report.pdf_report import PDFReportGenerator
+
+        if data_mode:
+            config.data_mode = data_mode
+
+        click.echo("\n📊 生成投资分析报告（PDF）")
+        click.echo("=" * 60)
+
+        try:
+            products = CSVParser.load_data()
+            click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
+
+            output_path = Path(output)
+            report_gen = PDFReportGenerator(output_path.parent)
+            report_path = report_gen.generate(products, output_path.name, include_ai=include_ai)
+
+            click.echo(f"\n✅ 报告已生成: {report_path}")
+
+        except Exception as e:
+            click.echo(f"❌ 报告生成失败: {e}", err=True)
+
+    @cli.command("generate-html-report")
+    @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
+    @click.option("--output", type=str, default="output/report.html", help="输出文件")
+    @click.option("--include-ai", is_flag=True, help="包含 AI 分析")
+    def generate_html_report(data_mode: Optional[str], output: str, include_ai: bool):
+        """生成投资分析报告（HTML）"""
+        from pathlib import Path
+        from asset_lens.config import config
+        from asset_lens.data.csv_parser import CSVParser
+        from asset_lens.report.html_report import HTMLReportGenerator
+
+        if data_mode:
+            config.data_mode = data_mode
+
+        click.echo("\n📊 生成投资分析报告（HTML）")
+        click.echo("=" * 60)
+
+        try:
+            products = CSVParser.load_data()
+            click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
+
+            output_path = Path(output)
+            report_gen = HTMLReportGenerator(output_path.parent)
+            report_path = report_gen.generate(products, output_path.name, include_ai=include_ai)
+
+            click.echo(f"\n✅ 报告已生成: {report_path}")
+
+        except Exception as e:
+            click.echo(f"❌ 报告生成失败: {e}", err=True)
+
+    @cli.command("ai-analyze")
+    @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
+    def ai_analyze(data_mode: Optional[str]):
+        """使用 AI 分析投资组合"""
+        from rich.console import Console
+        from rich.panel import Panel
+        from asset_lens.config import config
+        from asset_lens.data.csv_parser import CSVParser
+        from asset_lens.core.ai_analyzer import AIAnalyzer
+
+        if data_mode:
+            config.data_mode = data_mode
+
+        click.echo("\n🤖 AI 投资组合分析")
+        click.echo("=" * 60)
+
+        try:
+            products = CSVParser.load_data()
+            click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
+
+            analyzer = AIAnalyzer()
+            click.echo(f"📊 使用模型: {analyzer.model}")
+
+            portfolio_data = {
+                "products": [
+                    {
+                        "name": p.name,
+                        "type": p.investment_type.value if p.investment_type else "未知",
+                        "amount": float(p.current_amount or 0),
+                        "return_rate": float(p.return_rate or 0),
+                        "annual_return": float(p.annual_return or 0),
+                    }
+                    for p in products
+                ],
+                "total_amount": sum(float(p.current_amount or 0) for p in products),
+                "total_return": sum(
+                    float(p.current_amount or 0) - float(p.initial_amount or 0)
+                    for p in products
+                ),
+            }
+
+            click.echo("🔄 正在分析...")
+            result = analyzer.analyze_portfolio(portfolio_data)
+
+            console = Console()
+            console.print(
+                Panel(
+                    f"[bold green]投资组合摘要[/bold green]\n\n{result.summary}",
+                    title="AI 分析结果",
+                    border_style="blue",
+                )
+            )
+
+            console.print(
+                Panel(
+                    f"[bold yellow]风险评估[/bold yellow]\n\n{result.risk_assessment}",
+                    title="风险分析",
+                    border_style="yellow",
+                )
+            )
+
+            if result.suggestions:
+                click.echo("\n💡 投资建议:")
+                for i, suggestion in enumerate(result.suggestions, 1):
+                    click.echo(f"  {i}. {suggestion}")
+
+            if result.warnings:
+                click.echo("\n⚠️ 警告:")
+                for warning in result.warnings:
+                    click.echo(f"  • {warning}")
+
+            click.echo(f"\n📊 综合评分: {result.score}/100")
+
+            click.echo(f"\n✅ AI 分析完成！")
+
+        except Exception as e:
+            click.echo(f"❌ AI 分析失败: {e}", err=True)
+
+    @cli.command()
+    @click.option("--before", type=str, help="对比之前的数据目录")
+    @click.option("--after", type=str, help="对比之后的数据目录")
+    def compare(before: Optional[str], after: Optional[str]):
+        """对比不同时期的投资收益变化"""
+        from rich.console import Console
+        from rich.table import Table
+        from asset_lens.config import config
+        from asset_lens.data.csv_parser import CSVParser
+        from asset_lens.core.comparison import ComparisonAnalyzer
+
+        click.echo("\n📊 投资组合对比分析")
+        click.echo("=" * 60)
+
+        try:
+            if before:
+                before_dir = Path(before)
+            else:
+                before_dir = config.get_latest_data_dir()
+                if not before_dir:
+                    click.echo("❌ 未找到数据目录", err=True)
+                    return
+
+            if after:
+                after_dir = Path(after)
+            else:
+                data_dirs = sorted(config.data_path.glob("*_*"))
+                if len(data_dirs) < 2:
+                    click.echo("❌ 需要至少两个数据目录进行对比", err=True)
+                    return
+                after_dir = data_dirs[-1]
+                before_dir = data_dirs[-2]
+
+            click.echo(f"📁 对比目录: {before_dir.name} vs {after_dir.name}")
+
+            products_before = CSVParser.load_data_from_dir(before_dir)
+            products_after = CSVParser.load_data_from_dir(after_dir)
+
+            click.echo(f"✅ 加载 {len(products_before)} 个产品（之前）")
+            click.echo(f"✅ 加载 {len(products_after)} 个产品（之后）")
+
+            analyzer = ComparisonAnalyzer()
+            result = analyzer.generate_comparison_report(
+                products_before, products_after, f"{before_dir.name} vs {after_dir.name}"
+            )
+
+            trend = result["comparison"]["trend"]
+            click.echo(f"\n💰 总体变化:")
+            click.echo(f"  之前总金额: ¥{trend.total_amount_before:,.2f}")
+            click.echo(f"  之后总金额: ¥{trend.total_amount_after:,.2f}")
+            click.echo(f"  总变化: ¥{trend.total_change:,.2f}")
+            click.echo(f"  总收益率: {trend.total_return_rate:.2f}%")
+
+            console = Console()
+            table = Table(title="产品对比明细", show_lines=False)
+            table.add_column("产品名称", style="cyan")
+            table.add_column("类型", style="green")
+            table.add_column("之前金额", justify="right")
+            table.add_column("之后金额", justify="right")
+            table.add_column("变化", justify="right")
+            table.add_column("收益率", justify="right")
+
+            for detail in result["comparison"]["details"][:20]:
+                table.add_row(
+                    detail.name,
+                    detail.type,
+                    f"¥{detail.amount_before:,.2f}",
+                    f"¥{detail.amount_after:,.2f}",
+                    f"¥{detail.amount_change:,.2f}",
+                    f"{detail.return_rate:.2f}%",
+                )
+
+            console.print(table)
+
+            click.echo(f"\n✅ 对比分析完成！")
+
+        except Exception as e:
+            click.echo(f"❌ 对比分析失败: {e}", err=True)
+
     @cli.command()
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     def analyze_by_time(data_mode: Optional[str]):
