@@ -235,12 +235,20 @@ class StrategyEvaluator:
             
             win_trades = [t for t in style_trade_list if t.get("profit", 0) > 0]
             total_return = sum(t.get("profit_rate", 0) for t in style_trade_list)
-            avg_holding = sum(
-                (datetime.strptime(t.get("sell_date", t.get("date")), "%Y-%m-%d") - 
-                 datetime.strptime(t.get("entry_date", t.get("date")), "%Y-%m-%d")).days
-                for t in style_trade_list
-                if t.get("sell_date") or t.get("entry_date")
-            ) / len(style_trade_list) if style_trade_list else 0
+            
+            holding_days = []
+            for t in style_trade_list:
+                sell_date = t.get("sell_date") or t.get("date")
+                entry_date = t.get("entry_date") or t.get("date")
+                if sell_date and entry_date:
+                    try:
+                        sell_dt = datetime.strptime(sell_date, "%Y-%m-%d")
+                        entry_dt = datetime.strptime(entry_date, "%Y-%m-%d")
+                        holding_days.append((sell_dt - entry_dt).days)
+                    except (ValueError, TypeError):
+                        pass
+            
+            avg_holding = sum(holding_days) / len(holding_days) if holding_days else 0
             
             sensitivities.append(StyleSensitivity(
                 style=style,
