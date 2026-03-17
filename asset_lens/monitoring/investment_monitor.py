@@ -81,12 +81,18 @@ class InvestmentMonitor:
             else:
                 return {'success': False, 'error': result.stderr}
         except Exception as e:
-            logger.error(f"运行命令失败: {command}, {e}")
+            try:
+                logger.error(f"运行命令失败: {command}, {e}")
+            except ValueError:
+                pass
             return {'success': False, 'error': str(e)}
     
     def monitor_portfolio_performance(self) -> Dict[str, Any]:
         """监控投资组合表现"""
-        logger.info("监控投资组合表现...")
+        try:
+            logger.info("监控投资组合表现...")
+        except ValueError:
+            pass
         
         result = self.run_asset_lens_command('analyze')
         
@@ -179,7 +185,10 @@ class InvestmentMonitor:
     
     def check_concentration_risk(self, portfolio_data: Dict[str, Any]) -> Optional[Alert]:
         """检查集中度风险"""
-        logger.info("检查集中度风险...")
+        try:
+            logger.info("检查集中度风险...")
+        except ValueError:
+            pass
         
         result = self.run_asset_lens_command('stock-pool-status')
         
@@ -199,7 +208,10 @@ class InvestmentMonitor:
                             data={'concentration': concentration}
                         )
             except (ValueError, KeyError) as e:
-                logger.error(f"解析集中度数据失败: {e}")
+                try:
+                    logger.error(f"解析集中度数据失败: {e}")
+                except ValueError:
+                    pass
         
         return None
     
@@ -312,24 +324,38 @@ class InvestmentMonitor:
                     concentration_alert = self.check_concentration_risk(portfolio)
                     if concentration_alert:
                         self.save_alert(concentration_alert)
-                        logger.warning(f"预警: {concentration_alert.message}")
+                        try:
+                            logger.warning(f"预警: {concentration_alert.message}")
+                        except ValueError:
+                            # 日志文件已关闭，忽略错误
+                            pass
                     
                     time.sleep(self.config.check_interval)
                     
                 except Exception as e:
-                    logger.error(f"监控任务异常: {e}")
+                    try:
+                        logger.error(f"监控任务异常: {e}")
+                    except ValueError:
+                        # 日志文件已关闭，忽略错误
+                        pass
                     time.sleep(60)
         
         monitor_thread = threading.Thread(target=monitor_task)
         monitor_thread.daemon = True
         monitor_thread.start()
         
-        logger.info("持续监控已启动")
+        try:
+            logger.info("持续监控已启动")
+        except ValueError:
+            pass
     
     def stop_monitoring(self):
         """停止监控"""
         self.running = False
-        logger.info("监控已停止")
+        try:
+            logger.info("监控已停止")
+        except ValueError:
+            pass
 
 
 def create_monitor(config: Optional[MonitorConfig] = None) -> InvestmentMonitor:
