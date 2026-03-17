@@ -787,8 +787,39 @@ class CSVParser:
         Returns:
             投资产品列表
         """
-        if data_path is None:
-            data_path = config.data_path
+        # 如果明确传入了 data_path，直接使用它（用于测试）
+        if data_path is not None:
+            # 如果传入的是目录，查找投资产品的 CSV 文件
+            if data_path.is_dir():
+                # 尝试多种 glob 模式，优先匹配新文件名
+                patterns = [
+                    "投资产品-表格 1.csv",
+                    "投资产品.csv",
+                    "*工作表 1*.csv",
+                    "*工作表*1*.csv",
+                    "*Sheet1*.csv",
+                    "*.csv",
+                ]
+
+                csv_files = []
+                for pattern in patterns:
+                    csv_files = list(data_path.glob(pattern))
+                    if csv_files:
+                        break
+
+                if not csv_files:
+                    raise FileNotFoundError(f"数据目录中没有找到 CSV 文件: {data_path}")
+
+                # 使用第一个找到的 CSV 文件
+                csv_path = csv_files[0]
+                print(f"使用数据文件: {csv_path.name}")
+            else:
+                csv_path = data_path
+
+            return cls.parse_csv_file(csv_path)
+        
+        # 如果没有传入 data_path，使用配置的路径
+        data_path = config.data_path
 
         if config.is_real_mode:
             data_dir = config.project_root / "data" / "real"
