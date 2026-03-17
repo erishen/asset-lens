@@ -101,13 +101,13 @@ class ConcurrentDataFetcher:
         """
         if self._session is None:
             return False, None, "Session not initialized"
-        session: aiohttp.ClientSession = self._session
+        session = self._session
         
         last_error: Optional[str] = None
         
         for attempt in range(self.max_retries):
             try:
-                async with session.get(url, params=params, headers=headers) as response:
+                async with session.get(url, params=params, headers=headers) as response:  # pylint: disable=not-async-context-manager
                     if response.status == 200:
                         data = await response.json()
                         return True, data, None
