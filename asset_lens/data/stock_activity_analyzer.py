@@ -5,7 +5,7 @@ Stock activity analyzer for asset-lens.
 
 import json
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
@@ -35,14 +35,17 @@ class ETFPrediction:
 
     etf_name: str
     etf_code: str
-    predicted_change: float
-    confidence: float
-    activity_score: float
-    up_ratio: float
-    down_ratio: float
-    related_stocks: int
-    top_gainers: List[Dict[str, Any]]
-    top_losers: List[Dict[str, Any]]
+    current_price: float = 0.0
+    predicted_price: float = 0.0
+    predicted_change: float = 0.0
+    confidence: float = 0.0
+    trend: str = "neutral"
+    activity_score: float = 0.0
+    up_ratio: float = 0.0
+    down_ratio: float = 0.0
+    related_stocks: List[Dict[str, Any]] = field(default_factory=list)
+    top_gainers: List[Dict[str, Any]] = field(default_factory=list)
+    top_losers: List[Dict[str, Any]] = field(default_factory=list)
 
 
 StockFilterCallable = Callable[[Dict[str, Any]], bool]
