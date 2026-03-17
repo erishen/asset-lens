@@ -1,6 +1,12 @@
 """
 Concurrent Data Fetcher - 并发数据获取器
 使用异步和并发技术优化数据获取性能
+
+特性:
+- 异步 HTTP 请求
+- 自动重试机制
+- 连接池复用
+- 性能监控
 """
 
 import asyncio
@@ -12,6 +18,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_MAX_CONCURRENT = 10
+DEFAULT_TIMEOUT = 30
+DEFAULT_MAX_RETRIES = 3
+DEFAULT_RETRY_DELAY = 1.0
+
 
 @dataclass
 class FetchResult:
@@ -21,32 +32,55 @@ class FetchResult:
     data: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
     duration: float = 0.0
+    retries: int = 0
 
 
 class ConcurrentDataFetcher:
     """并发数据获取器"""
     
-    def __init__(self, max_concurrent: int = 10, timeout: int = 30):
+    def __init__(
+        self, 
+        max_concurrent: int = DEFAULT_MAX_CONCURRENT, 
+        timeout: int = DEFAULT_TIMEOUT,
+        max_retries: int = DEFAULT_MAX_RETRIES,
+        retry_delay: float = DEFAULT_RETRY_DELAY
+    ):
         """
         初始化并发数据获取器
         
         Args:
             max_concurrent: 最大并发数
             timeout: 请求超时时间（秒）
+            max_retries: 最大重试次数
+            retry_delay: 重试延迟（秒）
         """
         self.max_concurrent = max_concurrent
         self.timeout = aiohttp.ClientTimeout(total=timeout)
+        self.max_retries = max_retries
+        self.retry_delay = retry_delay
         self._session: Optional[aiohttp.ClientSession] = None
+        self._connector: Optional[aiohttp.TCPConnector] = None
     
     async def __aenter__(self):
         """异步上下文管理器入口"""
-        self._session = aiohttp.ClientSession(timeout=self.timeout)
+        self._connector = aiohttp.TCPConnector(
+            limit=self.max_concurrent,
+            limit_per_host=5,
+            ttl_dns_cache=300,
+            enable_cleanup_closed=True
+        )
+        self._session = aiohttp.ClientSession(
+            connector=self._connector,
+            timeout=self.timeout
+        )
         return self
     
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """异步上下文管理器出口"""
         if self._session:
             await self._session.close()
+        if self._connector:
+            await self._connector.close()
     
     async def fetch_single(
         self,
@@ -68,17 +102,35 @@ class ConcurrentDataFetcher:
         if self._session is None:
             return False, None, "Session not initialized"
         session: aiohttp.ClientSession = self._session
-        try:
-            async with session.get(url, params=params, headers=headers) as response:  # pylint: disable=E1701
-                if response.status == 200:
-                    data = await response.json()
-                    return True, data, None
-                else:
-                    return False, None, f"HTTP {response.status}"
-        except asyncio.TimeoutError:
-            return False, None, "请求超时"
-        except Exception as e:
-            return False, None, str(e)
+        
+        last_error: Optional[str] = None
+        
+        for attempt in range(self.max_retries):
+            try:
+                async with session.get(url, params=params, headers=headers) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        return True, data, None
+                    else:
+                        last_error = f"HTTP {response.status}"
+                        if attempt < self.max_retries - 1:
+                            await asyncio.sleep(self.retry_delay * (attempt + 1))
+            except asyncio.TimeoutError:
+                last_error = "请求超时"
+                if attempt < self.max_retries - 1:
+                    logger.warning(f"请求超时，重试 {attempt + 1}/{self.max_retries}: {url}")
+                    await asyncio.sleep(self.retry_delay * (attempt + 1))
+            except aiohttp.ClientError as e:
+                last_error = f"网络错误: {str(e)}"
+                if attempt < self.max_retries - 1:
+                    logger.warning(f"网络错误，重试 {attempt + 1}/{self.max_retries}: {url}")
+                    await asyncio.sleep(self.retry_delay * (attempt + 1))
+            except Exception as e:
+                last_error = str(e)
+                logger.error(f"请求异常: {url}", exc_info=True)
+                break
+        
+        return False, None, last_error
     
     async def fetch_stock_quote(self, code: str) -> FetchResult:
         """

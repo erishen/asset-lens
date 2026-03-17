@@ -32,6 +32,10 @@ def parse_date(value: Optional[str]) -> Optional[datetime]:
         "%Y年%m月%d日",
         "%m/%d/%Y",
         "%d/%m/%Y",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y/%m/%d %H:%M:%S",
+        "%Y.%m.%d %H:%M:%S",
+        "%Y%m%d",
     ]
     for fmt in date_formats:
         try:

@@ -7,47 +7,14 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Dict, List, Optional
 
-
-def parse_decimal(value: str) -> Optional[Decimal]:
-    """解析 Decimal 值"""
-    if not value or value.strip() == "":
-        return None
-    try:
-        cleaned = value.replace(",", "").strip()
-        return Decimal(cleaned)
-    except Exception:
-        return None
-
-
-def parse_date(value: str) -> Optional[datetime]:
-    """解析日期值"""
-    if not value or value.strip() == "":
-        return None
-
-    date_formats = [
-        "%Y/%m/%d",
-        "%Y-%m-%d",
-        "%Y.%m.%d",
-        "%Y/%m/%d %H:%M:%S",
-        "%Y-%m-%d %H:%M:%S",
-        "%Y.%m.%d %H:%M:%S",
-        "%Y%m%d",
-    ]
-
-    for fmt in date_formats:
-        try:
-            return datetime.strptime(value.strip(), fmt)
-        except ValueError:
-            continue
-
-    return None
-
-
-def parse_boolean(value: str) -> bool:
-    """解析布尔值"""
-    if not value or value.strip() == "":
-        return False
-    return value.strip().lower() in ["true", "yes", "1", "是", "可赎"]
+from .parsers.field_parsers import (
+    parse_decimal,
+    parse_date,
+    parse_boolean,
+    parse_investment_type,
+    parse_risk_level,
+    parse_investment_days,
+)
 
 
 SELL_RECORD_FIELDS: List[str] = [
