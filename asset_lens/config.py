@@ -1,16 +1,93 @@
 """
 Configuration management for asset-lens.
 配置管理模块，支持 sample 和 real 数据模式切换
+
+使用 Pydantic BaseSettings 实现：
+- 自动从环境变量加载
+- 类型验证
+- 默认值支持
+- .env 文件支持
 """
 
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings
 
 load_dotenv()
+
+
+class Settings(BaseSettings):
+    """应用配置 - 使用 Pydantic BaseSettings"""
+    
+    data_mode: str = Field(default="sample", description="数据模式: sample 或 real")
+    
+    finnhub_api_key: Optional[str] = Field(default=None, description="Finnhub API 密钥")
+    alphavantage_api_key: Optional[str] = Field(default=None, description="Alpha Vantage API 密钥")
+    tushare_token: Optional[str] = Field(default=None, description="Tushare Token")
+    fred_api_key: Optional[str] = Field(default=None, description="FRED API 密钥")
+    
+    deepseek_api_key: Optional[str] = Field(default=None, description="DeepSeek API 密钥")
+    ai_model: str = Field(default="deepseek-chat", description="AI 模型名称")
+    ai_cache_ttl: int = Field(default=3600, description="AI 缓存 TTL（秒）")
+    
+    joinquant_username: Optional[str] = Field(default=None, description="JoinQuant 用户名")
+    joinquant_password: Optional[str] = Field(default=None, description="JoinQuant 密码")
+    
+    sample_data_path: str = Field(default="data/sample_data", description="示例数据路径")
+    real_data_path: str = Field(default="data/real", description="真实数据路径")
+    output_path: str = Field(default="output", description="输出路径")
+    cache_path: str = Field(default="cache", description="缓存路径")
+    config_path: str = Field(default="config", description="配置路径")
+    
+    default_usd_rate: float = Field(default=6.90, description="默认美元汇率")
+    default_hkd_rate: float = Field(default=0.89, description="默认港元汇率")
+    
+    min_return_threshold: float = Field(default=2.0, description="最小收益阈值")
+    workday_ratio: float = Field(default=0.7, description="工作日比例")
+    
+    output_format: str = Field(default="console,csv", description="输出格式")
+    report_language: str = Field(default="zh", description="报告语言")
+    
+    @field_validator("data_mode")
+    @classmethod
+    def validate_data_mode(cls, v: str) -> str:
+        if v not in ("sample", "real"):
+            raise ValueError(f"data_mode 必须是 'sample' 或 'real'，当前值: {v}")
+        return v
+    
+    @field_validator("finnhub_api_key")
+    @classmethod
+    def validate_finnhub_api_key(cls, v: Optional[str]) -> Optional[str]:
+        if v and len(v) < 10:
+            raise ValueError("FINNHUB_API_KEY 格式不正确，密钥长度应该至少 10 个字符")
+        return v
+    
+    @field_validator("default_usd_rate")
+    @classmethod
+    def validate_usd_rate(cls, v: float) -> float:
+        if not (5.0 < v < 10.0):
+            raise ValueError(f"默认美元汇率应该在 5-10 之间，当前值: {v}")
+        return v
+    
+    @field_validator("default_hkd_rate")
+    @classmethod
+    def validate_hkd_rate(cls, v: float) -> float:
+        if not (0.7 < v < 1.2):
+            raise ValueError(f"默认港元汇率应该在 0.7-1.2 之间，当前值: {v}")
+        return v
+    
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        case_sensitive = False
+
+
+settings = Settings()
 
 
 class PlatformConfig:
@@ -49,33 +126,36 @@ class Config:
     """Configuration class for asset-lens."""
 
     def __init__(self):
-        self.data_mode: str = os.getenv("DATA_MODE", "sample")
-
-        self.finnhub_api_key: str | None = os.getenv("FINNHUB_API_KEY")
-        self.alphavantage_api_key: str | None = os.getenv("ALPHAVANTAGE_API_KEY")
-        self.tushare_token: str | None = os.getenv("TUSHARE_TOKEN")
-        self.fred_api_key: str | None = os.getenv("FRED_API_KEY")
+        self._settings = settings
         
-        self.joinquant_username: str | None = os.getenv("JOINQUANT_USERNAME")
-        self.joinquant_password: str | None = os.getenv("JOINQUANT_PASSWORD")
+        self.data_mode: str = self._settings.data_mode
+
+        self.finnhub_api_key: str | None = self._settings.finnhub_api_key
+        self.alphavantage_api_key: str | None = self._settings.alphavantage_api_key
+        self.tushare_token: str | None = self._settings.tushare_token
+        self.fred_api_key: str | None = self._settings.fred_api_key
+        
+        self.joinquant_username: str | None = self._settings.joinquant_username
+        self.joinquant_password: str | None = self._settings.joinquant_password
 
         self.project_root = Path(__file__).parent.parent
-        self.sample_data_path = Path(os.getenv("SAMPLE_DATA_PATH", "data/sample_data"))
-        self.real_data_path = Path(os.getenv("REAL_DATA_PATH", "data/real"))
-        self.output_path = Path(os.getenv("OUTPUT_PATH", "output"))
-        self.cache_path = Path(os.getenv("CACHE_PATH", "cache"))
-        self.config_path = Path(os.getenv("CONFIG_PATH", "config"))
+        self.sample_data_path = Path(self._settings.sample_data_path)
+        self.real_data_path = Path(self._settings.real_data_path)
+        self.output_path = Path(self._settings.output_path)
+        self.cache_path = Path(self._settings.cache_path)
+        self.config_path = Path(self._settings.config_path)
 
-        self.default_usd_rate: float = float(os.getenv("DEFAULT_USD_RATE", "6.90"))
-        self.default_hkd_rate: float = float(os.getenv("DEFAULT_HKD_RATE", "0.89"))
+        self.default_usd_rate: float = self._settings.default_usd_rate
+        self.default_hkd_rate: float = self._settings.default_hkd_rate
 
-        self.min_return_threshold: float = float(os.getenv("MIN_RETURN_THRESHOLD", "2.0"))
+        self.min_return_threshold: float = self._settings.min_return_threshold
 
-        self.workday_ratio: float = float(os.getenv("WORKDAY_RATIO", "0.7"))
+        self.workday_ratio: float = self._settings.workday_ratio
 
-        self.output_format: list = os.getenv("OUTPUT_FORMAT", "console,csv").split(",")
+        output_format_str: str = getattr(self._settings, "output_format", "console,csv")
+        self.output_format: list = output_format_str.split(",")  # pylint: disable=no-member
 
-        self.report_language: str = os.getenv("REPORT_LANGUAGE", "zh")
+        self.report_language: str = self._settings.report_language
 
         self._platforms: List[PlatformConfig] | None = None
         self._platform_types: Dict[str, str] | None = None

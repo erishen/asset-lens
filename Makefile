@@ -77,13 +77,15 @@ help: ## 显示帮助信息
 	@echo "    make compare          对比不同时期的投资收益变化"
 	@echo "    make analyze-sold     分析已卖出投资"
 	@echo "    make analyze-by-time  按投资时间分组分析"
-	@echo "    make ai-analyze       AI 分析投资组合（需要配置 OPENAI_API_KEY）"
+	@echo "    make ai-analyze       AI 分析投资组合（需要配置 API 密钥）"
 	@echo "    make portfolio-metrics 计算投资组合专业指标（夏普比率、最大回撤等）"
 	@echo "    make generate-charts  生成投资分析图表（资产配置、风险分布等）"
-	@echo "    make generate-report      生成投资分析报告（PDF）"
-	@echo "    make generate-report-ai  生成投资分析报告（PDF，包含 AI 分析）"
-	@echo "    make generate-html-report  生成投资分析报告（HTML）"
-	@echo "    make generate-html-report-ai 生成投资分析报告（HTML，包含 AI 分析）"
+	@echo "    make generate-report  生成投资分析报告（PDF）"
+	@echo "    make generate-html-report 生成投资分析报告（HTML）"
+	@echo "    make report           生成投资报告"
+	@echo "    make weekly           生成周度投资报告"
+	@echo "    make sentiment        分析市场风向"
+	@echo "    make predict-etf      预测 ETF 走势"
 	@echo ""
 	@echo "  💰 盈亏估算:"
 	@echo "    make pnl             日度盈亏估算（基于市场指数）"
@@ -291,29 +293,34 @@ analyze-by-time: ## 按投资时间分组分析
 	@echo "⏱️  按投资时间分组分析..."
 	$(CONDA) python -m asset_lens analyze-by-time
 
+.PHONY: report
+report: ## 生成投资报告
+	@echo "📊 生成投资报告..."
+	$(CONDA) python -m asset_lens report
+
 .PHONY: ai-analyze
-ai-analyze: ## AI 分析投资组合（需要配置 OPENAI_API_KEY）
+ai-analyze: ## AI 分析投资组合（需要配置 API 密钥）
 	@echo "🤖 AI 分析投资组合..."
 	$(CONDA) python -m asset_lens ai-analyze
 
 .PHONY: portfolio-metrics
-portfolio-metrics: ## 计算投资组合专业指标
+portfolio-metrics: ## 计算投资组合专业指标（夏普比率、最大回撤等）
 	@echo "📊 计算投资组合专业指标..."
 	$(CONDA) python -m asset_lens portfolio-metrics
 
 .PHONY: generate-charts
-generate-charts: ## 生成投资分析图表
+generate-charts: ## 生成投资分析图表（资产配置、风险分布等）
 	@echo "📊 生成投资分析图表..."
 	$(CONDA) python -m asset_lens generate-charts
 
 .PHONY: generate-report
 generate-report: ## 生成投资分析报告（PDF）
-	@echo "📊 生成投资分析报告..."
+	@echo "📊 生成投资分析报告（PDF）..."
 	$(CONDA) python -m asset_lens generate-report
 
 .PHONY: generate-report-ai
-generate-report-ai: ## 生成投资分析报告（包含 AI 分析）
-	@echo "📊 生成投资分析报告（包含 AI 分析）..."
+generate-report-ai: ## 生成投资分析报告（PDF，包含 AI 分析）
+	@echo "📊 生成投资分析报告（PDF，包含 AI 分析）..."
 	$(CONDA) python -m asset_lens generate-report --include-ai
 
 .PHONY: generate-html-report
@@ -325,6 +332,11 @@ generate-html-report: ## 生成投资分析报告（HTML）
 generate-html-report-ai: ## 生成投资分析报告（HTML，包含 AI 分析）
 	@echo "📊 生成投资分析报告（HTML，包含 AI 分析）..."
 	$(CONDA) python -m asset_lens generate-html-report --include-ai
+
+.PHONY: investment-report
+investment-report: ## 生成投资报告
+	@echo "📊 生成投资报告..."
+	$(CONDA) python -m asset_lens investment-report
 
 # ============================================
 # 市场数据
@@ -511,11 +523,6 @@ backtest-momentum: ## 动量策略回测
 investment-status: ## 查看投资系统状态
 	@echo "📊 查看投资系统状态..."
 	$(CONDA) python -m asset_lens investment-status
-
-.PHONY: investment-report
-investment-report: ## 生成投资报告
-	@echo "📊 生成投资报告..."
-	$(CONDA) python -m asset_lens investment-report
 
 .PHONY: optimize-strategy
 optimize-strategy: ## 策略优化（找出最佳策略）
