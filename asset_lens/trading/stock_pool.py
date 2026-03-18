@@ -13,7 +13,7 @@ import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from ..config import config
 
@@ -149,7 +149,7 @@ class StockPool:
         status: str = "watching",
         notes: str = "",
         strategy_score: float = 0,
-    ) -> bool:
+    ) -> Tuple[bool, str]:
         """
         添加股票到股票池（支持累积）
 
@@ -162,7 +162,7 @@ class StockPool:
             strategy_score: 策略得分
 
         Returns:
-            是否添加成功
+            (是否添加成功, 消息)
         """
         today = datetime.now().strftime("%Y-%m-%d")
 
@@ -171,8 +171,7 @@ class StockPool:
 
             today_records = [h for h in pos.selected_history if h.get("date", "") == today]
             if today_records:
-                print(f"⏭️ {name}({code}) 今日已入选，跳过重复记录")
-                return False
+                return False, f"{name}({code}) 今日已入选，跳过重复记录"
 
             pos.selected_count += 1
             pos.selected_history.append(
@@ -198,12 +197,10 @@ class StockPool:
             )
             self._save_pool()
 
-            print(f"🔄 {name}({code}) 再次入选，累计入选 {pos.selected_count} 次")
-            return True
+            return True, f"{name}({code}) 再次入选，累计入选 {pos.selected_count} 次"
 
         if len(self.positions) >= self.config.max_pool_size:
-            print(f"股票池已满 (最大 {self.config.max_pool_size} 只)")
-            return False
+            return False, f"股票池已满 (最大 {self.config.max_pool_size} 只)"
 
         position = StockPosition(
             code=code,
@@ -231,8 +228,7 @@ class StockPool:
         )
         self._save_pool()
 
-        print(f"✅ 已添加 {name}({code}) 到股票池，状态: {status}")
-        return True
+        return True, f"已添加 {name}({code}) 到股票池，状态: {status}"
 
     def remove_stock(self, code: str, reason: str = "") -> bool:
         """
@@ -469,6 +465,8 @@ class StockPool:
                         "buy_date": pos.buy_date,
                         "sell_date": pos.sell_date,
                         "notes": pos.notes,
+                        "selected_count": pos.selected_count,
+                        "first_selected_date": pos.first_selected_date,
                     }
                 )
 
