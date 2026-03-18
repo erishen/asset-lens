@@ -29,7 +29,11 @@ def register_stock_pool_commands(cli: click.Group) -> None:
                 stocks = pool.list_stocks()
                 click.echo(f"\n股票池 ({len(stocks)} 只股票):")
                 for stock in stocks:
-                    click.echo(f"  {stock.get('code')} - {stock.get('name')}")
+                    count = stock.get('selected_count', 1)
+                    first_date = stock.get('first_selected_date', '')
+                    date_str = f" [{first_date}]" if first_date else ""
+                    count_str = f" (入选{count}次)" if count > 1 else ""
+                    click.echo(f"  {stock.get('code')} - {stock.get('name')}{count_str}{date_str}")
 
             elif action == "add":
                 if not code:

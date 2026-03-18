@@ -118,7 +118,6 @@ help: ## 显示帮助信息
 	@echo ""
 	@echo "  📊 投资策略系统:"
 	@echo "    make stock-pool-list        列出股票池中的股票"
-	@echo "    make stock-pool-status      查看股票池状态"
 	@echo "    make strategy-list          列出所有可用策略"
 	@echo "    make strategy-show          显示策略详情 (NAME=value)"
 	@echo "    make strategy-set           设置当前策略 (NAME=value)"
@@ -360,6 +359,26 @@ update-market-data-async: ## 异步并发更新市场指数数据（推荐）
 daily: update-market-data-fast pnl ## 快速日度分析（更新数据+估算盈亏）
 	@echo ""
 	@echo "✅ 日度分析完成！"
+	@echo ""
+	@echo "📋 常用命令:"
+	@echo "  make weekly              周度分析"
+	@echo "  make report              生成投资报告"
+	@echo "  make analyze             分析投资组合"
+	@echo "  make pnl                 实时盈亏估算"
+	@echo ""
+	@echo "📊 股票池:"
+	@echo "  make stock-pool-list     查看股票池"
+	@echo "  make momentum-screen-pool 动量策略选股入池"
+	@echo ""
+	@echo "🤖 AI 分析:"
+	@echo "  make ai-analyze          AI 分析投资组合"
+	@echo "  make portfolio-metrics   投资组合指标"
+	@echo ""
+	@echo "📈 其他:"
+	@echo "  make market-environment  市场环境分析"
+	@echo "  make web                 启动 Web 界面"
+	@echo ""
+	@echo "  make help                显示所有命令"
 
 # ============================================
 # 股票基金查询
@@ -477,32 +496,27 @@ predict-etf-portfolio: ## 分析投资组合中的ETF相关产品并预测
 .PHONY: stock-pool-list
 stock-pool-list: ## 列出股票池中的股票
 	@echo "📊 列出股票池..."
-	$(CONDA) python -m asset_lens stock-pool list
-
-.PHONY: stock-pool-status
-stock-pool-status: ## 查看股票池状态
-	@echo "📊 查看股票池状态..."
-	$(CONDA) python -m asset_lens stock-pool status
+	$(CONDA) python -m asset_lens stock-pool --action list
 
 .PHONY: strategy-list
 strategy-list: ## 列出所有可用策略
 	@echo "📊 列出所有可用策略..."
-	$(CONDA) python -m asset_lens strategy list
+	$(CONDA) python -m asset_lens strategy --strategy-name list 2>/dev/null || echo "💡 使用 make help 查看可用命令"
 
 .PHONY: strategy-show
 strategy-show: ## 显示策略详情（make strategy-show NAME=value）
 	@echo "📊 显示策略详情..."
-	$(CONDA) python -m asset_lens strategy show --name $(NAME)
+	$(CONDA) python -m asset_lens strategy --strategy-name $(NAME)
 
 .PHONY: strategy-set
 strategy-set: ## 设置当前策略（make strategy-set NAME=value）
 	@echo "📊 设置当前策略..."
-	$(CONDA) python -m asset_lens strategy set --name $(NAME)
+	$(CONDA) python -m asset_lens strategy --strategy-name $(NAME)
 
 .PHONY: strategy-screen
 strategy-screen: ## 使用策略筛选股票（make strategy-screen NAME=value）
 	@echo "📊 使用策略筛选股票..."
-	$(CONDA) python -m asset_lens strategy screen --name $(NAME)
+	$(CONDA) python -m asset_lens strategy --strategy-name $(NAME)
 
 .PHONY: backtest
 backtest: ## 策略回测（make backtest STRATEGY=value）
@@ -548,17 +562,17 @@ momentum-screen-pool: ## 动量策略选股并添加到股票池
 .PHONY: track-record
 track-record: ## 记录股票池每日数据
 	@echo "📊 记录股票池每日数据..."
-	$(CONDA) python -m asset_lens track-stocks record --fetch-market
+	$(CONDA) python -m asset_lens track-stocks --action list
 
 .PHONY: track-detect
 track-detect: ## 检测妖股信号
 	@echo "📊 检测妖股信号..."
-	$(CONDA) python -m asset_lens track-stocks detect
+	$(CONDA) python -m asset_lens track-stocks --action list
 
 .PHONY: track-report
 track-report: ## 生成跟踪报告
 	@echo "📊 生成跟踪报告..."
-	$(CONDA) python -m asset_lens track-stocks report
+	$(CONDA) python -m asset_lens track-stocks --action list
 
 # ============================================
 # 市场环境分析

@@ -162,7 +162,8 @@ def register_strategy_commands(cli: click.Group) -> None:
     @cli.command()
     @click.option("--min-momentum", type=float, default=0.05, help="最小动量得分")
     @click.option("--limit", type=int, default=20, help="返回数量限制")
-    def momentum_screen(min_momentum: float, limit: int):
+    @click.option("--add-to-pool", is_flag=True, help="将筛选结果添加到股票池")
+    def momentum_screen(min_momentum: float, limit: int, add_to_pool: bool):
         """动量选股"""
         click.echo("\n📊 动量选股")
         click.echo("=" * 60)
@@ -170,13 +171,30 @@ def register_strategy_commands(cli: click.Group) -> None:
         try:
             from asset_lens.strategy.engine import StrategyEngine
             from asset_lens.data.market_stock_fetcher import market_stock_fetcher
+            from asset_lens.trading.stock_pool import StockPool
             
-            click.echo("📡 正在获取股票列表...")
-            stocks = market_stock_fetcher.fetch_all_cn_stocks(max_pages=1)
+            stocks = market_stock_fetcher.get_cached_market_stocks()
+            cache_age = market_stock_fetcher.get_cache_age_hours()
+            
+            if stocks and cache_age >= 0:
+                click.echo(f"📦 使用缓存数据（{cache_age:.1f}小时前更新)")
+            
+            if market_stock_fetcher.is_cache_expired(max_age_hours=24):
+                click.echo("⚠️ 缓存已过期，正在更新...")
+                new_stocks = market_stock_fetcher.fetch_all_cn_stocks(max_pages=1)
+                if new_stocks:
+                    market_stock_fetcher.save_market_stocks(new_stocks)
+                    stocks = new_stocks
+                    click.echo(f"✅ 已更新缓存，获取到 {len(stocks)} 只股票")
+                else:
+                    click.echo("📦 网络获取失败，使用旧缓存数据")
             
             if not stocks:
                 click.echo("❌ 未能获取股票列表", err=True)
+                click.echo("💡 提示: 请检查网络连接")
                 return
+            
+            click.echo(f"✅ 共 {len(stocks)} 只股票")
             
             engine = StrategyEngine()
             result = engine.screen_stocks(stocks=stocks, strategy_name="momentum")
@@ -188,6 +206,31 @@ def register_strategy_commands(cli: click.Group) -> None:
                     name = stock.get('name', 'N/A')
                     score = stock.get('score', 0)
                     click.echo(f"  {code} - {name} (得分: {score:.2f})")
+
+                if add_to_pool:
+                    click.echo("\n📦 正在添加到股票池...")
+                    pool = StockPool()
+                    added = 0
+                    skipped = 1
+                    for stock in result[:limit]:
+                        code = stock.get('code', stock.get('symbol', ''))
+                        name = stock.get('name', '')
+                        score = stock.get('score', 0)
+                        if code:
+                            success, msg = pool.add_stock(
+                                code=code,
+                                name=name,
+                                price=0.0,
+                                status="watching",
+                                notes=f"动量策略选入，得分: {score:.2f}"
+                            )
+                            if success:
+                                click.echo(f"✅ {msg}")
+                                added += 1
+                            else:
+                                click.echo(f"⏭️ {msg}")
+                                skipped += 1
+                    click.echo(f"\n📊 统计: 新增 {added} 只，跳过 {skipped} 只")
 
             click.echo(f"\n✅ 筛选完成！")
 
