@@ -224,8 +224,25 @@ def register_analyze_commands(cli: click.Group) -> None:
             click.echo(f"💵 估算产品金额: ¥{result['total_amount']:,.2f}")
 
             click.echo(f"\n📊 市场指数涨跌幅:")
+            index_cn_names = {
+                "SHComp": "上证指数",
+                "HS300": "沪深300",
+                "CSI500": "中证500",
+                "GEM": "创业板指",
+                "STAR50": "科创50",
+                "SP500": "标普500",
+                "HangSeng": "恒生指数",
+                "Nasdaq": "纳斯达克",
+                "Nikkei": "日经225",
+                "Gold": "黄金",
+                "Defense": "军工指数",
+                "FTSE": "富时100",
+                "DAX": "德国DAX",
+                "CAC": "法国CAC",
+            }
             for index_key, move in result["moves"].items():
-                click.echo(f"  {index_key}: {move:+.2f}%")
+                cn_name = index_cn_names.get(index_key, index_key)
+                click.echo(f"  {cn_name}: {move:+.2f}%")
 
             if result["details"]:
                 table = Table(title="\n产品盈亏明细", show_lines=False, expand=False, box=box.SIMPLE)
