@@ -142,6 +142,8 @@ class TestMarketStockFetcher:
         mock_ak.stock_zh_a_spot_em.return_value = mock_df
 
         fetcher._akshare = mock_ak
+        fetcher._fetch_stocks_efinance = MagicMock(return_value=[])
+        fetcher._fetch_stocks_baostock = MagicMock(return_value=[])
 
         result = fetcher.fetch_all_cn_stocks()
         assert result == []
@@ -152,6 +154,8 @@ class TestMarketStockFetcher:
         mock_ak.stock_zh_a_spot_em.side_effect = Exception("网络错误")
 
         fetcher._akshare = mock_ak
+        fetcher._fetch_stocks_efinance = MagicMock(return_value=[])
+        fetcher._fetch_stocks_baostock = MagicMock(return_value=[])
 
         result = fetcher.fetch_all_cn_stocks()
         assert result == []
@@ -294,6 +298,8 @@ class TestMarketStockFetcher:
         mock_ak.stock_zh_a_spot_em.return_value = None
 
         fetcher._akshare = mock_ak
+        fetcher._fetch_stocks_efinance = MagicMock(return_value=[])
+        fetcher._fetch_stocks_baostock = MagicMock(return_value=[])
 
         result = fetcher.fetch_all_cn_stocks()
         assert result == []

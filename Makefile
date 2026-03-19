@@ -356,27 +356,19 @@ update-market-data-async: ## 异步并发更新市场指数数据（推荐）
 	$(CONDA) python -m asset_lens update-market-data --async
 
 .PHONY: daily
-daily: update-market-data-fast pnl ## 快速日度分析（更新数据+估算盈亏）
+daily: update-market-data-fast pnl auto-trade-dry ## 快速日度分析（更新数据+估算盈亏+自动交易信号）
 	@echo ""
 	@echo "✅ 日度分析完成！"
 	@echo ""
-	@echo "📋 常用命令:"
-	@echo "  make weekly              周度分析"
-	@echo "  make report              生成投资报告"
-	@echo "  make analyze             分析投资组合"
-	@echo "  make pnl                 实时盈亏估算"
-	@echo ""
-	@echo "📊 股票池:"
+	@echo "📊 股票池管理:"
 	@echo "  make stock-pool-list     查看股票池"
-	@echo "  make momentum-screen-pool 动量策略选股入池"
+	@echo "  make auto-trade          执行自动交易"
+	@echo "  make stock-pool-clear    清空股票池"
 	@echo ""
-	@echo "🤖 AI 分析:"
-	@echo "  make ai-analyze          AI 分析投资组合"
-	@echo "  make portfolio-metrics   投资组合指标"
-	@echo ""
-	@echo "📈 其他:"
-	@echo "  make market-environment  市场环境分析"
-	@echo "  make web                 启动 Web 界面"
+	@echo "📈 分析报告:"
+	@echo "  make pnl                 实时盈亏估算"
+	@echo "  make report              生成投资报告"
+	@echo "  make weekly              周度分析"
 	@echo ""
 	@echo "  make help                显示所有命令"
 
@@ -496,7 +488,17 @@ predict-etf-portfolio: ## 分析投资组合中的ETF相关产品并预测
 .PHONY: stock-pool-list
 stock-pool-list: ## 列出股票池中的股票
 	@echo "📊 列出股票池..."
-	$(CONDA) python -m asset_lens stock-pool --action list
+	$(CONDA) python -m asset_lens.cli stock-pool --action list
+
+.PHONY: stock-pool-clear
+stock-pool-clear: ## 清空股票池
+	@echo "🗑️ 清空股票池..."
+	$(CONDA) python -m asset_lens stock-pool --action clear
+
+.PHONY: stock-pool-clear-force
+stock-pool-clear-force: ## 强制清空股票池（无需确认）
+	@echo "🗑️ 强制清空股票池..."
+	$(CONDA) python -m asset_lens stock-pool --action clear --force
 
 .PHONY: strategy-list
 strategy-list: ## 列出所有可用策略
@@ -555,6 +557,16 @@ momentum-screen: ## 动量策略选股
 momentum-screen-pool: ## 动量策略选股并添加到股票池
 	@echo "📊 动量策略选股并添加到股票池..."
 	$(CONDA) python -m asset_lens momentum-screen --add-to-pool
+
+.PHONY: auto-trade
+auto-trade: ## 自动交易 - 根据策略信号自动买入卖出
+	@echo "🤖 自动交易系统..."
+	$(CONDA) python -m asset_lens auto-trade
+
+.PHONY: auto-trade-dry
+auto-trade-dry: ## 自动交易（仅显示信号，不执行）
+	@echo "🤖 自动交易系统（模拟模式）..."
+	$(CONDA) python -m asset_lens auto-trade --dry-run
 
 # ============================================
 # 股票跟踪监控
