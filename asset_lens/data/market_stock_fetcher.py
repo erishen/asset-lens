@@ -169,17 +169,19 @@ class MarketStockFetcher:
         """使用 AkShare 获取A股列表"""
         try:
             print("正在获取A股股票列表(AkShare)...")
+            print("🌐 API请求: https://push2.eastmoney.com/api/qt/clist/get (通过AkShare)")
+            
             df = self.akshare.stock_zh_a_spot_em()
 
             if df is None or df.empty:
-                print("AkShare: 获取数据为空")
+                print("❌ AkShare: 获取数据为空")
                 return []
 
-            print(f"AkShare: 共获取 {len(df)} 只A股股票")
+            print(f"✅ AkShare: 共获取 {len(df)} 只A股股票")
             return self._parse_stock_df(df, "akshare")
 
         except Exception as e:
-            print(f"AkShare 获取失败: {e}")
+            print(f"❌ AkShare 获取失败: {e}")
             return []
 
     def _fetch_stocks_efinance(self) -> List[Dict[str, Any]]:
@@ -188,20 +190,22 @@ class MarketStockFetcher:
             import efinance as ef
             
             print("正在获取A股股票列表(Efinance)...")
+            print("🌐 API请求: http://push2.eastmoney.com/api/qt/clist/get (通过Efinance)")
+            
             df = ef.stock.get_realtime_quotes()
 
             if df is None or df.empty:
-                print("Efinance: 获取数据为空")
+                print("❌ Efinance: 获取数据为空")
                 return []
 
-            print(f"Efinance: 共获取 {len(df)} 只A股股票")
+            print(f"✅ Efinance: 共获取 {len(df)} 只A股股票")
             return self._parse_stock_df_efinance(df)
 
         except ImportError:
-            print("Efinance 未安装，跳过此数据源")
+            print("⚠️ Efinance 未安装，跳过此数据源")
             return []
         except Exception as e:
-            print(f"Efinance 获取失败: {e}")
+            print(f"❌ Efinance 获取失败: {e}")
             return []
 
     def _fetch_stocks_baostock(self) -> List[Dict[str, Any]]:
@@ -210,10 +214,11 @@ class MarketStockFetcher:
             import baostock as bs
             
             print("正在获取A股股票列表(Baostock)...")
+            print("🌐 API请求: http://www.baostock.com (Baostock)")
             
             lg = bs.login()
             if lg.error_code != '0':
-                print(f"Baostock 登录失败: {lg.error_msg}")
+                print(f"❌ Baostock 登录失败: {lg.error_msg}")
                 return []
             
             rs = bs.query_stock_basic()
@@ -306,6 +311,7 @@ class MarketStockFetcher:
                         volume = float(parts[6]) if parts[6] else 0
                         amount = float(parts[37]) if len(parts) > 37 and parts[37] else 0
                         turnover_rate = float(parts[38]) if len(parts) > 38 and parts[38] else 0
+                        market_cap = float(parts[45]) if len(parts) > 45 and parts[45] else 0
                         
                         pure_code = code_raw.replace("sh", "").replace("sz", "")
                         all_prices[pure_code] = {
@@ -314,6 +320,7 @@ class MarketStockFetcher:
                             "volume": int(volume),
                             "amount": amount,
                             "turnover_rate": turnover_rate,
+                            "market_cap": market_cap,
                         }
                     except (ValueError, IndexError):
                         continue
@@ -330,6 +337,7 @@ class MarketStockFetcher:
                     stock["volume"] = price_data["volume"]
                     stock["amount"] = price_data["amount"]
                     stock["turnover_rate"] = price_data["turnover_rate"]
+                    stock["market_cap"] = price_data["market_cap"] if price_data["market_cap"] > 0 else stock.get("market_cap", 0)
                     enriched += 1
             
             print(f"腾讯财经: 已补充 {enriched} 只股票的实时价格")
@@ -569,17 +577,56 @@ class MarketStockFetcher:
 
         print(f"✅ 市场股票数据已保存到: {self.market_stock_cache_file}")
 
-    def get_cached_market_stocks(self) -> List[Dict[str, Any]]:
-        """获取缓存的市场股票数据"""
+    def get_cached_market_stocks(self, max_age_hours: int = 24) -> List[Dict[str, Any]]:
+        """获取缓存的市场股票数据
+        
+        Args:
+            max_age_hours: 缓存有效期（小时），默认24小时
+        """
         if self.market_stock_cache_file.exists():
-            with open(self.market_stock_cache_file, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                return data.get("data", [])  # type: ignore
-        return []
+            try:
+                with open(self.market_stock_cache_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    
+                update_time_str = data.get("update_time", "")
+                if update_time_str:
+                    update_time = datetime.strptime(update_time_str, "%Y-%m-%d %H:%M:%S")
+                    age_hours = (datetime.now() - update_time).total_seconds() / 3600
+                    
+                    if age_hours < 1:
+                        age_str = f"{age_hours * 60:.0f}分钟"
+                    elif age_hours < 24:
+                        age_str = f"{age_hours:.1f}小时"
+                    else:
+                        age_str = f"{age_hours / 24:.1f}天"
+                    
+                    remaining_hours = max_age_hours - age_hours
+                    if remaining_hours < 0:
+                        remaining_str = "已过期"
+                    elif remaining_hours < 1:
+                        remaining_str = f"剩余 {remaining_hours * 60:.0f} 分钟"
+                    else:
+                        remaining_str = f"剩余 {remaining_hours:.1f} 小时"
+                    
+                    print(f"📦 使用缓存数据: {len(data.get('data', []))} 只股票 (缓存时间: {age_str}前)")
+                    print(f"   缓存文件: {self.market_stock_cache_file}")
+                    print(f"   更新时间: {update_time_str}")
+                    print(f"   有效期: {max_age_hours}小时 ({remaining_str})")
+                else:
+                    print(f"📦 使用缓存数据: {len(data.get('data', []))} 只股票")
+                    
+                return list(data.get("data", []))  # type: ignore
+            except Exception as e:
+                print(f"❌ 读取缓存失败: {e}")
+                return []
+        else:
+            print(f"📦 缓存文件不存在: {self.market_stock_cache_file}")
+            return []
 
     def is_cache_expired(self, max_age_hours: int = 24) -> bool:
         """检查缓存是否过期"""
         if not self.market_stock_cache_file.exists():
+            print(f"📦 缓存不存在，需要重新获取")
             return True
         
         try:
@@ -587,12 +634,29 @@ class MarketStockFetcher:
                 data = json.load(f)
                 update_time_str = data.get("update_time", "")
                 if not update_time_str:
+                    print(f"📦 缓存无时间戳，需要重新获取")
                     return True
                 
                 update_time = datetime.strptime(update_time_str, "%Y-%m-%d %H:%M:%S")
                 age_hours = (datetime.now() - update_time).total_seconds() / 3600
-                return age_hours > max_age_hours
-        except Exception:
+                
+                if age_hours > max_age_hours:
+                    if age_hours < 48:
+                        age_str = f"{age_hours:.1f}小时"
+                    else:
+                        age_str = f"{age_hours / 24:.1f}天"
+                    print(f"⚠️ 缓存已过期: 缓存时间 {age_str}，有效期 {max_age_hours}小时")
+                    return True
+                else:
+                    remaining = max_age_hours - age_hours
+                    if remaining < 1:
+                        remaining_str = f"{remaining * 60:.0f}分钟"
+                    else:
+                        remaining_str = f"{remaining:.1f}小时"
+                    print(f"✅ 缓存有效: 剩余有效期 {remaining_str}")
+                    return False
+        except Exception as e:
+            print(f"❌ 检查缓存失败: {e}")
             return True
 
     def get_cache_age_hours(self) -> float:

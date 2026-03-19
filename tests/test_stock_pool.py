@@ -114,7 +114,7 @@ class TestStockPool:
             notes="测试添加",
         )
 
-        assert result is True
+        assert result[0] is True
         assert "sh600519" in pool.positions
         assert pool.positions["sh600519"].name == "贵州茅台"
 
@@ -124,7 +124,7 @@ class TestStockPool:
 
         result = pool.add_stock("sh600519", "贵州茅台", 1850.0)
 
-        assert result is False
+        assert result[0] is False
 
     def test_add_stock_pool_full(self, pool):
         """测试股票池已满"""
@@ -133,7 +133,7 @@ class TestStockPool:
 
         result = pool.add_stock("sh600000", "浦发银行", 10.0)
 
-        assert result is False
+        assert result[0] is False
 
     def test_remove_stock(self, pool):
         """测试移除股票"""
@@ -156,7 +156,7 @@ class TestStockPool:
 
         result = pool.buy_stock("sh600519", 1800.0, 100)
 
-        assert result is True
+        assert result[0] is True
         assert pool.positions["sh600519"].status == "holding"
         assert pool.positions["sh600519"].buy_price == 1800.0
 
@@ -164,7 +164,7 @@ class TestStockPool:
         """测试买入不在池中的股票"""
         result = pool.buy_stock("sh600519", 1800.0)
 
-        assert result is False
+        assert result[0] is False
 
     def test_buy_stock_already_holding(self, pool):
         """测试买入已持有的股票"""
@@ -172,7 +172,7 @@ class TestStockPool:
 
         result = pool.buy_stock("sh600519", 1800.0)
 
-        assert result is False
+        assert result[0] is False
 
     def test_sell_stock(self, pool):
         """测试卖出股票"""
@@ -182,7 +182,7 @@ class TestStockPool:
 
         result = pool.sell_stock("sh600519", 1900.0)
 
-        assert result is True
+        assert result[0] is True
         assert pool.positions["sh600519"].status == "sold"
         assert pool.positions["sh600519"].sell_price == 1900.0
 
@@ -190,7 +190,7 @@ class TestStockPool:
         """测试卖出不在池中的股票"""
         result = pool.sell_stock("sh600519", 1900.0)
 
-        assert result is False
+        assert result[0] is False
 
     def test_sell_stock_not_holding(self, pool):
         """测试卖出未持有的股票"""
@@ -198,7 +198,7 @@ class TestStockPool:
 
         result = pool.sell_stock("sh600519", 1900.0)
 
-        assert result is False
+        assert result[0] is False
 
     def test_update_prices(self, pool):
         """测试更新价格"""

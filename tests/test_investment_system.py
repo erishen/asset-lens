@@ -97,7 +97,7 @@ class TestInvestmentSystem:
     def test_simulate_buy(self, system):
         """测试模拟买入"""
         system.stock_pool.positions = {"sh600519": MagicMock(current_price=1800)}
-        system.stock_pool.buy_stock.return_value = True
+        system.stock_pool.buy_stock.return_value = (True, "买入成功")
 
         result = system.simulate_buy("sh600519", price=1800, shares=100)
 
@@ -114,7 +114,7 @@ class TestInvestmentSystem:
     def test_simulate_sell(self, system):
         """测试模拟卖出"""
         system.stock_pool.positions = {"sh600519": MagicMock(current_price=1800)}
-        system.stock_pool.sell_stock.return_value = True
+        system.stock_pool.sell_stock.return_value = (True, "卖出成功")
 
         result = system.simulate_sell("sh600519", price=1900)
 
