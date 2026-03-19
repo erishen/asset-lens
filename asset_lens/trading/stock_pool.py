@@ -253,7 +253,26 @@ class StockPool:
         print(f"✅ 已从股票池移除 {pos.name}({code})")
         return True
 
-    def buy_stock(self, code: str, price: float, shares: int = 100, notes: str = "") -> bool:
+    def clear_pool(self) -> int:
+        """
+        清空股票池
+
+        Returns:
+            清空的股票数量
+        """
+        count = len(self.positions)
+        
+        for code in list(self.positions.keys()):
+            pos = self.positions[code]
+            self._add_history("remove", code, pos.name, {"reason": "清空股票池"})
+        
+        self.positions.clear()
+        self._save_pool()
+        
+        print(f"✅ 已清空股票池，共移除 {count} 只股票")
+        return count
+
+    def buy_stock(self, code: str, price: float, shares: int = 100, notes: str = "") -> Tuple[bool, str]:
         """
         买入股票（模拟）
 
@@ -264,20 +283,24 @@ class StockPool:
             notes: 备注
 
         Returns:
-            是否买入成功
+            (是否买入成功, 消息)
         """
         if code not in self.positions:
-            print(f"股票 {code} 不在股票池中，请先添加")
-            return False
+            return False, f"股票 {code} 不在股票池中，请先添加"
 
         pos = self.positions[code]
+        today = datetime.now().strftime("%Y-%m-%d")
+        
+        # 检查今日是否已买入
+        if pos.status == "holding" and pos.buy_date == today:
+            return False, f"股票 {pos.name}({code}) 今日已买入，跳过重复操作"
+        
         if pos.status == "holding":
-            print(f"股票 {pos.name}({code}) 已持有")
-            return False
+            return False, f"股票 {pos.name}({code}) 已持有"
 
         pos.status = "holding"
         pos.buy_price = price
-        pos.buy_date = datetime.now().strftime("%Y-%m-%d")
+        pos.buy_date = today
         pos.shares = shares
         pos.notes = notes
 
@@ -293,11 +316,9 @@ class StockPool:
         )
         self._save_pool()
 
-        print(f"✅ 模拟买入 {pos.name}({code})")
-        print(f"   买入价: {price:.2f}, 股数: {shares}, 总金额: {price * shares:.2f}")
-        return True
+        return True, f"模拟买入 {pos.name}({code}), 买入价: {price:.2f}, 股数: {shares}, 总金额: {price * shares:.2f}"
 
-    def sell_stock(self, code: str, price: float, notes: str = "") -> bool:
+    def sell_stock(self, code: str, price: float, notes: str = "") -> Tuple[bool, str]:
         """
         卖出股票（模拟）
 
@@ -307,16 +328,14 @@ class StockPool:
             notes: 备注
 
         Returns:
-            是否卖出成功
+            (是否卖出成功, 消息)
         """
         if code not in self.positions:
-            print(f"股票 {code} 不在股票池中")
-            return False
+            return False, f"股票 {code} 不在股票池中"
 
         pos = self.positions[code]
         if pos.status != "holding":
-            print(f"股票 {pos.name}({code}) 未持有")
-            return False
+            return False, f"股票 {pos.name}({code}) 未持有"
 
         profit = (price - pos.buy_price) * pos.shares
         profit_rate = (price - pos.buy_price) / pos.buy_price * 100
@@ -340,10 +359,7 @@ class StockPool:
         )
         self._save_pool()
 
-        print(f"✅ 模拟卖出 {pos.name}({code})")
-        print(f"   买入价: {pos.buy_price:.2f}, 卖出价: {price:.2f}")
-        print(f"   盈亏: {profit:+.2f} ({profit_rate:+.2f}%)")
-        return True
+        return True, f"模拟卖出 {pos.name}({code}), 买入价: {pos.buy_price:.2f}, 卖出价: {price:.2f}, 盈亏: {profit:+.2f} ({profit_rate:+.2f}%)"
 
     def update_prices(self, prices: Dict[str, float]) -> None:
         """

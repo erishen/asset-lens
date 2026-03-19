@@ -651,7 +651,7 @@ def register_analyze_commands(cli: click.Group) -> None:
         from rich.table import Table
         from asset_lens.config import config
         from asset_lens.data.csv_parser import CSVParser
-        from asset_lens.core.portfolio_analytics import PortfolioAnalytics
+        from asset_lens.core.realtime_pnl import RealtimePnlEstimator
 
         if data_mode:
             config.data_mode = data_mode
@@ -663,8 +663,46 @@ def register_analyze_commands(cli: click.Group) -> None:
             products = CSVParser.load_data()
             click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
 
-            analytics = PortfolioAnalytics()
-            metrics = analytics.calculate_metrics(products)
+            estimator = RealtimePnlEstimator()
+            pnl_result = estimator.estimate_portfolio_pnl(products, is_weekly=False)
+
+            total_amount = float(pnl_result.get("total_amount", 0))
+            total_pnl = float(pnl_result.get("total", 0))
+            total_return_rate = float(pnl_result.get("total_return_rate", 0))
+
+            returns = []
+            weights = []
+            for detail in pnl_result.get("details", []):
+                ret = float(detail.get("return_rate", 0))
+                amount = float(detail.get("amount", 0))
+                if amount > 0:
+                    returns.append(ret)
+                    weights.append(amount / total_amount if total_amount > 0 else 0)
+
+            if not returns:
+                click.echo("❌ 无法从产品数据中提取收益率", err=True)
+                return
+
+            weighted_return = sum(r * w for r, w in zip(returns, weights))
+
+            positive_returns = [r for r in returns if r > 0]
+            negative_returns = [r for r in returns if r < 0]
+            win_rate = len(positive_returns) / len(returns) * 100 if returns else 0
+
+            avg_positive = sum(positive_returns) / len(positive_returns) if positive_returns else 0
+            avg_negative = abs(sum(negative_returns) / len(negative_returns)) if negative_returns else 0
+            profit_loss_ratio = avg_positive / avg_negative if avg_negative > 0 else 0
+
+            import statistics
+            volatility = statistics.stdev(returns) if len(returns) > 1 else 0
+
+            risk_free_rate = 2.5
+            sharpe_ratio = (weighted_return - risk_free_rate) / volatility if volatility > 0 else 0
+
+            min_return = min(returns) if returns else 0
+            max_drawdown = abs(min_return) if min_return < 0 else 0
+
+            calmar_ratio = weighted_return / max_drawdown if max_drawdown > 0 else 0
 
             console = Console()
             table = Table(title="投资组合指标", show_lines=False)
@@ -672,21 +710,25 @@ def register_analyze_commands(cli: click.Group) -> None:
             table.add_column("数值", justify="right", style="green")
             table.add_column("说明", style="yellow")
 
-            table.add_row("总资产", f"¥{metrics.total_amount:,.2f}", "投资组合总市值")  # pylint: disable=no-member
-            table.add_row("总收益", f"¥{metrics.total_return:,.2f}", "总盈亏金额")
-            table.add_row("总收益率", f"{metrics.total_return_rate:.2f}%", "总收益率")  # pylint: disable=no-member
-            table.add_row("年化收益率", f"{metrics.annualized_return:.2f}%", "年化收益率")
-            table.add_row("夏普比率", f"{metrics.sharpe_ratio:.2f}", "风险调整后收益")
-            table.add_row("最大回撤", f"{metrics.max_drawdown:.2f}%", "最大亏损幅度")
-            table.add_row("波动率", f"{metrics.volatility:.2f}%", "收益波动程度")
-            table.add_row("胜率", f"{metrics.win_rate:.1f}%", "盈利产品占比")
+            table.add_row("总资产", f"¥{total_amount:,.2f}", "投资组合总市值")
+            table.add_row("今日盈亏", f"¥{total_pnl:,.2f}", "今日估算盈亏")
+            table.add_row("今日收益率", f"{total_return_rate:.2f}%", "今日估算收益率")
+            table.add_row("加权年化收益", f"{weighted_return:.2f}%", "按金额加权平均")
+            table.add_row("夏普比率", f"{sharpe_ratio:.2f}", f"风险调整后收益(无风险{risk_free_rate}%)")
+            table.add_row("最大回撤", f"{max_drawdown:.2f}%", "单产品最大亏损")
+            table.add_row("收益波动率", f"{volatility:.2f}%", "产品收益率标准差")
+            table.add_row("胜率", f"{win_rate:.1f}%", "盈利产品占比")
+            table.add_row("盈亏比", f"{profit_loss_ratio:.2f}", "平均盈利/平均亏损")
+            table.add_row("卡玛比率", f"{calmar_ratio:.2f}", "收益率/最大回撤")
 
             console.print(table)
 
             click.echo(f"\n✅ 指标计算完成！")
 
         except Exception as e:
+            import traceback
             click.echo(f"❌ 指标计算失败: {e}", err=True)
+            click.echo(traceback.format_exc(), err=True)
 
     @cli.command("generate-charts")
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")

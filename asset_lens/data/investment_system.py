@@ -124,7 +124,8 @@ class InvestmentSystem:
         pos = self.stock_pool.positions[code]
         buy_price = price if price else pos.current_price
 
-        return self.stock_pool.buy_stock(code, buy_price, shares)
+        success, _ = self.stock_pool.buy_stock(code, buy_price, shares)
+        return success
 
     def simulate_sell(self, code: str, price: Optional[float] = None) -> bool:
         """
@@ -144,7 +145,8 @@ class InvestmentSystem:
         pos = self.stock_pool.positions[code]
         sell_price = price if price else pos.current_price
 
-        return self.stock_pool.sell_stock(code, sell_price)
+        success, _ = self.stock_pool.sell_stock(code, sell_price)
+        return success
 
     def run_backtest(
         self,
