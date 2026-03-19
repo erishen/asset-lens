@@ -82,20 +82,23 @@ class StrategyEngine:
         # 策略2: 成长动量策略
         self.strategies["momentum"] = StrategyConfig(
             name="momentum",
-            description="成长动量策略 - 追踪强势股",
+            description="成长动量策略 - 追踪强势股（优化版）",
             buy_conditions=[
-                StrategyCondition("上涨动能", "change_percent", "between", [2, 9], 0.35, "涨幅2-9%"),
-                StrategyCondition("活跃换手", "turnover_rate", "between", [3, 15], 0.35, "换手率3-15%"),
-                StrategyCondition("放量", "volume", ">", 100000, 0.3, "成交量大于10万手"),
+                StrategyCondition("上涨动能", "change_percent", "between", [3, 7], 0.3, "涨幅3-7%"),
+                StrategyCondition("活跃换手", "turnover_rate", "between", [5, 12], 0.25, "换手率5-12%"),
+                StrategyCondition("适度市值", "market_cap", "between", [50, 500], 0.2, "市值50-500亿"),
+                StrategyCondition("放量确认", "volume", ">", 200000, 0.15, "成交量>20万手"),
+                StrategyCondition("成交额", "amount", ">", 1, 0.1, "成交额>1亿"),
             ],
             sell_conditions=[
-                StrategyCondition("止损", "profit_rate", "<", -0.08, 0.5, "亏损超过8%"),
-                StrategyCondition("止盈", "profit_rate", ">", 0.15, 0.5, "盈利超过15%"),
+                StrategyCondition("止损", "profit_rate", "<", -0.05, 0.4, "亏损超过5%"),
+                StrategyCondition("止盈", "profit_rate", ">", 0.10, 0.3, "盈利超过10%"),
+                StrategyCondition("趋势破坏", "change_percent", "<", -5, 0.3, "单日跌幅超5%"),
             ],
-            position_size=0.08,
-            max_positions=15,
-            stop_loss=-0.08,
-            take_profit=0.15,
+            position_size=0.1,
+            max_positions=20,
+            stop_loss=-0.05,
+            take_profit=0.10,
         )
 
         # 策略3: 困境反转策略
@@ -347,6 +350,8 @@ class StrategyEngine:
         stocks: List[Dict[str, Any]],
         strategy_name: str = "value",
         min_score: float = 60.0,
+        exclude_st: bool = True,
+        exclude_bj: bool = True,
     ) -> List[Dict[str, Any]]:
         """
         使用策略筛选股票
@@ -355,6 +360,8 @@ class StrategyEngine:
             stocks: 股票列表
             strategy_name: 策略名称
             min_score: 最低得分
+            exclude_st: 是否排除ST股票
+            exclude_bj: 是否排除北交所股票
 
         Returns:
             符合条件的股票列表
@@ -362,6 +369,19 @@ class StrategyEngine:
         results = []
 
         for stock in stocks:
+            code = stock.get("code", "")
+            name = stock.get("name", "")
+            
+            # 排除ST股票
+            if exclude_st:
+                if "ST" in name or "*ST" in name or "st" in name:
+                    continue
+            
+            # 排除北交所股票（代码以 bj 或 8 开头）
+            if exclude_bj:
+                if code.startswith("bj") or code.startswith("8"):
+                    continue
+            
             evaluation = self.evaluate_stock(stock, strategy_name)
 
             if evaluation["match"] and evaluation["score"] >= min_score:

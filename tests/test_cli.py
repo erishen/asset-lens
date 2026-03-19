@@ -229,6 +229,19 @@ class TestCLI:
                 result = runner.invoke(cli, ["analyze-by-time"])
                 assert result.exit_code == 0
 
+    def test_portfolio_metrics_with_mock(self, runner, temp_cache_path):
+        """测试投资组合指标命令 - 使用 mock"""
+        from asset_lens.cli import cli
+
+        with patch('asset_lens.data.csv_parser.CSVParser') as mock_parser:
+            mock_parser.load_data.return_value = []
+            
+            with patch('asset_lens.config.config') as mock_config:
+                mock_config.data_mode = "sample"
+                
+                result = runner.invoke(cli, ["portfolio-metrics"])
+                assert result.exit_code == 0
+
 
 class TestInteractiveCommands:
     """测试交互式命令"""
