@@ -8,8 +8,10 @@ HTTP 客户端工具函数
 - 多数据源故障转移
 - 错误处理
 - 日志记录
+- 跳过代理支持
 """
 
+import os
 import time
 import logging
 import random
@@ -22,6 +24,34 @@ import requests
 from requests.exceptions import RequestException, Timeout, ConnectionError, HTTPError
 
 logger = logging.getLogger(__name__)
+
+
+def get_session_without_proxy() -> requests.Session:
+    """
+    创建一个跳过代理的 requests Session
+    
+    Returns:
+        配置为跳过代理的 Session 对象
+    """
+    session = requests.Session()
+    session.trust_env = False
+    session.proxies = {}
+    return session
+
+
+def get_request_session(skip_proxy: bool = False) -> requests.Session:
+    """
+    获取请求 Session
+    
+    Args:
+        skip_proxy: 是否跳过代理
+        
+    Returns:
+        Session 对象
+    """
+    if skip_proxy:
+        return get_session_without_proxy()
+    return requests.Session()
 
 
 class ErrorType(Enum):
@@ -96,15 +126,19 @@ class HTTPClient:
         retry_delay: float = 1.0,
         enable_adaptive_timeout: bool = True,
         enable_jitter: bool = True,
+        skip_proxy: bool = True,
     ):
         self.default_timeout = default_timeout
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.enable_adaptive_timeout = enable_adaptive_timeout
         self.enable_jitter = enable_jitter
+        self.skip_proxy = skip_proxy
         
         self.adaptive_timeout = AdaptiveTimeout(base_timeout=default_timeout)
         self.stats = RequestStats()
+        
+        self._session = get_request_session(skip_proxy=skip_proxy)
         
         self._error_handlers: Dict[ErrorType, Callable] = {
             ErrorType.TIMEOUT: self._handle_timeout,
@@ -230,7 +264,7 @@ class HTTPClient:
             try:
                 current_timeout = self._get_timeout(timeout, attempt)
                 
-                response = requests.request(
+                response = self._session.request(
                     method,
                     url,
                     timeout=current_timeout,

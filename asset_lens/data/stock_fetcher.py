@@ -15,7 +15,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from functools import wraps
 
+import requests
+
 from ..config import config
+from ..utils.http_client import get_session_without_proxy
 
 logger = logging.getLogger(__name__)
 
@@ -583,7 +586,8 @@ class StockDataFetcher:
             url = "https://api.finnhub.io/api/v1/quote"
             params = {"symbol": symbol}
 
-            response = requests.get(url, params=params, headers=headers, timeout=10)
+            session = get_session_without_proxy()
+            response = session.get(url, params=params, headers=headers, timeout=10)
 
             if response.status_code != 200:
                 logger.warning(f"获取美股行情失败: {symbol}, HTTP {response.status_code}")

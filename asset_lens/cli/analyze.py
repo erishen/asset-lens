@@ -924,6 +924,7 @@ def register_analyze_commands(cli: click.Group) -> None:
         from asset_lens.config import config
         from asset_lens.data.csv_parser import CSVParser
         from asset_lens.core.comparison import ComparisonAnalyzer
+        from decimal import Decimal
 
         click.echo("\n📊 投资组合对比分析")
         click.echo("=" * 60)
@@ -967,7 +968,159 @@ def register_analyze_commands(cli: click.Group) -> None:
             click.echo(f"  总变化: ¥{trend.total_change:,.2f}")
             click.echo(f"  总收益率: {trend.total_return_rate:.2f}%")
 
+            # 按资产类型分类统计
+            click.echo(f"\n📊 按资产类型分类统计:")
+            click.echo("-" * 60)
+            
+            type_groups = {
+                '权益': ['基金', '定投基金', 'ETF', '美股（美元）', '个人养老金', '券商理财'],
+                '理财': ['理财'],
+                '债券': ['债券'],
+                '货币': ['货币', '现金', '现金（港元）'],
+                '高端理财': ['高端理财'],
+                '美元基金': ['美元基金（美元）'],
+                '特别国债': ['特别国债'],
+                '黄金': ['黄金'],
+                '公募固收': ['公募固收'],
+            }
+            
+            type_stats = {}
+            for group_name, types in type_groups.items():
+                type_stats[group_name] = {
+                    'before': Decimal('0'),
+                    'after': Decimal('0'),
+                    'count': 0
+                }
+            
+            for detail in result["comparison"]["details"]:
+                for group_name, types in type_groups.items():
+                    if detail.type in types:
+                        type_stats[group_name]['before'] += detail.amount_before
+                        type_stats[group_name]['after'] += detail.amount_after
+                        type_stats[group_name]['count'] += 1
+                        break
+            
+            type_table = Table(title="资产类型变化", show_lines=False)
+            type_table.add_column("资产类型", style="cyan")
+            type_table.add_column("之前金额", justify="right")
+            type_table.add_column("之后金额", justify="right")
+            type_table.add_column("变化", justify="right")
+            type_table.add_column("变化率", justify="right")
+            
+            sorted_stats = sorted(type_stats.items(), key=lambda x: abs(x[1]['after'] - x[1]['before']), reverse=True)
+            
+            for group_name, stats in sorted_stats:
+                if stats['before'] > 0 or stats['after'] > 0:
+                    change = stats['after'] - stats['before']
+                    change_rate = (change / stats['before'] * 100) if stats['before'] > 0 else Decimal('0')
+                    change_str = f"¥{change:,.0f}"
+                    if change < 0:
+                        change_str = f"[red]¥{change:,.0f}[/red]"
+                    elif change > 0:
+                        change_str = f"[green]¥{change:,.0f}[/green]"
+                    type_table.add_row(
+                        group_name,
+                        f"¥{stats['before']:,.0f}",
+                        f"¥{stats['after']:,.0f}",
+                        change_str,
+                        f"{change_rate:.2f}%",
+                    )
+            
             console = Console()
+            console.print(type_table)
+
+            # 资金流向分析
+            click.echo(f"\n🔄 资金流向分析:")
+            click.echo("-" * 60)
+            
+            money_change = type_stats.get('货币', {}).get('after', Decimal('0')) - type_stats.get('货币', {}).get('before', Decimal('0'))
+            equity_change = type_stats.get('权益', {}).get('after', Decimal('0')) - type_stats.get('权益', {}).get('before', Decimal('0'))
+            
+            # 从交易记录中解析本周买入金额
+            buy_amount = Decimal('0')
+            buy_details = []
+            for detail in result["comparison"]["details"]:
+                if detail.type in ['基金', '定投基金', 'ETF', '美股（美元）', '个人养老金', '券商理财']:
+                    # 检查交易记录中是否有本周买入
+                    # 这里简化处理：如果金额增加，假设是买入
+                    if detail.amount_change > 0:
+                        buy_amount += detail.amount_change
+                        buy_details.append((detail.name, detail.amount_change))
+            
+            transfer_table = Table(title="资金流向", show_lines=False)
+            transfer_table.add_column("项目", style="cyan")
+            transfer_table.add_column("金额", justify="right")
+            transfer_table.add_column("说明", style="dim")
+            
+            if money_change < 0:
+                money_out = abs(money_change)
+                transfer_table.add_row("货币减少", f"[red]¥{money_out:,.0f}[/red]", "朝朝宝、余额宝等")
+                
+                if buy_amount > 0:
+                    transfer_table.add_row("买入权益", f"[green]¥{buy_amount:,.0f}[/green]", "买入基金等")
+                    actual_equity_change = equity_change - buy_amount
+                    actual_str = f"¥{actual_equity_change:,.0f}"
+                    if actual_equity_change < 0:
+                        actual_str = f"[red]¥{actual_equity_change:,.0f}[/red]"
+                    elif actual_equity_change > 0:
+                        actual_str = f"[green]¥{actual_equity_change:,.0f}[/green]"
+                    transfer_table.add_row("权益实际涨跌", actual_str, "扣除买入资金后")
+                    
+                    other_out = money_out - buy_amount
+                    transfer_table.add_row("其他支出", f"¥{other_out:,.0f}", "消费、还款等")
+                    
+                    # 显示买入明细
+                    if buy_details:
+                        transfer_table.add_row("", "", "")
+                        for name, amount in buy_details[:5]:
+                            transfer_table.add_row(f"  └ {name}", f"¥{amount:,.0f}", "")
+            
+            console.print(transfer_table)
+
+            # 实际涨跌分析
+            click.echo(f"\n📈 实际涨跌分析:")
+            click.echo("-" * 60)
+            
+            actual_table = Table(title="实际涨跌（扣除资金转入转出）", show_lines=False)
+            actual_table.add_column("资产类型", style="cyan")
+            actual_table.add_column("显示变化", justify="right")
+            actual_table.add_column("资金转入", justify="right")
+            actual_table.add_column("实际涨跌", justify="right")
+            actual_table.add_column("实际涨跌幅", justify="right")
+            
+            for group_name, stats in sorted_stats:
+                if stats['before'] > 0 or stats['after'] > 0:
+                    change = stats['after'] - stats['before']
+                    transfer_in = Decimal('0')
+                    
+                    # 权益类资产，扣除买入金额
+                    if group_name == '权益' and buy_amount > 0:
+                        transfer_in = buy_amount
+                    
+                    actual_change = change - transfer_in
+                    actual_rate = (actual_change / stats['before'] * 100) if stats['before'] > 0 else Decimal('0')
+                    
+                    if abs(change) > 100 or abs(actual_change) > 100:
+                        change_str = f"¥{change:,.0f}" if change >= 0 else f"[red]¥{change:,.0f}[/red]"
+                        transfer_str = f"¥{transfer_in:,.0f}" if transfer_in > 0 else "-"
+                        actual_str = f"¥{actual_change:,.0f}"
+                        if actual_change < 0:
+                            actual_str = f"[red]¥{actual_change:,.0f}[/red]"
+                        elif actual_change > 0:
+                            actual_str = f"[green]¥{actual_change:,.0f}[/green]"
+                        
+                        actual_table.add_row(
+                            group_name,
+                            change_str,
+                            transfer_str,
+                            actual_str,
+                            f"{actual_rate:.2f}%",
+                        )
+            
+            console.print(actual_table)
+
+            # 产品对比明细
+            click.echo(f"\n📋 产品对比明细 (Top 20):")
             table = Table(title="产品对比明细", show_lines=False)
             table.add_column("产品名称", style="cyan")
             table.add_column("类型", style="green")
@@ -977,12 +1130,17 @@ def register_analyze_commands(cli: click.Group) -> None:
             table.add_column("收益率", justify="right")
 
             for detail in result["comparison"]["details"][:20]:
+                change_str = f"¥{detail.amount_change:,.2f}"
+                if detail.amount_change < 0:
+                    change_str = f"[red]¥{detail.amount_change:,.2f}[/red]"
+                elif detail.amount_change > 0:
+                    change_str = f"[green]¥{detail.amount_change:,.2f}[/green]"
                 table.add_row(
                     detail.name,
                     detail.type,
                     f"¥{detail.amount_before:,.2f}",
                     f"¥{detail.amount_after:,.2f}",
-                    f"¥{detail.amount_change:,.2f}",
+                    change_str,
                     f"{detail.return_rate:.2f}%",
                 )
 

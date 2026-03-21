@@ -272,10 +272,11 @@ def register_strategy_commands(cli: click.Group) -> None:
     @click.option("--max-position", type=float, default=100000, help="总持仓金额上限")
     @click.option("--max-industry", type=int, default=2, help="每个行业最大持仓数量")
     @click.option("--auto-screen", is_flag=True, default=True, help="股票池为空时自动选股入池")
+    @click.option("--use-ai", is_flag=True, default=False, help="启用 AI 分析辅助决策")
     def auto_trade(strategy_name: str, max_buy: int, max_sell: int, dry_run: bool, 
                    max_daily_buy: int, max_amount: float, max_position: float, max_industry: int,
-                   auto_screen: bool):
-        """自动交易 - 根据策略信号自动买入卖出（增强版）"""
+                   auto_screen: bool, use_ai: bool):
+        """自动交易 - 根据策略信号自动买入卖出（增强版，支持 AI 分析）"""
         from rich.console import Console
         from rich.table import Table
         from asset_lens.trading.stock_pool import StockPool
@@ -283,16 +284,51 @@ def register_strategy_commands(cli: click.Group) -> None:
         from asset_lens.strategy.engine import StrategyEngine
         from datetime import datetime
         
-        click.echo(f"\n🤖 自动交易系统 v2.0 ({strategy_name}策略)")
+        click.echo(f"\n🤖 自动交易系统 v3.0 ({strategy_name}策略)")
+        if use_ai:
+            click.echo("🧠 AI 分析已启用")
         click.echo("=" * 60)
         
         try:
             pool = StockPool()
             engine = StrategyEngine()
             
+            ai_advisor = None
+            if use_ai:
+                try:
+                    from asset_lens.strategy.ai_analyzer import ai_trading_advisor
+                    ai_advisor = ai_trading_advisor
+                    if ai_advisor.analyzer.enabled:
+                        click.echo("✅ AI 分析器已加载")
+                    else:
+                        click.echo("⚠️ AI 分析器未配置 API Key，将仅使用策略信号")
+                        ai_advisor = None
+                except Exception as e:
+                    click.echo(f"⚠️ AI 分析器加载失败: {e}")
+                    ai_advisor = None
+            
             click.echo("\n📊 市场环境分析...")
             market_ok, market_msg = _check_market_environment()
             click.echo(f"  {market_msg}")
+            
+            market_data = None
+            try:
+                from asset_lens.data.enhanced_market_data_fetcher import enhanced_market_data_fetcher
+                result = enhanced_market_data_fetcher.fetch_all_domestic_indexes()
+                if result and "指数数据" in result:
+                    for name, data in result["指数数据"].items():
+                        if "上证" in name:
+                            change = data.get("涨跌幅", 0)
+                            if isinstance(change, str):
+                                change = float(change.replace("%", ""))
+                            market_data = {
+                                "index_name": name,
+                                "index_change": change,
+                                "sentiment": "乐观" if change > 1 else ("悲观" if change < -1 else "中性")
+                            }
+                            break
+            except Exception:
+                pass
             
             click.echo("\n📊 分析股票池持仓...")
             holding_stocks = pool.list_stocks(status="holding")
@@ -301,7 +337,6 @@ def register_strategy_commands(cli: click.Group) -> None:
             click.echo(f"  持仓股票: {len(holding_stocks)}")
             click.echo(f"  观察股票: {len(watching_stocks)}")
             
-            # 自动选股入池逻辑
             if auto_screen and len(watching_stocks) < 10:
                 click.echo(f"\n⚠️ 观察股票不足 ({len(watching_stocks)} < 10)，自动执行选股入池...")
                 _auto_screen_and_add_to_pool(pool, strategy_name, max_buy * 10)
@@ -338,6 +373,17 @@ def register_strategy_commands(cli: click.Group) -> None:
                 buy_price = stock.get('buy_price', 0)
                 current_price = stock.get('current_price', buy_price)
                 profit_rate = ((current_price - buy_price) / buy_price * 100) if buy_price > 0 else 0
+                buy_date = stock.get('buy_date', '')
+                holding_days = 0
+                if buy_date:
+                    try:
+                        buy_dt = datetime.strptime(buy_date, "%Y-%m-%d")
+                        holding_days = (datetime.now() - buy_dt).days
+                    except Exception:
+                        pass
+                
+                strategy_sell = False
+                strategy_reason = ""
                 
                 evaluation = engine.evaluate_stock(
                     {
@@ -352,23 +398,62 @@ def register_strategy_commands(cli: click.Group) -> None:
                 
                 for detail in evaluation.get("details", []):
                     if detail.get("matched") and detail.get("condition") in ["止损", "止盈", "趋势破坏"]:
-                        sell_signals.append({
+                        strategy_sell = True
+                        strategy_reason = detail.get("condition", "") + ": " + detail.get("expected", "")
+                        break
+                
+                ai_decision = None
+                if ai_advisor:
+                    ai_result = ai_advisor.evaluate_sell_signal(
+                        stock_data={
                             "code": stock["code"],
                             "name": stock["name"],
-                            "current_price": current_price,
-                            "buy_price": buy_price,
+                            "price": current_price,
+                            "change_percent": stock.get("change_percent", 0),
+                        },
+                        holding_data={
                             "profit_rate": profit_rate,
-                            "score": evaluation["score"],
-                            "reason": detail.get("condition", "") + ": " + detail.get("expected", "")
-                        })
-                        break
+                            "holding_days": holding_days,
+                            "buy_price": buy_price,
+                        },
+                        market_data=market_data,
+                    )
+                    ai_decision = ai_result
+                
+                should_sell = strategy_sell
+                final_reason = strategy_reason
+                
+                if ai_decision:
+                    if ai_decision.get("action") == "sell":
+                        should_sell = True
+                        if strategy_reason:
+                            final_reason = f"{strategy_reason} + AI确认卖出"
+                        else:
+                            final_reason = ai_decision.get("reason", "AI建议卖出")
+                    elif ai_decision.get("action") == "hold" and strategy_sell:
+                        final_reason = f"{strategy_reason} (AI建议持有观望)"
+                
+                if should_sell:
+                    sell_signals.append({
+                        "code": stock["code"],
+                        "name": stock["name"],
+                        "current_price": current_price,
+                        "buy_price": buy_price,
+                        "profit_rate": profit_rate,
+                        "holding_days": holding_days,
+                        "score": evaluation["score"],
+                        "reason": final_reason,
+                        "ai_confidence": ai_decision.get("ai_confidence", 0) if ai_decision else 0,
+                    })
             
             if sell_signals:
                 click.echo(f"\n📉 卖出信号 ({len(sell_signals)}):")
                 for signal in sell_signals:
                     click.echo(f"  {signal['code']} - {signal['name']}")
-                    click.echo(f"    收益率: {signal['profit_rate']:+.2f}%")
+                    click.echo(f"    收益率: {signal['profit_rate']:+.2f}%, 持仓: {signal['holding_days']}天")
                     click.echo(f"    理由: {signal['reason']}")
+                    if signal['ai_confidence'] > 0:
+                        click.echo(f"    AI信心: {signal['ai_confidence']:.0f}%")
                 
                 if not dry_run:
                     click.echo("\n💰 执行卖出操作...")
@@ -387,6 +472,19 @@ def register_strategy_commands(cli: click.Group) -> None:
             
             click.echo("\n📊 分析买入信号...")
             buy_signals = []
+            
+            cache_max_age = 24
+            if market_stock_fetcher.is_cache_expired(max_age_hours=cache_max_age):
+                click.echo("⚠️ 缓存已过期，正在更新市场数据...")
+                try:
+                    new_stocks = market_stock_fetcher.fetch_all_cn_stocks(max_pages=2)
+                    if new_stocks:
+                        market_stock_fetcher.save_market_stocks(new_stocks)
+                        click.echo(f"✅ 已更新缓存，获取到 {len(new_stocks)} 只股票")
+                    else:
+                        click.echo("⚠️ 网络获取失败，尝试使用旧缓存")
+                except Exception as e:
+                    click.echo(f"⚠️ 更新失败: {e}，使用旧缓存")
             
             stocks_data = market_stock_fetcher.get_cached_market_stocks()
             if not stocks_data:
@@ -415,26 +513,71 @@ def register_strategy_commands(cli: click.Group) -> None:
                     current_price = stock_data.get("current_price", 0)
                     market_cap = stock_data.get("market_cap", 0)
                     
-                    buy_signals.append({
-                        "code": stock["code"],
-                        "name": stock["name"],
-                        "current_price": current_price,
-                        "change_percent": stock_data.get("change_percent", 0),
-                        "turnover_rate": stock_data.get("turnover_rate", 0),
-                        "market_cap": market_cap,
-                        "score": evaluation["score"],
-                        "reason": _generate_buy_reason(evaluation)
-                    })
+                    strategy_reason = _generate_buy_reason(evaluation)
+                    
+                    ai_decision = None
+                    if ai_advisor:
+                        ai_result = ai_advisor.evaluate_buy_signal(
+                            stock_data={
+                                "code": stock["code"],
+                                "name": stock["name"],
+                                "price": current_price,
+                                "change_percent": stock_data.get("change_percent", 0),
+                                "turnover_rate": stock_data.get("turnover_rate", 0),
+                                "market_cap": market_cap,
+                                "pe_ratio": stock_data.get("pe_ratio", 0),
+                                "volume": stock_data.get("volume", 0),
+                                "amount": stock_data.get("amount", 0),
+                            },
+                            strategy_score=evaluation["score"],
+                            market_data=market_data,
+                        )
+                        ai_decision = ai_result
+                    
+                    final_action = "buy"
+                    final_reason = strategy_reason
+                    
+                    if ai_decision:
+                        if ai_decision.get("action") == "wait":
+                            final_action = "wait"
+                            final_reason = ai_decision.get("reason", "AI建议观望")
+                        elif ai_decision.get("action") == "skip":
+                            final_action = "skip"
+                            final_reason = ai_decision.get("reason", "AI不建议买入")
+                        elif ai_decision.get("action") == "buy":
+                            final_reason = f"{strategy_reason} + AI确认"
+                    
+                    if final_action == "buy":
+                        buy_signals.append({
+                            "code": stock["code"],
+                            "name": stock["name"],
+                            "current_price": current_price,
+                            "change_percent": stock_data.get("change_percent", 0),
+                            "turnover_rate": stock_data.get("turnover_rate", 0),
+                            "market_cap": market_cap,
+                            "score": evaluation["score"],
+                            "reason": final_reason,
+                            "ai_confidence": ai_decision.get("ai_confidence", 0) if ai_decision else 0,
+                            "risk_level": ai_decision.get("risk_level", "medium") if ai_decision else "medium",
+                            "suggested_stop_loss": ai_decision.get("suggested_stop_loss") if ai_decision else None,
+                            "suggested_take_profit": ai_decision.get("suggested_take_profit") if ai_decision else None,
+                        })
             
-            buy_signals.sort(key=lambda x: (x["score"], x["market_cap"]), reverse=True)
+            buy_signals.sort(key=lambda x: (x["score"], x["ai_confidence"]), reverse=True)
             
             if buy_signals:
                 click.echo(f"\n📈 买入信号 ({len(buy_signals)}):")
                 for signal in buy_signals[:max_buy]:
                     click.echo(f"  {signal['code']} - {signal['name']} (得分: {signal['score']:.0f})")
                     click.echo(f"    当前价: {signal['current_price']:.2f}, 涨幅: {signal['change_percent']:+.2f}%, 换手: {signal['turnover_rate']:.2f}%")
-                    click.echo(f"    市值: {signal['market_cap']:.1f}亿")
+                    click.echo(f"    市值: {signal['market_cap']:.1f}亿, 风险: {signal['risk_level']}")
                     click.echo(f"    理由: {signal['reason']}")
+                    if signal['ai_confidence'] > 0:
+                        click.echo(f"    AI信心: {signal['ai_confidence']:.0f}%")
+                    if signal.get('suggested_stop_loss'):
+                        click.echo(f"    建议止损: {signal['suggested_stop_loss']:.2f}")
+                    if signal.get('suggested_take_profit'):
+                        click.echo(f"    建议止盈: {signal['suggested_take_profit']:.2f}")
                 
                 if not dry_run and remaining_buy > 0 and remaining_position > 0 and market_ok:
                     click.echo("\n💰 执行买入操作...")
@@ -457,11 +600,17 @@ def register_strategy_commands(cli: click.Group) -> None:
                                 click.echo(f"⏭️ {signal['name']}({signal['code']}) 剩余仓位不足")
                                 continue
                         
+                        notes = f"自动买入: {signal['reason']}"
+                        if signal.get('suggested_stop_loss'):
+                            notes += f", 止损: {signal['suggested_stop_loss']:.2f}"
+                        if signal.get('suggested_take_profit'):
+                            notes += f", 止盈: {signal['suggested_take_profit']:.2f}"
+                        
                         success, msg = pool.buy_stock(
                             code=signal["code"],
                             price=price,
                             shares=shares,
-                            notes=f"自动买入: {signal['reason']}"
+                            notes=notes
                         )
                         if success:
                             click.echo(f"✅ {msg}")
@@ -483,6 +632,8 @@ def register_strategy_commands(cli: click.Group) -> None:
             click.echo(f"  总持仓金额: ¥{total_position:,.2f}")
             if dry_run:
                 click.echo(f"  模式: 仅显示信号（未执行）")
+            if use_ai and ai_advisor:
+                click.echo(f"  AI 分析: 已启用")
             
         except Exception as e:
             import traceback
