@@ -13,7 +13,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import requests
+
 from ..config import config
+from ..utils.http_client import get_session_without_proxy
 
 
 class MarketStockFetcher:
@@ -181,7 +184,8 @@ class MarketStockFetcher:
             return self._parse_stock_df(df, "akshare")
 
         except Exception as e:
-            print(f"❌ AkShare 获取失败: {e}")
+            error_msg = str(e).split('\n')[0][:50]  # 只显示第一行，最多50字符
+            print(f"❌ AkShare 获取失败: {error_msg}")
             return []
 
     def _fetch_stocks_efinance(self) -> List[Dict[str, Any]]:
@@ -205,7 +209,8 @@ class MarketStockFetcher:
             print("⚠️ Efinance 未安装，跳过此数据源")
             return []
         except Exception as e:
-            print(f"❌ Efinance 获取失败: {e}")
+            error_msg = str(e).split('\n')[0][:50]  # 只显示第一行，最多50字符
+            print(f"❌ Efinance 获取失败: {error_msg}")
             return []
 
     def _fetch_stocks_baostock(self) -> List[Dict[str, Any]]:
@@ -290,7 +295,8 @@ class MarketStockFetcher:
                 batch = codes[i:i+batch_size]
                 url = "https://qt.gtimg.cn/q=" + ",".join(batch)
                 
-                resp = requests.get(url, timeout=15)
+                session = get_session_without_proxy()
+                resp = session.get(url, timeout=15)
                 resp.encoding = "gbk"
                 
                 for line in resp.text.strip().split("\n"):

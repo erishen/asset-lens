@@ -356,7 +356,7 @@ update-market-data-async: ## 异步并发更新市场指数数据（推荐）
 	$(CONDA) python -m asset_lens update-market-data --async
 
 .PHONY: daily
-daily: update-market-data-fast pnl auto-trade-dry ## 快速日度分析（更新数据+估算盈亏+自动交易信号）
+daily: update-market-data-fast pnl auto-trade-dry fund-holding ## 快速日度分析（更新数据+估算盈亏+自动交易信号+基金持仓分析）
 	@echo ""
 	@echo "✅ 日度分析完成！"
 	@echo ""
@@ -560,13 +560,23 @@ momentum-screen-pool: ## 动量策略选股并添加到股票池
 
 .PHONY: auto-trade
 auto-trade: ## 自动交易 - 根据策略信号自动买入卖出
-	@echo "🤖 自动交易系统..."
+	@echo "🤖 自动交易系统"
 	$(CONDA) python -m asset_lens auto-trade
 
 .PHONY: auto-trade-dry
 auto-trade-dry: ## 自动交易（仅显示信号，不执行）
-	@echo "🤖 自动交易系统（模拟模式）..."
+	@echo "🤖 自动交易系统（模拟模式）"
 	$(CONDA) python -m asset_lens auto-trade --dry-run
+
+.PHONY: auto-trade-ai
+auto-trade-ai: ## 自动交易 + AI 分析辅助决策
+	@echo "🤖 自动交易系统（AI 增强版）"
+	$(CONDA) python -m asset_lens auto-trade --use-ai
+
+.PHONY: auto-trade-ai-dry
+auto-trade-ai-dry: ## 自动交易 + AI 分析（仅显示信号，不执行）
+	@echo "🤖 自动交易系统（AI 增强版，模拟模式）"
+	$(CONDA) python -m asset_lens auto-trade --use-ai --dry-run
 
 # ============================================
 # 股票跟踪监控
@@ -1062,3 +1072,41 @@ weekly-full: ## 完整周报（同步数据+AI分析）
 .PHONY: sentiment
 sentiment: ## 分析市场风向
 	@$(CONDA) python -m asset_lens.cli sentiment
+
+# ============================================
+# 基金持仓分析
+# ============================================
+.PHONY: fund-holding
+fund-holding: ## 分析高仓位基金持仓汇总（股票仓位>=20%，排除债券类型）
+	@echo "📊 分析高仓位基金持仓..."
+	@$(CONDA) python scripts/fund_holding_analysis.py --analyze
+
+.PHONY: fund-holding-all
+fund-holding-all: ## 分析所有基金持仓（包括低仓位和债券基金）
+	@echo "📊 分析所有基金持仓..."
+	@$(CONDA) python scripts/fund_holding_analysis.py --all
+
+.PHONY: fund-holding-bond
+fund-holding-bond: ## 分析债券类型基金持仓
+	@echo "📊 分析债券类型基金持仓..."
+	@$(CONDA) python scripts/fund_holding_analysis.py --include-bond
+
+.PHONY: fund-list
+fund-list: ## 列出所有投资的基金
+	@echo "📋 列出所有基金..."
+	@$(CONDA) python scripts/fund_holding_analysis.py --list
+
+.PHONY: fund-detail
+fund-detail: ## 查看单只基金持仓明细（make fund-detail CODE=020220）
+ifndef CODE
+	@echo "❌ 错误: 需要提供基金代码"
+	@echo ""
+	@echo "用法: make fund-detail CODE=020220"
+	@echo ""
+	@echo "示例:"
+	@echo "  make fund-detail CODE=020220  # 查看国联安沪深300指数增强A"
+	@echo "  make fund-detail CODE=004512  # 查看海富通沪深300指数增强C"
+	@exit 1
+endif
+	@echo "📊 查看基金持仓明细..."
+	@$(CONDA) python scripts/fund_holding_analysis.py --detail $(CODE)
