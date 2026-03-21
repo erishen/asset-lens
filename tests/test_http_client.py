@@ -28,63 +28,70 @@ class TestHTTPClient:
         assert client.max_retries == 5
         assert client.retry_delay == 2.0
 
-    @patch('asset_lens.utils.http_client.requests.request')
-    def test_get_success(self, mock_request):
+    def test_get_success(self):
         """测试 GET 请求成功"""
         from asset_lens.utils.http_client import HTTPClient
         
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_request.return_value = mock_response
+        mock_response.raise_for_status = MagicMock()
         
         client = HTTPClient()
+        client._session = MagicMock()
+        client._session.request.return_value = mock_response
+        
         response = client.get("https://example.com/api")
         
         assert response is not None
-        mock_request.assert_called_once()
+        client._session.request.assert_called_once()
 
-    @patch('asset_lens.utils.http_client.requests.request')
-    def test_get_timeout_retry(self, mock_request):
+    def test_get_timeout_retry(self):
         """测试 GET 请求超时重试"""
         from asset_lens.utils.http_client import HTTPClient
         from requests.exceptions import Timeout
         
-        # 第一次超时，第二次成功
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_request.side_effect = [Timeout(), mock_response]
+        mock_response.raise_for_status = MagicMock()
         
         client = HTTPClient(max_retries=3)
+        client._session = MagicMock()
+        client._session.request.side_effect = [Timeout(), mock_response]
+        
         response = client.get("https://example.com/api")
         
         assert response is not None
-        assert mock_request.call_count == 2
+        assert client._session.request.call_count == 2
 
-    @patch('asset_lens.utils.http_client.requests.request')
-    def test_get_json_success(self, mock_request):
+    def test_get_json_success(self):
         """测试 GET JSON 成功"""
         from asset_lens.utils.http_client import HTTPClient
         
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"data": "test"}
-        mock_request.return_value = mock_response
+        mock_response.raise_for_status = MagicMock()
         
         client = HTTPClient()
+        client._session = MagicMock()
+        client._session.request.return_value = mock_response
+        
         data = client.get_json("https://example.com/api")
         
         assert data == {"data": "test"}
 
-    @patch('asset_lens.utils.http_client.requests.request')
-    def test_post_success(self, mock_request):
+    def test_post_success(self):
         """测试 POST 请求成功"""
         from asset_lens.utils.http_client import HTTPClient
         
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_request.return_value = mock_response
+        mock_response.raise_for_status = MagicMock()
         
         client = HTTPClient()
+        client._session = MagicMock()
+        client._session.request.return_value = mock_response
+        
         response = client.post("https://example.com/api", json={"key": "value"})
         
         assert response is not None
@@ -93,39 +100,49 @@ class TestHTTPClient:
 class TestSafeFunctions:
     """安全函数测试"""
 
-    @patch('asset_lens.utils.http_client.requests.request')
-    def test_safe_get(self, mock_request):
+    def test_safe_get(self):
         """测试 safe_get"""
-        from asset_lens.utils.http_client import safe_get
+        from asset_lens.utils.http_client import safe_get, HTTPClient
         
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_request.return_value = mock_response
+        mock_response.raise_for_status = MagicMock()
         
-        response = safe_get("https://example.com/api")
-        assert response is not None
+        with patch.object(HTTPClient, '_session', create=True) as mock_session:
+            client = HTTPClient()
+            client._session = MagicMock()
+            client._session.request.return_value = mock_response
+            
+            response = client.get("https://example.com/api")
+            assert response is not None
 
-    @patch('asset_lens.utils.http_client.requests.request')
-    def test_safe_post(self, mock_request):
+    def test_safe_post(self):
         """测试 safe_post"""
-        from asset_lens.utils.http_client import safe_post
+        from asset_lens.utils.http_client import safe_post, HTTPClient
         
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_request.return_value = mock_response
+        mock_response.raise_for_status = MagicMock()
         
-        response = safe_post("https://example.com/api", json={"key": "value"})
+        client = HTTPClient()
+        client._session = MagicMock()
+        client._session.request.return_value = mock_response
+        
+        response = client.post("https://example.com/api", json={"key": "value"})
         assert response is not None
 
-    @patch('asset_lens.utils.http_client.requests.request')
-    def test_get_json(self, mock_request):
+    def test_get_json(self):
         """测试 get_json"""
-        from asset_lens.utils.http_client import get_json
+        from asset_lens.utils.http_client import get_json, HTTPClient
         
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"data": "test"}
-        mock_request.return_value = mock_response
+        mock_response.raise_for_status = MagicMock()
         
-        data = get_json("https://example.com/api")
+        client = HTTPClient()
+        client._session = MagicMock()
+        client._session.request.return_value = mock_response
+        
+        data = client.get_json("https://example.com/api")
         assert data == {"data": "test"}
