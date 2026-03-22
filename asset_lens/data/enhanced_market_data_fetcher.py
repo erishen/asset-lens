@@ -793,6 +793,53 @@ class EnhancedMarketDataFetcher:
 
         return cache_data
 
+    def fetch_domestic_indexes_fast(self, key_indexes: list[str] | None = None) -> dict[str, Any]:
+        """快速获取关键国内指数（仅上证指数、沪深300等核心指数）"""
+        if key_indexes is None:
+            key_indexes = ["sh000001", "sh000300", "sz399006"]
+
+        logger.info(f"正在快速获取关键国内指数: {key_indexes}")
+
+        indexes = {}
+
+        for code in key_indexes:
+            if code not in self.DOMESTIC_INDEXES:
+                continue
+            name = self.DOMESTIC_INDEXES[code]
+            try:
+                data = self.fetch_domestic_index(code)
+                if data:
+                    indexes[name] = {
+                        "名称": name,
+                        "代码": code[2:] if code.startswith(("sh", "sz")) else code,
+                        "最新价": data["current_price"],
+                        "涨跌额": data["change_amount"],
+                        "涨跌幅": data["change_percent"],
+                        "昨收": data["prev_close"],
+                        "今开": data["open"],
+                        "最高": data["high"],
+                        "最低": data["low"],
+                        "成交量": data["volume"],
+                        "成交额": data["amount"],
+                        "数据日期": datetime.now().strftime("%Y-%m-%d"),
+                        "数据来源": data.get("source", "未知"),
+                    }
+                    logger.info(f"✅ {name}: {data['change_percent']:+.2f}%")
+                else:
+                    logger.warning(f"❌ {name}: 获取失败")
+            except Exception as e:
+                logger.error(f"❌ {name}: {e}")
+
+        cache_data = {
+            "更新时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "指数数据": indexes,
+        }
+
+        with open(self.domestic_cache_file, "w", encoding="utf-8") as f:
+            json.dump(cache_data, f, ensure_ascii=False, indent=2)
+
+        return cache_data
+
     def fetch_all_foreign_indexes(self) -> dict[str, Any]:
         """并发获取所有国外指数"""
         logger.info("正在获取国外市场指数...")
