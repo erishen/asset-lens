@@ -357,19 +357,14 @@ investment-report: ## 生成投资报告
 # 市场数据
 # ============================================
 .PHONY: update-market-data
-update-market-data: ## 更新市场指数数据（使用 Alpha Vantage API，获取完整历史数据）
-	@echo "📈 更新市场指数数据（Alpha Vantage API）..."
-	$(CONDA) python -m asset_lens update-market-data --api alphavantage
+update-market-data: ## 更新市场指数数据（完整模式，更新所有指数）
+	@echo "📈 更新市场指数数据（完整模式）..."
+	$(CONDA) python -m asset_lens update-market-data
 
 .PHONY: update-market-data-fast
-update-market-data-fast: ## 快速更新市场指数数据（使用 Finnhub API，仅实时数据）
-	@echo "📈 更新市场指数数据（Finnhub API）..."
-	$(CONDA) python -m asset_lens update-market-data --api finnhub
-
-.PHONY: update-market-data-async
-update-market-data-async: ## 异步并发更新市场指数数据（推荐）
-	@echo "🚀 异步并发更新市场指数数据..."
-	$(CONDA) python -m asset_lens update-market-data --async
+update-market-data-fast: ## 快速更新市场指数数据（仅关键指数）
+	@echo "📈 更新市场指数数据（快速模式）..."
+	$(CONDA) python -m asset_lens update-market-data --fast
 
 .PHONY: daily
 daily: update-market-data-fast pnl auto-trade-dry fund-holding ## 快速日度分析（更新数据+估算盈亏+自动交易信号+基金持仓分析）

@@ -85,11 +85,10 @@ def register_data_commands(cli: click.Group) -> None:
 
         自动匹配基金代码并获取净值
         """
-        from asset_lens.config import config
+        from asset_lens.cli.helpers import setup_data_mode
         from asset_lens.data.fund_fetcher import fetch_portfolio_fund_quotes
 
-        if data_mode:
-            config.data_mode = data_mode
+        setup_data_mode(data_mode)
 
         click.echo("\n📊 自动获取投资组合基金净值")
         click.echo("=" * 60)
@@ -102,63 +101,42 @@ def register_data_commands(cli: click.Group) -> None:
         else:
             click.echo("\n❌ 未能获取任何基金净值", err=True)
 
-    @cli.command()
-    @click.option(
-        "--api",
-        type=click.Choice(["finnhub", "alphavantage"]),
-        default="alphavantage",
-        help="选择海外市场数据 API (alphavantage: 完整历史数据, finnhub: 仅实时数据)",
-    )
-    @click.option("--async", "use_async", is_flag=True, help="使用异步并发获取数据")
-    def update_market_data(api: str, use_async: bool):
+    @cli.command("update-market-data")
+    @click.option("--fast", is_flag=True, help="快速模式（仅更新关键指数）")
+    def update_market_data(fast: bool):
         """更新市场指数数据
 
-        API 选择说明：
-        - alphavantage: 获取完整历史数据（最近一周OHLCV、周期表现、技术状态），免费版25次/天
-        - finnhub: 仅获取实时报价数据，免费版60次/分钟
-
-        推荐使用 alphavantage 以获得与 ts-demo 一致的数据格式
+        使用增强版数据获取器，支持多数据源冗余和智能缓存
         """
         from asset_lens.data.enhanced_market_data_fetcher import enhanced_market_data_fetcher
 
         click.echo("\n📊 更新市场指数数据")
         click.echo("=" * 60)
+        click.echo("📌 使用增强版数据获取器")
+        click.echo("   - 多数据源冗余（AkShare、腾讯财经、东方财富等）")
+        click.echo("   - 智能缓存（1小时有效期）")
+        click.echo("")
 
-        if use_async:
-            click.echo("🚀 使用增强版数据获取器")
-
-            try:
+        try:
+            if fast:
+                click.echo("🚀 快速模式：仅更新关键指数")
+                domestic_result = enhanced_market_data_fetcher.fetch_domestic_indexes_fast()
+                domestic_ok = bool(domestic_result and domestic_result.get("指数数据"))
+                success = domestic_ok
+            else:
                 domestic_result = enhanced_market_data_fetcher.fetch_all_domestic_indexes()
                 foreign_result = enhanced_market_data_fetcher.fetch_all_foreign_indexes()
-                success = bool(domestic_result) and bool(foreign_result)
+                domestic_ok = bool(domestic_result and domestic_result.get("指数数据"))
+                foreign_ok = bool(foreign_result and foreign_result.get("指数数据"))
+                success = domestic_ok and foreign_ok
 
-                if success:
-                    click.echo("\n✅ 市场指数数据更新成功！")
-                else:
-                    click.echo("\n❌ 市场指数数据更新失败！", err=True)
+            if success:
+                click.echo("\n✅ 市场指数数据更新成功！")
+            else:
+                click.echo("\n❌ 市场指数数据更新失败！", err=True)
 
-            except Exception as e:
-                click.echo(f"❌ 更新失败: {e}", err=True)
-        else:
-            click.echo("📌 使用增强版数据获取器")
-            click.echo("   - 多数据源冗余（AkShare、腾讯财经、东方财富等）")
-            click.echo("   - 智能缓存（1小时有效期）")
-            click.echo("")
-
-            try:
-                domestic_result = enhanced_market_data_fetcher.fetch_all_domestic_indexes()
-                foreign_result = enhanced_market_data_fetcher.fetch_all_foreign_indexes()
-                success = bool(domestic_result.get("指数数据")) and bool(foreign_result.get("指数数据"))
-
-                if success:
-                    click.echo("\n✅ 市场指数数据更新成功！")
-                    click.echo("💡 运行 'make estimate-pnl' 开始估算实时盈亏")
-                else:
-                    click.echo("\n❌ 市场指数数据更新失败！", err=True)
-                    click.echo("💡 请检查网络连接或稍后重试")
-
-            except Exception as e:
-                click.echo(f"❌ 更新失败: {e}", err=True)
+        except Exception as e:
+            click.echo(f"❌ 更新失败: {e}", err=True)
 
     @cli.command("update-all-data")
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
@@ -167,13 +145,12 @@ def register_data_commands(cli: click.Group) -> None:
 
         一键更新所有需要的数据
         """
-        from asset_lens.config import config
+        from asset_lens.cli.helpers import setup_data_mode
         from asset_lens.data.enhanced_market_data_fetcher import enhanced_market_data_fetcher
         from asset_lens.data.fund_fetcher import fetch_portfolio_fund_quotes
         from asset_lens.data.stock_fetcher import stock_fetcher
 
-        if data_mode:
-            config.data_mode = data_mode
+        setup_data_mode(data_mode)
 
         click.echo("\n📊 更新所有数据")
         click.echo("=" * 60)
@@ -182,7 +159,9 @@ def register_data_commands(cli: click.Group) -> None:
         try:
             domestic_result = enhanced_market_data_fetcher.fetch_all_domestic_indexes()
             foreign_result = enhanced_market_data_fetcher.fetch_all_foreign_indexes()
-            if domestic_result and foreign_result:
+            domestic_ok = bool(domestic_result and domestic_result.get("指数数据"))
+            foreign_ok = bool(foreign_result and foreign_result.get("指数数据"))
+            if domestic_ok and foreign_ok:
                 click.echo("   ✅ 市场指数数据更新成功")
             else:
                 click.echo("   ⚠️  市场指数数据部分更新失败")

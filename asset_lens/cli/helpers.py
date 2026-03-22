@@ -11,11 +11,11 @@ import click
 
 
 def setup_data_mode(data_mode: str | None) -> None:
-    """设置数据模式"""
+    """设置数据模式（统一入口，带验证）"""
     from asset_lens.config import config
 
     if data_mode:
-        config.data_mode = data_mode
+        config.set_data_mode(data_mode)
 
 
 def load_products(data_path: str | None = None) -> list:
