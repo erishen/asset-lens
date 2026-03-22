@@ -5,9 +5,9 @@ Volume breakout filter for asset-lens.
 
 import json
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..config import config
 
@@ -45,7 +45,7 @@ class VolumeBreakoutFilter:
         "通信": ["通信", "5G", "光纤", "基站"],
     }
 
-    def __init__(self, config_path: Optional[Path] = None):
+    def __init__(self, config_path: Path | None = None):
         self.config_path = config_path or config.project_root / "config" / "volume_breakout.json"
         self.filter_config = self._load_config()
         self.cache_path = config.cache_path
@@ -57,7 +57,7 @@ class VolumeBreakoutFilter:
             return VolumeBreakoutConfig()
 
         try:
-            with open(self.config_path, "r", encoding="utf-8") as f:
+            with open(self.config_path, encoding="utf-8") as f:
                 data = json.load(f)
             return VolumeBreakoutConfig(
                 turnover_ratio=data.get("turnover_ratio", 3.0),
@@ -73,7 +73,7 @@ class VolumeBreakoutFilter:
         except Exception:
             return VolumeBreakoutConfig()
 
-    def _get_industry(self, name: str) -> Optional[str]:
+    def _get_industry(self, name: str) -> str | None:
         """根据股票名称推断行业"""
         for industry, keywords in self.INDUSTRY_MAPPING.items():
             for kw in keywords:
@@ -81,27 +81,27 @@ class VolumeBreakoutFilter:
                     return industry
         return None
 
-    def _load_market_stocks(self) -> List[Dict[str, Any]]:
+    def _load_market_stocks(self) -> list[dict[str, Any]]:
         """加载市场股票数据"""
         if self.market_stock_file.exists():
-            with open(self.market_stock_file, "r", encoding="utf-8") as f:
+            with open(self.market_stock_file, encoding="utf-8") as f:
                 data = json.load(f)
                 return data.get("data", [])  # type: ignore
         return []
 
-    def _load_history(self) -> Dict[str, Any]:
+    def _load_history(self) -> dict[str, Any]:
         """加载历史数据"""
         if self.history_file.exists():
-            with open(self.history_file, "r", encoding="utf-8") as f:
+            with open(self.history_file, encoding="utf-8") as f:
                 return json.load(f)  # type: ignore
         return {}
 
-    def _save_history(self, history: Dict[str, Any]) -> None:
+    def _save_history(self, history: dict[str, Any]) -> None:
         """保存历史数据"""
         with open(self.history_file, "w", encoding="utf-8") as f:
             json.dump(history, f, ensure_ascii=False, indent=2)
 
-    def update_history(self, stocks: List[Dict[str, Any]]) -> None:
+    def update_history(self, stocks: list[dict[str, Any]]) -> None:
         """更新历史数据（每日运行时调用）"""
         history = self._load_history()
         today = datetime.now().strftime("%Y-%m-%d")
@@ -132,7 +132,7 @@ class VolumeBreakoutFilter:
 
         self._save_history(history)
 
-    def _get_avg_turnover_60d(self, code: str, history: Dict[str, Any]) -> Optional[float]:
+    def _get_avg_turnover_60d(self, code: str, history: dict[str, Any]) -> float | None:
         """获取60日平均换手率"""
         if code not in history:
             return None
@@ -141,7 +141,7 @@ class VolumeBreakoutFilter:
             return None
         return sum(rates[:-1]) / len(rates[:-1]) if len(rates) > 1 else None
 
-    def _get_avg_amount_60d(self, code: str, history: Dict[str, Any]) -> Optional[float]:
+    def _get_avg_amount_60d(self, code: str, history: dict[str, Any]) -> float | None:
         """获取60日平均成交额"""
         if code not in history:
             return None
@@ -150,7 +150,7 @@ class VolumeBreakoutFilter:
             return None
         return sum(amounts[:-1]) / len(amounts[:-1]) if len(amounts) > 1 else None
 
-    def get_hot_industries(self, stocks: List[Dict[str, Any]]) -> List[str]:
+    def get_hot_industries(self, stocks: list[dict[str, Any]]) -> list[str]:
         """获取热门行业"""
         industry_stats = {}
 
@@ -179,7 +179,7 @@ class VolumeBreakoutFilter:
 
         return hot_industries
 
-    def filter(self, stocks: Optional[List[Dict[str, Any]]] = None) -> List[Dict[str, Any]]:
+    def filter(self, stocks: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
         """
         筛选放量突破股票
 
@@ -271,9 +271,9 @@ class VolumeBreakoutFilter:
 
     def filter_with_api_history(
         self,
-        stocks: Optional[List[Dict[str, Any]]] = None,
+        stocks: list[dict[str, Any]] | None = None,
         days: int = 60,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         使用API获取历史数据进行放量突破筛选
 

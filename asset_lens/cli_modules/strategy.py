@@ -3,8 +3,8 @@ CLI Strategy Commands.
 CLI 策略命令
 """
 
+
 import click
-from typing import Optional
 
 
 def list_strategies():
@@ -14,7 +14,7 @@ def list_strategies():
     engine = StrategyEngine()
     strategies = engine.list_strategies()
 
-    click.echo(f"\n📋 可用策略列表")
+    click.echo("\n📋 可用策略列表")
     click.echo("=" * 60)
 
     for strategy in strategies:
@@ -60,7 +60,7 @@ def run_backtest(strategy_name: str, days: int = 365):
     try:
         result = engine.validate_strategy(strategy_name, {})
         if result and result.get("valid"):
-            click.echo(f"  ✅ 策略验证通过")
+            click.echo("  ✅ 策略验证通过")
             click.echo(f"  总收益率: {result.get('total_return', 0):.2f}%")
             click.echo(f"  胜率: {result.get('win_rate', 0):.2f}%")
         else:
@@ -71,13 +71,13 @@ def run_backtest(strategy_name: str, days: int = 365):
     click.echo("=" * 60)
 
 
-def show_stock_pool(pool_name: Optional[str] = None):
+def show_stock_pool(pool_name: str | None = None):
     """显示股票池"""
     from ..trading.stock_pool import StockPool
 
     pool = StockPool()
 
-    click.echo(f"\n📊 股票池状态")
+    click.echo("\n📊 股票池状态")
     click.echo("=" * 60)
 
     try:
@@ -95,7 +95,7 @@ def show_stock_pool(pool_name: Optional[str] = None):
     click.echo("=" * 60)
 
 
-def add_to_stock_pool(code: str, name: Optional[str] = None, status: str = "watching", price: float = 0.0):
+def add_to_stock_pool(code: str, name: str | None = None, status: str = "watching", price: float = 0.0):
     """添加股票到股票池"""
     from ..trading.stock_pool import StockPool
 
@@ -145,14 +145,14 @@ def screen_stocks_with_strategy(strategy_name: str, limit: int = 20):
 
 def add_stocks_to_pool_by_strategy(
     strategy_name: str,
-    stocks: Optional[list] = None,
+    stocks: list | None = None,
     min_score: float = 60.0,
     max_stocks: int = 10,
     auto_remove: bool = False,
 ):
     """根据策略筛选股票并添加到股票池"""
-    from ..trading.stock_pool import StockPool
     from ..strategy.engine import StrategyEngine
+    from ..trading.stock_pool import StockPool
 
     pool = StockPool()
     engine = StrategyEngine()
@@ -175,7 +175,7 @@ def add_stocks_to_pool_by_strategy(
             auto_remove_low_score=auto_remove,
         )
 
-        click.echo(f"\n  ✅ 筛选完成:")
+        click.echo("\n  ✅ 筛选完成:")
         click.echo(f"     - 符合条件: {result['total_screened']} 只")
         click.echo(f"     - 新增入池: {result['added']} 只")
         click.echo(f"     - 更新评分: {result['updated']} 只")
@@ -183,7 +183,7 @@ def add_stocks_to_pool_by_strategy(
             click.echo(f"     - 移除低分: {result['removed']} 只")
 
         if result['stocks_added']:
-            click.echo(f"\n  📈 入池股票:")
+            click.echo("\n  📈 入池股票:")
             for stock in result['stocks_added'][:10]:
                 click.echo(f"     - {stock['code']} {stock['name']} (评分: {stock['score']:.1f})")
 
@@ -243,7 +243,7 @@ def clear_strategy_from_pool(strategy_name: str):
         click.echo(f"  ✅ 已移除 {result['removed_count']} 只股票")
 
         if result['removed_codes']:
-            click.echo(f"\n  移除的股票:")
+            click.echo("\n  移除的股票:")
             for code in result['removed_codes'][:10]:
                 click.echo(f"     - {code}")
 

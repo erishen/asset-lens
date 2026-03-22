@@ -3,19 +3,19 @@ CLI Analysis Commands.
 CLI 分析命令
 """
 
+
 import click
-from typing import Optional, Dict
 
 
-def analyze_portfolio(data_mode: Optional[str] = None):
+def analyze_portfolio(data_mode: str | None = None):
     """分析投资组合"""
-    from ..data.csv_parser import CSVParser
     from ..config import config
+    from ..data.csv_parser import CSVParser
 
     if data_mode:
         config.data_mode = data_mode
 
-    click.echo(f"\n📊 投资组合分析")
+    click.echo("\n📊 投资组合分析")
     click.echo("=" * 60)
 
     try:
@@ -25,8 +25,8 @@ def analyze_portfolio(data_mode: Optional[str] = None):
             return
 
         total_amount: float = 0.0
-        by_type: Dict[str, float] = {}
-        by_platform: Dict[str, float] = {}
+        by_type: dict[str, float] = {}
+        by_platform: dict[str, float] = {}
 
         for product in products:
             amount = float(getattr(product, 'current_amount', 0) or 0)
@@ -58,15 +58,15 @@ def analyze_portfolio(data_mode: Optional[str] = None):
     click.echo("=" * 60)
 
 
-def calculate_returns(data_mode: Optional[str] = None):
+def calculate_returns(data_mode: str | None = None):
     """计算收益率"""
-    from ..data.csv_parser import CSVParser
     from ..config import config
+    from ..data.csv_parser import CSVParser
 
     if data_mode:
         config.data_mode = data_mode
 
-    click.echo(f"\n💰 收益率计算")
+    click.echo("\n💰 收益率计算")
     click.echo("=" * 60)
 
     try:
@@ -98,15 +98,15 @@ def calculate_returns(data_mode: Optional[str] = None):
     click.echo("=" * 60)
 
 
-def show_pnl(data_mode: Optional[str] = None):
+def show_pnl(data_mode: str | None = None):
     """显示盈亏明细"""
-    from ..data.csv_parser import CSVParser
     from ..config import config
+    from ..data.csv_parser import CSVParser
 
     if data_mode:
         config.data_mode = data_mode
 
-    click.echo(f"\n📊 盈亏明细")
+    click.echo("\n📊 盈亏明细")
     click.echo("=" * 60)
 
     try:
@@ -134,15 +134,15 @@ def show_pnl(data_mode: Optional[str] = None):
     click.echo("=" * 60)
 
 
-def calculate_irr(data_mode: Optional[str] = None):
+def calculate_irr(data_mode: str | None = None):
     """计算内部收益率"""
-    from ..core.irr_calculator import IRRCalculator
     from ..config import config
+    from ..core.irr_calculator import IRRCalculator
 
     if data_mode:
         config.data_mode = data_mode
 
-    click.echo(f"\n📈 内部收益率计算")
+    click.echo("\n📈 内部收益率计算")
     click.echo("=" * 60)
 
     try:
@@ -160,16 +160,15 @@ def calculate_irr(data_mode: Optional[str] = None):
     click.echo("=" * 60)
 
 
-def estimate_returns(data_mode: Optional[str] = None):
+def estimate_returns(data_mode: str | None = None):
     """估算收益"""
-    from ..data.csv_parser import CSVParser
-    from ..data.enhanced_market_data_fetcher import enhanced_market_data_fetcher
     from ..config import config
+    from ..data.csv_parser import CSVParser
 
     if data_mode:
         config.data_mode = data_mode
 
-    click.echo(f"\n📊 收益估算")
+    click.echo("\n📊 收益估算")
     click.echo("=" * 60)
 
     try:
@@ -210,7 +209,7 @@ def show_market_sentiment():
     """显示市场风向"""
     from ..data.market_environment import market_environment_analyzer
 
-    click.echo(f"\n🌡️ 市场风向")
+    click.echo("\n🌡️ 市场风向")
     click.echo("=" * 60)
 
     try:

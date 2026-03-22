@@ -6,11 +6,11 @@ AI Cache Manager - AI 缓存管理器
 
 import hashlib
 import json
+import logging
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
-from dataclasses import dataclass
-import logging
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -19,10 +19,10 @@ logger = logging.getLogger(__name__)
 class CacheEntry:
     """缓存条目"""
     key: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
     timestamp: datetime
     ttl: int = 3600
-    
+
     def is_expired(self) -> bool:
         """检查是否过期"""
         elapsed = (datetime.now() - self.timestamp).total_seconds()
@@ -34,7 +34,7 @@ class AICacheManager:
 
     def __init__(
         self,
-        cache_dir: Optional[Path] = None,
+        cache_dir: Path | None = None,
         ttl: int = 3600,
         enabled: bool = True,
     ):
@@ -49,13 +49,13 @@ class AICacheManager:
         self.enabled = enabled
         self.ttl = ttl
         self.cache_dir = cache_dir or Path.home() / ".cache" / "asset_lens" / "ai"
-        
+
         if self.enabled:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
-        
-        self._memory_cache: Dict[str, CacheEntry] = {}
 
-    def generate_key(self, data: Dict[str, Any], prefix: str = "ai") -> str:
+        self._memory_cache: dict[str, CacheEntry] = {}
+
+    def generate_key(self, data: dict[str, Any], prefix: str = "ai") -> str:
         """
         生成缓存键
 
@@ -77,7 +77,7 @@ class AICacheManager:
         hash_value = hashlib.md5(key_data.encode()).hexdigest()
         return f"{prefix}_{hash_value}"
 
-    def get(self, key: str) -> Optional[Dict[str, Any]]:
+    def get(self, key: str) -> dict[str, Any] | None:
         """
         获取缓存数据
 
@@ -101,17 +101,17 @@ class AICacheManager:
             return None
 
         try:
-            with open(cache_file, "r", encoding="utf-8") as f:
+            with open(cache_file, encoding="utf-8") as f:
                 cached = json.load(f)
 
             cache_time = datetime.fromisoformat(cached.get("timestamp", "2000-01-01"))
             elapsed = (datetime.now() - cache_time).total_seconds()
-            
+
             if elapsed > self.ttl:
                 return None
 
-            data: Dict[str, Any] = cached.get("data", {})
-            
+            data: dict[str, Any] = cached.get("data", {})
+
             # 更新内存缓存
             self._memory_cache[key] = CacheEntry(
                 key=key,
@@ -119,14 +119,14 @@ class AICacheManager:
                 timestamp=cache_time,
                 ttl=self.ttl,
             )
-            
+
             return data
 
         except (json.JSONDecodeError, ValueError, KeyError) as e:
             logger.warning(f"缓存读取失败: {e}")
             return None
 
-    def set(self, key: str, data: Dict[str, Any]) -> bool:
+    def set(self, key: str, data: dict[str, Any]) -> bool:
         """
         设置缓存数据
 
@@ -188,7 +188,7 @@ class AICacheManager:
                 return True
             except Exception:
                 return False
-        
+
         return True
 
     def clear(self) -> int:
@@ -199,7 +199,7 @@ class AICacheManager:
             清除的缓存数量
         """
         count = 0
-        
+
         # 清除内存缓存
         count += len(self._memory_cache)
         self._memory_cache.clear()
@@ -237,12 +237,12 @@ class AICacheManager:
         if self.cache_dir.exists():
             for cache_file in self.cache_dir.glob("*.json"):
                 try:
-                    with open(cache_file, "r", encoding="utf-8") as f:
+                    with open(cache_file, encoding="utf-8") as f:
                         cached = json.load(f)
-                    
+
                     cache_time = datetime.fromisoformat(cached.get("timestamp", "2000-01-01"))
                     elapsed = (datetime.now() - cache_time).total_seconds()
-                    
+
                     if elapsed > self.ttl:
                         cache_file.unlink()
                         count += 1
@@ -251,7 +251,7 @@ class AICacheManager:
 
         return count
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """
         获取缓存统计信息
 
@@ -259,7 +259,7 @@ class AICacheManager:
             统计信息字典
         """
         memory_count = len(self._memory_cache)
-        
+
         file_count = 0
         total_size = 0
         if self.cache_dir.exists():

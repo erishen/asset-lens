@@ -4,15 +4,13 @@ Core CLI commands for asset-lens.
 """
 
 import os
-from pathlib import Path
-from typing import Optional
 
 import click
 
 
 def register_core_commands(cli: click.Group) -> None:
     """注册核心命令到 CLI 组"""
-    
+
     @cli.command()
     def completion():
         """生成 shell 自动补全脚本
@@ -84,7 +82,7 @@ complete -F _asset_lens_completion asset-lens
         提供友好的交互式体验，引导用户完成各种操作。
         """
         from asset_lens.config import config
-        
+
         click.echo("\n" + "=" * 60)
         click.echo("🚀 欢迎使用 Asset-Lens 交互式向导")
         click.echo("=" * 60)
@@ -128,14 +126,14 @@ complete -F _asset_lens_completion asset-lens
     @cli.command()
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="当前数据模式")
     @click.option("--target-mode", type=click.Choice(["sample", "real"]), required=True, help="目标数据模式")
-    def switch_mode(data_mode: Optional[str], target_mode: str):
+    def switch_mode(data_mode: str | None, target_mode: str):
         """切换数据模式（sample <-> real）"""
         from asset_lens.config import config
-        
+
         env_file = config.project_root / ".env"
 
         if env_file.exists():
-            with open(env_file, "r") as f:
+            with open(env_file) as f:
                 lines = f.readlines()
 
             with open(env_file, "w") as f:
@@ -156,7 +154,7 @@ complete -F _asset_lens_completion asset-lens
     def show_config():
         """显示当前配置"""
         from asset_lens.config import config
-        
+
         click.echo("\n📋 当前配置")
         click.echo("=" * 50)
         click.echo(f"数据模式: {config.data_mode}")
@@ -177,6 +175,7 @@ complete -F _asset_lens_completion asset-lens
     def set_rate(currency: str, rate: float):
         """设置货币汇率"""
         from decimal import Decimal
+
         from asset_lens.data.models import Currency
         from asset_lens.utils.currency_converter import currency_converter
 
@@ -190,7 +189,7 @@ complete -F _asset_lens_completion asset-lens
     def init():
         """初始化项目（创建必要的数据目录和文件）"""
         from asset_lens.config import config
-        
+
         click.echo("\n🚀 初始化 asset-lens 项目...")
 
         dirs_to_create = [
@@ -230,7 +229,7 @@ complete -F _asset_lens_completion asset-lens
     def init_sample():
         """初始化示例数据"""
         from asset_lens.config import config
-        
+
         click.echo("\n📊 初始化示例数据...")
 
         sample_data_dir = config.project_root / "data" / "sample_data"
@@ -263,18 +262,17 @@ complete -F _asset_lens_completion asset-lens
         click.echo("  ║                  项目自检                                   ║")
         click.echo("  ╚════════════════════════════════════════════════════════════╝")
         click.echo("")
-        
+
         checks_passed = 0
         checks_failed = 0
-        
+
         try:
-            from asset_lens.config import config
             click.echo("  ✅ 配置模块正常")
             checks_passed += 1
         except Exception as e:
             click.echo(f"  ❌ 配置模块失败: {e}")
             checks_failed += 1
-        
+
         try:
             from asset_lens.data.csv_parser import CSVParser
             CSVParser.load_data()
@@ -283,7 +281,7 @@ complete -F _asset_lens_completion asset-lens
         except Exception as e:
             click.echo(f"  ❌ 数据加载失败: {e}")
             checks_failed += 1
-        
+
         try:
             from asset_lens.data.enhanced_market_data_fetcher import enhanced_market_data_fetcher
             enhanced_market_data_fetcher.fetch_all_domestic_indexes()
@@ -292,15 +290,14 @@ complete -F _asset_lens_completion asset-lens
         except Exception as e:
             click.echo(f"  ❌ 市场数据获取器失败: {e}")
             checks_failed += 1
-        
+
         try:
-            from asset_lens.web.api import app
             click.echo("  ✅ Web API 正常")
             checks_passed += 1
         except Exception as e:
             click.echo(f"  ❌ Web API 失败: {e}")
             checks_failed += 1
-        
+
         click.echo("")
         click.echo(f"  检查结果: {checks_passed} 通过, {checks_failed} 失败")
         click.echo("")
@@ -324,7 +321,7 @@ def _interactive_analyze():
     )
 
     click.echo(f"\n正在分析 {data_mode} 数据...")
-    click.echo("请运行: make analyze DATA_MODE={}".format(data_mode))
+    click.echo(f"请运行: make analyze DATA_MODE={data_mode}")
 
 
 def _interactive_calculate():
@@ -396,9 +393,9 @@ def _interactive_update_market():
 
     click.echo(f"\n正在更新市场数据（数据源: {api}）...")
     if async_mode:
-        click.echo("请运行: make update-market-async API={}".format(api))
+        click.echo(f"请运行: make update-market-async API={api}")
     else:
-        click.echo("请运行: make update-market API={}".format(api))
+        click.echo(f"请运行: make update-market API={api}")
 
 
 def _interactive_report():

@@ -9,12 +9,12 @@ Investment strategy system for asset-lens.
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from ..config import config
 from ..strategy.backtester import Backtester, BacktestResult
-from ..trading.stock_pool import StockPool, StockPosition
-from ..strategy.engine import StrategyConfig, StrategyEngine, strategy_engine
+from ..strategy.engine import strategy_engine
+from ..trading.stock_pool import StockPool
 
 
 class InvestmentSystem:
@@ -29,14 +29,14 @@ class InvestmentSystem:
         self.backtester = Backtester()
         self.config_file = self.system_path / "system_config.json"
 
-        self.current_strategy: Optional[str] = None
-        self.system_config: Dict[str, Any] = {}
+        self.current_strategy: str | None = None
+        self.system_config: dict[str, Any] = {}
         self._load_config()
 
     def _load_config(self) -> None:
         """加载系统配置"""
         if self.config_file.exists():
-            with open(self.config_file, "r", encoding="utf-8") as f:
+            with open(self.config_file, encoding="utf-8") as f:
                 self.system_config = json.load(f)
                 self.current_strategy = self.system_config.get("current_strategy")
 
@@ -70,7 +70,7 @@ class InvestmentSystem:
 
     def screen_and_add_to_pool(
         self,
-        stocks: List[Dict[str, Any]],
+        stocks: list[dict[str, Any]],
         min_score: float = 60.0,
         max_add: int = 10,
     ) -> int:
@@ -105,7 +105,7 @@ class InvestmentSystem:
         print(f"✅ 筛选出 {len(results)} 只股票，添加 {added_count} 只到股票池")
         return added_count
 
-    def simulate_buy(self, code: str, price: Optional[float] = None, shares: int = 100) -> bool:
+    def simulate_buy(self, code: str, price: float | None = None, shares: int = 100) -> bool:
         """
         模拟买入
 
@@ -127,7 +127,7 @@ class InvestmentSystem:
         success, _ = self.stock_pool.buy_stock(code, buy_price, shares)
         return success
 
-    def simulate_sell(self, code: str, price: Optional[float] = None) -> bool:
+    def simulate_sell(self, code: str, price: float | None = None) -> bool:
         """
         模拟卖出
 
@@ -150,8 +150,8 @@ class InvestmentSystem:
 
     def run_backtest(
         self,
-        historical_data: Dict[str, List[Dict[str, Any]]],
-        strategy_name: Optional[str] = None,
+        historical_data: dict[str, list[dict[str, Any]]],
+        strategy_name: str | None = None,
         **kwargs,
     ) -> BacktestResult:
         """
@@ -173,10 +173,10 @@ class InvestmentSystem:
 
     def optimize_strategy(
         self,
-        historical_data: Dict[str, List[Dict[str, Any]]],
-        strategies: Optional[List[str]] = None,
+        historical_data: dict[str, list[dict[str, Any]]],
+        strategies: list[str] | None = None,
         metric: str = "sharpe_ratio",
-    ) -> Tuple[str, BacktestResult]:
+    ) -> tuple[str, BacktestResult]:
         """
         优化策略 - 比较多个策略找出最佳
 
@@ -201,7 +201,7 @@ class InvestmentSystem:
 
         return best_name, best_result
 
-    def get_system_status(self) -> Dict[str, Any]:
+    def get_system_status(self) -> dict[str, Any]:
         """
         获取系统状态
 
@@ -302,7 +302,7 @@ class InvestmentSystem:
 
         return "\n".join(report)
 
-    def export_data(self, filepath: Optional[Path] = None) -> Path:
+    def export_data(self, filepath: Path | None = None) -> Path:
         """
         导出系统数据
 

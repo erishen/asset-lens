@@ -5,9 +5,7 @@ Logging system for asset-lens.
 
 import logging
 import sys
-from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 
 class SensitiveInfoFilter(logging.Filter):
@@ -53,7 +51,7 @@ class ColoredFormatter(logging.Formatter):
 def setup_logger(
     name: str = "asset_lens",
     level: int = logging.INFO,
-    log_file: Optional[Path] = None,
+    log_file: Path | None = None,
     use_color: bool = True,
 ) -> logging.Logger:
     """

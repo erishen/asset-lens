@@ -4,12 +4,10 @@ Stock activity analyzer for asset-lens.
 """
 
 import json
-from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime
-from decimal import Decimal
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 
 from ..config import config
 
@@ -43,18 +41,18 @@ class ETFPrediction:
     activity_score: float = 0.0
     up_ratio: float = 0.0
     down_ratio: float = 0.0
-    related_stocks: List[Dict[str, Any]] = field(default_factory=list)
-    top_gainers: List[Dict[str, Any]] = field(default_factory=list)
-    top_losers: List[Dict[str, Any]] = field(default_factory=list)
+    related_stocks: list[dict[str, Any]] = field(default_factory=list)
+    top_gainers: list[dict[str, Any]] = field(default_factory=list)
+    top_losers: list[dict[str, Any]] = field(default_factory=list)
 
 
-StockFilterCallable = Callable[[Dict[str, Any]], bool]
+StockFilterCallable = Callable[[dict[str, Any]], bool]
 
 
 class StockActivityAnalyzer:
     """股票活跃度分析器"""
 
-    INDEX_FUND_MAPPING: Dict[str, Dict[str, Any]] = {
+    INDEX_FUND_MAPPING: dict[str, dict[str, Any]] = {
         "沪深300": {
             "codes": ["sh510300", "sz159919"],
             "index_keys": ["SHComp", "CSI300"],
@@ -82,7 +80,7 @@ class StockActivityAnalyzer:
         },
     }
 
-    ETF_MAPPING: Dict[str, Dict[str, Any]] = {
+    ETF_MAPPING: dict[str, dict[str, Any]] = {
         "新能源": {
             "codes": ["sz516160", "sh515790"],
             "description": "新能源ETF",
@@ -135,7 +133,7 @@ class StockActivityAnalyzer:
         },
     }
 
-    def __init__(self, cache_path: Optional[Path] = None):
+    def __init__(self, cache_path: Path | None = None):
         """
         初始化股票活跃度分析器
 
@@ -145,15 +143,15 @@ class StockActivityAnalyzer:
         self.cache_path = cache_path or config.cache_path
         self.market_stock_cache_file = self.cache_path / "market_stocks.json"
 
-    def load_market_stocks(self) -> List[Dict[str, Any]]:
+    def load_market_stocks(self) -> list[dict[str, Any]]:
         """加载市场股票数据"""
         if self.market_stock_cache_file.exists():
-            with open(self.market_stock_cache_file, "r", encoding="utf-8") as f:
+            with open(self.market_stock_cache_file, encoding="utf-8") as f:
                 data = json.load(f)
                 return data.get("data", [])  # type: ignore
         return []
 
-    def analyze_activity(self, stocks: List[Dict[str, Any]]) -> ActivityMetrics:
+    def analyze_activity(self, stocks: list[dict[str, Any]]) -> ActivityMetrics:
         """
         分析股票活跃度
 
@@ -249,8 +247,8 @@ class StockActivityAnalyzer:
     def predict_etf(
         self,
         etf_name: str,
-        stocks: List[Dict[str, Any]],
-    ) -> Optional[ETFPrediction]:
+        stocks: list[dict[str, Any]],
+    ) -> ETFPrediction | None:
         """
         预测ETF表现
 
@@ -321,7 +319,7 @@ class StockActivityAnalyzer:
             ],
         )
 
-    def predict_index_fund(self, index_name: str) -> Optional[ETFPrediction]:
+    def predict_index_fund(self, index_name: str) -> ETFPrediction | None:
         """
         预测指数基金表现（使用指数市场数据）
 
@@ -342,7 +340,7 @@ class StockActivityAnalyzer:
             return None
 
         try:
-            with open(domestic_cache_file, "r", encoding="utf-8") as f:
+            with open(domestic_cache_file, encoding="utf-8") as f:
                 data = json.load(f)
 
             index_data = data.get("指数数据", {})
@@ -431,7 +429,7 @@ class StockActivityAnalyzer:
 
         return min(count_score + activity_score + direction_score, 100)
 
-    def predict_all_etfs(self) -> List[ETFPrediction]:
+    def predict_all_etfs(self) -> list[ETFPrediction]:
         """
         预测所有ETF表现
 
@@ -455,7 +453,7 @@ class StockActivityAnalyzer:
 
         return predictions
 
-    def get_market_overview(self) -> Dict[str, Any]:
+    def get_market_overview(self) -> dict[str, Any]:
         """
         获取市场概览
 
@@ -494,7 +492,7 @@ class StockActivityAnalyzer:
             ],
         }
 
-    def analyze_all_industries(self) -> List[Dict[str, Any]]:
+    def analyze_all_industries(self) -> list[dict[str, Any]]:
         """
         分析所有行业ETF的表现
 
@@ -540,8 +538,8 @@ class StockActivityAnalyzer:
 
     def get_investment_suggestions(
         self,
-        invested_etfs: List[str],
-    ) -> Dict[str, Any]:
+        invested_etfs: list[str],
+    ) -> dict[str, Any]:
         """
         获取投资建议
 
@@ -583,9 +581,9 @@ class StockActivityAnalyzer:
 
     def _generate_suggestions(
         self,
-        invested: List[Dict],
-        not_invested: List[Dict],
-    ) -> List[str]:
+        invested: list[dict],
+        not_invested: list[dict],
+    ) -> list[str]:
         """生成投资建议"""
         suggestions = []
 

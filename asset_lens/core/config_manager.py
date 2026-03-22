@@ -4,11 +4,10 @@ Unified Configuration System.
 """
 
 import json
-import os
-from pathlib import Path
-from typing import Any, Dict, List, Optional
-from dataclasses import dataclass, field
 import logging
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +24,8 @@ class DataSourceConfig:
     name: str
     priority: int = 1
     enabled: bool = True
-    api_key: Optional[str] = None
-    api_url: Optional[str] = None
+    api_key: str | None = None
+    api_url: str | None = None
     timeout: int = 30
     retry_times: int = 3
 
@@ -47,8 +46,8 @@ class UserPreferences:
     """用户偏好设置"""
     risk_tolerance: str = "moderate"
     investment_goal: str = "balanced"
-    preferred_sectors: List[str] = field(default_factory=list)
-    excluded_sectors: List[str] = field(default_factory=list)
+    preferred_sectors: list[str] = field(default_factory=list)
+    excluded_sectors: list[str] = field(default_factory=list)
     max_position_size: float = 10.0
     rebalance_frequency: str = "monthly"
 
@@ -66,7 +65,7 @@ class AlertConfig:
 
 class ConfigManager:
     """配置管理器"""
-    
+
     DEFAULT_CONFIG = {
         "version": "1.0.0",
         "environment": "development",
@@ -123,17 +122,17 @@ class ConfigManager:
             "enabled": True
         }
     }
-    
-    def __init__(self, config_path: Optional[Path] = None):
+
+    def __init__(self, config_path: Path | None = None):
         self.config_path = config_path or Path("config/asset_lens.yaml")
-        self.config: Dict[str, Any] = {}
+        self.config: dict[str, Any] = {}
         self._load_config()
-    
+
     def _load_config(self):
         """加载配置文件"""
         if self.config_path.exists():
             try:
-                with open(self.config_path, 'r', encoding='utf-8') as f:
+                with open(self.config_path, encoding='utf-8') as f:
                     if self.config_path.suffix in ['.yaml', '.yml']:
                         if YAML_AVAILABLE:
                             self.config = yaml.safe_load(f)
@@ -150,11 +149,11 @@ class ConfigManager:
             logger.info("配置文件不存在，使用默认配置")
             self.config = self.DEFAULT_CONFIG.copy()
             self._create_default_config()
-    
+
     def _create_default_config(self):
         """创建默认配置文件"""
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         try:
             with open(self.config_path, 'w', encoding='utf-8') as f:
                 if self.config_path.suffix in ['.yaml', '.yml']:
@@ -167,33 +166,33 @@ class ConfigManager:
             logger.info(f"默认配置文件已创建: {self.config_path}")
         except Exception as e:
             logger.error(f"创建默认配置文件失败: {e}")
-    
+
     def get(self, key: str, default: Any = None) -> Any:
         """获取配置项"""
         keys = key.split('.')
         value = self.config
-        
+
         for k in keys:
             if isinstance(value, dict) and k in value:
                 value = value[k]
             else:
                 return default
-        
+
         return value
-    
+
     def set(self, key: str, value: Any):
         """设置配置项"""
         keys = key.split('.')
         config = self.config
-        
+
         for k in keys[:-1]:
             if k not in config:
                 config[k] = {}
             config = config[k]
-        
+
         config[keys[-1]] = value
-    
-    def get_data_source_config(self, name: str) -> Optional[DataSourceConfig]:
+
+    def get_data_source_config(self, name: str) -> DataSourceConfig | None:
         """获取数据源配置"""
         data_sources = self.get('data_sources', {})
         if name in data_sources:
@@ -208,7 +207,7 @@ class ConfigManager:
                 retry_times=source_data.get('retry_times', 3)
             )
         return None
-    
+
     def get_monitor_config(self) -> MonitorConfig:
         """获取监控配置"""
         monitor_data = self.get('monitor', {})
@@ -220,7 +219,7 @@ class ConfigManager:
             check_interval=monitor_data.get('check_interval', 300),
             enable_alerts=monitor_data.get('enable_alerts', True)
         )
-    
+
     def get_user_preferences(self) -> UserPreferences:
         """获取用户偏好"""
         prefs_data = self.get('user_preferences', {})
@@ -232,7 +231,7 @@ class ConfigManager:
             max_position_size=prefs_data.get('max_position_size', 10.0),
             rebalance_frequency=prefs_data.get('rebalance_frequency', 'monthly')
         )
-    
+
     def get_alert_config(self) -> AlertConfig:
         """获取提醒配置"""
         alert_data = self.get('alerts', {})
@@ -244,7 +243,7 @@ class ConfigManager:
             weekly_report_day=alert_data.get('weekly_report_day', 4),
             weekly_report_time=alert_data.get('weekly_report_time', '16:00')
         )
-    
+
     def save(self):
         """保存配置"""
         try:
@@ -261,11 +260,11 @@ class ConfigManager:
         except Exception as e:
             logger.error(f"保存配置文件失败: {e}")
             return False
-    
+
     def reload(self):
         """重新加载配置"""
         self._load_config()
-    
+
     def validate(self) -> bool:
         """验证配置"""
         required_keys = ['version', 'environment', 'data_sources', 'monitor']
@@ -274,12 +273,12 @@ class ConfigManager:
                 logger.error(f"配置缺少必需项: {key}")
                 return False
         return True
-    
-    def get_all_config(self) -> Dict[str, Any]:
+
+    def get_all_config(self) -> dict[str, Any]:
         """获取所有配置"""
         return self.config.copy()
 
 
-def create_config_manager(config_path: Optional[Path] = None) -> ConfigManager:
+def create_config_manager(config_path: Path | None = None) -> ConfigManager:
     """创建配置管理器实例"""
     return ConfigManager(config_path)

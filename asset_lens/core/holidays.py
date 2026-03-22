@@ -4,7 +4,6 @@
 """
 
 from datetime import date, datetime, timedelta
-from typing import List, Optional
 
 
 class HolidayConfig:
@@ -13,9 +12,9 @@ class HolidayConfig:
     def __init__(
         self,
         year: int,
-        holidays: List[dict],
-        working_weekends: Optional[List[str]] = None,
-        post_holiday_trading_suspensions: Optional[List[str]] = None,
+        holidays: list[dict],
+        working_weekends: list[str] | None = None,
+        post_holiday_trading_suspensions: list[str] | None = None,
     ):
         self.year = year
         self.holidays = holidays
@@ -168,7 +167,7 @@ def is_fund_trading_day(d: date) -> bool:
 def calculate_working_days(
     start: date,
     end: date,
-    stop_periods: Optional[List[tuple]] = None,
+    stop_periods: list[tuple] | None = None,
 ) -> int:
     if start > end:
         return 0
@@ -196,7 +195,7 @@ def calculate_working_days(
 def calculate_fund_trading_days(
     start: date,
     end: date,
-    stop_periods: Optional[List[tuple]] = None,
+    stop_periods: list[tuple] | None = None,
 ) -> int:
     if start > end:
         return 0
@@ -221,8 +220,8 @@ def calculate_fund_trading_days(
     return count
 
 
-def parse_stop_periods(record_str: str) -> List[tuple]:
-    stop_periods: List[tuple] = []
+def parse_stop_periods(record_str: str) -> list[tuple]:
+    stop_periods: list[tuple] = []
 
     if not record_str:
         return stop_periods
@@ -257,7 +256,7 @@ def parse_stop_periods(record_str: str) -> List[tuple]:
     return stop_periods
 
 
-def _parse_date_string(date_str: str) -> Optional[date]:
+def _parse_date_string(date_str: str) -> date | None:
     date_formats = [
         "%Y/%m/%d",
         "%Y-%m-%d",

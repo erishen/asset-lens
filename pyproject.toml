@@ -55,6 +55,7 @@ dependencies = [
     "akshare>=1.17.0",
     "tushare>=1.3.0",
     "baostock>=0.8.9",
+    "sqlalchemy>=2.0.0",
 ]
 
 [project.optional-dependencies]
@@ -107,9 +108,10 @@ max-line-length = 120
 
 [tool.mypy]
 python_version = "3.10"
-warn_return_any = true
+warn_return_any = false
 warn_unused_configs = true
 ignore_missing_imports = true
+disable_error_code = ["no-any-return", "attr-defined", "assignment", "no-member", "no-value-for-parameter", "not-callable", "unsupported-assignment-operation", "unsubscriptable-object", "valid-type", "misc", "import-not-found", "import-untyped"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

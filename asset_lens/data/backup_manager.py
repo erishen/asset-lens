@@ -10,12 +10,10 @@ Auto backup system for asset-lens.
 """
 
 import json
-import os
 import shutil
 import tarfile
 from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..config import config
 
@@ -29,7 +27,7 @@ class BackupManager:
         self.config_file = self.backup_path / "backup_config.json"
         self.config = self._load_config()
 
-    def _load_config(self) -> Dict[str, Any]:
+    def _load_config(self) -> dict[str, Any]:
         """加载备份配置"""
         default_config = {
             "auto_backup_enabled": True,
@@ -51,7 +49,7 @@ class BackupManager:
 
         if self.config_file.exists():
             try:
-                with open(self.config_file, "r", encoding="utf-8") as f:
+                with open(self.config_file, encoding="utf-8") as f:
                     saved_config = json.load(f)
                     default_config.update(saved_config)
             except Exception:
@@ -66,11 +64,11 @@ class BackupManager:
 
     def create_backup(
         self,
-        backup_name: Optional[str] = None,
+        backup_name: str | None = None,
         include_data: bool = True,
         include_cache: bool = True,
         include_config: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         创建备份
 
@@ -88,7 +86,7 @@ class BackupManager:
 
         backup_file = self.backup_path / f"{backup_name}.tar.gz"
 
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "success": False,
             "backup_name": backup_name,
             "backup_file": str(backup_file),
@@ -146,7 +144,7 @@ class BackupManager:
         restore_data: bool = True,
         restore_cache: bool = True,
         restore_config: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         恢复备份
 
@@ -161,7 +159,7 @@ class BackupManager:
         """
         backup_file = self.backup_path / f"{backup_name}.tar.gz"
 
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "success": False,
             "backup_name": backup_name,
             "restored_directories": [],
@@ -216,7 +214,7 @@ class BackupManager:
 
         return result
 
-    def list_backups(self) -> List[Dict[str, Any]]:
+    def list_backups(self) -> list[dict[str, Any]]:
         """
         列出所有备份
 
@@ -247,7 +245,7 @@ class BackupManager:
 
         return backups
 
-    def delete_backup(self, backup_name: str) -> Dict[str, Any]:
+    def delete_backup(self, backup_name: str) -> dict[str, Any]:
         """
         删除备份
 
@@ -297,7 +295,7 @@ class BackupManager:
 
         return deleted_count
 
-    def get_backup_status(self) -> Dict[str, Any]:
+    def get_backup_status(self) -> dict[str, Any]:
         """
         获取备份状态
 
@@ -319,7 +317,7 @@ class BackupManager:
             "next_backup_time": self._calculate_next_backup_time(),
         }
 
-    def _calculate_next_backup_time(self) -> Optional[str]:
+    def _calculate_next_backup_time(self) -> str | None:
         """计算下次备份时间"""
         last_backup = self.config.get("last_backup_time")
         if not last_backup:
@@ -355,7 +353,7 @@ class BackupManager:
         except Exception:
             return True
 
-    def auto_backup(self) -> Optional[Dict[str, Any]]:
+    def auto_backup(self) -> dict[str, Any] | None:
         """
         自动备份（如果需要）
 

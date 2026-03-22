@@ -11,9 +11,8 @@ Stock screener for asset-lens.
 
 import json
 from dataclasses import dataclass, field
-from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..config import config
 
@@ -74,7 +73,7 @@ class ScreenerConfig:
 class StockScreener:
     """股票筛选器"""
 
-    def __init__(self, config_path: Optional[Path] = None):
+    def __init__(self, config_path: Path | None = None):
         self.config_path = config_path or config.project_root / "config" / "stock_screener.json"
         self.screener_config = self._load_config()
         self.cache_path = config.cache_path
@@ -85,7 +84,7 @@ class StockScreener:
             return ScreenerConfig()
 
         try:
-            with open(self.config_path, "r", encoding="utf-8") as f:
+            with open(self.config_path, encoding="utf-8") as f:
                 data = json.load(f)
 
             fundamental_data = data.get("fundamental", {})
@@ -129,29 +128,29 @@ class StockScreener:
         except Exception:
             return ScreenerConfig()
 
-    def _load_market_stocks(self) -> List[Dict[str, Any]]:
+    def _load_market_stocks(self) -> list[dict[str, Any]]:
         """加载市场股票数据"""
         market_file = self.cache_path / "market_stocks.json"
         if market_file.exists():
-            with open(market_file, "r", encoding="utf-8") as f:
-                data: Dict[str, Any] = json.load(f)
-                stocks_list: List[Dict[str, Any]] = data.get("data", [])
+            with open(market_file, encoding="utf-8") as f:
+                data: dict[str, Any] = json.load(f)
+                stocks_list: list[dict[str, Any]] = data.get("data", [])
                 return stocks_list
         return []
 
-    def _load_stock_history(self, code: str) -> Optional[Dict[str, Any]]:
+    def _load_stock_history(self, code: str) -> dict[str, Any] | None:
         """加载股票历史数据"""
         history_file = self.cache_path / "stock_history_baostock.json"
         if history_file.exists():
-            with open(history_file, "r", encoding="utf-8") as f:
-                data: Dict[str, Any] = json.load(f)
-                history_data: Dict[str, Any] = data.get("data", {})
+            with open(history_file, encoding="utf-8") as f:
+                data: dict[str, Any] = json.load(f)
+                history_data: dict[str, Any] = data.get("data", {})
                 if history_data and isinstance(history_data, dict):
-                    history: Optional[Dict[str, Any]] = history_data.get(code)
+                    history: dict[str, Any] | None = history_data.get(code)
                     return history
         return None
 
-    def filter_by_fundamental(self, stocks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def filter_by_fundamental(self, stocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """
         基本面筛选
 
@@ -187,7 +186,7 @@ class StockScreener:
 
         return results
 
-    def _calculate_fundamental_score(self, stock: Dict[str, Any]) -> float:
+    def _calculate_fundamental_score(self, stock: dict[str, Any]) -> float:
         """计算基本面得分"""
         score = 0.0
 
@@ -227,8 +226,8 @@ class StockScreener:
         return min(100, max(0, score))
 
     def filter_by_technical(
-        self, stocks: List[Dict[str, Any]], histories: Dict[str, Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+        self, stocks: list[dict[str, Any]], histories: dict[str, dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """
         技术面筛选
 
@@ -267,7 +266,7 @@ class StockScreener:
 
         return results
 
-    def _calculate_technical_score(self, stock: Dict[str, Any], klines: List[Dict]) -> float:
+    def _calculate_technical_score(self, stock: dict[str, Any], klines: list[dict]) -> float:
         """计算技术面得分"""
         score = 0.0
 
@@ -309,7 +308,7 @@ class StockScreener:
         return min(100, max(0, score))
 
     def _check_technical_conditions(
-        self, stock: Dict[str, Any], klines: List[Dict], cfg: TechnicalConfig
+        self, stock: dict[str, Any], klines: list[dict], cfg: TechnicalConfig
     ) -> bool:
         """检查技术面条件"""
         closes = [k.get("close", 0) for k in klines[-60:] if k.get("close")]
@@ -333,7 +332,7 @@ class StockScreener:
 
         return True
 
-    def calculate_comprehensive_score(self, stock: Dict[str, Any]) -> Dict[str, Any]:
+    def calculate_comprehensive_score(self, stock: dict[str, Any]) -> dict[str, Any]:
         """
         计算综合评分
 
@@ -381,9 +380,9 @@ class StockScreener:
 
     def screen(
         self,
-        stocks: Optional[List[Dict[str, Any]]] = None,
+        stocks: list[dict[str, Any]] | None = None,
         filter_type: str = "comprehensive",
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         综合筛选
 
@@ -409,7 +408,7 @@ class StockScreener:
             histories = {}
             history_file = self.cache_path / "stock_history_baostock.json"
             if history_file.exists():
-                with open(history_file, "r", encoding="utf-8") as f:
+                with open(history_file, encoding="utf-8") as f:
                     data = json.load(f)
                     histories = data.get("data", {})
             results = self.filter_by_technical(stocks, histories)
@@ -418,7 +417,7 @@ class StockScreener:
             histories = {}
             history_file = self.cache_path / "stock_history_baostock.json"
             if history_file.exists():
-                with open(history_file, "r", encoding="utf-8") as f:
+                with open(history_file, encoding="utf-8") as f:
                     data = json.load(f)
                     histories = data.get("data", {})
             results = self.filter_by_technical(fundamental_results, histories)
@@ -435,9 +434,9 @@ class StockScreener:
 
     def screen_with_custom_strategy(
         self,
-        stocks: Optional[List[Dict[str, Any]]] = None,
-        strategy: Optional[Dict[str, Any]] = None,
-    ) -> List[Dict[str, Any]]:
+        stocks: list[dict[str, Any]] | None = None,
+        strategy: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
         """
         自定义策略筛选
 

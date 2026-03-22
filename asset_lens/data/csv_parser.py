@@ -6,15 +6,15 @@ CSV 数据读取和解析模块
 import csv
 import logging
 from datetime import date, datetime, timedelta
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from ..config import config
-from ..data.models import Currency, InvestmentProduct, InvestmentType, RiskLevel
+from ..data.models import InvestmentProduct, InvestmentType, RiskLevel
 from .parser_utils import parse_date as _parse_date
 from .parser_utils import parse_decimal as _parse_decimal
-from .parsers.investment_calculator import days360, InvestmentCalculator
+from .parsers.investment_calculator import days360
 
 logger = logging.getLogger(__name__)
 
@@ -29,11 +29,11 @@ class ExchangeRateCache:
         Args:
             ttl_seconds: 缓存有效期（秒），默认 1 小时
         """
-        self._cache: Dict[str, Tuple[float, float]] = {}
-        self._timestamps: Dict[str, datetime] = {}
+        self._cache: dict[str, tuple[float, float]] = {}
+        self._timestamps: dict[str, datetime] = {}
         self._ttl = ttl_seconds
 
-    def get(self, key: str) -> Optional[Tuple[float, float]]:
+    def get(self, key: str) -> tuple[float, float] | None:
         """获取缓存的汇率"""
         if key not in self._cache:
             return None
@@ -47,7 +47,7 @@ class ExchangeRateCache:
         logger.debug(f"使用缓存的汇率: {key}")
         return self._cache[key]
 
-    def set(self, key: str, value: Tuple[float, float]) -> None:
+    def set(self, key: str, value: tuple[float, float]) -> None:
         """缓存汇率"""
         self._cache[key] = value
         self._timestamps[key] = datetime.now()
@@ -59,7 +59,7 @@ class ExchangeRateCache:
         self._timestamps.clear()
         logger.debug("汇率缓存已清空")
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """获取缓存统计信息"""
         return {
             "size": len(self._cache),
@@ -133,7 +133,7 @@ class CSVParser:
             csv_files = list(data_dir.glob("投资产品*.csv"))
             if csv_files:
                 csv_path = csv_files[0]
-                with open(csv_path, "r", encoding="utf-8-sig") as f:
+                with open(csv_path, encoding="utf-8-sig") as f:
                     lines = f.readlines()
 
                 if len(lines) >= 2:
@@ -191,7 +191,7 @@ class CSVParser:
 
             ws2_path = ws2_files[0]
 
-            with open(ws2_path, "r", encoding="utf-8-sig") as f:
+            with open(ws2_path, encoding="utf-8-sig") as f:
                 lines = f.readlines()
 
             if len(lines) < 2:
@@ -453,8 +453,8 @@ class CSVParser:
 
     @classmethod
     def _calculate_irr_for_products(
-        cls, products: List[InvestmentProduct], reference_date: Optional[datetime] = None
-    ) -> List[InvestmentProduct]:
+        cls, products: list[InvestmentProduct], reference_date: datetime | None = None
+    ) -> list[InvestmentProduct]:
         """
         对有交易记录的产品使用 IRR 计算年化收益率（与 ts-demo 保持一致）
         Args:
@@ -635,9 +635,9 @@ class CSVParser:
         cls,
         records_str: str,
         investment_type,
-        reference_date: Optional[datetime] = None,
-        product_name: Optional[str] = None,
-    ) -> List[dict]:
+        reference_date: datetime | None = None,
+        product_name: str | None = None,
+    ) -> list[dict]:
         """解析定投交易记录"""
         from datetime import datetime
 
@@ -665,8 +665,8 @@ class CSVParser:
 
     @classmethod
     def _calculate_cashflows_with_days(
-        cls, transactions: List[dict], start_date, current_amount, total_days: int
-    ) -> List[dict]:
+        cls, transactions: list[dict], start_date, current_amount, total_days: int
+    ) -> list[dict]:
         """
         计算现金流（使用 days360 计算天数，与 ts-demo 一致）
         Args:
@@ -679,7 +679,7 @@ class CSVParser:
         """
         from datetime import date
 
-        cashflows: List[dict] = []
+        cashflows: list[dict] = []
 
         if not start_date:
             return cashflows
@@ -701,7 +701,7 @@ class CSVParser:
                     trans_date = date(int(date_parts[0]), int(date_parts[1]), int(date_parts[2]))
                 else:
                     continue
-            except (ValueError, IndexError) as e:
+            except (ValueError, IndexError):
                 logger.warning(f"日期解析失败: {date_str}", exc_info=True)
                 continue
 
@@ -721,12 +721,12 @@ class CSVParser:
     @classmethod
     def _calculate_cashflows_with_days_for_dca(
         cls,
-        transactions: List[dict],
+        transactions: list[dict],
         start_date: date,
         current_amount: Decimal,
         total_days: int,
         initial_amount: Decimal,
-    ) -> List[dict]:
+    ) -> list[dict]:
         """
         计算定投产品的现金流（使用初始金额作为净投入）
         Args:
@@ -738,7 +738,7 @@ class CSVParser:
         Returns:
             现金流列表，格式为 [{"amount": float, "days": int}, ...]
         """
-        cashflows: List[dict] = []
+        cashflows: list[dict] = []
 
         if not start_date:
             return cashflows
@@ -753,7 +753,7 @@ class CSVParser:
         return cashflows
 
     @classmethod
-    def _parse_transaction_records(cls, records_str: str) -> List[dict]:
+    def _parse_transaction_records(cls, records_str: str) -> list[dict]:
         """
         解析交易记录字符串
         Args:
@@ -761,7 +761,7 @@ class CSVParser:
         Returns:
             交易记录列表
         """
-        transactions: List[Dict[str, Any]] = []
+        transactions: list[dict[str, Any]] = []
         if not records_str:
             return transactions
 
@@ -783,7 +783,7 @@ class CSVParser:
         return transactions
 
     @classmethod
-    def _calculate_cashflows(cls, transactions: List[dict], current_amount: Decimal) -> List[float]:
+    def _calculate_cashflows(cls, transactions: list[dict], current_amount: Decimal) -> list[float]:
         """
         计算现金流
         Args:
@@ -811,7 +811,7 @@ class CSVParser:
     @classmethod
     def parse_csv_file(
         cls, csv_path: Path, reference_date: date | None = None
-    ) -> List[InvestmentProduct]:
+    ) -> list[InvestmentProduct]:
         """
         解析 CSV 文件
         Args:
@@ -829,7 +829,7 @@ class CSVParser:
         products = []
 
         try:
-            with open(csv_path, "r", encoding="utf-8-sig") as f:
+            with open(csv_path, encoding="utf-8-sig") as f:
                 # 使用 csv.DictReader 读取
                 reader = csv.DictReader(f)
 
@@ -847,7 +847,7 @@ class CSVParser:
         return products
 
     @classmethod
-    def load_data(cls, data_path: Path | None = None) -> List[InvestmentProduct]:
+    def load_data(cls, data_path: Path | None = None) -> list[InvestmentProduct]:
         """
         加载投资数据
         Args:
@@ -884,7 +884,7 @@ class CSVParser:
                 csv_path = data_path
 
             return cls.parse_csv_file(csv_path)
-        
+
         # 如果没有传入 data_path，使用配置的路径
         data_path = config.data_path
 
@@ -922,7 +922,7 @@ class CSVParser:
 
                     logger.info(f"使用数据目录: {target_dir.name}")
 
-                
+
                     usd_rate, hkd_rate = cls.get_exchange_rates(target_dir)
                     csv_files = list(target_dir.glob("投资产品-表格 1.csv"))
                     if not csv_files:
@@ -979,7 +979,7 @@ class CSVParser:
         return cls.parse_csv_file(csv_path)
 
     @classmethod
-    def load_data_from_dir(cls, data_dir: Path) -> List[InvestmentProduct]:
+    def load_data_from_dir(cls, data_dir: Path) -> list[InvestmentProduct]:
         """
         从指定目录加载投资数据
 

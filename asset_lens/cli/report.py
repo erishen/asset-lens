@@ -4,15 +4,14 @@ Report CLI commands for asset-lens.
 """
 
 from pathlib import Path
-from typing import Optional
 
 import click
 
 
-def _get_data_dir(data_mode: str) -> Optional[Path]:
+def _get_data_dir(data_mode: str) -> Path | None:
     """获取数据目录"""
     from asset_lens.config import config
-    
+
     if data_mode == "real":
         result = config.get_latest_data_dir()
         return result if result else None
@@ -22,14 +21,14 @@ def _get_data_dir(data_mode: str) -> Optional[Path]:
 
 def register_report_commands(cli: click.Group) -> None:
     """注册报告命令到 CLI 组"""
-    
+
     @cli.command()
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="当前数据模式")
-    def show_asset_summary(data_mode: Optional[str]):
+    def show_asset_summary(data_mode: str | None):
         """显示资产汇总（资产汇总-表格 1.csv）"""
         from asset_lens.config import config
         from asset_lens.data.asset_summary_parser import AssetSummaryParser
-        
+
         actual_mode = data_mode or config.data_mode
         data_dir = _get_data_dir(actual_mode)
         if not data_dir:
@@ -66,7 +65,7 @@ def register_report_commands(cli: click.Group) -> None:
 
     @cli.command()
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="当前数据模式")
-    def show_exchange_rate_history(data_mode: Optional[str]):
+    def show_exchange_rate_history(data_mode: str | None):
         """显示汇率历史（资产汇总-表格 1.csv）"""
         from asset_lens.config import config
         from asset_lens.data.exchange_rate_parser import ExchangeRateParser
@@ -105,7 +104,7 @@ def register_report_commands(cli: click.Group) -> None:
 
     @cli.command()
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="当前数据模式")
-    def show_sell_records(data_mode: Optional[str]):
+    def show_sell_records(data_mode: str | None):
         """显示卖出记录（卖出记录-表格 1.csv）"""
         from asset_lens.config import config
         from asset_lens.data.sell_record_parser import SellRecordParser
@@ -145,7 +144,7 @@ def register_report_commands(cli: click.Group) -> None:
     @cli.command()
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="当前数据模式")
     @click.option("--output-format", type=click.Choice(["console", "csv", "json"]), default="console", help="输出格式")
-    def export_asset_summary(data_mode: Optional[str], output_format: str):
+    def export_asset_summary(data_mode: str | None, output_format: str):
         """导出资产汇总数据"""
         from asset_lens.config import config
         from asset_lens.data.asset_summary_parser import AssetSummaryParser
@@ -209,7 +208,6 @@ def register_report_commands(cli: click.Group) -> None:
     def report():
         """生成投资报告"""
         from asset_lens.report.investment_report import investment_report_generator
-        from asset_lens.config import config
 
         click.echo("\n📝 生成投资报告")
         click.echo("=" * 60)
@@ -222,7 +220,7 @@ def register_report_commands(cli: click.Group) -> None:
 
     @cli.command()
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
-    def risk_summary(data_mode: Optional[str]):
+    def risk_summary(data_mode: str | None):
         """显示风险摘要"""
         from asset_lens.config import config
         from asset_lens.data.csv_parser import CSVParser
@@ -243,20 +241,20 @@ def register_report_commands(cli: click.Group) -> None:
                 risk = p.risk_level or "未知"
                 risk_distribution[risk] = risk_distribution.get(risk, 0) + (p.current_amount or 0)
 
-            click.echo(f"\n📈 风险统计:")
+            click.echo("\n📈 风险统计:")
             click.echo(f"  总资产: ¥{total_value:,.2f}")
-            click.echo(f"  风险等级分布:")
+            click.echo("  风险等级分布:")
             for level, amount in risk_distribution.items():
                 click.echo(f"    {level}: ¥{amount:,.2f}")
 
-            click.echo(f"\n✅ 风险分析完成！")
+            click.echo("\n✅ 风险分析完成！")
 
         except Exception as e:
             click.echo(f"❌ 分析失败: {e}", err=True)
 
     @cli.command()
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
-    def position_advice(data_mode: Optional[str]):
+    def position_advice(data_mode: str | None):
         """显示仓位建议"""
         from asset_lens.config import config
         from asset_lens.data.csv_parser import CSVParser
@@ -271,7 +269,7 @@ def register_report_commands(cli: click.Group) -> None:
             products = CSVParser.load_data()
             click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
 
-            click.echo(f"\n📈 仓位建议:")
+            click.echo("\n📈 仓位建议:")
             for product in products[:10]:
                 advice = "持有"
                 if product.annual_return is not None:
@@ -281,14 +279,14 @@ def register_report_commands(cli: click.Group) -> None:
                         advice = "考虑止损"
                 click.echo(f"  {product.name}: {advice}")
 
-            click.echo(f"\n✅ 分析完成！")
+            click.echo("\n✅ 分析完成！")
 
         except Exception as e:
             click.echo(f"❌ 分析失败: {e}", err=True)
 
     @cli.command()
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
-    def stop_loss(data_mode: Optional[str]):
+    def stop_loss(data_mode: str | None):
         """计算止损止盈位"""
         from asset_lens.config import config
         from asset_lens.data.csv_parser import CSVParser
@@ -309,12 +307,12 @@ def register_report_commands(cli: click.Group) -> None:
                     current_price = float(product.current_amount)
                     stop_loss_price = entry_price * 0.9
                     take_profit_price = entry_price * 1.2
-                    
+
                     click.echo(f"\n{product.name}:")
                     click.echo(f"  止损位: ¥{stop_loss_price:.2f} (-10%)")
                     click.echo(f"  止盈位: ¥{take_profit_price:.2f} (+20%)")
 
-            click.echo(f"\n✅ 计算完成！")
+            click.echo("\n✅ 计算完成！")
 
         except Exception as e:
             click.echo(f"❌ 计算失败: {e}", err=True)

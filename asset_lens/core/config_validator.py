@@ -5,7 +5,6 @@ Configuration validator for asset-lens.
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -13,8 +12,8 @@ class ValidationResult:
     """验证结果"""
 
     is_valid: bool
-    errors: List[str]
-    warnings: List[str]
+    errors: list[str]
+    warnings: list[str]
 
     def __bool__(self) -> bool:
         return self.is_valid
@@ -23,9 +22,9 @@ class ValidationResult:
 class ConfigValidator:
     """配置验证器"""
 
-    REQUIRED_ENV_VARS: List[str] = []
-    OPTIONAL_ENV_VARS: List[str] = []
-    DEFAULT_VALUES: Dict[str, str] = {
+    REQUIRED_ENV_VARS: list[str] = []
+    OPTIONAL_ENV_VARS: list[str] = []
+    DEFAULT_VALUES: dict[str, str] = {
         "data_mode": "sample",
         "output_path": "output",
         "default_usd_rate": "7.25",
@@ -41,11 +40,11 @@ class ConfigValidator:
         if not env_path.exists():
             return ValidationResult(False, [], [f".env 文件不存在: {env_path}"])
 
-        errors: List[str] = []
-        warnings: List[str] = []
+        errors: list[str] = []
+        warnings: list[str] = []
 
         try:
-            with open(env_path, "r", encoding="utf-8") as f:
+            with open(env_path, encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
                     if line.startswith("#"):
@@ -128,12 +127,12 @@ class ConfigValidator:
         return ValidationResult(True, [], [])
 
     @classmethod
-    def validate_all(cls, project_root: Path | None = None) -> Dict[str, ValidationResult]:
+    def validate_all(cls, project_root: Path | None = None) -> dict[str, ValidationResult]:
         """验证所有配置"""
         if project_root is None:
             project_root = Path.cwd()
 
-        results: Dict[str, ValidationResult] = {}
+        results: dict[str, ValidationResult] = {}
 
         env_result = cls.validate_env_file(project_root / ".env")
         results["env_file"] = env_result

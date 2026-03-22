@@ -3,15 +3,15 @@ Performance Analysis - 绩效分析模块
 """
 
 from decimal import Decimal
-from typing import Any, Dict, List
+from typing import Any
 
-from ..data.models import InvestmentProduct, InvestmentType, Portfolio, RiskLevel
+from ..data.models import Portfolio, RiskLevel
 
 
 class PerformanceAnalyzer:
     """绩效分析器"""
 
-    def generate_investment_efficiency(self, portfolio: Portfolio) -> Dict[str, Any]:
+    def generate_investment_efficiency(self, portfolio: Portfolio) -> dict[str, Any]:
         """生成投资效率分析
 
         Args:
@@ -53,7 +53,7 @@ class PerformanceAnalyzer:
 
     def generate_optimization_suggestions(
         self, portfolio: Portfolio
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """生成优化建议
 
         Args:
@@ -64,7 +64,7 @@ class PerformanceAnalyzer:
         """
         suggestions = []
 
-        type_distribution: Dict[str, Decimal] = {}
+        type_distribution: dict[str, Decimal] = {}
         for product in portfolio.products:
             type_name = product.investment_type.value
             amount = product.current_amount or Decimal("0")
@@ -105,7 +105,7 @@ class PerformanceAnalyzer:
 
         return suggestions
 
-    def generate_investment_advice(self, portfolio: Portfolio) -> List[str]:
+    def generate_investment_advice(self, portfolio: Portfolio) -> list[str]:
         """生成投资建议
 
         Args:

@@ -4,9 +4,8 @@ Market index data models for asset-lens.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 @dataclass
@@ -17,10 +16,10 @@ class IndexPerformance:
     weekly_high: Decimal = Decimal("0")  # 周最高
     weekly_low: Decimal = Decimal("0")  # 周最低
     weekly_amplitude: Decimal = Decimal("0")  # 周振幅
-    monthly_change: Optional[Decimal] = None  # 月涨跌幅
-    ytd_change: Optional[Decimal] = None  # 年初至今涨跌幅
+    monthly_change: Decimal | None = None  # 月涨跌幅
+    ytd_change: Decimal | None = None  # 年初至今涨跌幅
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """转换为字典"""
         result = {
             "周涨跌幅": str(self.weekly_change),
@@ -44,11 +43,11 @@ class IndexHistory:
     close: Decimal  # 收盘价
     high: Decimal  # 最高价
     low: Decimal  # 最低价
-    volume: Optional[int] = None  # 成交量
+    volume: int | None = None  # 成交量
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """转换为字典"""
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "日期": self.date,
             "开盘": str(self.open),
             "收盘": str(self.close),
@@ -73,14 +72,14 @@ class MarketIndex:
     open: Decimal = Decimal("0")  # 今开
     high: Decimal = Decimal("0")  # 最高
     low: Decimal = Decimal("0")  # 最低
-    volume: Optional[int] = None  # 成交量
-    amount: Optional[Decimal] = None  # 成交额
-    performance: Optional[IndexPerformance] = None  # 周期表现
-    history: List[IndexHistory] = field(default_factory=list)  # 历史走势
+    volume: int | None = None  # 成交量
+    amount: Decimal | None = None  # 成交额
+    performance: IndexPerformance | None = None  # 周期表现
+    history: list[IndexHistory] = field(default_factory=list)  # 历史走势
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """转换为字典"""
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "代码": self.code,
             "名称": self.name,
             "最新价": str(self.latest_price),
@@ -110,10 +109,10 @@ class MarketIndexCache:
     data_date: str  # 数据日期
     is_trading_time: bool = False  # 是否交易时间
     is_trading_day: bool = False  # 是否交易日
-    next_trading_day: Optional[str] = None  # 下一个交易日
-    indexes: Dict[str, MarketIndex] = field(default_factory=dict)  # 指数数据
+    next_trading_day: str | None = None  # 下一个交易日
+    indexes: dict[str, MarketIndex] = field(default_factory=dict)  # 指数数据
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """转换为字典"""
         result = {
             "更新时间": self.update_time,

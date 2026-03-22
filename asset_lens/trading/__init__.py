@@ -3,24 +3,24 @@ Trading module - 交易相关功能
 """
 
 from .auto_trader import AutoTrader, auto_trader
-from .stock_pool import StockPool, StockPosition, stock_pool
 from .risk_manager import RiskManager, risk_manager
+from .stock_pool import StockPool, StockPosition, stock_pool
 from .stock_pool_builder import (
-    StockPoolBuilder,
-    StockEntryMatrix,
     EntryReason,
-    FilterCondition,
     FactorCategory,
+    FilterCondition,
+    StockEntryMatrix,
+    StockPoolBuilder,
     stock_pool_builder,
 )
 from .strategy_simulator import (
-    StrategySimulator,
-    SimulationConfig,
-    SimulationResult,
+    RebalanceFrequency,
     SimulatedPosition,
     SimulatedTrade,
-    RebalanceFrequency,
+    SimulationConfig,
+    SimulationResult,
     StopLossType,
+    StrategySimulator,
     strategy_simulator,
 )
 

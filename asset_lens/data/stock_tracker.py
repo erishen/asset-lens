@@ -10,10 +10,9 @@ Stock tracker for asset-lens.
 """
 
 import json
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
 
 from ..config import config
 from ..trading.stock_pool import StockPool
@@ -46,7 +45,7 @@ class MonsterStockSignal:
     signal_date: str
     description: str
     score: float
-    details: Dict[str, Any]
+    details: dict[str, Any]
 
 
 @dataclass
@@ -71,15 +70,15 @@ class StockTracker:
         self.tracker_file = self.tracker_path / f"{pool_name}_tracker.json"
         self.stock_pool = StockPool(pool_name)
         self.config = TrackerConfig()
-        self.daily_records: Dict[str, List[DailyRecord]] = {}
-        self.monster_signals: List[MonsterStockSignal] = []
+        self.daily_records: dict[str, list[DailyRecord]] = {}
+        self.monster_signals: list[MonsterStockSignal] = []
         self._load_tracker()
 
     def _load_tracker(self) -> None:
         """加载跟踪数据"""
         if self.tracker_file.exists():
             try:
-                with open(self.tracker_file, "r", encoding="utf-8") as f:
+                with open(self.tracker_file, encoding="utf-8") as f:
                     data = json.load(f)
 
                 for code, records in data.get("daily_records", {}).items():
@@ -157,7 +156,7 @@ class StockTracker:
         with open(self.tracker_file, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
-    def record_daily(self, stock_data: Dict[str, Any]) -> bool:
+    def record_daily(self, stock_data: dict[str, Any]) -> bool:
         """
         记录每日数据
 
@@ -172,7 +171,7 @@ class StockTracker:
             return False
 
         today = datetime.now().strftime("%Y-%m-%d")
-        
+
         record = DailyRecord(
             date=today,
             code=code,
@@ -199,7 +198,7 @@ class StockTracker:
 
         return False
 
-    def record_batch(self, stocks_data: List[Dict[str, Any]]) -> int:
+    def record_batch(self, stocks_data: list[dict[str, Any]]) -> int:
         """
         批量记录每日数据
 
@@ -219,7 +218,7 @@ class StockTracker:
         self._save_tracker()
         return count
 
-    def detect_monster_stocks(self, code: Optional[str] = None) -> List[MonsterStockSignal]:
+    def detect_monster_stocks(self, code: str | None = None) -> list[MonsterStockSignal]:
         """
         检测妖股信号
 
@@ -250,15 +249,15 @@ class StockTracker:
         return signals
 
     def _analyze_monster_signals(
-        self, code: str, records: List[DailyRecord]
-    ) -> Optional[MonsterStockSignal]:
+        self, code: str, records: list[DailyRecord]
+    ) -> MonsterStockSignal | None:
         """分析妖股信号"""
         if not records:
             return None
 
         score: int = 0
-        signal_types: List[str] = []
-        details: Dict[str, Any] = {}
+        signal_types: list[str] = []
+        details: dict[str, Any] = {}
 
         name = records[0].name
 
@@ -335,7 +334,7 @@ class StockTracker:
             details=details,
         )
 
-    def _check_consecutive_limit_up(self, records: List[DailyRecord]) -> int:
+    def _check_consecutive_limit_up(self, records: list[DailyRecord]) -> int:
         """检查连续涨停"""
         count = 0
         for r in records:
@@ -345,7 +344,7 @@ class StockTracker:
                 break
         return count
 
-    def _check_max_gain(self, records: List[DailyRecord]) -> float:
+    def _check_max_gain(self, records: list[DailyRecord]) -> float:
         """检查最大涨幅"""
         if not records:
             return 0.0
@@ -356,7 +355,7 @@ class StockTracker:
             total_gain += r.change_percent
         return total_gain
 
-    def _check_volume_surge(self, records: List[DailyRecord]) -> Optional[float]:
+    def _check_volume_surge(self, records: list[DailyRecord]) -> float | None:
         """检查成交量放大"""
         if len(records) < 5:
             return None
@@ -368,7 +367,7 @@ class StockTracker:
             return recent_volume / avg_volume
         return None
 
-    def _check_turnover_surge(self, records: List[DailyRecord]) -> Optional[float]:
+    def _check_turnover_surge(self, records: list[DailyRecord]) -> float | None:
         """检查换手率放大"""
         if len(records) < 5:
             return None
@@ -380,7 +379,7 @@ class StockTracker:
             return recent_turnover / avg_turnover
         return None
 
-    def _check_trend_strength(self, records: List[DailyRecord]) -> int:
+    def _check_trend_strength(self, records: list[DailyRecord]) -> int:
         """检查趋势强度"""
         count = 0
         for r in records:
@@ -390,7 +389,7 @@ class StockTracker:
                 break
         return count
 
-    def _check_price_acceleration(self, records: List[DailyRecord]) -> Optional[float]:
+    def _check_price_acceleration(self, records: list[DailyRecord]) -> float | None:
         """检查价格加速上涨"""
         if len(records) < 3:
             return None
@@ -401,7 +400,7 @@ class StockTracker:
                 return changes[0] - changes[2]
         return None
 
-    def _check_new_high(self, records: List[DailyRecord]) -> Optional[float]:
+    def _check_new_high(self, records: list[DailyRecord]) -> float | None:
         """检查创新高"""
         if len(records) < 5:
             return None
@@ -413,7 +412,7 @@ class StockTracker:
             return current_high - max(prev_highs)
         return None
 
-    def _check_gap_up(self, records: List[DailyRecord]) -> Optional[float]:
+    def _check_gap_up(self, records: list[DailyRecord]) -> float | None:
         """检查跳空高开"""
         if len(records) < 2:
             return None
@@ -427,7 +426,7 @@ class StockTracker:
                 return gap_pct
         return None
 
-    def _check_volatility_breakout(self, records: List[DailyRecord]) -> Optional[float]:
+    def _check_volatility_breakout(self, records: list[DailyRecord]) -> float | None:
         """检查波动突破"""
         if len(records) < 5:
             return None
@@ -439,7 +438,7 @@ class StockTracker:
             return current_range / avg_range
         return None
 
-    def get_tracking_report(self) -> Dict[str, Any]:
+    def get_tracking_report(self) -> dict[str, Any]:
         """
         生成跟踪报告
 

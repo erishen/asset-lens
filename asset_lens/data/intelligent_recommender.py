@@ -9,9 +9,8 @@ Intelligent recommendation system for asset-lens.
 """
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from datetime import datetime
+from typing import Any
 
 from ..config import config
 
@@ -26,7 +25,7 @@ class StrategyRecommendation:
     expected_return: float
     risk_level: str
     confidence: float
-    historical_performance: Dict[str, Any]
+    historical_performance: dict[str, Any]
 
 
 @dataclass
@@ -37,10 +36,10 @@ class StockRecommendation:
     name: str
     score: float
     reason: str
-    strategy_match: List[str]
+    strategy_match: list[str]
     risk_level: str
     confidence: float
-    indicators: Dict[str, Any]
+    indicators: dict[str, Any]
 
 
 class IntelligentRecommender:
@@ -53,11 +52,11 @@ class IntelligentRecommender:
 
     def recommend_strategy(
         self,
-        historical_data: Optional[Dict[str, List[Dict[str, Any]]]] = None,
-        market_environment: Optional[Dict[str, Any]] = None,
+        historical_data: dict[str, list[dict[str, Any]]] | None = None,
+        market_environment: dict[str, Any] | None = None,
         risk_preference: str = "moderate",
         investment_period: str = "medium",
-    ) -> List[StrategyRecommendation]:
+    ) -> list[StrategyRecommendation]:
         """
         基于历史表现推荐策略
 
@@ -70,7 +69,6 @@ class IntelligentRecommender:
         Returns:
             策略推荐列表
         """
-        from ..strategy.backtester import Backtester
         from ..strategy.engine import strategy_engine
 
         strategies = strategy_engine.list_strategies()
@@ -117,11 +115,11 @@ class IntelligentRecommender:
 
     def recommend_stocks(
         self,
-        market_environment: Optional[Dict[str, Any]] = None,
-        strategy_name: Optional[str] = None,
+        market_environment: dict[str, Any] | None = None,
+        strategy_name: str | None = None,
         max_stocks: int = 20,
         min_score: float = 60,
-    ) -> List[StockRecommendation]:
+    ) -> list[StockRecommendation]:
         """
         基于市场环境推荐股票
 
@@ -134,8 +132,8 @@ class IntelligentRecommender:
         Returns:
             股票推荐列表
         """
-        from .market_stock_fetcher import market_stock_fetcher
         from ..strategy.screener import stock_screener
+        from .market_stock_fetcher import market_stock_fetcher
 
         stocks = market_stock_fetcher.get_cached_market_stocks()
         if not stocks:
@@ -191,11 +189,11 @@ class IntelligentRecommender:
     def _calculate_strategy_score(
         self,
         strategy_name: str,
-        historical_data: Optional[Dict[str, List[Dict[str, Any]]]],
-        market_environment: Optional[Dict[str, Any]],
+        historical_data: dict[str, list[dict[str, Any]]] | None,
+        market_environment: dict[str, Any] | None,
         risk_preference: str,
         investment_period: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """计算策略评分"""
         from ..strategy.engine import strategy_engine
 
@@ -204,7 +202,7 @@ class IntelligentRecommender:
             return {"total_score": 0}
 
         score: float = 0.0
-        performance: Dict[str, Any] = {}
+        performance: dict[str, Any] = {}
 
         if historical_data:
             try:
@@ -261,10 +259,10 @@ class IntelligentRecommender:
 
     def _calculate_stock_score(
         self,
-        stock: Dict[str, Any],
-        market_environment: Dict[str, Any],
-        strategy_name: Optional[str],
-    ) -> Dict[str, Any]:
+        stock: dict[str, Any],
+        market_environment: dict[str, Any],
+        strategy_name: str | None,
+    ) -> dict[str, Any]:
         """计算股票评分"""
         from ..strategy.engine import strategy_engine
 
@@ -396,7 +394,7 @@ class IntelligentRecommender:
     def _calculate_environment_compatibility(
         self,
         strategy: Any,
-        market_environment: Dict[str, Any],
+        market_environment: dict[str, Any],
     ) -> float:
         """计算市场环境兼容性评分"""
         score: float = 0.0
@@ -461,8 +459,8 @@ class IntelligentRecommender:
     def _generate_strategy_reason(
         self,
         strategy_name: str,
-        score: Dict[str, Any],
-        market_environment: Optional[Dict[str, Any]],
+        score: dict[str, Any],
+        market_environment: dict[str, Any] | None,
     ) -> str:
         """生成策略推荐原因"""
         reasons = []
@@ -484,9 +482,9 @@ class IntelligentRecommender:
 
     def _generate_stock_reason(
         self,
-        stock: Dict[str, Any],
-        score: Dict[str, Any],
-        market_environment: Dict[str, Any],
+        stock: dict[str, Any],
+        score: dict[str, Any],
+        market_environment: dict[str, Any],
     ) -> str:
         """生成股票推荐原因"""
         reasons = []
@@ -508,7 +506,7 @@ class IntelligentRecommender:
 
         return "；".join(reasons)
 
-    def _get_market_environment(self) -> Dict[str, Any]:
+    def _get_market_environment(self) -> dict[str, Any]:
         """获取市场环境"""
         from .market_environment import market_environment_analyzer
 
@@ -528,8 +526,8 @@ class IntelligentRecommender:
 
     def save_recommendations(
         self,
-        recommendations: List[Any],
-        filename: Optional[str] = None,
+        recommendations: list[Any],
+        filename: str | None = None,
     ) -> str:
         """保存推荐结果"""
         import json

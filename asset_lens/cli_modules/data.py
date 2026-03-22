@@ -3,18 +3,18 @@ CLI Data Commands.
 CLI 数据命令
 """
 
+
 import click
-from typing import Optional
 
 
-def fetch_stock_data(codes: str, data_mode: Optional[str] = None):
+def fetch_stock_data(codes: str, data_mode: str | None = None):
     """获取股票行情数据"""
     from ..data.stock_fetcher import StockDataFetcher
 
     fetcher = StockDataFetcher()
     code_list = codes.split()
 
-    click.echo(f"\n📈 获取股票行情...")
+    click.echo("\n📈 获取股票行情...")
     click.echo("=" * 60)
 
     for code in code_list:
@@ -30,14 +30,14 @@ def fetch_stock_data(codes: str, data_mode: Optional[str] = None):
     click.echo("=" * 60)
 
 
-def fetch_fund_data(codes: str, data_mode: Optional[str] = None):
+def fetch_fund_data(codes: str, data_mode: str | None = None):
     """获取基金净值数据"""
     from ..data.fund_fetcher import FundDataFetcher
 
     fetcher = FundDataFetcher()
     code_list = codes.split()
 
-    click.echo(f"\n📊 获取基金净值...")
+    click.echo("\n📊 获取基金净值...")
     click.echo("=" * 60)
 
     for code in code_list:
@@ -79,7 +79,7 @@ def update_market_data(api: str = "eastmoney"):
     """更新市场数据"""
     from ..data.enhanced_market_data_fetcher import enhanced_market_data_fetcher
 
-    click.echo(f"\n🌍 更新市场数据（数据源: 增强版多数据源）...")
+    click.echo("\n🌍 更新市场数据（数据源: 增强版多数据源）...")
     click.echo("=" * 60)
 
     try:
@@ -100,9 +100,8 @@ def update_all_data():
     from ..data.csv_parser import CSVParser
     from ..data.enhanced_market_data_fetcher import enhanced_market_data_fetcher
     from ..data.fund_fetcher import FundDataFetcher
-    from ..data.stock_fetcher import StockDataFetcher
 
-    click.echo(f"\n🔄 更新所有数据...")
+    click.echo("\n🔄 更新所有数据...")
     click.echo("=" * 60)
 
     # 更新市场数据
@@ -118,7 +117,7 @@ def update_all_data():
     # 更新基金净值
     try:
         products = CSVParser.load_data()
-        fund_codes = [getattr(p, 'name', '') for p in products if getattr(p, 'investment_type', None) and getattr(p, 'investment_type').value == "基金"]
+        fund_codes = [getattr(p, 'name', '') for p in products if getattr(p, 'investment_type', None) and p.investment_type.value == "基金"]
         if fund_codes:
             fund_fetcher = FundDataFetcher()
             updated = 0

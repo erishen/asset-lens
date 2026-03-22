@@ -3,12 +3,13 @@ Advanced Analysis Tools - 高级分析工具
 包含技术分析、风险分析、组合分析等工具
 """
 
+import logging
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
+
 import numpy as np
 import pandas as pd
-from typing import Any, Dict, List, Optional, Tuple
-from dataclasses import dataclass
-from datetime import datetime, timedelta
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -20,65 +21,65 @@ class AnalysisResult:
     value: float
     unit: str
     timestamp: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 class TechnicalAnalysis:
     """技术分析工具"""
-    
+
     @staticmethod
     def calculate_sma(prices: pd.Series, window: int) -> pd.Series:
         """计算简单移动平均"""
         return prices.rolling(window=window).mean()
-    
+
     @staticmethod
     def calculate_ema(prices: pd.Series, span: int) -> pd.Series:
         """计算指数移动平均"""
         return prices.ewm(span=span, adjust=False).mean()
-    
+
     @staticmethod
     def calculate_rsi(prices: pd.Series, window: int = 14) -> pd.Series:
         """计算相对强弱指数"""
         delta = prices.diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
-        
+
         rs = gain / loss
         rsi = 100 - (100 / (1 + rs))
         return rsi
-    
+
     @staticmethod
     def calculate_macd(
         prices: pd.Series,
         fast: int = 12,
         slow: int = 26,
         signal: int = 9
-    ) -> Tuple[pd.Series, pd.Series, pd.Series]:
+    ) -> tuple[pd.Series, pd.Series, pd.Series]:
         """计算 MACD"""
         ema_fast = prices.ewm(span=fast, adjust=False).mean()
         ema_slow = prices.ewm(span=slow, adjust=False).mean()
-        
+
         macd_line = ema_fast - ema_slow
         signal_line = macd_line.ewm(span=signal, adjust=False).mean()
         histogram = macd_line - signal_line
-        
+
         return macd_line, signal_line, histogram
-    
+
     @staticmethod
     def calculate_bollinger_bands(
         prices: pd.Series,
         window: int = 20,
         num_std: int = 2
-    ) -> Tuple[pd.Series, pd.Series, pd.Series]:
+    ) -> tuple[pd.Series, pd.Series, pd.Series]:
         """计算布林带"""
         sma = prices.rolling(window=window).mean()
         std = prices.rolling(window=window).std()
-        
+
         upper_band = sma + (std * num_std)
         lower_band = sma - (std * num_std)
-        
+
         return upper_band, sma, lower_band
-    
+
     @staticmethod
     def calculate_atr(
         high: pd.Series,
@@ -90,13 +91,13 @@ class TechnicalAnalysis:
         high_low = high - low
         high_close = np.abs(high - close.shift())
         low_close = np.abs(low - close.shift())
-        
+
         tr = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
         atr = tr.rolling(window=window).mean()
-        
+
         return atr
-    
-    def full_analysis(self, prices: pd.DataFrame) -> Dict[str, Any]:
+
+    def full_analysis(self, prices: pd.DataFrame) -> dict[str, Any]:
         """
         完整技术分析
         
@@ -109,7 +110,7 @@ class TechnicalAnalysis:
         close = prices['close']
         high = prices['high']
         low = prices['low']
-        
+
         # 计算各种指标
         sma_20 = self.calculate_sma(close, 20)
         sma_50 = self.calculate_sma(close, 50)
@@ -119,7 +120,7 @@ class TechnicalAnalysis:
         macd, signal, hist = self.calculate_macd(close)
         upper, middle, lower = self.calculate_bollinger_bands(close)
         atr = self.calculate_atr(high, low, close)
-        
+
         return {
             "sma_20": sma_20.iloc[-1] if not sma_20.empty else None,
             "sma_50": sma_50.iloc[-1] if not sma_50.empty else None,
@@ -138,7 +139,7 @@ class TechnicalAnalysis:
 
 class RiskAnalysis:
     """风险分析工具"""
-    
+
     def __init__(self, risk_free_rate: float = 0.03):
         """
         初始化风险分析工具
@@ -147,7 +148,7 @@ class RiskAnalysis:
             risk_free_rate: 无风险利率
         """
         self.risk_free_rate = risk_free_rate
-    
+
     def calculate_var(
         self,
         returns: pd.Series,
@@ -164,7 +165,7 @@ class RiskAnalysis:
             VaR 值
         """
         return float(np.percentile(returns, (1 - confidence) * 100))
-    
+
     def calculate_cvar(
         self,
         returns: pd.Series,
@@ -182,7 +183,7 @@ class RiskAnalysis:
         """
         var = self.calculate_var(returns, confidence)
         return float(returns[returns <= var].mean())
-    
+
     def calculate_max_drawdown(self, prices: pd.Series) -> float:
         """
         计算最大回撤
@@ -196,7 +197,7 @@ class RiskAnalysis:
         peak = prices.expanding(min_periods=1).max()
         drawdown = (prices - peak) / peak
         return float(drawdown.min())
-    
+
     def calculate_sharpe_ratio(
         self,
         returns: pd.Series,
@@ -214,7 +215,7 @@ class RiskAnalysis:
         """
         excess_returns = returns - self.risk_free_rate / periods
         return float(np.sqrt(periods) * excess_returns.mean() / excess_returns.std())
-    
+
     def calculate_sortino_ratio(
         self,
         returns: pd.Series,
@@ -233,9 +234,9 @@ class RiskAnalysis:
         excess_returns = returns - self.risk_free_rate / periods
         downside_returns = returns[returns < 0]
         downside_std = downside_returns.std()
-        
+
         return float(np.sqrt(periods) * excess_returns.mean() / downside_std)
-    
+
     def calculate_calmar_ratio(
         self,
         returns: pd.Series,
@@ -254,14 +255,14 @@ class RiskAnalysis:
         annual_return = returns.mean() * periods
         prices = (1 + returns).cumprod()
         max_dd = abs(self.calculate_max_drawdown(prices))
-        
+
         return float(annual_return / max_dd) if max_dd > 0 else 0.0
-    
+
     def full_risk_analysis(
         self,
         returns: pd.Series,
-        prices: Optional[pd.Series] = None
-    ) -> Dict[str, float]:
+        prices: pd.Series | None = None
+    ) -> dict[str, float]:
         """
         完整风险分析
         
@@ -284,25 +285,25 @@ class RiskAnalysis:
             "skewness": returns.skew(),
             "kurtosis": returns.kurtosis()
         }
-        
+
         if prices is not None:
             results["max_drawdown"] = self.calculate_max_drawdown(prices)
-        
+
         return results
 
 
 class PortfolioAnalysis:
     """投资组合分析工具"""
-    
+
     def __init__(self):
         self.technical = TechnicalAnalysis()
         self.risk = RiskAnalysis()
-    
+
     def analyze_portfolio(
         self,
-        holdings: Dict[str, float],
+        holdings: dict[str, float],
         prices: pd.DataFrame
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         分析投资组合
         
@@ -318,26 +319,26 @@ class PortfolioAnalysis:
             holdings.get(code, 0) * prices['close'].iloc[-1]
             for code in holdings
         )
-        
+
         # 计算持仓权重
         weights = {
             code: (holdings.get(code, 0) * prices['close'].iloc[-1]) / portfolio_value
             for code in holdings
         }
-        
+
         # 计算收益率
         returns = prices['close'].pct_change()
-        
+
         # 计算风险指标
         risk_metrics = self.risk.full_risk_analysis(returns, prices['close'])
-        
+
         return {
             "portfolio_value": portfolio_value,
             "weights": weights,
             "risk_metrics": risk_metrics,
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
-    
+
     def calculate_correlation_matrix(
         self,
         returns: pd.DataFrame
@@ -352,7 +353,7 @@ class PortfolioAnalysis:
             相关性矩阵
         """
         return returns.corr()
-    
+
     def calculate_beta(
         self,
         stock_returns: pd.Series,
@@ -370,9 +371,9 @@ class PortfolioAnalysis:
         """
         covariance = np.cov(stock_returns, market_returns)[0][1]
         market_variance = np.var(market_returns)
-        
+
         return float(covariance / market_variance) if market_variance > 0 else 0.0
-    
+
     def calculate_alpha(
         self,
         stock_returns: pd.Series,
@@ -391,12 +392,12 @@ class PortfolioAnalysis:
             阿尔法
         """
         beta = self.calculate_beta(stock_returns, market_returns)
-        
+
         expected_return = risk_free_rate + beta * (market_returns.mean() - risk_free_rate)
         actual_return = stock_returns.mean()
-        
+
         return float(actual_return - expected_return)
-    
+
     def calculate_tracking_error(
         self,
         portfolio_returns: pd.Series,
@@ -413,7 +414,7 @@ class PortfolioAnalysis:
             跟踪误差
         """
         return float((portfolio_returns - benchmark_returns).std() * np.sqrt(252))
-    
+
     def calculate_information_ratio(
         self,
         portfolio_returns: pd.Series,
@@ -431,5 +432,5 @@ class PortfolioAnalysis:
         """
         excess_returns = portfolio_returns - benchmark_returns
         tracking_error = self.calculate_tracking_error(portfolio_returns, benchmark_returns)
-        
+
         return float(excess_returns.mean() / tracking_error) if tracking_error > 0 else 0.0

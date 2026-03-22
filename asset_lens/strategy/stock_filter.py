@@ -5,9 +5,8 @@ Stock filter module for asset-lens.
 
 import json
 from dataclasses import dataclass
-from decimal import Decimal
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..config import config
 
@@ -16,24 +15,24 @@ from ..config import config
 class StockFilterConfig:
     """股票筛选配置"""
 
-    price_min: Optional[float] = None
-    price_max: Optional[float] = None
-    market_cap_min: Optional[float] = None
-    market_cap_max: Optional[float] = None
-    turnover_rate_min: Optional[float] = None
-    turnover_rate_max: Optional[float] = None
-    change_percent_min: Optional[float] = None
-    change_percent_max: Optional[float] = None
-    volume_min: Optional[int] = None
-    volume_max: Optional[int] = None
-    amplitude_min: Optional[float] = None
-    amplitude_max: Optional[float] = None
-    pe_ratio_min: Optional[float] = None
-    pe_ratio_max: Optional[float] = None
-    pb_ratio_min: Optional[float] = None
-    pb_ratio_max: Optional[float] = None
+    price_min: float | None = None
+    price_max: float | None = None
+    market_cap_min: float | None = None
+    market_cap_max: float | None = None
+    turnover_rate_min: float | None = None
+    turnover_rate_max: float | None = None
+    change_percent_min: float | None = None
+    change_percent_max: float | None = None
+    volume_min: int | None = None
+    volume_max: int | None = None
+    amplitude_min: float | None = None
+    amplitude_max: float | None = None
+    pe_ratio_min: float | None = None
+    pe_ratio_max: float | None = None
+    pb_ratio_min: float | None = None
+    pb_ratio_max: float | None = None
     exclude_etf: bool = True
-    exclude_keywords: Optional[List[str]] = None
+    exclude_keywords: list[str] | None = None
     sort_key: str = "turnover_rate"
     sort_direction: str = "desc"
     max_results: int = 50
@@ -46,7 +45,7 @@ class StockFilterConfig:
 class StockFilter:
     """股票筛选器"""
 
-    def __init__(self, config_path: Optional[Path] = None):
+    def __init__(self, config_path: Path | None = None):
         """
         初始化股票筛选器
 
@@ -62,7 +61,7 @@ class StockFilter:
             return StockFilterConfig()
 
         try:
-            with open(self.config_path, "r", encoding="utf-8") as f:
+            with open(self.config_path, encoding="utf-8") as f:
                 data = json.load(f)
 
             filters = data.get("filters", {})
@@ -123,7 +122,7 @@ class StockFilter:
             print(f"加载股票筛选配置失败: {e}")
             return StockFilterConfig()
 
-    def filter_stock(self, stock: Dict[str, Any]) -> bool:
+    def filter_stock(self, stock: dict[str, Any]) -> bool:
         """
         检查股票是否符合筛选条件
 
@@ -228,7 +227,7 @@ class StockFilter:
 
         return True
 
-    def filter_stocks(self, stocks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def filter_stocks(self, stocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """
         批量筛选股票
 

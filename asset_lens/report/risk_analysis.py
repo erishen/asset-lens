@@ -3,15 +3,15 @@ Risk Analysis - 风险分析模块
 """
 
 from decimal import Decimal
-from typing import Any, Dict, List
+from typing import Any
 
-from ..data.models import InvestmentProduct, InvestmentType, Portfolio, RiskLevel
+from ..data.models import Portfolio, RiskLevel
 
 
 class RiskAnalyzer:
     """风险分析器"""
 
-    def get_type_distribution(self, portfolio: Portfolio) -> Dict[str, Any]:
+    def get_type_distribution(self, portfolio: Portfolio) -> dict[str, Any]:
         """获取投资类型分布
 
         Args:
@@ -20,7 +20,7 @@ class RiskAnalyzer:
         Returns:
             类型分布数据
         """
-        type_amounts: Dict[str, Decimal] = {}
+        type_amounts: dict[str, Decimal] = {}
         for product in portfolio.products:
             type_name = product.investment_type.value
             amount = product.current_amount or Decimal("0")
@@ -40,7 +40,7 @@ class RiskAnalyzer:
             "distribution": distribution,
         }
 
-    def get_risk_distribution(self, portfolio: Portfolio) -> Dict[str, Any]:
+    def get_risk_distribution(self, portfolio: Portfolio) -> dict[str, Any]:
         """获取风险等级分布
 
         Args:
@@ -49,7 +49,7 @@ class RiskAnalyzer:
         Returns:
             风险分布数据
         """
-        risk_amounts: Dict[str, Decimal] = {}
+        risk_amounts: dict[str, Decimal] = {}
         for product in portfolio.products:
             risk_level = product.risk_level.value if product.risk_level else "未知"
             amount = product.current_amount or Decimal("0")
@@ -69,7 +69,7 @@ class RiskAnalyzer:
             "distribution": distribution,
         }
 
-    def generate_risk_warnings(self, portfolio: Portfolio) -> List[Dict[str, Any]]:
+    def generate_risk_warnings(self, portfolio: Portfolio) -> list[dict[str, Any]]:
         """生成风险预警
 
         Args:

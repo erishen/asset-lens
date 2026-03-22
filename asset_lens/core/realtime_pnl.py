@@ -2,11 +2,9 @@ import json
 import logging
 from dataclasses import dataclass
 from decimal import Decimal
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..config import config
-from ..data.market_index import MarketIndex, MarketIndexCache
 from ..data.models import InvestmentProduct, InvestmentType, RiskLevel
 
 logger = logging.getLogger(__name__)
@@ -142,7 +140,7 @@ def adjust_by_risk_level(
     name: str,
     default_equity_ratio: Decimal,
     default_sensitivity: Decimal,
-    risk_level: Optional[RiskLevel] = None,
+    risk_level: RiskLevel | None = None,
 ) -> tuple[Decimal, Decimal]:
     """
     根据产品风险等级调整敏感度
@@ -184,10 +182,10 @@ class RealtimePnlEstimator:
         self.foreign_cache_file = self.cache_path / "market_index_foreign.json"
         self.fund_cache_file = self.cache_path / "fund_quotes.json"
         self.stock_cache_file = self.cache_path / "stock_quotes.json"
-        self._fund_codes_map: Optional[Dict[str, str]] = None
-        self._stock_codes_map: Optional[Dict[str, str]] = None
+        self._fund_codes_map: dict[str, str] | None = None
+        self._stock_codes_map: dict[str, str] | None = None
 
-    def _load_fund_codes_config(self) -> Dict[str, str]:
+    def _load_fund_codes_config(self) -> dict[str, str]:
         """加载基金代码配置
         
         Returns:
@@ -211,7 +209,7 @@ class RealtimePnlEstimator:
             return {}
 
         try:
-            with open(config_file, "r", encoding="utf-8") as f:
+            with open(config_file, encoding="utf-8") as f:
                 data = json.load(f)
 
             if not isinstance(data, dict):
@@ -265,7 +263,7 @@ class RealtimePnlEstimator:
             self._fund_codes_map = {}
             return {}
 
-        except IOError as e:
+        except OSError as e:
             logger.error(
                 f"读取基金代码配置文件失败: {e}",
                 exc_info=True,
@@ -283,7 +281,7 @@ class RealtimePnlEstimator:
             self._fund_codes_map = {}
             return {}
 
-    def _load_stock_codes_config(self) -> Dict[str, str]:
+    def _load_stock_codes_config(self) -> dict[str, str]:
         """加载股票代码配置
         
         Returns:
@@ -307,7 +305,7 @@ class RealtimePnlEstimator:
             return {}
 
         try:
-            with open(config_file, "r", encoding="utf-8") as f:
+            with open(config_file, encoding="utf-8") as f:
                 data = json.load(f)
 
             if not isinstance(data, dict):
@@ -361,7 +359,7 @@ class RealtimePnlEstimator:
             self._stock_codes_map = {}
             return {}
 
-        except IOError as e:
+        except OSError as e:
             logger.error(
                 f"读取股票代码配置文件失败: {e}",
                 exc_info=True,
@@ -379,15 +377,15 @@ class RealtimePnlEstimator:
             self._stock_codes_map = {}
             return {}
 
-    def _read_fund_quotes_from_cache(self) -> Dict[str, Decimal]:
+    def _read_fund_quotes_from_cache(self) -> dict[str, Decimal]:
         """从缓存读取基金净值涨跌幅"""
-        moves: Dict[str, Decimal] = {}
+        moves: dict[str, Decimal] = {}
 
         if not self.fund_cache_file.exists():
             return moves
 
         try:
-            with open(self.fund_cache_file, "r", encoding="utf-8") as f:
+            with open(self.fund_cache_file, encoding="utf-8") as f:
                 data = json.load(f)
 
             for code, fund_data in data.get("data", {}).items():
@@ -398,15 +396,15 @@ class RealtimePnlEstimator:
 
         return moves
 
-    def _read_stock_quotes_from_cache(self) -> Dict[str, Decimal]:
+    def _read_stock_quotes_from_cache(self) -> dict[str, Decimal]:
         """从缓存读取股票行情涨跌幅"""
-        moves: Dict[str, Decimal] = {}
+        moves: dict[str, Decimal] = {}
 
         if not self.stock_cache_file.exists():
             return moves
 
         try:
-            with open(self.stock_cache_file, "r", encoding="utf-8") as f:
+            with open(self.stock_cache_file, encoding="utf-8") as f:
                 data = json.load(f)
 
             for code, stock_data in data.get("data", {}).items():
@@ -439,7 +437,7 @@ class RealtimePnlEstimator:
             logger.warning(f"从资产汇总获取总金额失败: {e}", exc_info=True)
         return Decimal("0")
 
-    def read_index_moves_from_cache(self, is_weekly: bool = False) -> Dict[str, Decimal]:
+    def read_index_moves_from_cache(self, is_weekly: bool = False) -> dict[str, Decimal]:
         """
         从缓存读取指数涨跌幅数据
 
@@ -449,12 +447,12 @@ class RealtimePnlEstimator:
         Returns:
             指数涨跌幅字典
         """
-        moves: Dict[str, Decimal] = {}
+        moves: dict[str, Decimal] = {}
 
         # 读取国内市场数据
         if self.domestic_cache_file.exists():
             try:
-                with open(self.domestic_cache_file, "r", encoding="utf-8") as f:
+                with open(self.domestic_cache_file, encoding="utf-8") as f:
                     domestic_data = json.load(f)
 
                 # 处理国内数据 - 将中文名称映射为英文代码
@@ -482,7 +480,7 @@ class RealtimePnlEstimator:
 
         if self.foreign_cache_file.exists():
             try:
-                with open(self.foreign_cache_file, "r", encoding="utf-8") as f:
+                with open(self.foreign_cache_file, encoding="utf-8") as f:
                     foreign_data = json.load(f)
 
                 foreign_index_mapping = {
@@ -534,9 +532,9 @@ class RealtimePnlEstimator:
     def estimate_product_pnl(
         self,
         product: InvestmentProduct,
-        moves: Dict[str, Decimal],
+        moves: dict[str, Decimal],
         is_weekly: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         估算单个产品的盈亏
 
@@ -660,10 +658,10 @@ class RealtimePnlEstimator:
 
     def estimate_portfolio_pnl(
         self,
-        products: List[InvestmentProduct],
+        products: list[InvestmentProduct],
         is_weekly: bool = False,
         filter_equity: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         估算投资组合的盈亏
 

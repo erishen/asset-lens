@@ -3,15 +3,15 @@ Custom exceptions for asset-lens.
 自定义异常类
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class AssetLensError(Exception):
     """asset-lens 基础异常类"""
 
-    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
+    def __init__(self, message: str, details: dict[str, Any] | None = None):
         self.message = message
-        self.details: Dict[str, Any] = details or {}
+        self.details: dict[str, Any] = details or {}
         super().__init__(self.message)
 
     def __str__(self) -> str:
@@ -23,16 +23,16 @@ class AssetLensError(Exception):
 class ConfigurationError(AssetLensError):
     """配置错误"""
 
-    def __init__(self, message: str, config_key: Optional[str] = None):
-        details: Optional[Dict[str, Any]] = {"config_key": config_key} if config_key else None
+    def __init__(self, message: str, config_key: str | None = None):
+        details: dict[str, Any] | None = {"config_key": config_key} if config_key else None
         super().__init__(message, details)
 
 
 class DataLoadError(AssetLensError):
     """数据加载错误"""
 
-    def __init__(self, message: str, file_path: Optional[str] = None):
-        details: Optional[Dict[str, Any]] = {"file_path": file_path} if file_path else None
+    def __init__(self, message: str, file_path: str | None = None):
+        details: dict[str, Any] | None = {"file_path": file_path} if file_path else None
         super().__init__(message, details)
 
 
@@ -40,9 +40,9 @@ class DataParseError(AssetLensError):
     """数据解析错误"""
 
     def __init__(
-        self, message: str, row_number: Optional[int] = None, raw_data: Optional[str] = None
+        self, message: str, row_number: int | None = None, raw_data: str | None = None
     ):
-        details: Dict[str, Any] = {}
+        details: dict[str, Any] = {}
         if row_number is not None:
             details["row_number"] = row_number
         if raw_data:
@@ -53,8 +53,8 @@ class DataParseError(AssetLensError):
 class ValidationError(AssetLensError):
     """数据验证错误"""
 
-    def __init__(self, message: str, field: Optional[str] = None, value: Optional[Any] = None):
-        details: Dict[str, Any] = {}
+    def __init__(self, message: str, field: str | None = None, value: Any | None = None):
+        details: dict[str, Any] = {}
         if field:
             details["field"] = field
         if value is not None:
@@ -66,9 +66,9 @@ class APIError(AssetLensError):
     """API 调用错误"""
 
     def __init__(
-        self, message: str, api_name: Optional[str] = None, status_code: Optional[int] = None
+        self, message: str, api_name: str | None = None, status_code: int | None = None
     ):
-        details: Dict[str, Any] = {}
+        details: dict[str, Any] = {}
         if api_name:
             details["api_name"] = api_name
         if status_code:
@@ -80,7 +80,7 @@ class RateLimitError(APIError):
     """API 速率限制错误"""
 
     def __init__(
-        self, message: str, api_name: Optional[str] = None, retry_after: Optional[int] = None
+        self, message: str, api_name: str | None = None, retry_after: int | None = None
     ):
         super().__init__(message, api_name, 429)
         self.retry_after = retry_after
@@ -91,8 +91,8 @@ class RateLimitError(APIError):
 class CacheError(AssetLensError):
     """缓存错误"""
 
-    def __init__(self, message: str, cache_key: Optional[str] = None):
-        details: Optional[Dict[str, Any]] = {"cache_key": cache_key} if cache_key else None
+    def __init__(self, message: str, cache_key: str | None = None):
+        details: dict[str, Any] | None = {"cache_key": cache_key} if cache_key else None
         super().__init__(message, details)
 
 
@@ -102,10 +102,10 @@ class CalculationError(AssetLensError):
     def __init__(
         self,
         message: str,
-        calculation_type: Optional[str] = None,
-        inputs: Optional[Dict[str, Any]] = None,
+        calculation_type: str | None = None,
+        inputs: dict[str, Any] | None = None,
     ):
-        details: Dict[str, Any] = {}
+        details: dict[str, Any] = {}
         if calculation_type:
             details["calculation_type"] = calculation_type
         if inputs:
@@ -128,8 +128,8 @@ class FileFormatError(DataParseError):
     def __init__(
         self,
         message: str,
-        expected_format: Optional[str] = None,
-        actual_format: Optional[str] = None,
+        expected_format: str | None = None,
+        actual_format: str | None = None,
     ):
         self.expected_format = expected_format
         self.actual_format = actual_format

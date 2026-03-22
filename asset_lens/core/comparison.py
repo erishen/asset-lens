@@ -4,11 +4,11 @@ Comparison analysis for asset-lens.
 """
 
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import date
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from ..data.models import InvestmentProduct, InvestmentType
+from ..data.models import InvestmentProduct
 from ..data.parser_utils import calculate_return_rate
 
 
@@ -25,7 +25,7 @@ class ComparisonResult:
     investment_days: int  # 投资天数
     annualized_return: Decimal  # 年化收益率
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """转换为字典"""
         return {
             "名称": self.name,
@@ -52,7 +52,7 @@ class TrendAnalysis:
     positive_count: int  # 正收益产品数
     negative_count: int  # 负收益产品数
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """转换为字典"""
         return {
             "分析周期": self.period,
@@ -71,10 +71,10 @@ class ComparisonAnalyzer:
 
     def compare_periods(
         self,
-        products_before: List[InvestmentProduct],
-        products_after: List[InvestmentProduct],
+        products_before: list[InvestmentProduct],
+        products_after: list[InvestmentProduct],
         period: str = "自定义对比",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         对比两个时期的投资组合
 
@@ -192,8 +192,8 @@ class ComparisonAnalyzer:
 
     def analyze_by_type(
         self,
-        products: List[InvestmentProduct],
-    ) -> Dict[str, Any]:
+        products: list[InvestmentProduct],
+    ) -> dict[str, Any]:
         """
         按投资类型统计分析
 
@@ -203,7 +203,7 @@ class ComparisonAnalyzer:
         Returns:
             按类型统计的结果
         """
-        type_stats: Dict[str, Dict[str, Any]] = {}
+        type_stats: dict[str, dict[str, Any]] = {}
 
         for product in products:
             if not product.current_amount or product.current_amount == 0:
@@ -241,8 +241,8 @@ class ComparisonAnalyzer:
 
     def analyze_fund_flow(
         self,
-        products: List[InvestmentProduct],
-    ) -> Dict[str, Any]:
+        products: list[InvestmentProduct],
+    ) -> dict[str, Any]:
         """
         分析资金流动
 
@@ -292,10 +292,10 @@ class ComparisonAnalyzer:
 
     def generate_comparison_report(
         self,
-        products_before: List[InvestmentProduct],
-        products_after: List[InvestmentProduct],
+        products_before: list[InvestmentProduct],
+        products_after: list[InvestmentProduct],
         period: str = "自定义对比",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         生成完整的对比报告
 
