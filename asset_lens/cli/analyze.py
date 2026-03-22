@@ -39,22 +39,24 @@ def register_analyze_commands(cli: click.Group) -> None:
     def analyze(data_mode: str | None, output_format: str, data_path: str | None):
         """分析投资组合并生成报告"""
         from asset_lens.config import config
-        from asset_lens.core.dca_parser import dca_parser
-        from asset_lens.core.irr_calculator import irr_calculator
-        from asset_lens.data.csv_parser import CSVParser
         from asset_lens.data.models import Portfolio
         from asset_lens.report.analyzer import report_generator
 
+        from asset_lens.cli.helpers import (
+            calculate_product_returns,
+            get_hkd_rate,
+            get_usd_rate,
+            load_products,
+            setup_data_mode,
+        )
+
+        setup_data_mode(data_mode)
         if data_mode:
-            config.data_mode = data_mode
             click.echo(f"使用数据模式: {data_mode}")
 
         click.echo("\n📊 正在加载数据...")
         try:
-            if data_path:
-                products = CSVParser.load_data(Path(data_path))
-            else:
-                products = CSVParser.load_data()
+            products = load_products(data_path)
             click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
         except Exception as e:
             click.echo(f"❌ 加载数据失败: {e}", err=True)
@@ -62,37 +64,12 @@ def register_analyze_commands(cli: click.Group) -> None:
 
         portfolio = Portfolio(
             products=products,
-            usd_rate=Decimal(str(config.default_usd_rate)),
-            hkd_rate=Decimal(str(config.default_hkd_rate)),
+            usd_rate=get_usd_rate(),
+            hkd_rate=get_hkd_rate(),
         )
 
         click.echo("\n🔢 正在计算收益率...")
-        reference_date = datetime.now()
-
-        for product in portfolio.products:
-            if product.transaction_records:
-                transactions = dca_parser.parse_transaction_record(
-                    product.transaction_records,
-                    reference_date=reference_date,
-                )
-                product.transactions = transactions
-
-                if transactions and product.current_amount:
-                    irr = irr_calculator.calculate_annualized_irr(
-                        transactions=transactions,
-                        current_value=product.current_amount,
-                        reference_date=reference_date,
-                    )
-                    product.annualized_return_irr = irr
-            else:
-                if product.initial_amount and product.current_amount and product.investment_days:
-                    simple_return = irr_calculator.calculate_simple_annual_return(
-                        initial_amount=product.initial_amount,
-                        current_amount=product.current_amount,
-                        days=product.investment_days,
-                    )
-                    product.annualized_return_irr = simple_return
-
+        calculate_product_returns(portfolio.products)
         click.echo("✅ 收益率计算完成")
 
         sell_records = []
@@ -126,20 +103,24 @@ def register_analyze_commands(cli: click.Group) -> None:
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     def calculate(data_mode: str | None):
         """计算所有投资产品的收益率（快捷命令）"""
-        from asset_lens.config import config
-        from asset_lens.core.dca_parser import dca_parser
-        from asset_lens.core.irr_calculator import irr_calculator
-        from asset_lens.data.csv_parser import CSVParser
         from asset_lens.data.models import Portfolio
         from asset_lens.report.calculate_report import calculate_report_generator
 
+        from asset_lens.cli.helpers import (
+            calculate_product_returns,
+            get_hkd_rate,
+            get_usd_rate,
+            load_products,
+            setup_data_mode,
+        )
+
+        setup_data_mode(data_mode)
         if data_mode:
-            config.data_mode = data_mode
             click.echo(f"使用数据模式: {data_mode}")
 
         click.echo("\n📊 正在加载数据...")
         try:
-            products = CSVParser.load_data()
+            products = load_products()
             click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
         except Exception as e:
             click.echo(f"❌ 加载数据失败: {e}", err=True)
@@ -147,37 +128,12 @@ def register_analyze_commands(cli: click.Group) -> None:
 
         portfolio = Portfolio(
             products=products,
-            usd_rate=Decimal(str(config.default_usd_rate)),
-            hkd_rate=Decimal(str(config.default_hkd_rate)),
+            usd_rate=get_usd_rate(),
+            hkd_rate=get_hkd_rate(),
         )
 
         click.echo("\n🔢 正在计算收益率...")
-        reference_date = datetime.now()
-
-        for product in portfolio.products:
-            if product.transaction_records:
-                transactions = dca_parser.parse_transaction_record(
-                    product.transaction_records,
-                    reference_date=reference_date,
-                )
-                product.transactions = transactions
-
-                if transactions and product.current_amount:
-                    irr = irr_calculator.calculate_annualized_irr(
-                        transactions=transactions,
-                        current_value=product.current_amount,
-                        reference_date=reference_date,
-                    )
-                    product.annualized_return_irr = irr
-            else:
-                if product.initial_amount and product.current_amount and product.investment_days:
-                    simple_return = irr_calculator.calculate_simple_annual_return(
-                        initial_amount=product.initial_amount,
-                        current_amount=product.current_amount,
-                        days=product.investment_days,
-                    )
-                    product.annualized_return_irr = simple_return
-
+        calculate_product_returns(portfolio.products)
         click.echo("✅ 收益率计算完成")
 
         click.echo("\n📝 正在生成计算报告...")
@@ -195,18 +151,17 @@ def register_analyze_commands(cli: click.Group) -> None:
         from rich.console import Console
         from rich.table import Table
 
-        from asset_lens.config import config
         from asset_lens.core.realtime_pnl import RealtimePnlEstimator
-        from asset_lens.data.csv_parser import CSVParser
 
-        if data_mode:
-            config.data_mode = data_mode
+        from asset_lens.cli.helpers import load_products, setup_data_mode
+
+        setup_data_mode(data_mode)
 
         click.echo(f"\n{'📊 周盈亏估算' if weekly else '📊 日盈亏估算'}")
         click.echo("=" * 60)
 
         try:
-            products = CSVParser.load_data()
+            products = load_products()
             click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
 
             estimator = RealtimePnlEstimator()
@@ -283,20 +238,19 @@ def register_analyze_commands(cli: click.Group) -> None:
         from rich.console import Console
         from rich.table import Table
 
-        from asset_lens.config import config
         from asset_lens.core.daily_estimate import estimate_all_products
         from asset_lens.core.realtime_pnl import RealtimePnlEstimator
-        from asset_lens.data.csv_parser import CSVParser
 
-        if data_mode:
-            config.data_mode = data_mode
+        from asset_lens.cli.helpers import load_products, setup_data_mode
+
+        setup_data_mode(data_mode)
 
         period_text = "周" if weekly else "日"
         click.echo(f"\n📊 全产品{period_text}收益估算")
         click.echo("=" * 60)
 
         try:
-            products = CSVParser.load_data()
+            products = load_products()
             click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
 
             estimator = RealtimePnlEstimator()
@@ -396,18 +350,18 @@ def register_analyze_commands(cli: click.Group) -> None:
         """分析已卖出投资"""
         from rich.console import Console
 
-        from asset_lens.config import config
         from asset_lens.core.sold_investment import SoldInvestmentAnalyzer
         from asset_lens.data.sell_record_parser import SellRecordParser
 
-        if data_mode:
-            config.data_mode = data_mode
+        from asset_lens.cli.helpers import setup_data_mode
+
+        setup_data_mode(data_mode)
 
         click.echo("\n📊 已卖出投资分析")
         click.echo("=" * 60)
 
         try:
-            data_dir = _get_data_dir(config.data_mode)
+            data_dir = _get_data_dir(data_mode or "real")
             if not data_dir:
                 click.echo("❌ 数据目录不存在", err=True)
                 return
@@ -511,17 +465,15 @@ def register_analyze_commands(cli: click.Group) -> None:
         """生成周度投资报告"""
         from pathlib import Path
 
-        from asset_lens.config import config
-        from asset_lens.data.csv_parser import CSVParser
+        from asset_lens.cli.helpers import load_products, setup_data_mode
 
-        if data_mode:
-            config.data_mode = data_mode
+        setup_data_mode(data_mode)
 
         click.echo("\n📊 生成周度投资报告")
         click.echo("=" * 60)
 
         try:
-            products = CSVParser.load_data()
+            products = load_products()
             click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
 
             output_path = Path(output)
@@ -660,18 +612,17 @@ def register_analyze_commands(cli: click.Group) -> None:
         from rich.console import Console
         from rich.table import Table
 
-        from asset_lens.config import config
         from asset_lens.core.realtime_pnl import RealtimePnlEstimator
-        from asset_lens.data.csv_parser import CSVParser
 
-        if data_mode:
-            config.data_mode = data_mode
+        from asset_lens.cli.helpers import load_products, setup_data_mode
+
+        setup_data_mode(data_mode)
 
         click.echo("\n📊 投资组合专业指标分析")
         click.echo("=" * 60)
 
         try:
-            products = CSVParser.load_data()
+            products = load_products()
             click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
 
             estimator = RealtimePnlEstimator()
@@ -748,18 +699,17 @@ def register_analyze_commands(cli: click.Group) -> None:
         """生成投资分析图表（资产配置、风险分布等）"""
         from pathlib import Path
 
-        from asset_lens.config import config
-        from asset_lens.data.csv_parser import CSVParser
         from asset_lens.report.charts import ChartGenerator
 
-        if data_mode:
-            config.data_mode = data_mode
+        from asset_lens.cli.helpers import load_products, setup_data_mode
+
+        setup_data_mode(data_mode)
 
         click.echo("\n📊 生成投资分析图表")
         click.echo("=" * 60)
 
         try:
-            products = CSVParser.load_data()
+            products = load_products()
             click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
 
             output_dir = Path(output)
@@ -796,18 +746,17 @@ def register_analyze_commands(cli: click.Group) -> None:
         """生成投资分析报告（PDF）"""
         from pathlib import Path
 
-        from asset_lens.config import config
-        from asset_lens.data.csv_parser import CSVParser
         from asset_lens.report.pdf_report import PDFReportGenerator
 
-        if data_mode:
-            config.data_mode = data_mode
+        from asset_lens.cli.helpers import load_products, setup_data_mode
+
+        setup_data_mode(data_mode)
 
         click.echo("\n📊 生成投资分析报告（PDF）")
         click.echo("=" * 60)
 
         try:
-            products = CSVParser.load_data()
+            products = load_products()
             click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
 
             output_path = Path(output)
@@ -827,18 +776,17 @@ def register_analyze_commands(cli: click.Group) -> None:
         """生成投资分析报告（HTML）"""
         from pathlib import Path
 
-        from asset_lens.config import config
-        from asset_lens.data.csv_parser import CSVParser
         from asset_lens.report.html_report import HTMLReportGenerator
 
-        if data_mode:
-            config.data_mode = data_mode
+        from asset_lens.cli.helpers import load_products, setup_data_mode
+
+        setup_data_mode(data_mode)
 
         click.echo("\n📊 生成投资分析报告（HTML）")
         click.echo("=" * 60)
 
         try:
-            products = CSVParser.load_data()
+            products = load_products()
             click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
 
             output_path = Path(output)
@@ -857,18 +805,17 @@ def register_analyze_commands(cli: click.Group) -> None:
         from rich.console import Console
         from rich.panel import Panel
 
-        from asset_lens.config import config
         from asset_lens.core.ai_analyzer import AIAnalyzer
-        from asset_lens.data.csv_parser import CSVParser
 
-        if data_mode:
-            config.data_mode = data_mode
+        from asset_lens.cli.helpers import load_products, setup_data_mode
+
+        setup_data_mode(data_mode)
 
         click.echo("\n🤖 AI 投资组合分析")
         click.echo("=" * 60)
 
         try:
-            products = CSVParser.load_data()
+            products = load_products()
             click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
 
             analyzer = AIAnalyzer()
@@ -1175,18 +1122,17 @@ def register_analyze_commands(cli: click.Group) -> None:
         from rich.console import Console
         from rich.table import Table
 
-        from asset_lens.config import config
         from asset_lens.core.time_group import TimeGroupAnalyzer
-        from asset_lens.data.csv_parser import CSVParser
 
-        if data_mode:
-            config.data_mode = data_mode
+        from asset_lens.cli.helpers import load_products, setup_data_mode
+
+        setup_data_mode(data_mode)
 
         click.echo("\n📊 按投资时间分组分析")
         click.echo("=" * 60)
 
         try:
-            products = CSVParser.load_data()
+            products = load_products()
             click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
 
             analyzer = TimeGroupAnalyzer()

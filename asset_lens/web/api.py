@@ -37,11 +37,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from .routes import compare_router, risk_router, system_router
+from .routes import (
+    backup_router,
+    compare_router,
+    recommendation_router,
+    report_router,
+    risk_router,
+    stock_pool_router,
+    system_router,
+)
 
 app.include_router(compare_router)
 app.include_router(risk_router)
 app.include_router(system_router)
+app.include_router(backup_router)
+app.include_router(recommendation_router)
+app.include_router(stock_pool_router)
+app.include_router(report_router)
 
 
 class StockQuote(BaseModel):
