@@ -38,10 +38,6 @@ def register_analyze_commands(cli: click.Group) -> None:
     @click.option("--data-path", type=click.Path(exists=True), help="自定义数据路径")
     def analyze(data_mode: str | None, output_format: str, data_path: str | None):
         """分析投资组合并生成报告"""
-        from asset_lens.config import config
-        from asset_lens.data.models import Portfolio
-        from asset_lens.report.analyzer import report_generator
-
         from asset_lens.cli.helpers import (
             calculate_product_returns,
             get_hkd_rate,
@@ -49,6 +45,9 @@ def register_analyze_commands(cli: click.Group) -> None:
             load_products,
             setup_data_mode,
         )
+        from asset_lens.config import config
+        from asset_lens.data.models import Portfolio
+        from asset_lens.report.analyzer import report_generator
 
         setup_data_mode(data_mode)
         if data_mode:
@@ -103,9 +102,6 @@ def register_analyze_commands(cli: click.Group) -> None:
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     def calculate(data_mode: str | None):
         """计算所有投资产品的收益率（快捷命令）"""
-        from asset_lens.data.models import Portfolio
-        from asset_lens.report.calculate_report import calculate_report_generator
-
         from asset_lens.cli.helpers import (
             calculate_product_returns,
             get_hkd_rate,
@@ -113,6 +109,8 @@ def register_analyze_commands(cli: click.Group) -> None:
             load_products,
             setup_data_mode,
         )
+        from asset_lens.data.models import Portfolio
+        from asset_lens.report.calculate_report import calculate_report_generator
 
         setup_data_mode(data_mode)
         if data_mode:
@@ -151,9 +149,8 @@ def register_analyze_commands(cli: click.Group) -> None:
         from rich.console import Console
         from rich.table import Table
 
-        from asset_lens.core.realtime_pnl import RealtimePnlEstimator
-
         from asset_lens.cli.helpers import load_products, setup_data_mode
+        from asset_lens.core.realtime_pnl import RealtimePnlEstimator
 
         setup_data_mode(data_mode)
 
@@ -238,10 +235,9 @@ def register_analyze_commands(cli: click.Group) -> None:
         from rich.console import Console
         from rich.table import Table
 
+        from asset_lens.cli.helpers import load_products, setup_data_mode
         from asset_lens.core.daily_estimate import estimate_all_products
         from asset_lens.core.realtime_pnl import RealtimePnlEstimator
-
-        from asset_lens.cli.helpers import load_products, setup_data_mode
 
         setup_data_mode(data_mode)
 
@@ -350,10 +346,9 @@ def register_analyze_commands(cli: click.Group) -> None:
         """分析已卖出投资"""
         from rich.console import Console
 
+        from asset_lens.cli.helpers import setup_data_mode
         from asset_lens.core.sold_investment import SoldInvestmentAnalyzer
         from asset_lens.data.sell_record_parser import SellRecordParser
-
-        from asset_lens.cli.helpers import setup_data_mode
 
         setup_data_mode(data_mode)
 
@@ -612,9 +607,8 @@ def register_analyze_commands(cli: click.Group) -> None:
         from rich.console import Console
         from rich.table import Table
 
-        from asset_lens.core.realtime_pnl import RealtimePnlEstimator
-
         from asset_lens.cli.helpers import load_products, setup_data_mode
+        from asset_lens.core.realtime_pnl import RealtimePnlEstimator
 
         setup_data_mode(data_mode)
 
@@ -699,9 +693,8 @@ def register_analyze_commands(cli: click.Group) -> None:
         """生成投资分析图表（资产配置、风险分布等）"""
         from pathlib import Path
 
-        from asset_lens.report.charts import ChartGenerator
-
         from asset_lens.cli.helpers import load_products, setup_data_mode
+        from asset_lens.report.charts import ChartGenerator
 
         setup_data_mode(data_mode)
 
@@ -746,9 +739,8 @@ def register_analyze_commands(cli: click.Group) -> None:
         """生成投资分析报告（PDF）"""
         from pathlib import Path
 
-        from asset_lens.report.pdf_report import PDFReportGenerator
-
         from asset_lens.cli.helpers import load_products, setup_data_mode
+        from asset_lens.report.pdf_report import PDFReportGenerator
 
         setup_data_mode(data_mode)
 
@@ -776,9 +768,8 @@ def register_analyze_commands(cli: click.Group) -> None:
         """生成投资分析报告（HTML）"""
         from pathlib import Path
 
-        from asset_lens.report.html_report import HTMLReportGenerator
-
         from asset_lens.cli.helpers import load_products, setup_data_mode
+        from asset_lens.report.html_report import HTMLReportGenerator
 
         setup_data_mode(data_mode)
 
@@ -805,9 +796,8 @@ def register_analyze_commands(cli: click.Group) -> None:
         from rich.console import Console
         from rich.panel import Panel
 
-        from asset_lens.core.ai_analyzer import AIAnalyzer
-
         from asset_lens.cli.helpers import load_products, setup_data_mode
+        from asset_lens.core.ai_analyzer import AIAnalyzer
 
         setup_data_mode(data_mode)
 
@@ -1122,9 +1112,8 @@ def register_analyze_commands(cli: click.Group) -> None:
         from rich.console import Console
         from rich.table import Table
 
-        from asset_lens.core.time_group import TimeGroupAnalyzer
-
         from asset_lens.cli.helpers import load_products, setup_data_mode
+        from asset_lens.core.time_group import TimeGroupAnalyzer
 
         setup_data_mode(data_mode)
 
