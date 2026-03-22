@@ -222,11 +222,11 @@ def register_report_commands(cli: click.Group) -> None:
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     def risk_summary(data_mode: str | None):
         """显示风险摘要"""
-        from asset_lens.config import config
         from asset_lens.data.csv_parser import CSVParser
 
-        if data_mode:
-            config.data_mode = data_mode
+        from asset_lens.cli.helpers import setup_data_mode
+
+        setup_data_mode(data_mode)
 
         click.echo("\n📊 风险摘要")
         click.echo("=" * 60)
@@ -256,11 +256,11 @@ def register_report_commands(cli: click.Group) -> None:
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     def position_advice(data_mode: str | None):
         """显示仓位建议"""
-        from asset_lens.config import config
         from asset_lens.data.csv_parser import CSVParser
 
-        if data_mode:
-            config.data_mode = data_mode
+        from asset_lens.cli.helpers import setup_data_mode
+
+        setup_data_mode(data_mode)
 
         click.echo("\n📊 仓位建议")
         click.echo("=" * 60)
@@ -288,12 +288,9 @@ def register_report_commands(cli: click.Group) -> None:
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     def stop_loss(data_mode: str | None):
         """计算止损止盈位"""
-        from asset_lens.config import config
         from asset_lens.data.csv_parser import CSVParser
-
-        if data_mode:
-            config.data_mode = data_mode
-
+        from asset_lens.cli.helpers import setup_data_mode
+        setup_data_mode(data_mode)
         click.echo("\n📊 止损止盈计算")
         click.echo("=" * 60)
 
