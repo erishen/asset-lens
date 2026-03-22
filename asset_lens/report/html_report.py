@@ -8,6 +8,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+
 
 class HTMLReportGenerator:
     """HTML 报告生成器"""
@@ -21,6 +23,12 @@ class HTMLReportGenerator:
         """
         self.output_dir = output_dir or Path("output/reports")
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        
+        template_dir = Path(__file__).parent / "templates"
+        self.env = Environment(
+            loader=FileSystemLoader(str(template_dir)),
+            autoescape=select_autoescape(['html', 'xml']),
+        )
 
     def generate_investment_report(
         self,
@@ -53,7 +61,9 @@ class HTMLReportGenerator:
                     except Exception:
                         pass
 
-        html_content = self._generate_html_content(portfolio_data, analysis_result, chart_images)
+        html_content = self._generate_html_content(
+            portfolio_data, analysis_result, chart_images
+        )
 
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(html_content)
@@ -66,7 +76,9 @@ class HTMLReportGenerator:
         analysis_result: dict[str, Any] | None = None,
         chart_images: dict[str, str] | None = None,
     ) -> str:
-        """生成 HTML 内容"""
+        """使用 Jinja2 模板生成 HTML 内容"""
+        template = self.env.get_template("investment_report.html.j2")
+        
         total_value = portfolio_data.get("total_value", 0)
         total_profit = portfolio_data.get("total_profit", 0)
         overall_return_rate = portfolio_data.get("overall_return_rate", 0)
@@ -84,312 +96,17 @@ class HTMLReportGenerator:
             "风险等级",
         )
 
-        charts_html = ""
-        if chart_images:
-            for chart_name, image_data in chart_images.items():
-                charts_html += f"""
-        <div class="chart-section">
-            <h3>{chart_name}</h3>
-            <img src="data:image/png;base64,{image_data}" alt="{chart_name}" class="chart-image">
-        </div>
-"""
-
-        analysis_html = ""
-        if analysis_result:
-            summary = analysis_result.get("summary", "")
-            risk_assessment = analysis_result.get("risk_assessment", "")
-            suggestions = analysis_result.get("suggestions", [])
-            warnings = analysis_result.get("warnings", [])
-
-            suggestions_html = ""
-            for i, suggestion in enumerate(suggestions, 1):
-                suggestions_html += f"<li>{suggestion}</li>\n"
-
-            warnings_html = ""
-            for warning in warnings:
-                warnings_html += f'<li class="warning">⚠️ {warning}</li>\n'
-
-            analysis_html = f"""
-        <section class="analysis-section">
-            <h2>五、AI 分析建议</h2>
-            
-            <div class="analysis-block">
-                <h3>投资摘要</h3>
-                <p>{summary}</p>
-            </div>
-            
-            <div class="analysis-block">
-                <h3>风险评估</h3>
-                <p>{risk_assessment}</p>
-            </div>
-            
-            <div class="analysis-block">
-                <h3>投资建议</h3>
-                <ol>
-                    {suggestions_html}
-                </ol>
-            </div>
-            
-            <div class="analysis-block">
-                <h3>风险警告</h3>
-                <ul>
-                    {warnings_html}
-                </ul>
-            </div>
-        </section>
-"""
-
-        html = f"""
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>投资组合分析报告</title>
-    <style>
-        * {{
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }}
-        
-        body {{
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f5f5f5;
-        }}
-        
-        .container {{
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }}
-        
-        header {{
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 40px 20px;
-            text-align: center;
-            margin-bottom: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }}
-        
-        header h1 {{
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }}
-        
-        header p {{
-            font-size: 1.1em;
-            opacity: 0.9;
-        }}
-        
-        section {{
-            background: white;
-            padding: 30px;
-            margin-bottom: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }}
-        
-        h2 {{
-            color: #667eea;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }}
-        
-        h3 {{
-            color: #333;
-            margin-bottom: 15px;
-        }}
-        
-        .overview-cards {{
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }}
-        
-        .card {{
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-        }}
-        
-        .card h3 {{
-            font-size: 0.9em;
-            color: #666;
-            margin-bottom: 10px;
-        }}
-        
-        .card p {{
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #333;
-        }}
-        
-        .card.profit p {{
-            color: #2ecc71;
-        }}
-        
-        .card.loss p {{
-            color: #e74c3c;
-        }}
-        
-        table {{
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }}
-        
-        th, td {{
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }}
-        
-        th {{
-            background-color: #667eea;
-            color: white;
-            font-weight: 600;
-        }}
-        
-        tr:hover {{
-            background-color: #f5f5f5;
-        }}
-        
-        .chart-section {{
-            margin-bottom: 30px;
-        }}
-        
-        .chart-image {{
-            width: 100%;
-            max-width: 800px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }}
-        
-        .analysis-section {{
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        }}
-        
-        .analysis-block {{
-            background: white;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }}
-        
-        .analysis-block h3 {{
-            color: #667eea;
-            margin-bottom: 15px;
-        }}
-        
-        .analysis-block p {{
-            line-height: 1.8;
-        }}
-        
-        .analysis-block ol, .analysis-block ul {{
-            margin-left: 20px;
-        }}
-        
-        .analysis-block li {{
-            margin-bottom: 10px;
-            line-height: 1.6;
-        }}
-        
-        .warning {{
-            color: #e74c3c;
-        }}
-        
-        footer {{
-            text-align: center;
-            padding: 20px;
-            color: #666;
-            font-size: 0.9em;
-        }}
-        
-        @media (max-width: 768px) {{
-            .container {{
-                padding: 10px;
-            }}
-            
-            header {{
-                padding: 20px 10px;
-            }}
-            
-            header h1 {{
-                font-size: 1.8em;
-            }}
-            
-            section {{
-                padding: 20px;
-            }}
-            
-            .overview-cards {{
-                grid-template-columns: 1fr;
-            }}
-        }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>投资组合分析报告</h1>
-            <p>生成日期: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
-        </header>
-        
-        <section>
-            <h2>一、投资组合概览</h2>
-            
-            <div class="overview-cards">
-                <div class="card">
-                    <h3>总市值</h3>
-                    <p>¥{total_value:,.2f}</p>
-                </div>
-                <div class="card {"profit" if total_profit >= 0 else "loss"}">
-                    <h3>累计收益</h3>
-                    <p>¥{total_profit:,.2f}</p>
-                </div>
-                <div class="card {"profit" if overall_return_rate >= 0 else "loss"}">
-                    <h3>整体收益率</h3>
-                    <p>{overall_return_rate:.2f}%</p>
-                </div>
-                <div class="card">
-                    <h3>产品数量</h3>
-                    <p>{total_products} 个</p>
-                </div>
-            </div>
-        </section>
-        
-        <section>
-            <h2>二、资产配置分析</h2>
-            {type_distribution_html}
-        </section>
-        
-        <section>
-            <h2>三、风险分布分析</h2>
-            {risk_distribution_html}
-        </section>
-        
-        {charts_html}
-        
-        {analysis_html}
-        
-        <footer>
-            <p>本报告由 asset-lens 自动生成</p>
-        </footer>
-    </div>
-</body>
-</html>
-"""
-
-        return html
+        return template.render(
+            generated_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            total_value=total_value,
+            total_profit=total_profit,
+            overall_return_rate=overall_return_rate,
+            total_products=total_products,
+            type_distribution_html=type_distribution_html,
+            risk_distribution_html=risk_distribution_html,
+            chart_images=chart_images or {},
+            analysis_result=analysis_result,
+        )
 
     def _generate_distribution_table(
         self,
