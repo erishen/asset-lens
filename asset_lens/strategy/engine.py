@@ -11,9 +11,7 @@ Strategy engine for asset-lens.
 
 import json
 from dataclasses import dataclass, field
-from datetime import datetime
-from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 from ..config import config
 
@@ -36,8 +34,8 @@ class StrategyConfig:
 
     name: str
     description: str = ""
-    buy_conditions: List[StrategyCondition] = field(default_factory=list)
-    sell_conditions: List[StrategyCondition] = field(default_factory=list)
+    buy_conditions: list[StrategyCondition] = field(default_factory=list)
+    sell_conditions: list[StrategyCondition] = field(default_factory=list)
     position_size: float = 0.1  # 单只股票仓位比例
     max_positions: int = 10  # 最大持仓数
     stop_loss: float = -0.1  # 止损比例
@@ -52,7 +50,7 @@ class StrategyEngine:
     def __init__(self):
         self.strategies_path = config.cache_path / "strategies"
         self.strategies_path.mkdir(parents=True, exist_ok=True)
-        self.strategies: Dict[str, StrategyConfig] = {}
+        self.strategies: dict[str, StrategyConfig] = {}
         self._load_default_strategies()
 
     def _load_default_strategies(self) -> None:
@@ -149,8 +147,8 @@ class StrategyEngine:
         self,
         name: str,
         description: str,
-        buy_conditions: List[Dict[str, Any]],
-        sell_conditions: List[Dict[str, Any]],
+        buy_conditions: list[dict[str, Any]],
+        sell_conditions: list[dict[str, Any]],
         **kwargs,
     ) -> StrategyConfig:
         """
@@ -244,7 +242,7 @@ class StrategyEngine:
         with open(strategy_file, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
-    def evaluate_stock(self, stock: Dict[str, Any], strategy_name: str = "value") -> Dict[str, Any]:
+    def evaluate_stock(self, stock: dict[str, Any], strategy_name: str = "value") -> dict[str, Any]:
         """
         评估股票是否符合策略
 
@@ -261,7 +259,7 @@ class StrategyEngine:
         strategy = self.strategies[strategy_name]
         total_weight: float = 0
         matched_weight: float = 0
-        details: List[Dict[str, Any]] = []
+        details: list[dict[str, Any]] = []
 
         for condition in strategy.buy_conditions:
             total_weight += float(condition.weight)
@@ -294,7 +292,7 @@ class StrategyEngine:
             "strategy": strategy_name,
         }
 
-    def _get_field_value(self, stock: Dict[str, Any], field: str) -> Any:
+    def _get_field_value(self, stock: dict[str, Any], field: str) -> Any:
         """获取股票字段值"""
         if field in stock:
             return stock[field]
@@ -347,12 +345,12 @@ class StrategyEngine:
 
     def screen_stocks(
         self,
-        stocks: List[Dict[str, Any]],
+        stocks: list[dict[str, Any]],
         strategy_name: str = "value",
         min_score: float = 60.0,
         exclude_st: bool = True,
         exclude_bj: bool = True,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         使用策略筛选股票
 
@@ -371,17 +369,17 @@ class StrategyEngine:
         for stock in stocks:
             code = stock.get("code", "")
             name = stock.get("name", "")
-            
+
             # 排除ST股票
             if exclude_st:
                 if "ST" in name or "*ST" in name or "st" in name:
                     continue
-            
+
             # 排除北交所股票（代码以 bj 或 8 开头）
             if exclude_bj:
                 if code.startswith("bj") or code.startswith("8"):
                     continue
-            
+
             evaluation = self.evaluate_stock(stock, strategy_name)
 
             if evaluation["match"] and evaluation["score"] >= min_score:
@@ -396,11 +394,11 @@ class StrategyEngine:
         results.sort(key=lambda x: x.get("strategy_score", 0), reverse=True)
         return results
 
-    def get_strategy(self, name: str) -> Optional[StrategyConfig]:
+    def get_strategy(self, name: str) -> StrategyConfig | None:
         """获取策略"""
         return self.strategies.get(name)
 
-    def list_strategies(self) -> List[Dict[str, Any]]:
+    def list_strategies(self) -> list[dict[str, Any]]:
         """列出所有策略"""
         return [
             {
@@ -419,12 +417,12 @@ class StrategyEngine:
     def validate_strategy(
         self,
         strategy_name: str,
-        historical_data: Dict[str, List[Dict[str, Any]]],
+        historical_data: dict[str, list[dict[str, Any]]],
         initial_capital: float = 100000,
         min_trades: int = 5,
         min_win_rate: float = 0.4,
         min_total_return: float = 0.0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         验证策略有效性
 
@@ -493,10 +491,10 @@ class StrategyEngine:
     def optimize_strategy_params(
         self,
         strategy_name: str,
-        historical_data: Dict[str, List[Dict[str, Any]]],
-        param_ranges: Optional[Dict[str, List[Any]]] = None,
+        historical_data: dict[str, list[dict[str, Any]]],
+        param_ranges: dict[str, list[Any]] | None = None,
         optimization_metric: str = "sharpe_ratio",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         优化策略参数
 
@@ -610,10 +608,10 @@ class StrategyEngine:
 
     def combine_strategies(
         self,
-        strategy_names: List[str],
+        strategy_names: list[str],
         combination_method: str = "intersection",
-        weights: Optional[List[float]] = None,
-    ) -> Dict[str, Any]:
+        weights: list[float] | None = None,
+    ) -> dict[str, Any]:
         """
         组合多个策略
 
@@ -704,12 +702,12 @@ class StrategyEngine:
             "source_strategies": strategy_names,
             "message": f"策略组合 {combined_name} 创建成功",
         }
-    
+
     def evaluate_strategy_portfolio(
         self,
-        stock: Dict[str, Any],
-        strategy_weights: Optional[Dict[str, float]] = None,
-    ) -> Dict[str, Any]:
+        stock: dict[str, Any],
+        strategy_weights: dict[str, float] | None = None,
+    ) -> dict[str, Any]:
         """
         使用策略组合评估股票
         
@@ -727,20 +725,20 @@ class StrategyEngine:
                 "reversal": 0.2,
                 "dividend": 0.25,
             }
-        
+
         total_weight = sum(strategy_weights.values())
         if total_weight == 0:
             return {"combined_score": 0, "strategies": {}}
-        
+
         normalized_weights = {k: v / total_weight for k, v in strategy_weights.items()}
-        
-        strategy_scores: Dict[str, Dict[str, Any]] = {}
+
+        strategy_scores: dict[str, dict[str, Any]] = {}
         weighted_score = 0.0
-        
+
         for strategy_name, weight in normalized_weights.items():
             if strategy_name not in self.strategies:
                 continue
-            
+
             evaluation = self.evaluate_stock(stock, strategy_name)
             strategy_scores[strategy_name] = {
                 "score": evaluation["score"],
@@ -750,17 +748,17 @@ class StrategyEngine:
                 "matched_conditions": evaluation["matched_conditions"],
                 "total_conditions": evaluation["total_conditions"],
             }
-            
+
             weighted_score += evaluation["score"] * weight
-        
+
         sorted_strategies = sorted(
             strategy_scores.items(),
             key=lambda x: x[1]["score"],
             reverse=True,
         )
-        
+
         best_strategy = sorted_strategies[0] if sorted_strategies else (None, {})
-        
+
         return {
             "combined_score": round(weighted_score, 2),
             "best_strategy": best_strategy[0],
@@ -768,8 +766,8 @@ class StrategyEngine:
             "strategies": strategy_scores,
             "recommendation": self._get_portfolio_recommendation(weighted_score, best_strategy[0]),
         }
-    
-    def _get_portfolio_recommendation(self, combined_score: float, best_strategy: Optional[str]) -> str:
+
+    def _get_portfolio_recommendation(self, combined_score: float, best_strategy: str | None) -> str:
         """获取组合推荐"""
         if combined_score >= 80:
             return f"强烈推荐 - 综合得分 {combined_score:.1f}，最佳策略: {best_strategy}"
@@ -779,13 +777,13 @@ class StrategyEngine:
             return f"观望 - 综合得分 {combined_score:.1f}，建议等待更好时机"
         else:
             return f"不推荐 - 综合得分 {combined_score:.1f}，不符合多数策略条件"
-    
+
     def screen_with_portfolio(
         self,
-        stocks: List[Dict[str, Any]],
-        strategy_weights: Optional[Dict[str, float]] = None,
+        stocks: list[dict[str, Any]],
+        strategy_weights: dict[str, float] | None = None,
         min_combined_score: float = 50.0,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         使用策略组合筛选股票
         
@@ -798,10 +796,10 @@ class StrategyEngine:
             筛选后的股票列表
         """
         results = []
-        
+
         for stock in stocks:
             portfolio_result = self.evaluate_strategy_portfolio(stock, strategy_weights)
-            
+
             if portfolio_result["combined_score"] >= min_combined_score:
                 results.append({
                     **stock,
@@ -810,7 +808,7 @@ class StrategyEngine:
                     "strategy_scores": portfolio_result["strategies"],
                     "recommendation": portfolio_result["recommendation"],
                 })
-        
+
         results.sort(key=lambda x: x.get("portfolio_score", 0), reverse=True)
         return results
 

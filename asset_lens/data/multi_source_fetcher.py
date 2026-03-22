@@ -18,11 +18,11 @@ Multi-source data fetcher for asset-lens.
 
 import json
 import time
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, TypeVar
+from typing import Any, TypeVar
 
 from ..config import config
 
@@ -47,7 +47,7 @@ class DataSourceConfig:
     timeout: int = 30
     max_retries: int = 3
     retry_delay: float = 1.0
-    last_check: Optional[str] = None
+    last_check: str | None = None
     status: DataSourceStatus = DataSourceStatus.HEALTHY
     error_count: int = 0
     success_count: int = 0
@@ -59,10 +59,10 @@ class MultiSourceDataFetcher:
     def __init__(self):
         self.cache_path = config.cache_path
         self.config_file = self.cache_path / "data_sources.json"
-        self.sources: Dict[str, DataSourceConfig] = self._load_configs()
+        self.sources: dict[str, DataSourceConfig] = self._load_configs()
         self._initialize_sources()
 
-    def _load_configs(self) -> Dict[str, DataSourceConfig]:
+    def _load_configs(self) -> dict[str, DataSourceConfig]:
         """加载数据源配置"""
         default_sources = {
             "akshare": DataSourceConfig(
@@ -94,7 +94,7 @@ class MultiSourceDataFetcher:
 
         if self.config_file.exists():
             try:
-                with open(self.config_file, "r", encoding="utf-8") as f:
+                with open(self.config_file, encoding="utf-8") as f:
                     data = json.load(f)
                 for name, cfg in data.get("sources", {}).items():
                     if name in default_sources:
@@ -176,7 +176,7 @@ class MultiSourceDataFetcher:
         except Exception:
             return False
 
-    def get_available_sources(self) -> List[str]:
+    def get_available_sources(self) -> list[str]:
         """获取可用数据源列表（按优先级排序）"""
         available = [
             name
@@ -187,9 +187,9 @@ class MultiSourceDataFetcher:
 
     def fetch_with_fallback(
         self,
-        fetch_func: Callable[[str], Optional[T]],
-        sources: Optional[List[str]] = None,
-    ) -> Optional[T]:
+        fetch_func: Callable[[str], T | None],
+        sources: list[str] | None = None,
+    ) -> T | None:
         """
         使用故障切换机制获取数据
 
@@ -239,8 +239,8 @@ class MultiSourceDataFetcher:
     def fetch_stock_quote(
         self,
         code: str,
-        sources: Optional[List[str]] = None,
-    ) -> Optional[Dict[str, Any]]:
+        sources: list[str] | None = None,
+    ) -> dict[str, Any] | None:
         """
         获取股票行情（多数据源）
 
@@ -252,7 +252,7 @@ class MultiSourceDataFetcher:
             行情数据
         """
 
-        def _fetch(source_name: str) -> Optional[Dict[str, Any]]:
+        def _fetch(source_name: str) -> dict[str, Any] | None:
             if source_name == "akshare":
                 return self._fetch_quote_akshare(code)
             elif source_name == "eastmoney":
@@ -267,7 +267,7 @@ class MultiSourceDataFetcher:
 
         return self.fetch_with_fallback(_fetch, sources)
 
-    def _fetch_quote_akshare(self, code: str) -> Optional[Dict[str, Any]]:
+    def _fetch_quote_akshare(self, code: str) -> dict[str, Any] | None:
         """使用 AkShare 获取行情"""
         try:
             import akshare as ak
@@ -302,7 +302,7 @@ class MultiSourceDataFetcher:
         except Exception:
             return None
 
-    def _fetch_quote_eastmoney(self, code: str) -> Optional[Dict[str, Any]]:
+    def _fetch_quote_eastmoney(self, code: str) -> dict[str, Any] | None:
         """使用 EastMoney 获取行情"""
         try:
             import akshare as ak
@@ -337,7 +337,7 @@ class MultiSourceDataFetcher:
         except Exception:
             return None
 
-    def _fetch_quote_sina(self, code: str) -> Optional[Dict[str, Any]]:
+    def _fetch_quote_sina(self, code: str) -> dict[str, Any] | None:
         """使用 Sina 获取行情"""
         try:
             import akshare as ak
@@ -372,7 +372,7 @@ class MultiSourceDataFetcher:
         except Exception:
             return None
 
-    def _fetch_quote_tushare(self, code: str) -> Optional[Dict[str, Any]]:
+    def _fetch_quote_tushare(self, code: str) -> dict[str, Any] | None:
         """使用 Tushare 获取行情"""
         if not getattr(config, "tushare_token", None):
             return None
@@ -411,7 +411,7 @@ class MultiSourceDataFetcher:
         except Exception:
             return None
 
-    def _fetch_quote_baostock(self, code: str) -> Optional[Dict[str, Any]]:
+    def _fetch_quote_baostock(self, code: str) -> dict[str, Any] | None:
         """使用 Baostock 获取行情"""
         try:
             import baostock as bs
@@ -466,7 +466,7 @@ class MultiSourceDataFetcher:
         except Exception:
             return None
 
-    def get_source_status(self) -> Dict[str, Any]:
+    def get_source_status(self) -> dict[str, Any]:
         """获取数据源状态"""
         return {
             "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),

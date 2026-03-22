@@ -4,10 +4,9 @@ IRR Calculator - 内部收益率计算器
 """
 
 import logging
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from decimal import Decimal
 from functools import lru_cache
-from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -21,19 +20,19 @@ except ImportError:
 from ..data.models import Transaction
 
 
-def _hash_cashflows_with_days(cashflows: List[dict]) -> Tuple:
+def _hash_cashflows_with_days(cashflows: list[dict]) -> tuple:
     """将现金流列表转换为可哈希的元组，用于缓存"""
     return tuple((cf["amount"], cf["days"]) for cf in cashflows)
 
 
-def _hash_cashflows(cashflows: List[float]) -> Tuple[float, ...]:
+def _hash_cashflows(cashflows: list[float]) -> tuple[float, ...]:
     """将现金流列表转换为可哈希的元组，用于缓存"""
     return tuple(cashflows)
 
 
 @lru_cache(maxsize=256)
 def _calculate_irr_with_days_cached(
-    cashflows_hash: Tuple,
+    cashflows_hash: tuple,
     guess: float = 0.1,
     tolerance: float = 1e-6,
     max_iterations: int = 200,
@@ -70,7 +69,7 @@ def _calculate_irr_with_days_cached(
 
 
 @lru_cache(maxsize=256)
-def _calculate_irr_numpy_cached(cashflows_hash: Tuple[float, ...]) -> float | None:
+def _calculate_irr_numpy_cached(cashflows_hash: tuple[float, ...]) -> float | None:
     """
     带缓存的 numpy IRR 计算
     """
@@ -122,7 +121,7 @@ class IRRCalculator:
 
     @staticmethod
     def calculate_irr_with_days(
-        cashflows: List[dict],
+        cashflows: list[dict],
         guess: float = 0.1,
         tolerance: float = 1e-6,
         max_iterations: int = 200,
@@ -143,7 +142,7 @@ class IRRCalculator:
         return _calculate_irr_with_days_cached(cashflows_hash, guess, tolerance, max_iterations)
 
     @staticmethod
-    def calculate_irr_numpy(cashflows: List[float]) -> float | None:
+    def calculate_irr_numpy(cashflows: list[float]) -> float | None:
         """
         使用 numpy 计算IRR
         Args:
@@ -154,12 +153,12 @@ class IRRCalculator:
         try:
             irr_value = numpy_irr(cashflows)
             return float(irr_value * 100)  # 转换为百分比
-        except (Exception,):
+        except Exception:
             return None
 
     @staticmethod
     def calculate_irr_newton(
-        cashflows: List[float], max_iter: int = 100, tol: float = 1e-6
+        cashflows: list[float], max_iter: int = 100, tol: float = 1e-6
     ) -> float | None:
         """
         使用牛顿法计算IRR
@@ -258,7 +257,7 @@ class IRRCalculator:
 
         return None
 
-    def calculate_irr(self, cashflows: List[float]) -> float | None:
+    def calculate_irr(self, cashflows: list[float]) -> float | None:
         """
         计算 IRR（内部收益率）
         Args:
@@ -280,7 +279,7 @@ class IRRCalculator:
 
     def calculate_annualized_irr(
         self,
-        transactions: List[Transaction],
+        transactions: list[Transaction],
         current_value: Decimal,
         reference_date: datetime,
     ) -> Decimal | None:

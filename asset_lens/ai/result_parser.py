@@ -5,9 +5,9 @@ Result Parser - AI 结果解析器
 """
 
 import json
-from typing import Any, Dict, List, Optional
-from dataclasses import dataclass, field
 import logging
+from dataclasses import dataclass, field
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -18,10 +18,10 @@ class ParsedResult:
     success: bool
     summary: str = ""
     risk_assessment: str = ""
-    suggestions: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
+    suggestions: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
     score: int = 60
-    raw_content: Optional[str] = None
+    raw_content: str | None = None
 
 
 class ResultParser:
@@ -41,11 +41,11 @@ class ResultParser:
         try:
             json_start = response.find("{")
             json_end = response.rfind("}") + 1
-            
+
             if json_start >= 0 and json_end > json_start:
                 json_str = response[json_start:json_end]
                 result = json.loads(json_str)
-                
+
                 return ParsedResult(
                     success=True,
                     summary=result.get("summary", ""),
@@ -94,31 +94,31 @@ class ResultParser:
             start_idx = text.find(start_keyword)
             if start_idx == -1:
                 return ""
-            
+
             start_idx = text.find("\n", start_idx)
             if start_idx == -1:
                 return ""
-            
+
             end_idx = text.find(end_keyword, start_idx)
             if end_idx == -1:
                 end_idx = len(text)
-            
+
             return text[start_idx:end_idx].strip()
         except Exception:
             return ""
 
     @staticmethod
-    def _extract_list(text: str, keyword: str) -> List[str]:
+    def _extract_list(text: str, keyword: str) -> list[str]:
         """提取列表项"""
-        items: List[str] = []
+        items: list[str] = []
         try:
             start_idx = text.find(keyword)
             if start_idx == -1:
                 return items
-            
+
             section = text[start_idx:start_idx + 500]
             lines = section.split("\n")
-            
+
             for line in lines[1:]:
                 line = line.strip()
                 if line.startswith("-") or line.startswith("*") or line.startswith("•"):
@@ -129,31 +129,31 @@ class ResultParser:
                     break
         except Exception:
             pass
-        
+
         return items
 
     @staticmethod
     def _extract_score(text: str) -> int:
         """提取评分"""
         import re
-        
+
         patterns = [
             r"评分[：:]\s*(\d+)",
             r"综合评分[：:]\s*(\d+)",
             r"得分[：:]\s*(\d+)",
             r"score[：:]\s*(\d+)",
         ]
-        
+
         for pattern in patterns:
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
                 score = int(match.group(1))
                 return max(0, min(100, score))
-        
+
         return 60
 
     @staticmethod
-    def to_dict(result: ParsedResult) -> Dict[str, Any]:
+    def to_dict(result: ParsedResult) -> dict[str, Any]:
         """将解析结果转换为字典"""
         return {
             "success": result.success,

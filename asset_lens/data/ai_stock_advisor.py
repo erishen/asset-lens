@@ -11,9 +11,8 @@ AI 智能选股顾问 - 基于机器学习和规则的智能选股建议
 
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from datetime import datetime
+from typing import Any
 
 from ..config import config
 
@@ -26,13 +25,13 @@ class StockAdvice:
     name: str
     action: str  # buy, sell, hold
     confidence: float
-    reasons: List[str]
+    reasons: list[str]
     risk_level: str
-    target_price: Optional[float] = None
-    stop_loss: Optional[float] = None
-    take_profit: Optional[float] = None
-    holding_period: Optional[int] = None
-    position_size: Optional[float] = None
+    target_price: float | None = None
+    stop_loss: float | None = None
+    take_profit: float | None = None
+    holding_period: int | None = None
+    position_size: float | None = None
 
 
 @dataclass
@@ -42,8 +41,8 @@ class StrategyAdvice:
     strategy_name: str
     action: str  # use, modify, avoid
     confidence: float
-    reasons: List[str]
-    suggested_params: Dict[str, Any] = field(default_factory=dict)
+    reasons: list[str]
+    suggested_params: dict[str, Any] = field(default_factory=dict)
     expected_return: float = 0.0
     risk_level: str = "medium"
 
@@ -56,9 +55,9 @@ class MarketPrediction:
     confidence: float
     trend: str  # up, down, stable
     volatility: str  # high, medium, low
-    risk_factors: List[str]
-    opportunities: List[str]
-    suggested_actions: List[str]
+    risk_factors: list[str]
+    opportunities: list[str]
+    suggested_actions: list[str]
 
 
 class AIStockAdvisor:
@@ -72,8 +71,8 @@ class AIStockAdvisor:
     def generate_stock_advice(
         self,
         code: str,
-        historical_data: Optional[Dict[str, Any]] = None,
-        market_environment: Optional[Dict[str, Any]] = None,
+        historical_data: dict[str, Any] | None = None,
+        market_environment: dict[str, Any] | None = None,
     ) -> StockAdvice:
         """
         生成股票建议
@@ -210,8 +209,8 @@ class AIStockAdvisor:
     def generate_strategy_advice(
         self,
         strategy_name: str,
-        historical_data: Optional[Dict[str, Any]] = None,
-        market_environment: Optional[Dict[str, Any]] = None,
+        historical_data: dict[str, Any] | None = None,
+        market_environment: dict[str, Any] | None = None,
     ) -> StrategyAdvice:
         """
         生成策略建议
@@ -321,7 +320,7 @@ class AIStockAdvisor:
 
     def predict_market(
         self,
-        market_data: Optional[Dict[str, Any]] = None,
+        market_data: dict[str, Any] | None = None,
     ) -> MarketPrediction:
         """
         预测市场趋势
@@ -377,9 +376,9 @@ class AIStockAdvisor:
 
     def batch_generate_advice(
         self,
-        codes: List[str],
-        market_environment: Optional[Dict[str, Any]] = None,
-    ) -> List[StockAdvice]:
+        codes: list[str],
+        market_environment: dict[str, Any] | None = None,
+    ) -> list[StockAdvice]:
         """
         批量生成股票建议
 
@@ -409,7 +408,7 @@ class AIStockAdvisor:
         self,
         limit: int = 10,
         min_confidence: float = 0.6,
-    ) -> List[StockAdvice]:
+    ) -> list[StockAdvice]:
         """
         获取热门推荐
 
@@ -434,7 +433,7 @@ class AIStockAdvisor:
     def save_advice(
         self,
         advice: Any,
-        filename: Optional[str] = None,
+        filename: str | None = None,
     ) -> str:
         """
         保存建议

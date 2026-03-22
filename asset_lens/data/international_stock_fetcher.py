@@ -10,10 +10,10 @@ Hong Kong and US stock data fetcher for asset-lens.
 
 import json
 import time
-from datetime import datetime, timedelta
+from collections.abc import Callable
+from datetime import datetime
 from functools import wraps
-from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 from ..config import config
 
@@ -64,10 +64,10 @@ class InternationalStockFetcher:
         self,
         fetch_func: Callable,
         *args,
-        max_retries: Optional[int] = None,
-        retry_delay: Optional[float] = None,
+        max_retries: int | None = None,
+        retry_delay: float | None = None,
         **kwargs,
-    ) -> Optional[Any]:
+    ) -> Any | None:
         """
         带重试的数据获取
 
@@ -95,7 +95,7 @@ class InternationalStockFetcher:
         print(f"所有重试失败: {last_exception}")
         return None
 
-    def fetch_hk_stock_quote(self, code: str) -> Optional[Dict[str, Any]]:
+    def fetch_hk_stock_quote(self, code: str) -> dict[str, Any] | None:
         """
         获取港股实时行情
 
@@ -144,7 +144,7 @@ class InternationalStockFetcher:
             print(f"获取港股 {code} 行情失败: {e}")
             return None
 
-    def fetch_us_stock_quote(self, symbol: str) -> Optional[Dict[str, Any]]:
+    def fetch_us_stock_quote(self, symbol: str) -> dict[str, Any] | None:
         """
         获取美股实时行情
 
@@ -197,7 +197,7 @@ class InternationalStockFetcher:
         self,
         code: str,
         days: int = 60,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         获取港股历史数据
 
@@ -219,7 +219,7 @@ class InternationalStockFetcher:
 
             df = df.tail(days)
 
-            history: Dict[str, Any] = {
+            history: dict[str, Any] = {
                 "code": code,
                 "name": "",
                 "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -228,7 +228,7 @@ class InternationalStockFetcher:
                 "klines": [],
             }
 
-            klines_list: List[Dict[str, Any]] = history["klines"]
+            klines_list: list[dict[str, Any]] = history["klines"]
 
             for _, row in df.iterrows():
                 try:
@@ -264,7 +264,7 @@ class InternationalStockFetcher:
         self,
         symbol: str,
         days: int = 60,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         获取美股历史数据
 
@@ -286,7 +286,7 @@ class InternationalStockFetcher:
 
             df = df.tail(days)
 
-            history: Dict[str, Any] = {
+            history: dict[str, Any] = {
                 "code": symbol,
                 "name": "",
                 "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -295,7 +295,7 @@ class InternationalStockFetcher:
                 "klines": [],
             }
 
-            klines_list: List[Dict[str, Any]] = history["klines"]
+            klines_list: list[dict[str, Any]] = history["klines"]
 
             for _, row in df.iterrows():
                 try:
@@ -327,7 +327,7 @@ class InternationalStockFetcher:
             print(f"获取美股 {symbol} 历史数据失败: {e}")
             return None
 
-    def search_hk_stock(self, keyword: str) -> List[Dict[str, Any]]:
+    def search_hk_stock(self, keyword: str) -> list[dict[str, Any]]:
         """
         搜索港股
 
@@ -361,7 +361,7 @@ class InternationalStockFetcher:
         except Exception:
             return []
 
-    def search_us_stock(self, keyword: str) -> List[Dict[str, Any]]:
+    def search_us_stock(self, keyword: str) -> list[dict[str, Any]]:
         """
         搜索美股
 
@@ -395,7 +395,7 @@ class InternationalStockFetcher:
         except Exception:
             return []
 
-    def get_hk_stock_list(self) -> List[Dict[str, Any]]:
+    def get_hk_stock_list(self) -> list[dict[str, Any]]:
         """
         获取港股列表
 
@@ -428,7 +428,7 @@ class InternationalStockFetcher:
         except Exception:
             return []
 
-    def get_us_stock_list(self) -> List[Dict[str, Any]]:
+    def get_us_stock_list(self) -> list[dict[str, Any]]:
         """
         获取美股列表
 
@@ -461,7 +461,7 @@ class InternationalStockFetcher:
         except Exception:
             return []
 
-    def fetch_futures_quote(self, symbol: str) -> Optional[Dict[str, Any]]:
+    def fetch_futures_quote(self, symbol: str) -> dict[str, Any] | None:
         """
         获取期货行情
 
@@ -508,7 +508,7 @@ class InternationalStockFetcher:
             print(f"获取期货 {symbol} 行情失败: {e}")
             return None
 
-    def save_hk_stocks_cache(self, stocks: List[Dict[str, Any]]) -> None:
+    def save_hk_stocks_cache(self, stocks: list[dict[str, Any]]) -> None:
         """保存港股缓存"""
         cache_data = {
             "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -517,18 +517,18 @@ class InternationalStockFetcher:
         with open(self.hk_stock_cache, "w", encoding="utf-8") as f:
             json.dump(cache_data, f, ensure_ascii=False, indent=2)
 
-    def load_hk_stocks_cache(self) -> List[Dict[str, Any]]:
+    def load_hk_stocks_cache(self) -> list[dict[str, Any]]:
         """加载港股缓存"""
         if not self.hk_stock_cache.exists():
             return []
         try:
-            with open(self.hk_stock_cache, "r", encoding="utf-8") as f:
+            with open(self.hk_stock_cache, encoding="utf-8") as f:
                 data = json.load(f)
                 return list(data.get("data", []))
         except Exception:
             return []
 
-    def save_us_stocks_cache(self, stocks: List[Dict[str, Any]]) -> None:
+    def save_us_stocks_cache(self, stocks: list[dict[str, Any]]) -> None:
         """保存美股缓存"""
         cache_data = {
             "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -537,12 +537,12 @@ class InternationalStockFetcher:
         with open(self.us_stock_cache, "w", encoding="utf-8") as f:
             json.dump(cache_data, f, ensure_ascii=False, indent=2)
 
-    def load_us_stocks_cache(self) -> List[Dict[str, Any]]:
+    def load_us_stocks_cache(self) -> list[dict[str, Any]]:
         """加载美股缓存"""
         if not self.us_stock_cache.exists():
             return []
         try:
-            with open(self.us_stock_cache, "r", encoding="utf-8") as f:
+            with open(self.us_stock_cache, encoding="utf-8") as f:
                 data = json.load(f)
                 return list(data.get("data", []))
         except Exception:

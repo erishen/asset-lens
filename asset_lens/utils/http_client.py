@@ -11,17 +11,17 @@ HTTP 客户端工具函数
 - 跳过代理支持
 """
 
-import os
-import time
 import logging
 import random
-from typing import Any, Dict, List, Optional, Callable
+import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from functools import wraps
+from typing import Any
 
 import requests
-from requests.exceptions import RequestException, Timeout, ConnectionError, HTTPError
+from requests.exceptions import ConnectionError, HTTPError, Timeout
 
 logger = logging.getLogger(__name__)
 
@@ -72,8 +72,8 @@ class RequestStats:
     failed_requests: int = 0
     total_time: float = 0.0
     avg_response_time: float = 0.0
-    last_error: Optional[str] = None
-    last_error_type: Optional[ErrorType] = None
+    last_error: str | None = None
+    last_error_type: ErrorType | None = None
 
 
 @dataclass
@@ -87,30 +87,30 @@ class AdaptiveTimeout:
     current_timeout: float = field(default=10.0)
     success_streak: int = 0
     failure_streak: int = 0
-    
+
     def on_success(self, response_time: float):
         """成功时调整超时"""
         self.success_streak += 1
         self.failure_streak = 0
-        
+
         if self.success_streak >= 3:
             self.current_timeout = max(
                 self.min_timeout,
                 self.current_timeout * self.decrease_factor
             )
             self.success_streak = 0
-    
+
     def on_failure(self, error_type: ErrorType):
         """失败时调整超时"""
         self.failure_streak += 1
         self.success_streak = 0
-        
+
         if error_type == ErrorType.TIMEOUT:
             self.current_timeout = min(
                 self.max_timeout,
                 self.current_timeout * self.increase_factor
             )
-    
+
     def get_timeout(self) -> int:
         """获取当前超时时间"""
         return int(self.current_timeout)
@@ -134,13 +134,13 @@ class HTTPClient:
         self.enable_adaptive_timeout = enable_adaptive_timeout
         self.enable_jitter = enable_jitter
         self.skip_proxy = skip_proxy
-        
+
         self.adaptive_timeout = AdaptiveTimeout(base_timeout=default_timeout)
         self.stats = RequestStats()
-        
+
         self._session = get_request_session(skip_proxy=skip_proxy)
-        
-        self._error_handlers: Dict[ErrorType, Callable] = {
+
+        self._error_handlers: dict[ErrorType, Callable] = {
             ErrorType.TIMEOUT: self._handle_timeout,
             ErrorType.CONNECTION: self._handle_connection_error,
             ErrorType.HTTP_ERROR: self._handle_http_error,
@@ -151,11 +151,11 @@ class HTTPClient:
     def get(
         self,
         url: str,
-        params: Optional[Dict] = None,
-        headers: Optional[Dict] = None,
-        timeout: Optional[int] = None,
+        params: dict | None = None,
+        headers: dict | None = None,
+        timeout: int | None = None,
         **kwargs,
-    ) -> Optional[requests.Response]:
+    ) -> requests.Response | None:
         return self._request(
             "GET",
             url,
@@ -168,12 +168,12 @@ class HTTPClient:
     def post(
         self,
         url: str,
-        data: Optional[Dict] = None,
-        json: Optional[Dict] = None,
-        headers: Optional[Dict] = None,
-        timeout: Optional[int] = None,
+        data: dict | None = None,
+        json: dict | None = None,
+        headers: dict | None = None,
+        timeout: int | None = None,
         **kwargs,
-    ) -> Optional[requests.Response]:
+    ) -> requests.Response | None:
         return self._request(
             "POST",
             url,
@@ -228,74 +228,74 @@ class HTTPClient:
         logger.warning(f"服务器错误 (attempt {attempt + 1}/{self.max_retries})")
         return attempt < self.max_retries - 1
 
-    def _calculate_backoff(self, attempt: int, base_delay: Optional[float] = None) -> float:
+    def _calculate_backoff(self, attempt: int, base_delay: float | None = None) -> float:
         """计算退避时间（指数退避 + 抖动）"""
         base = base_delay or self.retry_delay
         backoff = base * (2 ** attempt)
-        
+
         if self.enable_jitter:
             jitter = random.uniform(0, 0.3 * backoff)
             backoff += jitter
-        
+
         return float(min(backoff, 30.0))
 
-    def _get_timeout(self, timeout: Optional[int], attempt: int) -> int:
+    def _get_timeout(self, timeout: int | None, attempt: int) -> int:
         """获取超时时间"""
         if timeout is not None:
             return timeout
-        
+
         if self.enable_adaptive_timeout:
             base = self.adaptive_timeout.get_timeout()
             return base + attempt * 5
-        
+
         return self.default_timeout + attempt * 5
 
     def _request(
         self,
         method: str,
         url: str,
-        timeout: Optional[int] = None,
+        timeout: int | None = None,
         **kwargs,
-    ) -> Optional[requests.Response]:
+    ) -> requests.Response | None:
         start_time = time.time()
         self.stats.total_requests += 1
 
         for attempt in range(self.max_retries):
             try:
                 current_timeout = self._get_timeout(timeout, attempt)
-                
+
                 response = self._session.request(
                     method,
                     url,
                     timeout=current_timeout,
                     **kwargs,
                 )
-                
+
                 response.raise_for_status()
-                
+
                 response_time = time.time() - start_time
                 self.stats.successful_requests += 1
                 self.stats.total_time += response_time
                 self.stats.avg_response_time = (
                     self.stats.total_time / self.stats.successful_requests
                 )
-                
+
                 if self.enable_adaptive_timeout:
                     self.adaptive_timeout.on_success(response_time)
-                
+
                 return response
 
             except Exception as e:
                 error_type = self._classify_error(e)
                 self.stats.last_error = str(e)
                 self.stats.last_error_type = error_type
-                
+
                 if self.enable_adaptive_timeout:
                     self.adaptive_timeout.on_failure(error_type)
-                
+
                 handler = self._error_handlers.get(error_type)
                 should_retry = handler(e, attempt) if handler else False
-                
+
                 if should_retry:
                     backoff = self._calculate_backoff(attempt)
                     time.sleep(backoff)
@@ -308,11 +308,11 @@ class HTTPClient:
     def get_json(
         self,
         url: str,
-        params: Optional[Dict] = None,
-        headers: Optional[Dict] = None,
-        timeout: Optional[int] = None,
+        params: dict | None = None,
+        headers: dict | None = None,
+        timeout: int | None = None,
         **kwargs,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         response = self.get(url, params=params, headers=headers, timeout=timeout, **kwargs)
         if response is not None:
             try:
@@ -334,39 +334,39 @@ class HTTPClient:
 class MultiSourceFetcher:
     """多数据源获取器"""
 
-    def __init__(self, client: Optional[HTTPClient] = None):
+    def __init__(self, client: HTTPClient | None = None):
         self.client = client or HTTPClient()
-        self._sources: Dict[str, List[str]] = {}
+        self._sources: dict[str, list[str]] = {}
 
-    def register_sources(self, data_type: str, urls: List[str]):
+    def register_sources(self, data_type: str, urls: list[str]):
         """注册数据源"""
         self._sources[data_type] = urls
 
     def fetch_with_fallback(
         self,
         data_type: str,
-        params: Optional[Dict] = None,
-        headers: Optional[Dict] = None,
-        timeout: Optional[int] = None,
-    ) -> Optional[Dict[str, Any]]:
+        params: dict | None = None,
+        headers: dict | None = None,
+        timeout: int | None = None,
+    ) -> dict[str, Any] | None:
         """带故障转移的数据获取"""
         urls = self._sources.get(data_type, [])
-        
+
         for i, url in enumerate(urls):
             logger.info(f"尝试数据源 {i + 1}/{len(urls)}: {url}")
-            
+
             response = self.client.get_json(
                 url,
                 params=params,
                 headers=headers,
                 timeout=timeout,
             )
-            
+
             if response is not None:
                 return response
-            
+
             logger.warning(f"数据源 {url} 失败，尝试下一个...")
-        
+
         logger.error(f"所有数据源都失败: {data_type}")
         return None
 
@@ -375,7 +375,7 @@ def with_retry(
     max_retries: int = 3,
     retry_delay: float = 1.0,
     exceptions: tuple = (Exception,),
-    on_retry: Optional[Callable] = None,
+    on_retry: Callable | None = None,
 ):
     """
     重试装饰器
@@ -390,7 +390,7 @@ def with_retry(
         @wraps(func)
         def wrapper(*args, **kwargs):
             last_error = None
-            
+
             for attempt in range(max_retries):
                 try:
                     return func(*args, **kwargs)
@@ -401,11 +401,11 @@ def with_retry(
                         if on_retry:
                             on_retry(attempt, e)
                         time.sleep(delay)
-            
+
             if last_error:
                 raise last_error
             return None
-        
+
         return wrapper
     return decorator
 
@@ -416,31 +416,31 @@ multi_source_fetcher = MultiSourceFetcher(http_client)
 
 def safe_get(
     url: str,
-    params: Optional[Dict] = None,
-    headers: Optional[Dict] = None,
+    params: dict | None = None,
+    headers: dict | None = None,
     timeout: int = 10,
     max_retries: int = 3,
-) -> Optional[requests.Response]:
+) -> requests.Response | None:
     client = HTTPClient(default_timeout=timeout, max_retries=max_retries)
     return client.get(url, params=params, headers=headers)
 
 
 def safe_post(
     url: str,
-    data: Optional[Dict] = None,
-    json: Optional[Dict] = None,
-    headers: Optional[Dict] = None,
+    data: dict | None = None,
+    json: dict | None = None,
+    headers: dict | None = None,
     timeout: int = 10,
     max_retries: int = 3,
-) -> Optional[requests.Response]:
+) -> requests.Response | None:
     client = HTTPClient(default_timeout=timeout, max_retries=max_retries)
     return client.post(url, data=data, json=json, headers=headers)
 
 
 def get_json(
     url: str,
-    params: Optional[Dict] = None,
-    headers: Optional[Dict] = None,
+    params: dict | None = None,
+    headers: dict | None = None,
     timeout: int = 10,
-) -> Optional[Dict[str, Any]]:
+) -> dict[str, Any] | None:
     return http_client.get_json(url, params=params, headers=headers, timeout=timeout)

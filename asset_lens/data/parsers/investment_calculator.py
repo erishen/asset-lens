@@ -9,7 +9,7 @@ Investment Calculator - 投资产品计算模块
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ...core.dca_parser import DCAParser
 from ...core.irr_calculator import IRRCalculator
@@ -68,9 +68,9 @@ class InvestmentCalculator:
     def parse_dca_transactions(
         records_str: str,
         investment_type,
-        reference_date: Optional[datetime] = None,
-        product_name: Optional[str] = None,
-    ) -> List[dict]:
+        reference_date: datetime | None = None,
+        product_name: str | None = None,
+    ) -> list[dict]:
         """解析定投交易记录"""
         dca_parser = DCAParser()
         transactions = dca_parser.parse_transaction_record(
@@ -94,8 +94,8 @@ class InvestmentCalculator:
 
     @staticmethod
     def calculate_cashflows_with_days(
-        transactions: List[dict], start_date, current_amount, total_days: int
-    ) -> List[dict]:
+        transactions: list[dict], start_date, current_amount, total_days: int
+    ) -> list[dict]:
         """
         计算现金流（使用 days360 计算天数，与 ts-demo 一致）
         Args:
@@ -106,7 +106,7 @@ class InvestmentCalculator:
         Returns:
             现金流列表，格式为 [{"amount": float, "days": int}, ...]
         """
-        cashflows: List[dict] = []
+        cashflows: list[dict] = []
 
         if not start_date:
             return cashflows
@@ -142,16 +142,16 @@ class InvestmentCalculator:
 
     @staticmethod
     def calculate_cashflows_with_days_for_dca(
-        transactions: List[dict],
+        transactions: list[dict],
         start_date: date,
         current_amount: Decimal,
         total_days: int,
         initial_amount: Decimal,
-    ) -> List[dict]:
+    ) -> list[dict]:
         """
         计算定投产品的现金流（使用初始金额作为净投入）
         """
-        cashflows: List[dict] = []
+        cashflows: list[dict] = []
 
         if not start_date:
             return cashflows
@@ -164,7 +164,7 @@ class InvestmentCalculator:
         return cashflows
 
     @staticmethod
-    def parse_transaction_records(records_str: str) -> List[dict]:
+    def parse_transaction_records(records_str: str) -> list[dict]:
         """
         解析交易记录字符串
         Args:
@@ -172,7 +172,7 @@ class InvestmentCalculator:
         Returns:
             交易记录列表
         """
-        transactions: List[Dict[str, Any]] = []
+        transactions: list[dict[str, Any]] = []
         if not records_str:
             return transactions
 
@@ -194,7 +194,7 @@ class InvestmentCalculator:
         return transactions
 
     @staticmethod
-    def calculate_cashflows(transactions: List[dict], current_amount: Decimal) -> List[float]:
+    def calculate_cashflows(transactions: list[dict], current_amount: Decimal) -> list[float]:
         """
         计算现金流
         """
@@ -215,7 +215,7 @@ class InvestmentCalculator:
     def calculate_product_returns(
         cls,
         product: InvestmentProduct,
-        reference_date: Optional[datetime] = None,
+        reference_date: datetime | None = None,
     ) -> InvestmentProduct:
         """
         计算单个产品的收益率

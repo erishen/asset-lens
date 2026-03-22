@@ -3,15 +3,16 @@ Intelligent Cache System - 智能缓存系统
 支持 TTL、LRU 淘汰策略、缓存预热、缓存统计
 """
 
-import time
-import json
 import hashlib
-from typing import Any, Dict, List, Optional, Callable
-from dataclasses import dataclass, field
-from collections import OrderedDict
-from pathlib import Path
+import json
 import logging
 import threading
+import time
+from collections import OrderedDict
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -25,13 +26,13 @@ class CacheEntry:
     ttl: int
     access_count: int = 0
     last_access: float = field(default_factory=time.time)
-    
+
     def is_expired(self) -> bool:
         """检查是否过期"""
         if self.ttl <= 0:
             return False
         return time.time() - self.created_at > self.ttl
-    
+
     def touch(self):
         """更新访问信息"""
         self.access_count += 1
@@ -40,7 +41,7 @@ class CacheEntry:
 
 class IntelligentCache:
     """智能缓存系统"""
-    
+
     def __init__(
         self,
         max_size: int = 1000,
@@ -58,10 +59,10 @@ class IntelligentCache:
         self.max_size = max_size
         self.default_ttl = default_ttl
         self.enable_stats = enable_stats
-        
+
         self._cache: OrderedDict[str, CacheEntry] = OrderedDict()
         self._lock = threading.RLock()
-        
+
         # 统计信息
         self._stats = {
             "hits": 0,
@@ -70,15 +71,15 @@ class IntelligentCache:
             "expirations": 0,
             "total_requests": 0
         }
-        
+
         # 缓存预热数据
-        self._warmup_data: Dict[str, Any] = {}
-    
+        self._warmup_data: dict[str, Any] = {}
+
     def _generate_key(self, *args, **kwargs) -> str:
         """生成缓存键"""
         key_data = json.dumps({"args": args, "kwargs": kwargs}, sort_keys=True)
         return hashlib.md5(key_data.encode()).hexdigest()
-    
+
     def get(
         self,
         key: str,
@@ -98,38 +99,38 @@ class IntelligentCache:
         """
         with self._lock:
             self._stats["total_requests"] += 1
-            
+
             if key not in self._cache:
                 self._stats["misses"] += 1
                 return default
-            
+
             entry = self._cache[key]
-            
+
             # 检查是否过期
             if entry.is_expired():
                 del self._cache[key]
                 self._stats["expirations"] += 1
                 self._stats["misses"] += 1
                 return default
-            
+
             # 更新访问信息
             entry.touch()
-            
+
             # 刷新 TTL
             if refresh_on_hit:
                 entry.created_at = time.time()
-            
+
             # 移动到末尾（LRU）
             self._cache.move_to_end(key)
-            
+
             self._stats["hits"] += 1
             return entry.value
-    
+
     def set(
         self,
         key: str,
         value: Any,
-        ttl: Optional[int] = None
+        ttl: int | None = None
     ) -> bool:
         """
         设置缓存值
@@ -146,7 +147,7 @@ class IntelligentCache:
             # 检查是否需要淘汰
             if len(self._cache) >= self.max_size and key not in self._cache:
                 self._evict()
-            
+
             # 创建缓存条目
             entry = CacheEntry(
                 key=key,
@@ -154,15 +155,15 @@ class IntelligentCache:
                 created_at=time.time(),
                 ttl=ttl if ttl is not None else self.default_ttl
             )
-            
+
             # 如果键已存在，先删除
             if key in self._cache:
                 del self._cache[key]
-            
+
             # 添加到缓存
             self._cache[key] = entry
             return True
-    
+
     def delete(self, key: str) -> bool:
         """
         删除缓存
@@ -178,22 +179,22 @@ class IntelligentCache:
                 del self._cache[key]
                 return True
             return False
-    
+
     def clear(self):
         """清空缓存"""
         with self._lock:
             self._cache.clear()
-    
+
     def _evict(self):
         """淘汰策略（LRU）"""
         if not self._cache:
             return
-        
+
         # 删除最久未访问的条目
         oldest_key = next(iter(self._cache))
         del self._cache[oldest_key]
         self._stats["evictions"] += 1
-    
+
     def cleanup_expired(self) -> int:
         """
         清理过期缓存
@@ -206,14 +207,14 @@ class IntelligentCache:
                 key for key, entry in self._cache.items()
                 if entry.is_expired()
             ]
-            
+
             for key in expired_keys:
                 del self._cache[key]
                 self._stats["expirations"] += 1
-            
+
             return len(expired_keys)
-    
-    def get_stats(self) -> Dict[str, Any]:
+
+    def get_stats(self) -> dict[str, Any]:
         """
         获取统计信息
         
@@ -226,7 +227,7 @@ class IntelligentCache:
                 if self._stats["total_requests"] > 0
                 else 0
             )
-            
+
             return {
                 **self._stats,
                 "size": len(self._cache),
@@ -234,8 +235,8 @@ class IntelligentCache:
                 "hit_rate": f"{hit_rate:.2%}",
                 "usage": f"{len(self._cache) / self.max_size:.2%}"
             }
-    
-    def warmup(self, data: Dict[str, Any], ttl: Optional[int] = None):
+
+    def warmup(self, data: dict[str, Any], ttl: int | None = None):
         """
         缓存预热
         
@@ -246,14 +247,14 @@ class IntelligentCache:
         with self._lock:
             for key, value in data.items():
                 self.set(key, value, ttl)
-        
+
         logger.info(f"缓存预热完成: {len(data)} 个条目")
-    
+
     def get_or_set(
         self,
         key: str,
         factory: Callable[[], Any],
-        ttl: Optional[int] = None
+        ttl: int | None = None
     ) -> Any:
         """
         获取或设置缓存
@@ -269,14 +270,14 @@ class IntelligentCache:
         value = self.get(key)
         if value is not None:
             return value
-        
+
         value = factory()
         self.set(key, value, ttl)
         return value
-    
+
     def memoize(
         self,
-        ttl: Optional[int] = None
+        ttl: int | None = None
     ) -> Callable:
         """
         缓存装饰器
@@ -293,7 +294,7 @@ class IntelligentCache:
                 return self.get_or_set(key, lambda: func(*args, **kwargs), ttl)
             return wrapper
         return decorator
-    
+
     def save_to_file(self, file_path: Path):
         """
         保存缓存到文件
@@ -312,10 +313,10 @@ class IntelligentCache:
                 for key, entry in self._cache.items()
                 if not entry.is_expired()
             }
-            
+
             with open(file_path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
-    
+
     def load_from_file(self, file_path: Path):
         """
         从文件加载缓存
@@ -325,10 +326,10 @@ class IntelligentCache:
         """
         if not file_path.exists():
             return
-        
-        with open(file_path, 'r', encoding='utf-8') as f:
+
+        with open(file_path, encoding='utf-8') as f:
             data = json.load(f)
-        
+
         with self._lock:
             for key, item in data.items():
                 entry = CacheEntry(
@@ -338,7 +339,7 @@ class IntelligentCache:
                     ttl=item["ttl"],
                     access_count=item.get("access_count", 0)
                 )
-                
+
                 if not entry.is_expired():
                     self._cache[key] = entry
 
@@ -351,7 +352,7 @@ intelligent_cache = IntelligentCache(
 )
 
 
-def cached(ttl: Optional[int] = None):
+def cached(ttl: int | None = None):
     """
     缓存装饰器
     

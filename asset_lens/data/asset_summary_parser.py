@@ -4,10 +4,8 @@
 """
 
 import csv
-from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import List
 
 from ..data.models import AssetSummary
 from .parser_utils import parse_date, parse_decimal
@@ -67,7 +65,7 @@ class AssetSummaryParser:
             return None
 
     @classmethod
-    def parse_csv_file(cls, csv_path: Path) -> List[AssetSummary]:
+    def parse_csv_file(cls, csv_path: Path) -> list[AssetSummary]:
         """
         解析资产汇总 CSV 文件
         Args:
@@ -81,7 +79,7 @@ class AssetSummaryParser:
         summaries = []
 
         try:
-            with open(csv_path, "r", encoding="utf-8-sig") as f:
+            with open(csv_path, encoding="utf-8-sig") as f:
                 reader = csv.DictReader(f)
 
                 for row_num, row in enumerate(reader, start=2):

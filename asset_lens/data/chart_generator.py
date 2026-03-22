@@ -10,10 +10,9 @@ Chart generator for asset-lens.
 """
 
 import json
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -43,7 +42,7 @@ class ChartGenerator:
         self,
         pool_name: str = "default",
         days: int = 30,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         生成收益曲线图数据
 
@@ -90,7 +89,7 @@ class ChartGenerator:
 
         sorted_dates = sorted(list(all_dates))[-days:]
 
-        profit_rates: List[float] = []
+        profit_rates: list[float] = []
         for date in sorted_dates:
             total_profit = 0.0
             count = 0
@@ -113,11 +112,11 @@ class ChartGenerator:
             else:
                 profit_rates.append(0.0)
 
-        data_dict: Dict[str, Any] = chart_data["data"]  # type: ignore
+        data_dict: dict[str, Any] = chart_data["data"]  # type: ignore
         data_dict["dates"] = sorted_dates
         data_dict["profit_rates"] = profit_rates
 
-        benchmark: List[float] = [0.0] * len(sorted_dates)
+        benchmark: list[float] = [0.0] * len(sorted_dates)
         data_dict["benchmark"] = benchmark
 
         if profit_rates:
@@ -138,8 +137,8 @@ class ChartGenerator:
 
     def generate_strategy_comparison_chart(
         self,
-        strategies: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        strategies: list[str] | None = None,
+    ) -> dict[str, Any]:
         """
         生成策略对比图数据
 
@@ -154,7 +153,7 @@ class ChartGenerator:
         if not strategies:
             strategies = ["value", "momentum", "reversal", "dividend"]
 
-        chart_data: Dict[str, Any] = {
+        chart_data: dict[str, Any] = {
             "chart_type": "strategy_comparison",
             "generate_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "config": {
@@ -171,10 +170,10 @@ class ChartGenerator:
             },
         }
 
-        data_dict: Dict[str, Any] = chart_data["data"]
-        strategies_list: List[str] = data_dict["strategies"]
-        profit_rates_list: List[float] = data_dict["profit_rates"]
-        win_rates_list: List[float] = data_dict["win_rates"]
+        data_dict: dict[str, Any] = chart_data["data"]
+        strategies_list: list[str] = data_dict["strategies"]
+        profit_rates_list: list[float] = data_dict["profit_rates"]
+        win_rates_list: list[float] = data_dict["win_rates"]
 
         for strategy_name in strategies:
             pool = StockPool(strategy_name)
@@ -196,7 +195,7 @@ class ChartGenerator:
         self,
         pool_name: str = "default",
         days: int = 30,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         生成妖股信号图表数据
 
@@ -233,8 +232,8 @@ class ChartGenerator:
         if not signals:
             return chart_data
 
-        date_counts: Dict[str, int] = {}
-        type_counts: Dict[str, int] = {}
+        date_counts: dict[str, int] = {}
+        type_counts: dict[str, int] = {}
 
         for signal in signals:
             date = signal.signal_date
@@ -245,7 +244,7 @@ class ChartGenerator:
 
         sorted_dates = sorted(date_counts.keys())[-days:]
 
-        data_dict: Dict[str, Any] = chart_data["data"]  # type: ignore
+        data_dict: dict[str, Any] = chart_data["data"]  # type: ignore
         data_dict["dates"] = sorted_dates
         data_dict["signal_counts"] = [date_counts.get(d, 0) for d in sorted_dates]
         data_dict["signal_types"] = dict(
@@ -263,7 +262,7 @@ class ChartGenerator:
     def generate_risk_dashboard(
         self,
         pool_name: str = "default",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         生成风险仪表盘数据
 
@@ -273,14 +272,14 @@ class ChartGenerator:
         Returns:
             图表数据
         """
-        from .market_environment import market_environment_analyzer
         from ..trading.stock_pool import StockPool
+        from .market_environment import market_environment_analyzer
 
         pool = StockPool(pool_name)
         status = pool.get_performance()
         environment = market_environment_analyzer.analyze_environment()
 
-        chart_data: Dict[str, Any] = {
+        chart_data: dict[str, Any] = {
             "chart_type": "risk_dashboard",
             "pool_name": pool_name,
             "generate_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -307,13 +306,13 @@ class ChartGenerator:
         }
 
         risk_score = 0
-        warnings: List[str] = []
+        warnings: list[str] = []
 
         holding_count = status.get("holding_count", 0)
         total_stocks = status.get("total_stocks", 0)
 
-        data_dict: Dict[str, Any] = chart_data["data"]
-        metrics_dict: Dict[str, Any] = data_dict["metrics"]
+        data_dict: dict[str, Any] = chart_data["data"]
+        metrics_dict: dict[str, Any] = data_dict["metrics"]
 
         if total_stocks > 0:
             concentration = holding_count / total_stocks
@@ -352,7 +351,7 @@ class ChartGenerator:
         chart_data["chart_file"] = str(filepath)
         return chart_data
 
-    def print_chart_summary(self, chart_data: Dict[str, Any]) -> None:
+    def print_chart_summary(self, chart_data: dict[str, Any]) -> None:
         """打印图表摘要"""
         chart_type = chart_data.get("chart_type", "unknown")
 
@@ -383,7 +382,7 @@ class ChartGenerator:
         }
         return titles.get(chart_type, "投资图表")
 
-    def _print_profit_curve(self, chart_data: Dict[str, Any]) -> None:
+    def _print_profit_curve(self, chart_data: dict[str, Any]) -> None:
         """打印收益曲线"""
         stats = chart_data.get("statistics", {})
         print(f"\n股票池: {chart_data.get('pool_name', 'N/A')}")
@@ -393,7 +392,7 @@ class ChartGenerator:
         print(f"  最小收益: {stats.get('min_return', 0):.2f}%")
         print(f"  平均收益: {stats.get('avg_return', 0):.2f}%")
 
-    def _print_strategy_comparison(self, chart_data: Dict[str, Any]) -> None:
+    def _print_strategy_comparison(self, chart_data: dict[str, Any]) -> None:
         """打印策略对比"""
         data = chart_data.get("data", {})
         print("\n策略对比:")
@@ -408,7 +407,7 @@ class ChartGenerator:
 
         print("-" * 40)
 
-    def _print_monster_signal(self, chart_data: Dict[str, Any]) -> None:
+    def _print_monster_signal(self, chart_data: dict[str, Any]) -> None:
         """打印妖股信号"""
         data = chart_data.get("data", {})
         print(f"\n股票池: {chart_data.get('pool_name', 'N/A')}")
@@ -419,7 +418,7 @@ class ChartGenerator:
             for signal_type, count in list(signal_types.items())[:5]:
                 print(f"  {signal_type}: {count} 次")
 
-    def _print_risk_dashboard(self, chart_data: Dict[str, Any]) -> None:
+    def _print_risk_dashboard(self, chart_data: dict[str, Any]) -> None:
         """打印风险仪表盘"""
         data = chart_data.get("data", {})
         print(f"\n股票池: {chart_data.get('pool_name', 'N/A')}")

@@ -11,8 +11,7 @@ Market Sentiment Analyzer for asset-lens.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from datetime import datetime
 
 
 @dataclass
@@ -30,8 +29,8 @@ class MarketSentiment:
     overall_score: float  # 综合评分 0-100
     trend: str  # bullish, bearish, neutral
     risk_level: str  # low, medium, high
-    indicators: List[SentimentIndicator] = field(default_factory=list)
-    suggestions: List[str] = field(default_factory=list)
+    indicators: list[SentimentIndicator] = field(default_factory=list)
+    suggestions: list[str] = field(default_factory=list)
     analysis_time: str = ""
 
 
@@ -190,8 +189,8 @@ class MarketSentimentAnalyzer:
     def _analyze_sector_heat(self) -> SentimentIndicator:
         """分析板块热度"""
         try:
-            from ..trading.stock_pool import StockPool
             from ..config import config
+            from ..trading.stock_pool import StockPool
 
             pool_path = config.cache_path / "stock_pools"
             if not pool_path.exists():
@@ -268,8 +267,8 @@ class MarketSentimentAnalyzer:
     def _analyze_fund_flow(self) -> SentimentIndicator:
         """分析资金流向"""
         try:
-            from ..data.csv_parser import CSVParser
             from ..config import config
+            from ..data.csv_parser import CSVParser
 
             data_path = config.data_path
             data_dirs = sorted([d for d in data_path.iterdir() if d.is_dir() and d.name.startswith("money_csv_")])
@@ -342,8 +341,8 @@ class MarketSentimentAnalyzer:
     def _analyze_stock_pool(self) -> SentimentIndicator:
         """分析股票池表现"""
         try:
-            from ..trading.stock_pool import StockPool
             from ..config import config
+            from ..trading.stock_pool import StockPool
 
             pool_path = config.cache_path / "stock_pools"
             if not pool_path.exists():
@@ -409,7 +408,7 @@ class MarketSentimentAnalyzer:
             description="成交量数据暂未接入",
         )
 
-    def _calculate_overall_score(self, indicators: List[SentimentIndicator]) -> float:
+    def _calculate_overall_score(self, indicators: list[SentimentIndicator]) -> float:
         """计算综合评分"""
         weights = {
             "指数趋势": 0.30,
@@ -438,7 +437,7 @@ class MarketSentimentAnalyzer:
         else:
             return "bearish"
 
-    def _determine_risk_level(self, score: float, indicators: List[SentimentIndicator]) -> str:
+    def _determine_risk_level(self, score: float, indicators: list[SentimentIndicator]) -> str:
         """判断风险等级"""
         if score >= 70:
             return "low"
@@ -447,7 +446,7 @@ class MarketSentimentAnalyzer:
         else:
             return "high"
 
-    def _generate_suggestions(self, score: float, indicators: List[SentimentIndicator]) -> List[str]:
+    def _generate_suggestions(self, score: float, indicators: list[SentimentIndicator]) -> list[str]:
         """生成投资建议"""
         suggestions = []
 

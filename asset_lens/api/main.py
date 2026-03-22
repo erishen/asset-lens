@@ -4,14 +4,13 @@ Asset-Lens REST API.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
-from pathlib import Path
+from typing import Any
 
-from fastapi import FastAPI, HTTPException, Query, Depends, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Depends, FastAPI, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pydantic import BaseModel
 
 app = FastAPI(
     title="Asset-Lens API",
@@ -31,7 +30,6 @@ app.add_middleware(
 
 security = HTTPBearer()
 
-
 class StockQuote(BaseModel):
     """股票行情模型"""
     code: str
@@ -42,7 +40,6 @@ class StockQuote(BaseModel):
     turnover: float
     update_time: str
 
-
 class FundNav(BaseModel):
     """基金净值模型"""
     code: str
@@ -50,7 +47,6 @@ class FundNav(BaseModel):
     nav: float
     accumulated_nav: float
     update_date: str
-
 
 class PortfolioAnalysis(BaseModel):
     """投资组合分析模型"""
@@ -61,7 +57,6 @@ class PortfolioAnalysis(BaseModel):
     risk_level: str
     update_time: str
 
-
 class RiskMetrics(BaseModel):
     """风险指标模型"""
     volatility: float
@@ -70,21 +65,18 @@ class RiskMetrics(BaseModel):
     beta: float
     var_95: float
 
-
 class MonitorReport(BaseModel):
     """监控报告模型"""
     report_type: str
     timestamp: str
     content: str
-    alerts: List[Dict[str, Any]]
-
+    alerts: list[dict[str, Any]]
 
 API_KEYS = {
     "demo_key": {"user": "demo", "rate_limit": 100}
 }
 
-request_counts: Dict[str, int] = {}
-
+request_counts: dict[str, int] = {}
 
 async def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """验证 API Key"""
@@ -96,24 +88,22 @@ async def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(sec
         )
     return API_KEYS[token]
 
-
 async def check_rate_limit(api_info: dict = Depends(verify_api_key)):
     """检查速率限制"""
     user = api_info["user"]
     rate_limit = api_info["rate_limit"]
-    
+
     if user not in request_counts:
         request_counts[user] = 0
-    
+
     if request_counts[user] >= rate_limit:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Rate limit exceeded"
         )
-    
+
     request_counts[user] += 1
     return api_info
-
 
 @app.get("/")
 async def root():
@@ -124,7 +114,6 @@ async def root():
         "docs": "/docs"
     }
 
-
 @app.get("/api/v1/stocks/{code}", response_model=StockQuote)
 async def get_stock_quote(
     code: str,
@@ -132,10 +121,10 @@ async def get_stock_quote(
 ):
     """
     获取股票实时行情
-    
+
     Args:
         code: 股票代码（如 sh600519, sz000001）
-    
+
     Returns:
         股票行情数据
     """
@@ -146,13 +135,13 @@ async def get_stock_quote(
             capture_output=True,
             text=True
         )
-        
+
         if result.returncode != 0:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Stock not found: {code}"
             )
-        
+
         return StockQuote(
             code=code,
             name="示例股票",
@@ -168,8 +157,7 @@ async def get_stock_quote(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
-        )
-
+        ) from e
 
 @app.get("/api/v1/funds/{code}", response_model=FundNav)
 async def get_fund_nav(
@@ -178,10 +166,10 @@ async def get_fund_nav(
 ):
     """
     获取基金净值
-    
+
     Args:
         code: 基金代码
-    
+
     Returns:
         基金净值数据
     """
@@ -197,8 +185,7 @@ async def get_fund_nav(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
-        )
-
+        ) from e
 
 @app.get("/api/v1/portfolio/analysis", response_model=PortfolioAnalysis)
 async def get_portfolio_analysis(
@@ -206,7 +193,7 @@ async def get_portfolio_analysis(
 ):
     """
     获取投资组合分析
-    
+
     Returns:
         投资组合分析数据
     """
@@ -223,8 +210,7 @@ async def get_portfolio_analysis(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
-        )
-
+        ) from e
 
 @app.get("/api/v1/risk/metrics", response_model=RiskMetrics)
 async def get_risk_metrics(
@@ -232,7 +218,7 @@ async def get_risk_metrics(
 ):
     """
     获取风险指标
-    
+
     Returns:
         风险指标数据
     """
@@ -248,8 +234,7 @@ async def get_risk_metrics(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
-        )
-
+        ) from e
 
 @app.get("/api/v1/monitor/report", response_model=MonitorReport)
 async def get_monitor_report(
@@ -258,10 +243,10 @@ async def get_monitor_report(
 ):
     """
     获取监控报告
-    
+
     Args:
         report_type: 报告类型
-    
+
     Returns:
         监控报告数据
     """
@@ -282,8 +267,7 @@ async def get_monitor_report(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
-        )
-
+        ) from e
 
 @app.post("/api/v1/stocks/screen")
 async def screen_stocks(
@@ -293,11 +277,11 @@ async def screen_stocks(
 ):
     """
     股票筛选
-    
+
     Args:
         strategy: 策略类型
         limit: 返回数量
-    
+
     Returns:
         筛选结果
     """
@@ -318,8 +302,7 @@ async def screen_stocks(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
-        )
-
+        ) from e
 
 @app.get("/api/v1/market/indices")
 async def get_market_indices(
@@ -327,7 +310,7 @@ async def get_market_indices(
 ):
     """
     获取市场指数
-    
+
     Returns:
         市场指数数据
     """
@@ -353,8 +336,7 @@ async def get_market_indices(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
-        )
-
+        ) from e
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
@@ -366,7 +348,6 @@ async def http_exception_handler(request, exc):
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
     )
-
 
 if __name__ == "__main__":
     import uvicorn

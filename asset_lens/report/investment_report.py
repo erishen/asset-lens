@@ -11,9 +11,8 @@ Investment report generator for asset-lens.
 
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from datetime import datetime
+from typing import Any
 
 from ..config import config
 from ..trading.stock_pool import StockPool
@@ -24,7 +23,7 @@ class ReportConfig:
     """报告配置"""
 
     output_dir: str = "reports"
-    formats: List[str] = field(default_factory=lambda: ["json"])
+    formats: list[str] = field(default_factory=lambda: ["json"])
     include_charts: bool = True
 
 
@@ -41,7 +40,7 @@ class InvestmentReportGenerator:
         self,
         strategy_name: str,
         pool_name: str = "default",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         生成策略报告
 
@@ -52,11 +51,11 @@ class InvestmentReportGenerator:
         Returns:
             报告数据
         """
-        from ..trading.stock_pool import StockPool
         from ..data.stock_tracker import StockTracker
         from ..strategy.engine import strategy_engine
+        from ..trading.stock_pool import StockPool
 
-        report: Dict[str, Any] = {
+        report: dict[str, Any] = {
             "report_type": "strategy_report",
             "strategy_name": strategy_name,
             "pool_name": pool_name,
@@ -115,7 +114,7 @@ class InvestmentReportGenerator:
         tracking_report = tracker.get_tracking_report()
         report["monster_signals"] = tracking_report.get("recent_monsters", [])
 
-        recommendations_list: List[Dict[str, Any]] = self._generate_strategy_recommendations(
+        recommendations_list: list[dict[str, Any]] = self._generate_strategy_recommendations(
             strategy_name, pool_status, tracking_report
         )
         report["recommendations"] = recommendations_list
@@ -128,7 +127,7 @@ class InvestmentReportGenerator:
         report["report_file"] = str(filepath)
         return report
 
-    def generate_pool_report(self, pool_name: str = "default") -> Dict[str, Any]:
+    def generate_pool_report(self, pool_name: str = "default") -> dict[str, Any]:
         """
         生成股票池报告
 
@@ -138,10 +137,10 @@ class InvestmentReportGenerator:
         Returns:
             报告数据
         """
-        from ..trading.stock_pool import StockPool
         from ..data.stock_tracker import StockTracker
+        from ..trading.stock_pool import StockPool
 
-        report: Dict[str, Any] = {
+        report: dict[str, Any] = {
             "report_type": "pool_report",
             "pool_name": pool_name,
             "generate_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -164,7 +163,7 @@ class InvestmentReportGenerator:
         }
 
         positions_dict = pool.positions
-        positions_list: List[Dict[str, Any]] = report["positions"]
+        positions_list: list[dict[str, Any]] = report["positions"]
         if positions_dict:
             for code, pos in positions_dict.items():
                 positions_list.append(
@@ -206,8 +205,8 @@ class InvestmentReportGenerator:
 
     def generate_comparison_report(
         self,
-        strategies: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        strategies: list[str] | None = None,
+    ) -> dict[str, Any]:
         """
         生成策略对比报告
 
@@ -222,7 +221,7 @@ class InvestmentReportGenerator:
         if not strategies:
             strategies = ["value", "momentum", "reversal", "dividend"]
 
-        report: Dict[str, Any] = {
+        report: dict[str, Any] = {
             "report_type": "comparison_report",
             "strategies": strategies,
             "generate_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -230,7 +229,7 @@ class InvestmentReportGenerator:
             "recommendations": [],
         }
 
-        comparison_list: List[Dict[str, Any]] = report["comparison"]
+        comparison_list: list[dict[str, Any]] = report["comparison"]
 
         for strategy_name in strategies:
             strategy = strategy_engine.get_strategy(strategy_name)
@@ -256,7 +255,7 @@ class InvestmentReportGenerator:
 
         if comparison_list:
             best = comparison_list[0]
-            recommendations_list: List[Dict[str, Any]] = report["recommendations"]
+            recommendations_list: list[dict[str, Any]] = report["recommendations"]
             recommendations_list.append(
                 {
                     "type": "best_strategy",
@@ -273,7 +272,7 @@ class InvestmentReportGenerator:
         report["report_file"] = str(filepath)
         return report
 
-    def generate_risk_report(self, pool_name: str = "default") -> Dict[str, Any]:
+    def generate_risk_report(self, pool_name: str = "default") -> dict[str, Any]:
         """
         生成风险评估报告
 
@@ -286,7 +285,7 @@ class InvestmentReportGenerator:
         from ..data.market_environment import market_environment_analyzer
         from ..trading.stock_pool import StockPool
 
-        report: Dict[str, Any] = {
+        report: dict[str, Any] = {
             "report_type": "risk_report",
             "pool_name": pool_name,
             "generate_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -313,7 +312,7 @@ class InvestmentReportGenerator:
             "max_loss": pool_status.get("max_loss", 0),
         }
 
-        warnings_list: List[Dict[str, Any]] = report["warnings"]
+        warnings_list: list[dict[str, Any]] = report["warnings"]
         if concentration > 0.7:
             warnings_list.append(
                 {
@@ -370,9 +369,9 @@ class InvestmentReportGenerator:
     def _generate_strategy_recommendations(
         self,
         strategy_name: str,
-        pool_status: Dict[str, Any],
-        tracking_report: Dict[str, Any],
-    ) -> List[Dict[str, Any]]:
+        pool_status: dict[str, Any],
+        tracking_report: dict[str, Any],
+    ) -> list[dict[str, Any]]:
         """生成策略建议"""
         recommendations = []
 
@@ -408,7 +407,7 @@ class InvestmentReportGenerator:
 
         return recommendations
 
-    def _analyze_pool_risk(self, pool: Any) -> Dict[str, Any]:
+    def _analyze_pool_risk(self, pool: Any) -> dict[str, Any]:
         """分析股票池风险"""
         positions = list(pool.positions.values())
 
@@ -470,7 +469,7 @@ class InvestmentReportGenerator:
         else:
             return "low"
 
-    def _generate_risk_recommendations(self, report: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _generate_risk_recommendations(self, report: dict[str, Any]) -> list[dict[str, Any]]:
         """生成风险建议"""
         recommendations = []
 
@@ -508,7 +507,7 @@ class InvestmentReportGenerator:
 
         return recommendations
 
-    def print_report(self, report: Dict[str, Any]) -> None:
+    def print_report(self, report: dict[str, Any]) -> None:
         """打印报告"""
         report_type = report.get("report_type", "unknown")
 
@@ -539,7 +538,7 @@ class InvestmentReportGenerator:
         }
         return titles.get(report_type, "投资报告")
 
-    def _print_strategy_report(self, report: Dict[str, Any]) -> None:
+    def _print_strategy_report(self, report: dict[str, Any]) -> None:
         """打印策略报告"""
         strategy_info = report.get("strategy_info", {})
         print(f"\n策略: {strategy_info.get('name', 'N/A')}")
@@ -561,7 +560,7 @@ class InvestmentReportGenerator:
             for r in report["recommendations"]:
                 print(f"  • {r.get('message', '')}")
 
-    def _print_pool_report(self, report: Dict[str, Any]) -> None:
+    def _print_pool_report(self, report: dict[str, Any]) -> None:
         """打印股票池报告"""
         print(f"\n股票池: {report.get('pool_name', 'N/A')}")
 
@@ -576,7 +575,7 @@ class InvestmentReportGenerator:
         print(f"  风险等级: {risk.get('risk_level', 'N/A')}")
         print(f"  {risk.get('message', '')}")
 
-    def _print_comparison_report(self, report: Dict[str, Any]) -> None:
+    def _print_comparison_report(self, report: dict[str, Any]) -> None:
         """打印对比报告"""
         print("\n策略对比:")
         print("-" * 60)
@@ -594,7 +593,7 @@ class InvestmentReportGenerator:
 
         print("-" * 60)
 
-    def _print_risk_report(self, report: Dict[str, Any]) -> None:
+    def _print_risk_report(self, report: dict[str, Any]) -> None:
         """打印风险报告"""
         print(f"\n股票池: {report.get('pool_name', 'N/A')}")
 
@@ -613,8 +612,8 @@ class InvestmentReportGenerator:
 
     def export_html_report(
         self,
-        report: Dict[str, Any],
-        output_file: Optional[str] = None,
+        report: dict[str, Any],
+        output_file: str | None = None,
         include_charts: bool = True,
     ) -> str:
         """
@@ -642,7 +641,7 @@ class InvestmentReportGenerator:
 
         return str(filepath)
 
-    def _generate_html(self, report: Dict[str, Any], include_charts: bool) -> str:
+    def _generate_html(self, report: dict[str, Any], include_charts: bool) -> str:
         """生成 HTML 内容"""
         report_type = report.get("report_type", "unknown")
         title = self._get_report_title(report_type)
@@ -710,7 +709,7 @@ class InvestmentReportGenerator:
 
         return "\n".join(html_parts)
 
-    def _generate_strategy_html(self, report: Dict[str, Any]) -> List[str]:
+    def _generate_strategy_html(self, report: dict[str, Any]) -> list[str]:
         """生成策略报告 HTML"""
         parts = []
         strategy_info = report.get("strategy_info", {})
@@ -768,7 +767,7 @@ class InvestmentReportGenerator:
 
         return parts
 
-    def _generate_pool_html(self, report: Dict[str, Any]) -> List[str]:
+    def _generate_pool_html(self, report: dict[str, Any]) -> list[str]:
         """生成股票池报告 HTML"""
         parts = []
         summary = report.get("summary", {})
@@ -803,7 +802,7 @@ class InvestmentReportGenerator:
 
         return parts
 
-    def _generate_comparison_html(self, report: Dict[str, Any]) -> List[str]:
+    def _generate_comparison_html(self, report: dict[str, Any]) -> list[str]:
         """生成对比报告 HTML"""
         parts = []
 
@@ -859,7 +858,7 @@ class InvestmentReportGenerator:
 
         return parts
 
-    def _generate_risk_html(self, report: Dict[str, Any]) -> List[str]:
+    def _generate_risk_html(self, report: dict[str, Any]) -> list[str]:
         """生成风险报告 HTML"""
         parts = []
         metrics = report.get("risk_metrics", {})

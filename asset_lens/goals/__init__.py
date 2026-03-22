@@ -5,7 +5,7 @@ Goals Module - 资产目标与进度追踪
 
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -21,23 +21,23 @@ class InvestmentGoal:
     priority: str = "medium"  # low, medium, high
     created_at: str = ""
     current_amount: float = 0.0
-    
+
     def __post_init__(self):
         if not self.created_at:
             self.created_at = datetime.now().strftime("%Y-%m-%d")
-    
+
     @property
     def progress(self) -> float:
         """计算进度百分比"""
         if self.target_amount <= 0:
             return 0.0
         return min(100.0, (self.current_amount / self.target_amount) * 100)
-    
+
     @property
     def remaining_amount(self) -> float:
         """剩余金额"""
         return max(0.0, self.target_amount - self.current_amount)
-    
+
     @property
     def days_remaining(self) -> int:
         """剩余天数"""
@@ -47,13 +47,13 @@ class InvestmentGoal:
             return max(0, (target - today).days)
         except ValueError:
             return 0
-    
+
     @property
     def monthly_savings_needed(self) -> float:
         """每月需要储蓄金额"""
         months = max(1, self.days_remaining / 30)
         return self.remaining_amount / months
-    
+
     @property
     def status(self) -> str:
         """目标状态"""
@@ -67,8 +67,8 @@ class InvestmentGoal:
             return "overdue"
         else:
             return "behind"
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         """转换为字典"""
         return {
             "name": self.name,
@@ -89,21 +89,21 @@ class InvestmentGoal:
 
 class GoalsManager:
     """目标管理器"""
-    
-    def __init__(self, config_path: Optional[Path] = None):
+
+    def __init__(self, config_path: Path | None = None):
         self.config_path = config_path or Path.home() / ".asset_lens" / "goals.json"
-        self._goals: List[InvestmentGoal] = []
+        self._goals: list[InvestmentGoal] = []
         self._load_goals()
-    
+
     def _load_goals(self) -> None:
         """加载目标配置"""
         if not self.config_path.exists():
             return
-        
+
         try:
-            with open(self.config_path, "r", encoding="utf-8") as f:
+            with open(self.config_path, encoding="utf-8") as f:
                 data = json.load(f)
-            
+
             self._goals = [
                 InvestmentGoal(
                     name=g.get("name", ""),
@@ -119,11 +119,11 @@ class GoalsManager:
             ]
         except Exception:
             self._goals = []
-    
+
     def _save_goals(self) -> None:
         """保存目标配置"""
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         data = {
             "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "goals": [
@@ -140,10 +140,10 @@ class GoalsManager:
                 for g in self._goals
             ],
         }
-        
+
         with open(self.config_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
-    
+
     def add_goal(
         self,
         name: str,
@@ -165,7 +165,7 @@ class GoalsManager:
         self._goals.append(goal)
         self._save_goals()
         return goal
-    
+
     def remove_goal(self, name: str) -> bool:
         """删除目标"""
         for i, goal in enumerate(self._goals):
@@ -174,7 +174,7 @@ class GoalsManager:
                 self._save_goals()
                 return True
         return False
-    
+
     def update_progress(self, name: str, current_amount: float) -> bool:
         """更新目标进度"""
         for goal in self._goals:
@@ -183,32 +183,32 @@ class GoalsManager:
                 self._save_goals()
                 return True
         return False
-    
-    def get_goal(self, name: str) -> Optional[InvestmentGoal]:
+
+    def get_goal(self, name: str) -> InvestmentGoal | None:
         """获取目标"""
         for goal in self._goals:
             if goal.name == name:
                 return goal
         return None
-    
-    def get_goals_by_owner(self, owner: str) -> List[InvestmentGoal]:
+
+    def get_goals_by_owner(self, owner: str) -> list[InvestmentGoal]:
         """按所有者获取目标"""
         return [g for g in self._goals if g.owner == owner]
-    
-    def get_all_goals(self) -> List[InvestmentGoal]:
+
+    def get_all_goals(self) -> list[InvestmentGoal]:
         """获取所有目标"""
         return self._goals.copy()
-    
-    def get_summary(self) -> Dict[str, Any]:
+
+    def get_summary(self) -> dict[str, Any]:
         """获取目标摘要"""
         total_target = sum(g.target_amount for g in self._goals)
         total_current = sum(g.current_amount for g in self._goals)
-        
-        by_status: Dict[str, int] = {}
+
+        by_status: dict[str, int] = {}
         for goal in self._goals:
             status = goal.status
             by_status[status] = by_status.get(status, 0) + 1
-        
+
         return {
             "total_goals": len(self._goals),
             "total_target": total_target,
@@ -217,7 +217,7 @@ class GoalsManager:
             "by_status": by_status,
             "goals": [g.to_dict() for g in self._goals],
         }
-    
+
     def update_from_portfolio(self, total_assets: float, owner: str = "personal") -> None:
         """从投资组合更新进度"""
         for goal in self._goals:

@@ -3,9 +3,9 @@ Platform configuration loader.
 """
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
 
 @dataclass
@@ -31,8 +31,8 @@ class PlatformLoader:
     """Load and manage platform configurations"""
 
     _instance: Optional["PlatformLoader"] = None
-    _platforms: Dict[str, PlatformConfig] = {}
-    _platform_types: Dict[str, str] = {}
+    _platforms: dict[str, PlatformConfig] = {}
+    _platform_types: dict[str, str] = {}
     _loaded: bool = False
 
     def __new__(cls):
@@ -41,7 +41,7 @@ class PlatformLoader:
         return cls._instance
 
     @classmethod
-    def load(cls, config_path: Optional[Path] = None, data_mode: Optional[str] = None) -> None:
+    def load(cls, config_path: Path | None = None, data_mode: str | None = None) -> None:
         """Load platform configuration from JSON file"""
         if cls._loaded and config_path is None:
             return
@@ -62,7 +62,7 @@ class PlatformLoader:
             cls._loaded = True
             return
 
-        with open(config_path, "r", encoding="utf-8") as f:
+        with open(config_path, encoding="utf-8") as f:
             data = json.load(f)
 
         cls._platforms = {}
@@ -101,22 +101,22 @@ class PlatformLoader:
 
     @classmethod
     def get_platform(
-        cls, platform_id: str, data_mode: Optional[str] = None
-    ) -> Optional[PlatformConfig]:
+        cls, platform_id: str, data_mode: str | None = None
+    ) -> PlatformConfig | None:
         """Get platform by ID"""
         if not cls._loaded:
             cls.load(data_mode=data_mode)
         return cls._platforms.get(platform_id)
 
     @classmethod
-    def get_all_platforms(cls, data_mode: Optional[str] = None) -> List[PlatformConfig]:
+    def get_all_platforms(cls, data_mode: str | None = None) -> list[PlatformConfig]:
         """Get all platforms"""
         if not cls._loaded:
             cls.load(data_mode=data_mode)
         return list(cls._platforms.values())
 
     @classmethod
-    def get_platforms_by_type(cls, platform_type: str) -> List[PlatformConfig]:
+    def get_platforms_by_type(cls, platform_type: str) -> list[PlatformConfig]:
         """Get platforms by type"""
         if not cls._loaded:
             cls.load()
@@ -142,21 +142,21 @@ class PlatformLoader:
         return cls._platform_types.get(platform_type, platform_type)
 
     @classmethod
-    def get_all_field_names(cls) -> List[str]:
+    def get_all_field_names(cls) -> list[str]:
         """Get all field names"""
         if not cls._loaded:
             cls.load()
         return [p.field for p in cls._platforms.values()]
 
     @classmethod
-    def get_field_to_name_mapping(cls) -> Dict[str, str]:
+    def get_field_to_name_mapping(cls) -> dict[str, str]:
         """Get mapping from field name to display name"""
         if not cls._loaded:
             cls.load()
         return {p.field: p.name for p in cls._platforms.values()}
 
     @classmethod
-    def get_id_to_field_mapping(cls) -> Dict[str, str]:
+    def get_id_to_field_mapping(cls) -> dict[str, str]:
         """Get mapping from platform ID to field name"""
         if not cls._loaded:
             cls.load()

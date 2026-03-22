@@ -4,7 +4,6 @@ Progress bar utility for asset-lens.
 """
 
 import sys
-from typing import List, Optional
 
 
 class ProgressBar:
@@ -38,7 +37,7 @@ class ProgressBar:
         self.empty = empty
         self.current = 0
 
-    def update(self, current: int, description: Optional[str] = None) -> None:
+    def update(self, current: int, description: str | None = None) -> None:
         """
         更新进度条
 
@@ -62,7 +61,7 @@ class ProgressBar:
         sys.stdout.write(line)
         sys.stdout.flush()
 
-    def increment(self, description: Optional[str] = None) -> None:
+    def increment(self, description: str | None = None) -> None:
         """
         增加进度
 
@@ -71,7 +70,7 @@ class ProgressBar:
         """
         self.update(self.current + 1, description)
 
-    def finish(self, message: Optional[str] = None) -> None:
+    def finish(self, message: str | None = None) -> None:
         """
         完成进度条
 
@@ -128,7 +127,7 @@ class Spinner:
         sys.stdout.flush()
         self.current += 1
 
-    def finish(self, message: Optional[str] = None) -> None:
+    def finish(self, message: str | None = None) -> None:
         """
         完成旋转动画
 
@@ -156,7 +155,7 @@ class TaskProgress:
         """
         self.tasks = tasks
         self.current_task = 0
-        self.completed: List[str] = []
+        self.completed: list[str] = []
 
     def start_task(self, task_name: str) -> None:
         """

@@ -4,14 +4,14 @@ Prompt Builder - AI Prompt 构建器
 负责构建 AI 分析所需的 Prompt。
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class PromptBuilder:
     """Prompt 构建器 - 构建 AI 分析所需的 Prompt"""
 
     @staticmethod
-    def build_portfolio_analysis_prompt(data: Dict[str, Any]) -> str:
+    def build_portfolio_analysis_prompt(data: dict[str, Any]) -> str:
         """
         构建投资组合分析 Prompt
 
@@ -81,7 +81,7 @@ class PromptBuilder:
         return prompt
 
     @staticmethod
-    def build_risk_assessment_prompt(data: Dict[str, Any]) -> str:
+    def build_risk_assessment_prompt(data: dict[str, Any]) -> str:
         """
         构建风险评估 Prompt
 
@@ -95,7 +95,7 @@ class PromptBuilder:
         total_value = float(data.get("total_value", 1))
 
         prompt = "## 风险分布分析\n\n"
-        
+
         for risk_name, stats in risk_dist.items():
             value = float(stats.get("total_value", 0))
             ratio = value / total_value * 100 if total_value > 0 else 0
@@ -106,7 +106,7 @@ class PromptBuilder:
 
     @staticmethod
     def build_suggestion_prompt(
-        data: Dict[str, Any],
+        data: dict[str, Any],
         risk_preference: str = "balanced",
     ) -> str:
         """

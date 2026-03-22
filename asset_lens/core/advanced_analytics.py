@@ -4,9 +4,9 @@ Advanced analytics for investment portfolio.
 """
 
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..data.models import InvestmentProduct, Portfolio
 
@@ -17,12 +17,12 @@ class DrawdownResult:
 
     max_drawdown: Decimal
     max_drawdown_percent: Decimal
-    peak_date: Optional[date]
-    trough_date: Optional[date]
-    recovery_date: Optional[date]
+    peak_date: date | None
+    trough_date: date | None
+    recovery_date: date | None
     drawdown_duration: int
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "最大回撤金额": str(self.max_drawdown),
             "最大回撤比例": f"{self.max_drawdown_percent:.2f}%",
@@ -42,7 +42,7 @@ class SharpeResult:
     risk_free_rate: Decimal
     volatility: Decimal
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "夏普比率": f"{self.sharpe_ratio:.4f}",
             "年化收益率": f"{self.annualized_return:.2f}%",
@@ -60,7 +60,7 @@ class VolatilityResult:
     monthly_volatility: Decimal
     annualized_volatility: Decimal
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "日波动率": f"{self.daily_volatility:.4f}%",
             "周波动率": f"{self.weekly_volatility:.4f}%",
@@ -77,12 +77,12 @@ class PortfolioAnalytics:
     total_initial: Decimal
     total_profit: Decimal
     return_rate: Decimal
-    max_drawdown: Optional[DrawdownResult]
-    sharpe_ratio: Optional[SharpeResult]
-    volatility: Optional[VolatilityResult]
+    max_drawdown: DrawdownResult | None
+    sharpe_ratio: SharpeResult | None
+    volatility: VolatilityResult | None
 
-    def to_dict(self) -> Dict[str, Any]:
-        result: Dict[str, Any] = {
+    def to_dict(self) -> dict[str, Any]:
+        result: dict[str, Any] = {
             "总资产": str(self.total_value),
             "总成本": str(self.total_initial),
             "总收益": str(self.total_profit),
@@ -109,8 +109,8 @@ class AdvancedAnalytics:
 
     def calculate_max_drawdown(
         self,
-        values: List[Decimal],
-        dates: Optional[List[date]] = None,
+        values: list[Decimal],
+        dates: list[date] | None = None,
     ) -> DrawdownResult:
         if not values or len(values) < 2:
             return DrawdownResult(
@@ -178,7 +178,7 @@ class AdvancedAnalytics:
 
     def calculate_sharpe_ratio(
         self,
-        returns: List[Decimal],
+        returns: list[Decimal],
         annualized: bool = True,
     ) -> SharpeResult:
         if not returns or len(returns) < 2:
@@ -220,7 +220,7 @@ class AdvancedAnalytics:
 
     def calculate_volatility(
         self,
-        returns: List[Decimal],
+        returns: list[Decimal],
     ) -> VolatilityResult:
         if not returns or len(returns) < 2:
             return VolatilityResult(
@@ -249,8 +249,8 @@ class AdvancedAnalytics:
 
     def calculate_returns_from_values(
         self,
-        values: List[Decimal],
-    ) -> List[Decimal]:
+        values: list[Decimal],
+    ) -> list[Decimal]:
         if not values or len(values) < 2:
             return []
 
@@ -267,8 +267,8 @@ class AdvancedAnalytics:
     def analyze_portfolio(
         self,
         portfolio: Portfolio,
-        historical_values: Optional[List[Decimal]] = None,
-        historical_dates: Optional[List[date]] = None,
+        historical_values: list[Decimal] | None = None,
+        historical_dates: list[date] | None = None,
     ) -> PortfolioAnalytics:
         total_value = portfolio.total_value or Decimal("0")
         total_initial = portfolio.total_initial or Decimal("0")
@@ -304,9 +304,9 @@ class AdvancedAnalytics:
     def analyze_product(
         self,
         product: InvestmentProduct,
-        historical_values: Optional[List[Decimal]] = None,
-        historical_dates: Optional[List[date]] = None,
-    ) -> Dict[str, Any]:
+        historical_values: list[Decimal] | None = None,
+        historical_dates: list[date] | None = None,
+    ) -> dict[str, Any]:
         current_amount = product.current_amount or Decimal("0")
         initial_amount = product.initial_amount or Decimal("0")
         profit_amount = product.profit_amount or Decimal("0")
@@ -344,8 +344,8 @@ class AdvancedAnalytics:
 
     def calculate_correlation(
         self,
-        returns1: List[Decimal],
-        returns2: List[Decimal],
+        returns1: list[Decimal],
+        returns2: list[Decimal],
     ) -> Decimal:
         if not returns1 or not returns2 or len(returns1) != len(returns2):
             return Decimal("0")
@@ -381,8 +381,8 @@ class AdvancedAnalytics:
 
     def calculate_beta(
         self,
-        portfolio_returns: List[Decimal],
-        market_returns: List[Decimal],
+        portfolio_returns: list[Decimal],
+        market_returns: list[Decimal],
     ) -> Decimal:
         if (
             not portfolio_returns

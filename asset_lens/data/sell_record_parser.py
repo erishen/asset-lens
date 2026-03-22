@@ -3,10 +3,7 @@
 解析卖出记录-表格 1.csv 文件
 """
 
-from datetime import datetime
-from decimal import Decimal
 from pathlib import Path
-from typing import List
 
 from ..data.models import RiskLevel, SellRecord
 from .parser_utils import SELL_RECORD_FIELDS, parse_date, parse_decimal
@@ -95,17 +92,17 @@ class SellRecordParser:
             return None
 
     @classmethod
-    def parse_csv_file(cls, csv_path: Path) -> List[SellRecord]:
+    def parse_csv_file(cls, csv_path: Path) -> list[SellRecord]:
         """
         解析卖出记录 CSV 文件
         """
         if not csv_path.exists():
             raise FileNotFoundError(f"卖出记录 CSV 文件不存在: {csv_path}")
 
-        records: List[SellRecord] = []
+        records: list[SellRecord] = []
 
         try:
-            with open(csv_path, "r", encoding="utf-8-sig") as f:
+            with open(csv_path, encoding="utf-8-sig") as f:
                 lines = f.readlines()
 
                 if not lines:
@@ -133,7 +130,7 @@ class SellRecordParser:
         return records
 
     @classmethod
-    def load_sell_records(cls) -> List[SellRecord]:
+    def load_sell_records(cls) -> list[SellRecord]:
         """
         加载卖出记录数据
         从配置的数据路径中查找卖出记录文件

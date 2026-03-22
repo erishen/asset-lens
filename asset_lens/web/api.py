@@ -13,10 +13,9 @@ Web API 服务 - 提供 REST API 接口
     uvicorn asset_lens.web.api:app --reload --port 8000
 """
 
-import asyncio
 import json
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -91,7 +90,7 @@ class HealthResponse(BaseModel):
     timestamp: str
 
 
-@app.get("/", response_model=Dict[str, str])
+@app.get("/", response_model=dict[str, str])
 async def root():
     """API 根路径"""
     return {
@@ -121,11 +120,10 @@ async def get_stock_quote(code: str):
     Args:
         code: 股票代码（如 sh600519）
     """
-    import requests
 
     try:
         from ..utils.http_client import safe_get
-        
+
         url = f"http://hq.sinajs.cn/list={code}"
         headers = {
             "Referer": "http://finance.sina.com.cn",
@@ -247,7 +245,7 @@ async def get_portfolio_summary():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/strategies", response_model=List[StrategyInfo])
+@app.get("/api/strategies", response_model=list[StrategyInfo])
 async def list_strategies():
     """获取策略列表"""
     from ..strategy.engine import strategy_engine
@@ -322,7 +320,7 @@ async def evaluate_stock(strategy_name: str, code: str):
 
 @app.get("/api/recommendations/stocks")
 async def recommend_stocks(
-    strategy_name: Optional[str] = None,
+    strategy_name: str | None = None,
     max_stocks: int = Query(10, ge=1, le=50),
 ):
     """推荐股票"""
@@ -589,7 +587,7 @@ async def get_portfolio_items():
     from decimal import Decimal
 
     from ..data.csv_parser import CSVParser
-    from ..data.models import InvestmentType, Portfolio
+    from ..data.models import Portfolio
 
     try:
         products = CSVParser.load_data()
@@ -648,7 +646,7 @@ async def get_risk_summary():
     try:
         summary = risk_service.get_risk_summary()
         return summary
-    except Exception as e:
+    except Exception:
         return {
             "risk_score": 50,
             "risk_level": "中等",
@@ -708,7 +706,7 @@ async def get_stock_kline(
         else:
             scale = "240"
 
-        params: Dict[str, Any] = {
+        params: dict[str, Any] = {
             "symbol": code,
             "scale": scale,
             "ma": "no",
@@ -723,7 +721,7 @@ async def get_stock_kline(
         if response.status_code == 200:
             data = response.json()
             if data and isinstance(data, list):
-                kline_data: List[Dict[str, Any]] = []
+                kline_data: list[dict[str, Any]] = []
                 for item in data:
                     kline_data.append({
                         "date": item.get("day", ""),
@@ -743,8 +741,8 @@ async def get_stock_kline(
 
 async def _get_kline_tencent(code: str, ktype: str, count: int):
     """使用腾讯API获取周K/月K数据"""
+
     import requests
-    import json
 
     try:
         # 腾讯K线API
@@ -765,7 +763,7 @@ async def _get_kline_tencent(code: str, ktype: str, count: int):
             # 周K在 qfqweek，月K在 qfqmonth
             key = f"qfq{ktype}"
             kline_list = stock_data.get(key, [])
-            
+
             if kline_list:
                 kline_data = []
                 for item in kline_list:
@@ -794,31 +792,31 @@ async def _get_kline_tencent(code: str, ktype: str, count: int):
 @app.get("/api/portfolio/performance")
 async def get_portfolio_performance():
     """获取投资组合历史收益曲线数据"""
-    from ..data.csv_parser import CSVParser
     from ..config import config
+    from ..data.csv_parser import CSVParser
 
     try:
         # 使用 config 中的 data_path
         data_path = config.data_path
-        
+
         # 查找 money_csv_* 子目录
         data_dirs = sorted([d for d in data_path.iterdir() if d.is_dir() and d.name.startswith("money_csv_")])
         if not data_dirs:
             return {"error": f"未找到数据目录，请检查 {data_path}"}
-        
+
         # 使用最新的数据目录
         data_dir = data_dirs[-1]
         products = CSVParser.load_data_from_dir(data_dir)
 
         # 按类型汇总收益
-        type_performance: Dict[str, List[Dict]] = {}
+        type_performance: dict[str, list[dict]] = {}
         total_initial: float = 0.0
         total_current: float = 0.0
 
         for product in products:
             # InvestmentType 枚举的 value 已经是中文名称
             ptype = product.investment_type.value if hasattr(product, 'investment_type') and product.investment_type else "其他"
-            
+
             if ptype not in type_performance:
                 type_performance[ptype] = []
 
@@ -889,7 +887,7 @@ class ConnectionManager:
     """WebSocket 连接管理器"""
 
     def __init__(self):
-        self.active_connections: Set[WebSocket] = set()
+        self.active_connections: set[WebSocket] = set()
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
@@ -923,11 +921,11 @@ async def websocket_market(websocket: WebSocket):
         while True:
             # 接收客户端消息
             data = await websocket.receive_text()
-            
+
             try:
                 message = json.loads(data)
                 action = message.get("action", "")
-                
+
                 if action == "subscribe":
                     # 订阅特定股票
                     codes = message.get("codes", [])
@@ -936,11 +934,11 @@ async def websocket_market(websocket: WebSocket):
                         "codes": codes,
                         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     })
-                
+
                 elif action == "ping":
                     # 心跳检测
                     await websocket.send_json({"type": "pong"})
-                
+
                 elif action == "get_market_indexes":
                     # 获取市场指数
                     indexes = await _get_market_indexes()
@@ -949,7 +947,7 @@ async def websocket_market(websocket: WebSocket):
                         "data": indexes,
                         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     })
-                
+
                 elif action == "get_stock_quotes":
                     # 获取股票行情
                     codes = message.get("codes", [])
@@ -959,10 +957,10 @@ async def websocket_market(websocket: WebSocket):
                         "data": quotes,
                         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     })
-                    
+
             except json.JSONDecodeError:
                 await websocket.send_json({"type": "error", "message": "Invalid JSON"})
-                
+
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
@@ -970,7 +968,7 @@ async def websocket_market(websocket: WebSocket):
 async def _get_market_indexes():
     """获取市场指数数据"""
     import requests
-    
+
     indexes = []
     index_codes = [
         ("sh000001", "上证指数"),
@@ -979,7 +977,7 @@ async def _get_market_indexes():
         ("sh000300", "沪深300"),
         ("sh000016", "上证50"),
     ]
-    
+
     for code, name in index_codes:
         try:
             url = f"http://hq.sinajs.cn/list={code}"
@@ -988,18 +986,18 @@ async def _get_market_indexes():
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             }
             response = requests.get(url, headers=headers, timeout=5)
-            
+
             if response.status_code == 200:
                 content = response.text
                 pattern = f'var hq_str_{code}="'
                 start = content.find(pattern)
-                
+
                 if start != -1:
                     start += len(pattern)
                     end = content.find('";', start)
                     data_str = content[start:end]
                     parts = data_str.split(",")
-                    
+
                     if len(parts) >= 32:
                         indexes.append({
                             "code": code,
@@ -1010,14 +1008,14 @@ async def _get_market_indexes():
                         })
         except Exception:
             pass
-    
+
     return indexes
 
 
-async def _get_stock_quotes(codes: List[str]):
+async def _get_stock_quotes(codes: list[str]):
     """获取股票行情数据"""
     import requests
-    
+
     quotes = []
     for code in codes[:10]:  # 限制最多10只
         try:
@@ -1027,23 +1025,23 @@ async def _get_stock_quotes(codes: List[str]):
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             }
             response = requests.get(url, headers=headers, timeout=5)
-            
+
             if response.status_code == 200:
                 content = response.text
                 pattern = f'var hq_str_{code}="'
                 start = content.find(pattern)
-                
+
                 if start != -1:
                     start += len(pattern)
                     end = content.find('";', start)
                     data_str = content[start:end]
                     parts = data_str.split(",")
-                    
+
                     if len(parts) >= 32:
                         current_price = float(parts[3]) if parts[3] else 0
                         prev_close = float(parts[2]) if parts[2] else 0
                         change_percent = ((current_price - prev_close) / prev_close * 100) if prev_close > 0 else 0
-                        
+
                         quotes.append({
                             "code": code,
                             "name": parts[0],
@@ -1054,7 +1052,7 @@ async def _get_stock_quotes(codes: List[str]):
                         })
         except Exception:
             pass
-    
+
     return quotes
 
 
@@ -1071,12 +1069,12 @@ async def get_realtime_status():
 @app.get("/api/stock-pool")
 async def get_stock_pool():
     """获取股票池数据"""
-    from ..trading.stock_pool import StockPool
     from ..config import config
+    from ..trading.stock_pool import StockPool
 
     try:
         pool_path = config.cache_path / "stock_pools"
-        
+
         if not pool_path.exists():
             return {
                 "stocks": [],
@@ -1089,7 +1087,7 @@ async def get_stock_pool():
             f for f in pool_path.glob("*_pool.json")
             if not f.name.startswith("test_")
         ]
-        
+
         if not pool_files:
             return {
                 "stocks": [],
@@ -1097,38 +1095,38 @@ async def get_stock_pool():
                 "message": "股票池为空"
             }
 
-        all_stocks: Dict[str, dict] = {}
-        pool_info: Dict[str, dict] = {}
-        
+        all_stocks: dict[str, dict] = {}
+        pool_info: dict[str, dict] = {}
+
         for pool_file in pool_files:
             pool = StockPool(pool_file.stem.replace("_pool", ""))
-            
+
             # 获取策略信息
             strategy_name = pool.pool_name
             min_score = 60.0
             update_time = ""
-            
+
             if hasattr(pool, 'config') and pool.config:
                 if hasattr(pool.config, 'strategy_name'):
                     strategy_name = pool.config.strategy_name
                 if hasattr(pool.config, 'min_score'):
                     min_score = pool.config.min_score
-            
+
             if hasattr(pool, 'update_time'):
                 update_time = pool.update_time
-            
+
             pool_info[pool.pool_name] = {
                 "name": pool.pool_name,
                 "strategy_name": strategy_name,
                 "min_score": min_score,
                 "update_time": update_time,
             }
-            
+
             for code, position in pool.positions.items():
                 # 过滤掉北交所股票（代码以 sh92 或 bj 开头）
                 if code.startswith("sh92") or code.startswith("bj"):
                     continue
-                    
+
                 if position.status in ["watching", "holding"]:
                     if code in all_stocks:
                         all_stocks[code]["selected_count"] += position.selected_count
@@ -1171,6 +1169,7 @@ async def get_stock_pool():
 async def export_report():
     """导出投资报告 HTML"""
     from fastapi.responses import Response
+
     from ..data.csv_parser import CSVParser
 
     try:

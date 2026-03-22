@@ -18,7 +18,7 @@ import os
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from dotenv import load_dotenv
 
@@ -33,7 +33,7 @@ class StockHistoryFetcher:
     BAOSTOCK_MAX_RETRIES = 3
     BAOSTOCK_RETRY_DELAY = 2
 
-    def __init__(self, cache_path: Optional[Path] = None):
+    def __init__(self, cache_path: Path | None = None):
         self.cache_path = cache_path or config.cache_path
         self.cache_path.mkdir(parents=True, exist_ok=True)
         self.history_cache_file = self.cache_path / "stock_history_baostock.json"
@@ -122,7 +122,7 @@ class StockHistoryFetcher:
 
         return False
 
-    def fetch_history_baostock(self, code: str, days: int = 60) -> Optional[Dict[str, Any]]:
+    def fetch_history_baostock(self, code: str, days: int = 60) -> dict[str, Any] | None:
         """
         使用 Baostock 获取股票历史K线数据
 
@@ -157,7 +157,7 @@ class StockHistoryFetcher:
             if rs.error_code != "0":
                 return None
 
-            history: Dict[str, Any] = {
+            history: dict[str, Any] = {
                 "code": code,
                 "name": "",
                 "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -165,9 +165,9 @@ class StockHistoryFetcher:
                 "klines": [],
             }
 
-            klines_list: List[Dict[str, Any]] = history["klines"]
+            klines_list: list[dict[str, Any]] = history["klines"]
 
-            data_list: List[List[Any]] = []
+            data_list: list[list[Any]] = []
             while (rs.error_code == "0") & rs.next():
                 data_list.append(rs.get_row_data())
 
@@ -175,7 +175,7 @@ class StockHistoryFetcher:
                 try:
                     if len(row) < 9:
                         continue
-                    row_list: List[Any] = list(row)
+                    row_list: list[Any] = list(row)
                     klines_list.append(
                         {
                             "date": str(row_list[0]),
@@ -208,7 +208,7 @@ class StockHistoryFetcher:
             except Exception:
                 pass
 
-    def fetch_history_tushare(self, code: str, days: int = 60) -> Optional[Dict[str, Any]]:
+    def fetch_history_tushare(self, code: str, days: int = 60) -> dict[str, Any] | None:
         """
         使用 Tushare 获取股票历史K线数据
 
@@ -238,7 +238,7 @@ class StockHistoryFetcher:
             if df is None or df.empty:
                 return None
 
-            history: Dict[str, Any] = {
+            history: dict[str, Any] = {
                 "code": code,
                 "name": "",
                 "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -246,11 +246,11 @@ class StockHistoryFetcher:
                 "klines": [],
             }
 
-            klines_list: List[Dict[str, Any]] = history["klines"]
+            klines_list: list[dict[str, Any]] = history["klines"]
 
             for _, row in df.head(days).iterrows():
                 try:
-                    row_dict: Dict[str, Any] = (
+                    row_dict: dict[str, Any] = (
                         row.to_dict() if hasattr(row, "to_dict") else dict(row)
                     )
                     klines_list.append(
@@ -282,7 +282,7 @@ class StockHistoryFetcher:
         except Exception:
             return None
 
-    def fetch_history_akshare(self, code: str, days: int = 60) -> Optional[Dict[str, Any]]:
+    def fetch_history_akshare(self, code: str, days: int = 60) -> dict[str, Any] | None:
         """
         使用 AkShare 腾讯数据源获取股票历史K线数据
 
@@ -299,7 +299,7 @@ class StockHistoryFetcher:
             if df is None or df.empty:
                 return None
 
-            history: Dict[str, Any] = {
+            history: dict[str, Any] = {
                 "code": code,
                 "name": "",
                 "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -307,11 +307,11 @@ class StockHistoryFetcher:
                 "klines": [],
             }
 
-            klines_list: List[Dict[str, Any]] = history["klines"]
+            klines_list: list[dict[str, Any]] = history["klines"]
 
             for _, row in df.tail(days).iterrows():
                 try:
-                    row_dict: Dict[str, Any] = (
+                    row_dict: dict[str, Any] = (
                         row.to_dict() if hasattr(row, "to_dict") else dict(row)
                     )
                     klines_list.append(
@@ -338,7 +338,7 @@ class StockHistoryFetcher:
             print(f"AkShare 获取 {code} 历史数据失败: {e}")
             return None
 
-    def fetch_history_akshare_daily(self, code: str, days: int = 60) -> Optional[Dict[str, Any]]:
+    def fetch_history_akshare_daily(self, code: str, days: int = 60) -> dict[str, Any] | None:
         """
         使用 AkShare 东方财富数据源获取股票历史K线数据（包含换手率）
 
@@ -366,7 +366,7 @@ class StockHistoryFetcher:
             if df is None or df.empty:
                 return None
 
-            history: Dict[str, Any] = {
+            history: dict[str, Any] = {
                 "code": code,
                 "name": "",
                 "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -374,11 +374,11 @@ class StockHistoryFetcher:
                 "klines": [],
             }
 
-            klines_list: List[Dict[str, Any]] = history["klines"]
+            klines_list: list[dict[str, Any]] = history["klines"]
 
             for _, row in df.tail(days).iterrows():
                 try:
-                    row_dict: Dict[str, Any] = (
+                    row_dict: dict[str, Any] = (
                         row.to_dict() if hasattr(row, "to_dict") else dict(row)
                     )
                     klines_list.append(
@@ -405,7 +405,7 @@ class StockHistoryFetcher:
             print(f"AkShare-东方财富 获取 {code} 历史数据失败: {e}")
             return None
 
-    def fetch_history(self, code: str, days: int = 60) -> Optional[Dict[str, Any]]:
+    def fetch_history(self, code: str, days: int = 60) -> dict[str, Any] | None:
         """
         获取股票历史K线数据（自动选择数据源）
 
@@ -437,11 +437,11 @@ class StockHistoryFetcher:
 
     def fetch_batch_history(
         self,
-        codes: List[str],
+        codes: list[str],
         days: int = 60,
         delay: float = 0.1,
         progress: bool = True,
-    ) -> Dict[str, Dict[str, Any]]:
+    ) -> dict[str, dict[str, Any]]:
         """
         批量获取多只股票历史数据
 
@@ -472,7 +472,7 @@ class StockHistoryFetcher:
 
         return results
 
-    def calculate_avg_metrics(self, history: Dict[str, Any], days: int = 60) -> Dict[str, float]:
+    def calculate_avg_metrics(self, history: dict[str, Any], days: int = 60) -> dict[str, float]:
         """
         计算历史平均指标
 
@@ -513,7 +513,7 @@ class StockHistoryFetcher:
             "avg_volume": total_volume / count if count > 0 else 0,
         }
 
-    def save_history_cache(self, histories: Dict[str, Dict[str, Any]]) -> None:
+    def save_history_cache(self, histories: dict[str, dict[str, Any]]) -> None:
         """保存历史数据缓存"""
         cache_data = {
             "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -527,22 +527,22 @@ class StockHistoryFetcher:
 
         print(f"✅ 历史数据已保存到: {self.history_cache_file}")
 
-    def load_history_cache(self) -> Dict[str, Dict[str, Any]]:
+    def load_history_cache(self) -> dict[str, dict[str, Any]]:
         """加载历史数据缓存"""
         if self.history_cache_file.exists():
-            with open(self.history_cache_file, "r", encoding="utf-8") as f:
-                data: Dict[str, Any] = json.load(f)
-                result: Dict[str, Dict[str, Any]] = data.get("data", {})
+            with open(self.history_cache_file, encoding="utf-8") as f:
+                data: dict[str, Any] = json.load(f)
+                result: dict[str, dict[str, Any]] = data.get("data", {})
                 return result
         return {}
 
     def get_stocks_with_history(
         self,
-        stocks: List[Dict[str, Any]],
+        stocks: list[dict[str, Any]],
         days: int = 60,
         use_cache: bool = True,
         delay: float = 0.3,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         获取带历史数据的股票列表
 
@@ -591,7 +591,7 @@ class StockHistoryFetcher:
 
         return result_stocks
 
-    def get_stock_realtime_quote(self, code: str) -> Optional[Dict[str, Any]]:
+    def get_stock_realtime_quote(self, code: str) -> dict[str, Any] | None:
         """
         获取单只股票实时行情
 
@@ -640,7 +640,7 @@ class StockHistoryFetcher:
             print(f"获取 {code} 实时行情失败: {e}")
             return None
 
-    def check_cache_validity(self, max_age_hours: int = 24) -> Dict[str, Any]:
+    def check_cache_validity(self, max_age_hours: int = 24) -> dict[str, Any]:
         """
         检查缓存数据的有效性
 
@@ -659,8 +659,8 @@ class StockHistoryFetcher:
             }
 
         try:
-            with open(self.history_cache_file, "r", encoding="utf-8") as f:
-                cache_data: Dict[str, Any] = json.load(f)
+            with open(self.history_cache_file, encoding="utf-8") as f:
+                cache_data: dict[str, Any] = json.load(f)
 
             update_time_str = cache_data.get("update_time", "")
             if not update_time_str:
@@ -684,11 +684,11 @@ class StockHistoryFetcher:
                     "need_update": [],
                 }
 
-            data: Dict[str, Dict[str, Any]] = cache_data.get("data", {})
+            data: dict[str, dict[str, Any]] = cache_data.get("data", {})
             incomplete_stocks = []
 
             for code, history in data.items():
-                klines: List[Dict[str, Any]] = history.get("klines", [])
+                klines: list[dict[str, Any]] = history.get("klines", [])
                 if len(klines) < 30:
                     incomplete_stocks.append(
                         {
@@ -717,11 +717,11 @@ class StockHistoryFetcher:
 
     def incremental_update(
         self,
-        stocks: List[Dict[str, Any]],
+        stocks: list[dict[str, Any]],
         days: int = 60,
         force_update: bool = False,
         delay: float = 0.3,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         增量更新历史数据
 
@@ -734,7 +734,7 @@ class StockHistoryFetcher:
         Returns:
             更新结果
         """
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "total": len(stocks),
             "cached": 0,
             "updated": 0,
@@ -817,7 +817,7 @@ class StockHistoryFetcher:
 
         return result
 
-    def get_cache_statistics(self) -> Dict[str, Any]:
+    def get_cache_statistics(self) -> dict[str, Any]:
         """
         获取缓存统计信息
 
@@ -834,16 +834,16 @@ class StockHistoryFetcher:
             }
 
         try:
-            with open(self.history_cache_file, "r", encoding="utf-8") as f:
-                cache_data: Dict[str, Any] = json.load(f)
+            with open(self.history_cache_file, encoding="utf-8") as f:
+                cache_data: dict[str, Any] = json.load(f)
 
-            data: Dict[str, Dict[str, Any]] = cache_data.get("data", {})
+            data: dict[str, dict[str, Any]] = cache_data.get("data", {})
             total_stocks = len(data)
             total_klines = 0
-            data_sources: Dict[str, int] = {}
+            data_sources: dict[str, int] = {}
 
             for code, history in data.items():
-                klines: List[Dict[str, Any]] = history.get("klines", [])
+                klines: list[dict[str, Any]] = history.get("klines", [])
                 total_klines += len(klines)
                 source = history.get("data_source", "Unknown")
                 data_sources[source] = data_sources.get(source, 0) + 1

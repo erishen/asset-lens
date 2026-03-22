@@ -3,12 +3,13 @@ Advanced Investment Strategies - 高级投资策略
 包含多种量化策略：趋势跟踪、均值回归、因子投资等
 """
 
+import logging
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
+
 import numpy as np
 import pandas as pd
-from typing import Any, Dict, List, Optional, Tuple
-from dataclasses import dataclass
-from datetime import datetime, timedelta
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -22,12 +23,12 @@ class StrategySignal:
     confidence: float  # 0-1
     price: float
     timestamp: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 class TrendFollowingStrategy:
     """趋势跟踪策略"""
-    
+
     def __init__(
         self,
         short_window: int = 20,
@@ -48,12 +49,12 @@ class TrendFollowingStrategy:
         self.long_window = long_window
         self.stop_loss = stop_loss
         self.take_profit = take_profit
-    
+
     def generate_signals(
         self,
         prices: pd.DataFrame,
-        volume: Optional[pd.Series] = None
-    ) -> List[StrategySignal]:
+        volume: pd.Series | None = None
+    ) -> list[StrategySignal]:
         """
         生成交易信号
         
@@ -65,24 +66,24 @@ class TrendFollowingStrategy:
             交易信号列表
         """
         signals = []
-        
+
         # 计算均线
         short_ma = prices['close'].rolling(window=self.short_window).mean()
         long_ma = prices['close'].rolling(window=self.long_window).mean()
-        
+
         # 计算趋势强度
         trend_strength = (short_ma - long_ma) / long_ma
-        
+
         # 生成信号
         for i in range(len(prices)):
             if i < self.long_window:
                 continue
-            
+
             current_price = prices['close'].iloc[i]
             current_short_ma = short_ma.iloc[i]
             current_long_ma = long_ma.iloc[i]
             current_strength = trend_strength.iloc[i]
-            
+
             # 金叉买入信号
             if current_short_ma > current_long_ma and short_ma.iloc[i-1] <= long_ma.iloc[i-1]:
                 signal = StrategySignal(
@@ -99,7 +100,7 @@ class TrendFollowingStrategy:
                     }
                 )
                 signals.append(signal)
-            
+
             # 死叉卖出信号
             elif current_short_ma < current_long_ma and short_ma.iloc[i-1] >= long_ma.iloc[i-1]:
                 signal = StrategySignal(
@@ -116,13 +117,13 @@ class TrendFollowingStrategy:
                     }
                 )
                 signals.append(signal)
-        
+
         return signals
 
 
 class MeanReversionStrategy:
     """均值回归策略"""
-    
+
     def __init__(
         self,
         window: int = 20,
@@ -140,12 +141,12 @@ class MeanReversionStrategy:
         self.window = window
         self.std_threshold = std_threshold
         self.max_holding_period = max_holding_period
-    
+
     def generate_signals(
         self,
         prices: pd.DataFrame,
-        volume: Optional[pd.Series] = None
-    ) -> List[StrategySignal]:
+        volume: pd.Series | None = None
+    ) -> list[StrategySignal]:
         """
         生成交易信号
         
@@ -157,23 +158,23 @@ class MeanReversionStrategy:
             交易信号列表
         """
         signals = []
-        
+
         # 计算均值和标准差
         rolling_mean = prices['close'].rolling(window=self.window).mean()
         rolling_std = prices['close'].rolling(window=self.window).std()
-        
+
         # 计算 Z-score
         z_score = (prices['close'] - rolling_mean) / rolling_std
-        
+
         # 生成信号
         for i in range(len(prices)):
             if i < self.window:
                 continue
-            
+
             current_price = prices['close'].iloc[i]
             current_z_score = z_score.iloc[i]
             current_mean = rolling_mean.iloc[i]
-            
+
             # 价格低于均值2个标准差，买入信号
             if current_z_score < -self.std_threshold:
                 signal = StrategySignal(
@@ -190,7 +191,7 @@ class MeanReversionStrategy:
                     }
                 )
                 signals.append(signal)
-            
+
             # 价格高于均值2个标准差，卖出信号
             elif current_z_score > self.std_threshold:
                 signal = StrategySignal(
@@ -207,17 +208,17 @@ class MeanReversionStrategy:
                     }
                 )
                 signals.append(signal)
-        
+
         return signals
 
 
 class FactorInvestingStrategy:
     """因子投资策略"""
-    
+
     def __init__(
         self,
-        factors: Optional[List[str]] = None,
-        factor_weights: Optional[Dict[str, float]] = None
+        factors: list[str] | None = None,
+        factor_weights: dict[str, float] | None = None
     ):
         """
         初始化因子投资策略
@@ -233,28 +234,28 @@ class FactorInvestingStrategy:
             "quality": 0.2,
             "size": 0.2
         }
-    
+
     def calculate_momentum_factor(self, prices: pd.DataFrame) -> pd.Series:
         """计算动量因子"""
         return prices['close'].pct_change(periods=252)
-    
+
     def calculate_value_factor(self, fundamentals: pd.DataFrame) -> pd.Series:
         """计算价值因子"""
         return 1 / fundamentals['pe_ratio']
-    
+
     def calculate_quality_factor(self, fundamentals: pd.DataFrame) -> pd.Series:
         """计算质量因子"""
         return fundamentals['roe']
-    
+
     def calculate_size_factor(self, fundamentals: pd.DataFrame) -> pd.Series:
         """计算规模因子"""
         return -np.log(fundamentals['market_cap'])
-    
+
     def generate_signals(
         self,
         prices: pd.DataFrame,
-        fundamentals: Optional[pd.DataFrame] = None
-    ) -> List[StrategySignal]:
+        fundamentals: pd.DataFrame | None = None
+    ) -> list[StrategySignal]:
         """
         生成交易信号
         
@@ -266,41 +267,41 @@ class FactorInvestingStrategy:
             交易信号列表
         """
         signals = []
-        
+
         # 计算因子得分
         factor_scores = pd.DataFrame()
-        
+
         if "momentum" in self.factors:
             factor_scores["momentum"] = self.calculate_momentum_factor(prices)
-        
+
         if fundamentals is not None:
             if "value" in self.factors:
                 factor_scores["value"] = self.calculate_value_factor(fundamentals)
-            
+
             if "quality" in self.factors:
                 factor_scores["quality"] = self.calculate_quality_factor(fundamentals)
-            
+
             if "size" in self.factors:
                 factor_scores["size"] = self.calculate_size_factor(fundamentals)
-        
+
         # 标准化因子得分
         factor_scores = (factor_scores - factor_scores.mean()) / factor_scores.std()
-        
+
         # 计算综合得分
         total_score = sum(
             factor_scores[factor] * self.factor_weights[factor]
             for factor in self.factors
             if factor in factor_scores.columns
         )
-        
+
         # 生成信号
         for i in range(len(prices)):
             if i < 252:
                 continue
-            
+
             current_score = total_score.iloc[i]
             current_price = prices['close'].iloc[i]
-            
+
             # 高得分买入信号
             if current_score > 1.5:
                 signal = StrategySignal(
@@ -316,7 +317,7 @@ class FactorInvestingStrategy:
                     }
                 )
                 signals.append(signal)
-            
+
             # 低得分卖出信号
             elif current_score < -1.5:
                 signal = StrategySignal(
@@ -332,18 +333,18 @@ class FactorInvestingStrategy:
                     }
                 )
                 signals.append(signal)
-        
+
         return signals
 
 
 class PortfolioOptimizer:
     """投资组合优化器"""
-    
+
     def __init__(
         self,
         risk_free_rate: float = 0.03,
-        target_return: Optional[float] = None,
-        max_risk: Optional[float] = None
+        target_return: float | None = None,
+        max_risk: float | None = None
     ):
         """
         初始化投资组合优化器
@@ -356,12 +357,12 @@ class PortfolioOptimizer:
         self.risk_free_rate = risk_free_rate
         self.target_return = target_return
         self.max_risk = max_risk
-    
+
     def optimize(
         self,
         returns: pd.DataFrame,
         method: str = "max_sharpe"
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         优化投资组合权重
         
@@ -375,9 +376,9 @@ class PortfolioOptimizer:
         # 计算期望收益率和协方差矩阵
         expected_returns = returns.mean()
         cov_matrix = returns.cov()
-        
+
         n_assets = len(expected_returns)
-        
+
         # 简单优化示例（实际应使用 scipy.optimize）
         if method == "max_sharpe":
             # 最大化夏普比率
@@ -391,15 +392,15 @@ class PortfolioOptimizer:
         else:
             # 等权重
             weights = np.ones(n_assets) / n_assets
-        
+
         # 转换为字典
         weight_dict = {
             asset: weight
             for asset, weight in zip(returns.columns, weights)
         }
-        
+
         return weight_dict
-    
+
     def _max_sharpe_ratio(
         self,
         expected_returns: pd.Series,
@@ -410,14 +411,14 @@ class PortfolioOptimizer:
         sharpe_ratios = expected_returns / np.sqrt(np.diag(cov_matrix))
         weights = sharpe_ratios / sharpe_ratios.sum()
         return np.asarray(weights.values)
-    
+
     def _min_risk(self, cov_matrix: pd.DataFrame) -> np.ndarray:
         """最小化风险"""
         # 简化实现：使用逆方差
         inv_var = 1 / np.diag(cov_matrix)
         weights = inv_var / inv_var.sum()
         return np.asarray(weights)
-    
+
     def _risk_parity(self, cov_matrix: pd.DataFrame) -> np.ndarray:
         """风险平价"""
         # 简化实现：使用逆波动率

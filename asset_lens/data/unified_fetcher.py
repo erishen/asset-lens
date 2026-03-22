@@ -19,7 +19,7 @@ Unified data source interface for asset-lens.
 
 import warnings
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class DataSourceType(Enum):
@@ -79,7 +79,7 @@ class UnifiedDataFetcher:
         source_type: DataSourceType,
         data_type: str = "quote",
         **kwargs,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         统一数据获取接口 - 转发到新实现
         
@@ -93,7 +93,7 @@ class UnifiedDataFetcher:
             数据字典
         """
         from .providers import DataType
-        
+
         type_map = {
             DataSourceType.STOCK_CN: DataType.STOCK_CN,
             DataSourceType.STOCK_HK: DataType.STOCK_HK,
@@ -106,14 +106,14 @@ class UnifiedDataFetcher:
             DataSourceType.MACRO: DataType.MACRO,
             DataSourceType.INDEX: DataType.INDEX,
         }
-        
+
         new_type = type_map.get(source_type)
         if new_type is None:
             warnings.warn(f"不支持的数据源类型: {source_type}", RuntimeWarning, stacklevel=2)
             return None
-        
+
         fetcher = self._get_new_fetcher()
-        result: Optional[Dict[str, Any]] = fetcher.fetch(new_type, symbol, **kwargs)
+        result: dict[str, Any] | None = fetcher.fetch(new_type, symbol, **kwargs)
         return result
 
 

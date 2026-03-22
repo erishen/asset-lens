@@ -6,7 +6,7 @@ Sold investment analysis for asset-lens.
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
-from typing import Any, Dict, List
+from typing import Any
 
 from ..data.models import SellRecord
 from ..data.parser_utils import calculate_return_rate
@@ -25,7 +25,7 @@ class SoldInvestmentStats:
     avg_holding_days: float  # 平均持有天数
     avg_return_rate: Decimal  # 平均收益率
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """转换为字典"""
         return {
             "总记录数": self.total_records,
@@ -52,7 +52,7 @@ class SoldInvestmentDetail:
     annualized_return: Decimal  # 年化收益率
     risk_level: str  # 风险等级
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """转换为字典"""
         return {
             "名称": self.name,
@@ -71,8 +71,8 @@ class SoldInvestmentAnalyzer:
 
     def analyze_sold_investments(
         self,
-        sell_records: List[SellRecord],
-    ) -> Dict[str, Any]:
+        sell_records: list[SellRecord],
+    ) -> dict[str, Any]:
         """
         分析已卖出投资
 
@@ -178,8 +178,8 @@ class SoldInvestmentAnalyzer:
 
     def _analyze_by_type(
         self,
-        details: List[SoldInvestmentDetail],
-    ) -> Dict[str, Any]:
+        details: list[SoldInvestmentDetail],
+    ) -> dict[str, Any]:
         """
         按风险等级分组统计
 
@@ -189,7 +189,7 @@ class SoldInvestmentAnalyzer:
         Returns:
             按风险等级统计的结果
         """
-        risk_stats: Dict[str, Dict[str, Any]] = {}
+        risk_stats: dict[str, dict[str, Any]] = {}
 
         for detail in details:
             risk_key = detail.risk_level
@@ -221,8 +221,8 @@ class SoldInvestmentAnalyzer:
 
     def _analyze_by_holding_period(
         self,
-        details: List[SoldInvestmentDetail],
-    ) -> Dict[str, Any]:
+        details: list[SoldInvestmentDetail],
+    ) -> dict[str, Any]:
         """
         按持有时间分组分析
 
@@ -236,7 +236,7 @@ class SoldInvestmentAnalyzer:
         medium_term = [d for d in details if 180 <= d.holding_days <= 720]  # 中期 6个月-2年
         long_term = [d for d in details if d.holding_days > 720]  # 长期 > 2年
 
-        def calculate_group_stats(group: List[SoldInvestmentDetail]) -> Dict[str, Any]:
+        def calculate_group_stats(group: list[SoldInvestmentDetail]) -> dict[str, Any]:
             """计算分组统计"""
             if not group:
                 return {
@@ -271,8 +271,8 @@ class SoldInvestmentAnalyzer:
         }
 
     def get_top_performers(
-        self, details: List[SoldInvestmentDetail], top_n: int = 3
-    ) -> List[SoldInvestmentDetail]:
+        self, details: list[SoldInvestmentDetail], top_n: int = 3
+    ) -> list[SoldInvestmentDetail]:
         """
         获取表现最好的产品（按年化收益率排序，与 ts-demo 保持一致）
 
@@ -287,8 +287,8 @@ class SoldInvestmentAnalyzer:
         return sorted(positive, key=lambda x: x.annualized_return or 0, reverse=True)[:top_n]
 
     def get_worst_performers(
-        self, details: List[SoldInvestmentDetail], top_n: int = 3
-    ) -> List[SoldInvestmentDetail]:
+        self, details: list[SoldInvestmentDetail], top_n: int = 3
+    ) -> list[SoldInvestmentDetail]:
         """
         获取表现最差的产品
 

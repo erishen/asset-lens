@@ -3,17 +3,16 @@ Data CLI commands for asset-lens.
 数据管理命令模块 - 包含 fetch-stock, fetch-fund, search-fund, update-market-data, fetch-portfolio-funds, update-all-data
 """
 
-from typing import Optional, Tuple
 
 import click
 
 
 def register_data_commands(cli: click.Group) -> None:
     """注册数据管理命令到 CLI 组"""
-    
+
     @cli.command()
     @click.argument("codes", nargs=-1, required=True)
-    def fetch_stock(codes: Tuple[str, ...]):
+    def fetch_stock(codes: tuple[str, ...]):
         """获取股票实时行情
 
         示例:
@@ -36,7 +35,7 @@ def register_data_commands(cli: click.Group) -> None:
 
     @cli.command()
     @click.argument("codes", nargs=-1, required=True)
-    def fetch_fund(codes: Tuple[str, ...]):
+    def fetch_fund(codes: tuple[str, ...]):
         """获取基金净值
 
         示例:
@@ -81,7 +80,7 @@ def register_data_commands(cli: click.Group) -> None:
 
     @cli.command("fetch-portfolio-funds")
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
-    def fetch_portfolio_funds(data_mode: Optional[str]):
+    def fetch_portfolio_funds(data_mode: str | None):
         """自动获取投资组合中所有基金的净值
 
         自动匹配基金代码并获取净值
@@ -163,7 +162,7 @@ def register_data_commands(cli: click.Group) -> None:
 
     @cli.command("update-all-data")
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
-    def update_all_data(data_mode: Optional[str]):
+    def update_all_data(data_mode: str | None):
         """更新所有数据（市场指数、基金净值、股票行情）
 
         一键更新所有需要的数据
@@ -227,7 +226,7 @@ def register_data_commands(cli: click.Group) -> None:
         click.echo("=" * 60)
 
         info = unified_data_fetcher.get_provider_info()
-        
+
         if info:
             click.echo("\n可用数据源:")
             for data_type, providers in info.items():
@@ -248,8 +247,8 @@ def register_data_commands(cli: click.Group) -> None:
             asset-lens fetch-unified --type fund_cn 000001
             asset-lens fetch-unified --type stock_us AAPL
         """
-        from asset_lens.data.unified_data_fetcher import unified_data_fetcher
         from asset_lens.data.providers import DataType
+        from asset_lens.data.unified_data_fetcher import unified_data_fetcher
 
         click.echo(f"\n📊 获取 {data_type} 数据: {symbol}")
         click.echo("=" * 60)
@@ -264,16 +263,16 @@ def register_data_commands(cli: click.Group) -> None:
         result = unified_data_fetcher.fetch(type_map[data_type], symbol)
 
         if result:
-            click.echo(f"\n✅ 成功获取数据:")
+            click.echo("\n✅ 成功获取数据:")
             for key, value in result.items():
                 click.echo(f"  {key}: {value}")
         else:
-            click.echo(f"\n❌ 未能获取数据", err=True)
+            click.echo("\n❌ 未能获取数据", err=True)
 
     @cli.command("provider-health")
     @click.option("--provider", "provider_name", default=None, help="指定数据源名称")
     @click.option("--json", "output_json", is_flag=True, help="输出 JSON 格式")
-    def provider_health(provider_name: Optional[str], output_json: bool):
+    def provider_health(provider_name: str | None, output_json: bool):
         """显示数据源健康状态
 
         示例:
@@ -281,9 +280,10 @@ def register_data_commands(cli: click.Group) -> None:
             asset-lens provider-health --provider akshare
             asset-lens provider-health --json
         """
-        from asset_lens.data.providers import provider_registry
         from rich.console import Console
         from rich.table import Table
+
+        from asset_lens.data.providers import provider_registry
 
         if provider_name:
             health_data = provider_registry.get_health(provider_name)
@@ -331,7 +331,7 @@ def register_data_commands(cli: click.Group) -> None:
         console.print(table)
 
         summary = provider_registry.get_health_summary()
-        click.echo(f"\n📈 汇总:")
+        click.echo("\n📈 汇总:")
         click.echo(f"   总数据源: {summary['total_providers']}")
         click.echo(f"   可用数据源: {summary['available_providers']}")
         click.echo(f"   整体成功率: {summary['overall_success_rate']}%")
@@ -339,9 +339,9 @@ def register_data_commands(cli: click.Group) -> None:
     @cli.command("cache-stats")
     def cache_stats():
         """显示缓存统计信息"""
-        from asset_lens.data.providers.cache import provider_cache
         from rich.console import Console
-        from rich.table import Table
+
+        from asset_lens.data.providers.cache import provider_cache
 
         console = Console()
 
@@ -364,7 +364,7 @@ def register_data_commands(cli: click.Group) -> None:
 
     @cli.command("cache-clear")
     @click.option("--type", "data_type", default=None, help="指定数据类型")
-    def cache_clear(data_type: Optional[str]):
+    def cache_clear(data_type: str | None):
         """清空缓存
         
         示例:
@@ -374,7 +374,7 @@ def register_data_commands(cli: click.Group) -> None:
         from asset_lens.data.providers.cache import provider_cache
 
         provider_cache.clear(data_type)
-        
+
         if data_type:
             click.echo(f"✅ 已清空 {data_type} 缓存")
         else:

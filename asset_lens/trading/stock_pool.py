@@ -12,8 +12,7 @@ Stock pool management for asset-lens.
 import json
 from dataclasses import dataclass, field
 from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from ..config import config
 
@@ -28,13 +27,13 @@ class StockPosition:
     buy_date: str
     shares: int = 100
     current_price: float = 0.0
-    sell_price: Optional[float] = None
-    sell_date: Optional[str] = None
+    sell_price: float | None = None
+    sell_date: str | None = None
     status: str = "watching"  # watching, holding, sold
     notes: str = ""
     first_selected_date: str = ""  # 首次入选日期
     selected_count: int = 1  # 累计入选次数
-    selected_history: List[Dict[str, Any]] = field(default_factory=list)  # 入选历史
+    selected_history: list[dict[str, Any]] = field(default_factory=list)  # 入选历史
     max_profit_rate: float = 0.0  # 历史最高收益率
     min_profit_rate: float = 0.0  # 历史最低收益率
 
@@ -58,16 +57,16 @@ class StockPool:
         self.pool_path = config.cache_path / "stock_pools"
         self.pool_path.mkdir(parents=True, exist_ok=True)
         self.pool_file = self.pool_path / f"{pool_name}_pool.json"
-        self.positions: Dict[str, StockPosition] = {}
+        self.positions: dict[str, StockPosition] = {}
         self.config = StockPoolConfig()
-        self.history: List[Dict[str, Any]] = []
+        self.history: list[dict[str, Any]] = []
         self._load_pool()
 
     def _load_pool(self) -> None:
         """加载股票池"""
         if self.pool_file.exists():
             try:
-                with open(self.pool_file, "r", encoding="utf-8") as f:
+                with open(self.pool_file, encoding="utf-8") as f:
                     data = json.load(f)
 
                 for code, pos_data in data.get("positions", {}).items():
@@ -149,7 +148,7 @@ class StockPool:
         status: str = "watching",
         notes: str = "",
         strategy_score: float = 0,
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """
         添加股票到股票池（支持累积）
 
@@ -261,18 +260,18 @@ class StockPool:
             清空的股票数量
         """
         count = len(self.positions)
-        
+
         for code in list(self.positions.keys()):
             pos = self.positions[code]
             self._add_history("remove", code, pos.name, {"reason": "清空股票池"})
-        
+
         self.positions.clear()
         self._save_pool()
-        
+
         print(f"✅ 已清空股票池，共移除 {count} 只股票")
         return count
 
-    def buy_stock(self, code: str, price: float, shares: int = 100, notes: str = "") -> Tuple[bool, str]:
+    def buy_stock(self, code: str, price: float, shares: int = 100, notes: str = "") -> tuple[bool, str]:
         """
         买入股票（模拟）
 
@@ -290,11 +289,11 @@ class StockPool:
 
         pos = self.positions[code]
         today = datetime.now().strftime("%Y-%m-%d")
-        
+
         # 检查今日是否已买入
         if pos.status == "holding" and pos.buy_date == today:
             return False, f"股票 {pos.name}({code}) 今日已买入，跳过重复操作"
-        
+
         if pos.status == "holding":
             return False, f"股票 {pos.name}({code}) 已持有"
 
@@ -318,7 +317,7 @@ class StockPool:
 
         return True, f"模拟买入 {pos.name}({code}), 买入价: {price:.2f}, 股数: {shares}, 总金额: {price * shares:.2f}"
 
-    def sell_stock(self, code: str, price: float, notes: str = "") -> Tuple[bool, str]:
+    def sell_stock(self, code: str, price: float, notes: str = "") -> tuple[bool, str]:
         """
         卖出股票（模拟）
 
@@ -361,7 +360,7 @@ class StockPool:
 
         return True, f"模拟卖出 {pos.name}({code}), 买入价: {pos.buy_price:.2f}, 卖出价: {price:.2f}, 盈亏: {profit:+.2f} ({profit_rate:+.2f}%)"
 
-    def update_prices(self, prices: Dict[str, float]) -> None:
+    def update_prices(self, prices: dict[str, float]) -> None:
         """
         更新股票价格
 
@@ -374,7 +373,7 @@ class StockPool:
 
         self._save_pool()
 
-    def get_performance(self) -> Dict[str, Any]:
+    def get_performance(self) -> dict[str, Any]:
         """
         获取股票池绩效
 
@@ -433,7 +432,7 @@ class StockPool:
             "total_invested": round(total_invested, 2),
         }
 
-    def _add_history(self, action: str, code: str, name: str, data: Dict[str, Any]) -> None:
+    def _add_history(self, action: str, code: str, name: str, data: dict[str, Any]) -> None:
         """添加历史记录"""
         self.history.append(
             {
@@ -445,7 +444,7 @@ class StockPool:
             }
         )
 
-    def list_stocks(self, status: Optional[str] = None) -> List[Dict[str, Any]]:
+    def list_stocks(self, status: str | None = None) -> list[dict[str, Any]]:
         """
         列出股票池中的股票
 
@@ -488,7 +487,7 @@ class StockPool:
 
         return result
 
-    def get_best_performers(self, top_n: int = 5) -> List[Dict[str, Any]]:
+    def get_best_performers(self, top_n: int = 5) -> list[dict[str, Any]]:
         """
         获取表现最好的股票
 
@@ -502,7 +501,7 @@ class StockPool:
         stocks.sort(key=lambda x: x.get("profit_rate", 0), reverse=True)
         return stocks[:top_n]
 
-    def get_worst_performers(self, top_n: int = 5) -> List[Dict[str, Any]]:
+    def get_worst_performers(self, top_n: int = 5) -> list[dict[str, Any]]:
         """
         获取表现最差的股票
 
@@ -519,11 +518,11 @@ class StockPool:
     def add_stocks_by_strategy(
         self,
         strategy_name: str,
-        stocks: List[Dict[str, Any]],
+        stocks: list[dict[str, Any]],
         min_score: float = 60.0,
         max_stocks: int = 10,
         auto_remove_low_score: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         根据策略筛选股票并添加到股票池
 
@@ -617,7 +616,7 @@ class StockPool:
             ],
         }
 
-    def get_strategy_top_stocks(self, strategy_name: str, top_n: int = 10) -> List[Dict[str, Any]]:
+    def get_strategy_top_stocks(self, strategy_name: str, top_n: int = 10) -> list[dict[str, Any]]:
         """
         获取股票池中某策略评分最高的股票
 
@@ -629,7 +628,7 @@ class StockPool:
             股票列表
         """
         stocks = self.list_stocks()
-        
+
         # 筛选包含该策略历史的股票
         strategy_stocks = []
         for stock in stocks:
@@ -646,7 +645,7 @@ class StockPool:
         strategy_stocks.sort(key=lambda x: x.get("strategy_score", 0), reverse=True)
         return strategy_stocks[:top_n]
 
-    def clear_strategy_stocks(self, strategy_name: str) -> Dict[str, Any]:
+    def clear_strategy_stocks(self, strategy_name: str) -> dict[str, Any]:
         """
         清除股票池中某策略选入的股票
 
@@ -657,7 +656,7 @@ class StockPool:
             清除结果
         """
         removed_codes = []
-        
+
         for code, position in list(self.positions.items()):
             if position.status == "watching":
                 # 检查是否由该策略选入
