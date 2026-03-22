@@ -2,14 +2,13 @@
 Field Parsers - 字段解析器
 """
 
-from datetime import date, datetime
+from datetime import datetime
 from decimal import Decimal, InvalidOperation
-from typing import Optional
 
 from ..models import InvestmentType, RiskLevel
 
 
-def parse_decimal(value: Optional[str]) -> Optional[Decimal]:
+def parse_decimal(value: str | None) -> Decimal | None:
     """解析 Decimal 值"""
     if not value or value.strip() in ("", "-", "N/A", "无"):
         return None
@@ -20,7 +19,7 @@ def parse_decimal(value: Optional[str]) -> Optional[Decimal]:
         return None
 
 
-def parse_date(value: Optional[str]) -> Optional[datetime]:
+def parse_date(value: str | None) -> datetime | None:
     """解析日期值"""
     if not value or value.strip() in ("", "-", "N/A"):
         return None
@@ -45,14 +44,14 @@ def parse_date(value: Optional[str]) -> Optional[datetime]:
     return None
 
 
-def parse_boolean(value: Optional[str]) -> bool:
+def parse_boolean(value: str | None) -> bool:
     """解析布尔值"""
     if not value:
         return False
     return value.strip().lower() in ("是", "yes", "true", "1", "y", "√")
 
 
-def parse_investment_type(value: Optional[str]) -> InvestmentType:
+def parse_investment_type(value: str | None) -> InvestmentType:
     """解析投资类型"""
     if not value:
         return InvestmentType.OTHER
@@ -90,7 +89,7 @@ def parse_investment_type(value: Optional[str]) -> InvestmentType:
     return type_mapping.get(stripped_value, InvestmentType.OTHER)
 
 
-def parse_risk_level(value: Optional[str]) -> RiskLevel:
+def parse_risk_level(value: str | None) -> RiskLevel:
     """解析风险等级"""
     if not value:
         return RiskLevel.MEDIUM
@@ -104,7 +103,7 @@ def parse_risk_level(value: Optional[str]) -> RiskLevel:
     return risk_mapping.get(value.strip(), RiskLevel.MEDIUM)
 
 
-def parse_investment_days(value: Optional[str]) -> Optional[int]:
+def parse_investment_days(value: str | None) -> int | None:
     """解析投资天数"""
     if not value or value.strip() in ("", "-", "N/A"):
         return None

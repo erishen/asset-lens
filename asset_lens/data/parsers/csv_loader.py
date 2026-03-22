@@ -5,12 +5,9 @@ CSV Loader - CSV 文件加载器
 import csv
 import logging
 from pathlib import Path
-from typing import List, Optional
 
 logger = logging.getLogger(__name__)
 from datetime import date
-from pathlib import Path
-from typing import List, Optional
 
 from ..models import InvestmentProduct
 from .product_parser import ProductParser
@@ -23,10 +20,10 @@ class CSVLoader:
     def parse_csv_file(
         cls,
         file_path: Path,
-        reference_date: Optional[date] = None,
-    ) -> List[InvestmentProduct]:
+        reference_date: date | None = None,
+    ) -> list[InvestmentProduct]:
         """解析单个 CSV 文件"""
-        products: List[InvestmentProduct] = []
+        products: list[InvestmentProduct] = []
 
         if not file_path.exists():
             return products
@@ -44,7 +41,7 @@ class CSVLoader:
         return products
 
     @classmethod
-    def load_data(cls, data_path: Optional[Path] = None) -> List[InvestmentProduct]:
+    def load_data(cls, data_path: Path | None = None) -> list[InvestmentProduct]:
         """加载投资数据"""
         from ...config import config
 
@@ -59,7 +56,7 @@ class CSVLoader:
         return []
 
     @classmethod
-    def load_data_from_dir(cls, data_dir: Path) -> List[InvestmentProduct]:
+    def load_data_from_dir(cls, data_dir: Path) -> list[InvestmentProduct]:
         """从目录加载所有数据文件"""
         all_products = []
 

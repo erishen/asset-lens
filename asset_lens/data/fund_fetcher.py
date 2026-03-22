@@ -8,13 +8,12 @@ Fund data fetcher for asset-lens.
 """
 
 import json
-import re
 import signal
 import time
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Generator, List, Optional
+from typing import Any
 
 from ..config import config
 
@@ -46,7 +45,7 @@ def timeout_context(seconds: int, message: str = "操作超时"):
 class FundDataFetcher:
     """基金数据获取器 - 使用 AkShare 开源库"""
 
-    def __init__(self, cache_path: Optional[Path] = None):
+    def __init__(self, cache_path: Path | None = None):
         """
         初始化基金数据获取器
 
@@ -56,7 +55,7 @@ class FundDataFetcher:
         self.cache_path = cache_path or config.cache_path
         self.cache_path.mkdir(parents=True, exist_ok=True)
         self.fund_cache_file = self.cache_path / "fund_quotes.json"
-        self._fund_codes_map: Optional[Dict[str, str]] = None
+        self._fund_codes_map: dict[str, str] | None = None
         self._akshare = None
 
     @property
@@ -75,7 +74,7 @@ class FundDataFetcher:
                 )
         return self._akshare
 
-    def _load_fund_codes_config(self) -> Dict[str, str]:
+    def _load_fund_codes_config(self) -> dict[str, str]:
         """
         加载基金代码配置
 
@@ -90,7 +89,7 @@ class FundDataFetcher:
 
         if config_file.exists():
             try:
-                with open(config_file, "r", encoding="utf-8") as f:
+                with open(config_file, encoding="utf-8") as f:
                     data = json.load(f)
 
                 for fund in data.get("funds", []):
@@ -113,7 +112,7 @@ class FundDataFetcher:
 
     def fetch_fund_quote_akshare(
         self, fund_code: str, timeout: int = 10
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         获取基金净值（AkShare）
 
@@ -166,7 +165,7 @@ class FundDataFetcher:
             print(f"获取基金净值失败 {fund_code}: {e}")
             return None
 
-    def fetch_fund_quote_eastmoney(self, fund_code: str) -> Optional[Dict[str, Any]]:
+    def fetch_fund_quote_eastmoney(self, fund_code: str) -> dict[str, Any] | None:
         """
         获取基金净值（兼容旧接口名）
 
@@ -178,7 +177,7 @@ class FundDataFetcher:
         """
         return self.fetch_fund_quote_akshare(fund_code)
 
-    def fetch_fund_info(self, fund_code: str) -> Optional[Dict[str, Any]]:
+    def fetch_fund_info(self, fund_code: str) -> dict[str, Any] | None:
         """
         获取基金详细信息
 
@@ -208,7 +207,7 @@ class FundDataFetcher:
 
     def fetch_fund_historical_nav(
         self, fund_code: str, page: int = 1, page_size: int = 20
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         """
         获取基金历史净值
 
@@ -243,7 +242,7 @@ class FundDataFetcher:
             print(f"获取基金历史净值失败 {fund_code}: {e}")
             return None
 
-    def fetch_multiple_funds(self, fund_codes: List[str]) -> Dict[str, Any]:
+    def fetch_multiple_funds(self, fund_codes: list[str]) -> dict[str, Any]:
         """
         批量获取基金净值
 
@@ -278,14 +277,14 @@ class FundDataFetcher:
 
         return cache_data
 
-    def get_cached_funds(self) -> Dict[str, Any]:
+    def get_cached_funds(self) -> dict[str, Any]:
         """获取缓存的基金数据"""
         if self.fund_cache_file.exists():
-            with open(self.fund_cache_file, "r", encoding="utf-8") as f:
+            with open(self.fund_cache_file, encoding="utf-8") as f:
                 return json.load(f)  # type: ignore
         return {}
 
-    def search_fund(self, keyword: str) -> List[Dict[str, Any]]:
+    def search_fund(self, keyword: str) -> list[dict[str, Any]]:
         """
         搜索基金
 
@@ -330,7 +329,7 @@ class FundDataFetcher:
 fund_fetcher = FundDataFetcher()
 
 
-def auto_match_fund_codes(product_names: List[str]) -> Dict[str, Optional[str]]:
+def auto_match_fund_codes(product_names: list[str]) -> dict[str, str | None]:
     """
     自动匹配基金代码
 
@@ -340,7 +339,7 @@ def auto_match_fund_codes(product_names: List[str]) -> Dict[str, Optional[str]]:
     Returns:
         产品名称到基金代码的映射
     """
-    result: Dict[str, Optional[str]] = {}
+    result: dict[str, str | None] = {}
 
     config_map = fund_fetcher._load_fund_codes_config()
 
@@ -412,7 +411,7 @@ def auto_match_fund_codes(product_names: List[str]) -> Dict[str, Optional[str]]:
     return result
 
 
-def fetch_portfolio_fund_quotes() -> Dict[str, Any]:
+def fetch_portfolio_fund_quotes() -> dict[str, Any]:
     """
     获取投资组合中所有基金的净值
 

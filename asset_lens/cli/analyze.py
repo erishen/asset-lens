@@ -6,15 +6,14 @@ Analyze CLI commands for asset-lens.
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Optional
 
 import click
 
 
-def _get_data_dir(data_mode: str) -> Optional[Path]:
+def _get_data_dir(data_mode: str) -> Path | None:
     """获取数据目录，处理 None 情况"""
     from asset_lens.config import config
-    
+
     if data_mode == "real":
         return config.get_latest_data_dir()
     else:
@@ -23,7 +22,7 @@ def _get_data_dir(data_mode: str) -> Optional[Path]:
 
 def register_analyze_commands(cli: click.Group) -> None:
     """注册分析命令到 CLI 组"""
-    
+
     @cli.command()
     @click.option(
         "--data-mode",
@@ -37,15 +36,15 @@ def register_analyze_commands(cli: click.Group) -> None:
         help="输出格式",
     )
     @click.option("--data-path", type=click.Path(exists=True), help="自定义数据路径")
-    def analyze(data_mode: Optional[str], output_format: str, data_path: Optional[str]):
+    def analyze(data_mode: str | None, output_format: str, data_path: str | None):
         """分析投资组合并生成报告"""
         from asset_lens.config import config
-        from asset_lens.data.csv_parser import CSVParser
-        from asset_lens.data.models import Portfolio
         from asset_lens.core.dca_parser import dca_parser
         from asset_lens.core.irr_calculator import irr_calculator
+        from asset_lens.data.csv_parser import CSVParser
+        from asset_lens.data.models import Portfolio
         from asset_lens.report.analyzer import report_generator
-        
+
         if data_mode:
             config.data_mode = data_mode
             click.echo(f"使用数据模式: {data_mode}")
@@ -125,13 +124,13 @@ def register_analyze_commands(cli: click.Group) -> None:
 
     @cli.command()
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
-    def calculate(data_mode: Optional[str]):
+    def calculate(data_mode: str | None):
         """计算所有投资产品的收益率（快捷命令）"""
         from asset_lens.config import config
-        from asset_lens.data.csv_parser import CSVParser
-        from asset_lens.data.models import Portfolio
         from asset_lens.core.dca_parser import dca_parser
         from asset_lens.core.irr_calculator import irr_calculator
+        from asset_lens.data.csv_parser import CSVParser
+        from asset_lens.data.models import Portfolio
         from asset_lens.report.calculate_report import calculate_report_generator
 
         if data_mode:
@@ -190,14 +189,15 @@ def register_analyze_commands(cli: click.Group) -> None:
     @cli.command()
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     @click.option("--weekly", is_flag=True, help="周预估模式")
-    def pnl(data_mode: Optional[str], weekly: bool):
+    def pnl(data_mode: str | None, weekly: bool):
         """估算实时盈亏（基于市场指数）"""
+        from rich import box
         from rich.console import Console
         from rich.table import Table
-        from rich import box
+
         from asset_lens.config import config
-        from asset_lens.data.csv_parser import CSVParser
         from asset_lens.core.realtime_pnl import RealtimePnlEstimator
+        from asset_lens.data.csv_parser import CSVParser
 
         if data_mode:
             config.data_mode = data_mode
@@ -223,7 +223,7 @@ def register_analyze_commands(cli: click.Group) -> None:
             click.echo(f"📈 估算产品收益率: {result['total_return_rate']:.2f}%")
             click.echo(f"💵 估算产品金额: ¥{result['total_amount']:,.2f}")
 
-            click.echo(f"\n📊 市场指数涨跌幅:")
+            click.echo("\n📊 市场指数涨跌幅:")
             index_cn_names = {
                 "SHComp": "上证指数",
                 "HS300": "沪深300",
@@ -265,7 +265,12 @@ def register_analyze_commands(cli: click.Group) -> None:
 
                 console.print(table)
 
-            click.echo(f"\n✅ 估算完成！")
+            click.echo("\n✅ 估算完成！")
+
+            click.echo("\n💡 相关命令:")
+            click.echo("   make ml-analyze-market  # ML市场分析")
+            click.echo("   make ml-sector          # ML板块轮动分析")
+            click.echo("   make compare            # 对比分析")
 
         except Exception as e:
             click.echo(f"❌ 估算失败: {e}", err=True)
@@ -273,14 +278,15 @@ def register_analyze_commands(cli: click.Group) -> None:
     @cli.command()
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     @click.option("--weekly", is_flag=True, help="周预估模式")
-    def estimate(data_mode: Optional[str], weekly: bool):
+    def estimate(data_mode: str | None, weekly: bool):
         """全产品收益估算（基于预期年化收益率）"""
         from rich.console import Console
         from rich.table import Table
+
         from asset_lens.config import config
-        from asset_lens.data.csv_parser import CSVParser
         from asset_lens.core.daily_estimate import estimate_all_products
         from asset_lens.core.realtime_pnl import RealtimePnlEstimator
+        from asset_lens.data.csv_parser import CSVParser
 
         if data_mode:
             config.data_mode = data_mode
@@ -375,23 +381,24 @@ def register_analyze_commands(cli: click.Group) -> None:
             total_value = sum(r.current_value for r in results)
             avg_return_rate = total_return / total_value * 100 if total_value > 0 else 0
 
-            click.echo(f"\n📊 汇总:")
+            click.echo("\n📊 汇总:")
             click.echo(f"  总预估收益: ¥{total_return:,.2f}")
             click.echo(f"  总市值: ¥{total_value:,.2f}")
             click.echo(f"  平均收益率: {avg_return_rate:.4f}%")
-            click.echo(f"\n✅ 估算完成！")
+            click.echo("\n✅ 估算完成！")
 
         except Exception as e:
             click.echo(f"❌ 估算失败: {e}", err=True)
 
     @cli.command()
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
-    def analyze_sold(data_mode: Optional[str]):
+    def analyze_sold(data_mode: str | None):
         """分析已卖出投资"""
         from rich.console import Console
+
         from asset_lens.config import config
-        from asset_lens.data.sell_record_parser import SellRecordParser
         from asset_lens.core.sold_investment import SoldInvestmentAnalyzer
+        from asset_lens.data.sell_record_parser import SellRecordParser
 
         if data_mode:
             config.data_mode = data_mode
@@ -418,7 +425,7 @@ def register_analyze_commands(cli: click.Group) -> None:
             result = analyzer.analyze_sold_investments(sell_records)
 
             stats = result["stats"]
-            click.echo(f"\n📈 总体统计:")
+            click.echo("\n📈 总体统计:")
             click.echo(f"  总记录数: {stats.total_records}")
             click.echo(f"  总初始投资: ¥{stats.total_initial:,.2f}")
             click.echo(f"  总收益: ¥{stats.total_profit:,.2f}")
@@ -442,7 +449,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                 if len(result["details"]) > 20:
                     console.print(f"\n[dim]... 还有 {len(result['details']) - 20} 条记录未显示[/dim]")
 
-            click.echo(f"\n✅ 分析完成！")
+            click.echo("\n✅ 分析完成！")
 
         except Exception as e:
             click.echo(f"❌ 分析失败: {e}", err=True)
@@ -450,10 +457,11 @@ def register_analyze_commands(cli: click.Group) -> None:
     @cli.command("predict-etf")
     @click.option("--code", type=str, help="ETF 代码")
     @click.option("--days", type=int, default=5, help="预测天数")
-    def predict_etf(code: Optional[str], days: int):
+    def predict_etf(code: str | None, days: int):
         """预测 ETF 走势"""
         from rich.console import Console
         from rich.table import Table
+
         from asset_lens.data.stock_activity_analyzer import StockActivityAnalyzer
 
         click.echo("\n📊 ETF 走势预测")
@@ -461,7 +469,7 @@ def register_analyze_commands(cli: click.Group) -> None:
 
         try:
             analyzer = StockActivityAnalyzer()
-            
+
             if code:
                 result = analyzer.predict_etf(code, days)
                 click.echo(f"\n📈 {code} 预测结果:")
@@ -470,7 +478,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                 click.echo(f"  预测涨跌: {result.predicted_change:.2f}%")
                 click.echo(f"  置信度: {result.confidence:.1f}%")
                 click.echo(f"  趋势: {result.trend}")
-                
+
                 if result.related_stocks:
                     console = Console()
                     table = Table(title="相关股票")
@@ -478,7 +486,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                     table.add_column("名称", style="green")
                     table.add_column("涨跌幅", justify="right")
                     table.add_column("市值", justify="right")
-                    
+
                     for stock in result.related_stocks[:10]:  # pylint: disable=unsubscriptable-object
                         table.add_row(
                             stock.get("code", ""),
@@ -491,7 +499,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                 click.echo("请使用 --code 参数指定 ETF 代码")
                 click.echo("示例: asset-lens predict-etf --code 510050 --days 5")
 
-            click.echo(f"\n✅ 预测完成！")
+            click.echo("\n✅ 预测完成！")
 
         except Exception as e:
             click.echo(f"❌ 预测失败: {e}", err=True)
@@ -499,9 +507,10 @@ def register_analyze_commands(cli: click.Group) -> None:
     @cli.command("weekly")
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     @click.option("--output", type=str, default="output/weekly_report.md", help="输出文件")
-    def weekly(data_mode: Optional[str], output: str):
+    def weekly(data_mode: str | None, output: str):
         """生成周度投资报告"""
         from pathlib import Path
+
         from asset_lens.config import config
         from asset_lens.data.csv_parser import CSVParser
 
@@ -516,7 +525,7 @@ def register_analyze_commands(cli: click.Group) -> None:
             click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
 
             output_path = Path(output)
-            
+
             report_lines = [
                 "# 周度投资报告",
                 "",
@@ -533,30 +542,30 @@ def register_analyze_commands(cli: click.Group) -> None:
                 "### 涨幅前5",
                 "",
             ]
-            
+
             sorted_products = sorted(
-                products, 
-                key=lambda p: float(p.return_rate or 0), 
+                products,
+                key=lambda p: float(p.return_rate or 0),
                 reverse=True
             )[:5]
-            
+
             for p in sorted_products:
                 report_lines.append(f"- {p.name}: {float(p.return_rate or 0):.2f}%")
-            
+
             report_lines.extend([
                 "",
                 "### 跌幅前5",
                 "",
             ])
-            
+
             sorted_products = sorted(
-                products, 
+                products,
                 key=lambda p: float(p.return_rate or 0)
             )[:5]
-            
+
             for p in sorted_products:
                 report_lines.append(f"- {p.name}: {float(p.return_rate or 0):.2f}%")
-            
+
             report_lines.extend([
                 "",
                 "## 下周计划",
@@ -567,12 +576,12 @@ def register_analyze_commands(cli: click.Group) -> None:
                 "---",
                 f"*报告生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*",
             ])
-            
+
             report_content = "\n".join(report_lines)
-            
+
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(report_content, encoding="utf-8")
-            
+
             click.echo(f"\n✅ 周报已生成: {output_path}")
 
         except Exception as e:
@@ -582,8 +591,9 @@ def register_analyze_commands(cli: click.Group) -> None:
     def sentiment():
         """分析市场风向"""
         from rich.console import Console
-        from rich.table import Table
         from rich.panel import Panel
+        from rich.table import Table
+
         from asset_lens.core.market_sentiment import MarketSentimentAnalyzer
 
         click.echo("\n📊 市场风向分析")
@@ -594,13 +604,13 @@ def register_analyze_commands(cli: click.Group) -> None:
             result = analyzer.analyze()
 
             console = Console()
-            
+
             trend_color = {
                 "bullish": "green",
                 "bearish": "red",
                 "neutral": "yellow"
             }.get(result.trend, "white")
-            
+
             console.print(Panel(
                 f"[bold]综合评分[/bold]: {result.overall_score:.1f}/100\n"
                 f"[bold]市场趋势[/bold]: [{trend_color}]{result.trend}[/{trend_color}]\n"
@@ -623,7 +633,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                         "bearish": "red",
                         "neutral": "yellow"
                     }.get(indicator.level, "white")
-                    
+
                     table.add_row(
                         indicator.name,
                         f"{indicator.value:.1f}",
@@ -638,20 +648,21 @@ def register_analyze_commands(cli: click.Group) -> None:
                 for i, suggestion in enumerate(result.suggestions, 1):
                     click.echo(f"  {i}. {suggestion}")
 
-            click.echo(f"\n✅ 分析完成！")
+            click.echo("\n✅ 分析完成！")
 
         except Exception as e:
             click.echo(f"❌ 分析失败: {e}", err=True)
 
     @cli.command("portfolio-metrics")
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
-    def portfolio_metrics(data_mode: Optional[str]):
+    def portfolio_metrics(data_mode: str | None):
         """计算投资组合专业指标（夏普比率、最大回撤等）"""
         from rich.console import Console
         from rich.table import Table
+
         from asset_lens.config import config
-        from asset_lens.data.csv_parser import CSVParser
         from asset_lens.core.realtime_pnl import RealtimePnlEstimator
+        from asset_lens.data.csv_parser import CSVParser
 
         if data_mode:
             config.data_mode = data_mode
@@ -723,7 +734,7 @@ def register_analyze_commands(cli: click.Group) -> None:
 
             console.print(table)
 
-            click.echo(f"\n✅ 指标计算完成！")
+            click.echo("\n✅ 指标计算完成！")
 
         except Exception as e:
             import traceback
@@ -733,9 +744,10 @@ def register_analyze_commands(cli: click.Group) -> None:
     @cli.command("generate-charts")
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     @click.option("--output", type=str, default="output/charts", help="输出目录")
-    def generate_charts(data_mode: Optional[str], output: str):
+    def generate_charts(data_mode: str | None, output: str):
         """生成投资分析图表（资产配置、风险分布等）"""
         from pathlib import Path
+
         from asset_lens.config import config
         from asset_lens.data.csv_parser import CSVParser
         from asset_lens.report.charts import ChartGenerator
@@ -771,7 +783,7 @@ def register_analyze_commands(cli: click.Group) -> None:
             for name, path in charts.items():
                 click.echo(f"  📈 {name}: {path}")
 
-            click.echo(f"\n✅ 图表生成完成！")
+            click.echo("\n✅ 图表生成完成！")
 
         except Exception as e:
             click.echo(f"❌ 图表生成失败: {e}", err=True)
@@ -780,9 +792,10 @@ def register_analyze_commands(cli: click.Group) -> None:
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     @click.option("--output", type=str, default="output/report.pdf", help="输出文件")
     @click.option("--include-ai", is_flag=True, help="包含 AI 分析")
-    def generate_report(data_mode: Optional[str], output: str, include_ai: bool):
+    def generate_report(data_mode: str | None, output: str, include_ai: bool):
         """生成投资分析报告（PDF）"""
         from pathlib import Path
+
         from asset_lens.config import config
         from asset_lens.data.csv_parser import CSVParser
         from asset_lens.report.pdf_report import PDFReportGenerator
@@ -810,9 +823,10 @@ def register_analyze_commands(cli: click.Group) -> None:
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     @click.option("--output", type=str, default="output/report.html", help="输出文件")
     @click.option("--include-ai", is_flag=True, help="包含 AI 分析")
-    def generate_html_report(data_mode: Optional[str], output: str, include_ai: bool):
+    def generate_html_report(data_mode: str | None, output: str, include_ai: bool):
         """生成投资分析报告（HTML）"""
         from pathlib import Path
+
         from asset_lens.config import config
         from asset_lens.data.csv_parser import CSVParser
         from asset_lens.report.html_report import HTMLReportGenerator
@@ -838,13 +852,14 @@ def register_analyze_commands(cli: click.Group) -> None:
 
     @cli.command("ai-analyze")
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
-    def ai_analyze(data_mode: Optional[str]):
+    def ai_analyze(data_mode: str | None):
         """使用 AI 分析投资组合"""
         from rich.console import Console
         from rich.panel import Panel
+
         from asset_lens.config import config
-        from asset_lens.data.csv_parser import CSVParser
         from asset_lens.core.ai_analyzer import AIAnalyzer
+        from asset_lens.data.csv_parser import CSVParser
 
         if data_mode:
             config.data_mode = data_mode
@@ -909,7 +924,7 @@ def register_analyze_commands(cli: click.Group) -> None:
 
             click.echo(f"\n📊 综合评分: {result.score}/100")
 
-            click.echo(f"\n✅ AI 分析完成！")
+            click.echo("\n✅ AI 分析完成！")
 
         except Exception as e:
             click.echo(f"❌ AI 分析失败: {e}", err=True)
@@ -917,14 +932,16 @@ def register_analyze_commands(cli: click.Group) -> None:
     @cli.command()
     @click.option("--before", type=str, help="对比之前的数据目录")
     @click.option("--after", type=str, help="对比之后的数据目录")
-    def compare(before: Optional[str], after: Optional[str]):
+    def compare(before: str | None, after: str | None):
         """对比不同时期的投资收益变化"""
+        from decimal import Decimal
+
         from rich.console import Console
         from rich.table import Table
+
         from asset_lens.config import config
-        from asset_lens.data.csv_parser import CSVParser
         from asset_lens.core.comparison import ComparisonAnalyzer
-        from decimal import Decimal
+        from asset_lens.data.csv_parser import CSVParser
 
         click.echo("\n📊 投资组合对比分析")
         click.echo("=" * 60)
@@ -962,16 +979,16 @@ def register_analyze_commands(cli: click.Group) -> None:
             )
 
             trend = result["comparison"]["trend"]
-            click.echo(f"\n💰 总体变化:")
+            click.echo("\n💰 总体变化:")
             click.echo(f"  之前总金额: ¥{trend.total_amount_before:,.2f}")
             click.echo(f"  之后总金额: ¥{trend.total_amount_after:,.2f}")
             click.echo(f"  总变化: ¥{trend.total_change:,.2f}")
             click.echo(f"  总收益率: {trend.total_return_rate:.2f}%")
 
             # 按资产类型分类统计
-            click.echo(f"\n📊 按资产类型分类统计:")
+            click.echo("\n📊 按资产类型分类统计:")
             click.echo("-" * 60)
-            
+
             type_groups = {
                 '权益': ['基金', '定投基金', 'ETF', '美股（美元）', '个人养老金', '券商理财'],
                 '理财': ['理财'],
@@ -983,7 +1000,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                 '黄金': ['黄金'],
                 '公募固收': ['公募固收'],
             }
-            
+
             type_stats = {}
             for group_name, types in type_groups.items():
                 type_stats[group_name] = {
@@ -991,7 +1008,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                     'after': Decimal('0'),
                     'count': 0
                 }
-            
+
             for detail in result["comparison"]["details"]:
                 for group_name, types in type_groups.items():
                     if detail.type in types:
@@ -999,16 +1016,16 @@ def register_analyze_commands(cli: click.Group) -> None:
                         type_stats[group_name]['after'] += detail.amount_after
                         type_stats[group_name]['count'] += 1
                         break
-            
+
             type_table = Table(title="资产类型变化", show_lines=False)
             type_table.add_column("资产类型", style="cyan")
             type_table.add_column("之前金额", justify="right")
             type_table.add_column("之后金额", justify="right")
             type_table.add_column("变化", justify="right")
             type_table.add_column("变化率", justify="right")
-            
+
             sorted_stats = sorted(type_stats.items(), key=lambda x: abs(x[1]['after'] - x[1]['before']), reverse=True)
-            
+
             for group_name, stats in sorted_stats:
                 if stats['before'] > 0 or stats['after'] > 0:
                     change = stats['after'] - stats['before']
@@ -1025,17 +1042,17 @@ def register_analyze_commands(cli: click.Group) -> None:
                         change_str,
                         f"{change_rate:.2f}%",
                     )
-            
+
             console = Console()
             console.print(type_table)
 
             # 资金流向分析
-            click.echo(f"\n🔄 资金流向分析:")
+            click.echo("\n🔄 资金流向分析:")
             click.echo("-" * 60)
-            
+
             money_change = type_stats.get('货币', {}).get('after', Decimal('0')) - type_stats.get('货币', {}).get('before', Decimal('0'))
             equity_change = type_stats.get('权益', {}).get('after', Decimal('0')) - type_stats.get('权益', {}).get('before', Decimal('0'))
-            
+
             # 从交易记录中解析本周买入金额
             buy_amount = Decimal('0')
             buy_details = []
@@ -1046,16 +1063,16 @@ def register_analyze_commands(cli: click.Group) -> None:
                     if detail.amount_change > 0:
                         buy_amount += detail.amount_change
                         buy_details.append((detail.name, detail.amount_change))
-            
+
             transfer_table = Table(title="资金流向", show_lines=False)
             transfer_table.add_column("项目", style="cyan")
             transfer_table.add_column("金额", justify="right")
             transfer_table.add_column("说明", style="dim")
-            
+
             if money_change < 0:
                 money_out = abs(money_change)
                 transfer_table.add_row("货币减少", f"[red]¥{money_out:,.0f}[/red]", "朝朝宝、余额宝等")
-                
+
                 if buy_amount > 0:
                     transfer_table.add_row("买入权益", f"[green]¥{buy_amount:,.0f}[/green]", "买入基金等")
                     actual_equity_change = equity_change - buy_amount
@@ -1065,41 +1082,41 @@ def register_analyze_commands(cli: click.Group) -> None:
                     elif actual_equity_change > 0:
                         actual_str = f"[green]¥{actual_equity_change:,.0f}[/green]"
                     transfer_table.add_row("权益实际涨跌", actual_str, "扣除买入资金后")
-                    
+
                     other_out = money_out - buy_amount
                     transfer_table.add_row("其他支出", f"¥{other_out:,.0f}", "消费、还款等")
-                    
+
                     # 显示买入明细
                     if buy_details:
                         transfer_table.add_row("", "", "")
                         for name, amount in buy_details[:5]:
                             transfer_table.add_row(f"  └ {name}", f"¥{amount:,.0f}", "")
-            
+
             console.print(transfer_table)
 
             # 实际涨跌分析
-            click.echo(f"\n📈 实际涨跌分析:")
+            click.echo("\n📈 实际涨跌分析:")
             click.echo("-" * 60)
-            
+
             actual_table = Table(title="实际涨跌（扣除资金转入转出）", show_lines=False)
             actual_table.add_column("资产类型", style="cyan")
             actual_table.add_column("显示变化", justify="right")
             actual_table.add_column("资金转入", justify="right")
             actual_table.add_column("实际涨跌", justify="right")
             actual_table.add_column("实际涨跌幅", justify="right")
-            
+
             for group_name, stats in sorted_stats:
                 if stats['before'] > 0 or stats['after'] > 0:
                     change = stats['after'] - stats['before']
                     transfer_in = Decimal('0')
-                    
+
                     # 权益类资产，扣除买入金额
                     if group_name == '权益' and buy_amount > 0:
                         transfer_in = buy_amount
-                    
+
                     actual_change = change - transfer_in
                     actual_rate = (actual_change / stats['before'] * 100) if stats['before'] > 0 else Decimal('0')
-                    
+
                     if abs(change) > 100 or abs(actual_change) > 100:
                         change_str = f"¥{change:,.0f}" if change >= 0 else f"[red]¥{change:,.0f}[/red]"
                         transfer_str = f"¥{transfer_in:,.0f}" if transfer_in > 0 else "-"
@@ -1108,7 +1125,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                             actual_str = f"[red]¥{actual_change:,.0f}[/red]"
                         elif actual_change > 0:
                             actual_str = f"[green]¥{actual_change:,.0f}[/green]"
-                        
+
                         actual_table.add_row(
                             group_name,
                             change_str,
@@ -1116,11 +1133,11 @@ def register_analyze_commands(cli: click.Group) -> None:
                             actual_str,
                             f"{actual_rate:.2f}%",
                         )
-            
+
             console.print(actual_table)
 
             # 产品对比明细
-            click.echo(f"\n📋 产品对比明细 (Top 20):")
+            click.echo("\n📋 产品对比明细 (Top 20):")
             table = Table(title="产品对比明细", show_lines=False)
             table.add_column("产品名称", style="cyan")
             table.add_column("类型", style="green")
@@ -1146,20 +1163,21 @@ def register_analyze_commands(cli: click.Group) -> None:
 
             console.print(table)
 
-            click.echo(f"\n✅ 对比分析完成！")
+            click.echo("\n✅ 对比分析完成！")
 
         except Exception as e:
             click.echo(f"❌ 对比分析失败: {e}", err=True)
 
     @cli.command()
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
-    def analyze_by_time(data_mode: Optional[str]):
+    def analyze_by_time(data_mode: str | None):
         """按投资时间分组分析"""
         from rich.console import Console
         from rich.table import Table
+
         from asset_lens.config import config
-        from asset_lens.data.csv_parser import CSVParser
         from asset_lens.core.time_group import TimeGroupAnalyzer
+        from asset_lens.data.csv_parser import CSVParser
 
         if data_mode:
             config.data_mode = data_mode
@@ -1174,7 +1192,7 @@ def register_analyze_commands(cli: click.Group) -> None:
             analyzer = TimeGroupAnalyzer()
             result = analyzer.analyze_by_holding_period(products)
 
-            click.echo(f"\n📈 总体统计:")
+            click.echo("\n📈 总体统计:")
             click.echo(f"  总产品数: {result['total_products']}")
             click.echo(f"  总金额: ¥{result['total_amount']:,.2f}")
             click.echo(f"  总初始投资: ¥{result['total_initial']:,.2f}")
@@ -1205,7 +1223,7 @@ def register_analyze_commands(cli: click.Group) -> None:
 
                 console.print(table)
 
-            click.echo(f"\n✅ 分析完成！")
+            click.echo("\n✅ 分析完成！")
 
         except Exception as e:
             click.echo(f"❌ 分析失败: {e}", err=True)

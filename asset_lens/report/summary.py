@@ -3,15 +3,15 @@ Portfolio Summary - 投资组合摘要分析
 """
 
 from decimal import Decimal
-from typing import Any, Dict, List
+from typing import Any
 
-from ..data.models import InvestmentProduct, InvestmentType, Portfolio, RiskLevel
+from ..data.models import Portfolio
 
 
 class PortfolioSummaryAnalyzer:
     """投资组合摘要分析器"""
 
-    def generate_portfolio_summary(self, portfolio: Portfolio) -> Dict[str, Any]:
+    def generate_portfolio_summary(self, portfolio: Portfolio) -> dict[str, Any]:
         """生成投资组合摘要
 
         Args:
@@ -55,7 +55,7 @@ class PortfolioSummaryAnalyzer:
 
     def get_top_performers(
         self, portfolio: Portfolio, top_n: int = 10
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """获取收益率最高的产品
 
         Args:
@@ -97,7 +97,7 @@ class PortfolioSummaryAnalyzer:
 
     def get_low_return_products(
         self, portfolio: Portfolio, threshold: float = 2.0
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """获取低收益产品列表
 
         Args:
@@ -127,7 +127,7 @@ class PortfolioSummaryAnalyzer:
 
     def get_short_term_observation_products(
         self, portfolio: Portfolio
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """获取短期观察产品列表
 
         Args:
@@ -155,7 +155,7 @@ class PortfolioSummaryAnalyzer:
 
     def get_high_return_reference_products(
         self, portfolio: Portfolio
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """获取高收益参考产品列表
 
         Args:

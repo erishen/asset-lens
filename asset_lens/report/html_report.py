@@ -5,15 +5,14 @@ HTML 报告生成模块 - 使用 Jinja2 生成专业投资报告
 
 import base64
 from datetime import datetime
-from decimal import Decimal
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class HTMLReportGenerator:
     """HTML 报告生成器"""
 
-    def __init__(self, output_dir: Optional[Path] = None):
+    def __init__(self, output_dir: Path | None = None):
         """
         初始化 HTML 报告生成器
 
@@ -25,9 +24,9 @@ class HTMLReportGenerator:
 
     def generate_investment_report(
         self,
-        portfolio_data: Dict[str, Any],
-        analysis_result: Optional[Dict[str, Any]] = None,
-        charts: Optional[Dict[str, Path]] = None,
+        portfolio_data: dict[str, Any],
+        analysis_result: dict[str, Any] | None = None,
+        charts: dict[str, Path] | None = None,
         filename: str = "investment_report.html",
     ) -> Path:
         """
@@ -63,9 +62,9 @@ class HTMLReportGenerator:
 
     def _generate_html_content(
         self,
-        portfolio_data: Dict[str, Any],
-        analysis_result: Optional[Dict[str, Any]] = None,
-        chart_images: Optional[Dict[str, str]] = None,
+        portfolio_data: dict[str, Any],
+        analysis_result: dict[str, Any] | None = None,
+        chart_images: dict[str, str] | None = None,
     ) -> str:
         """生成 HTML 内容"""
         total_value = portfolio_data.get("total_value", 0)
@@ -394,7 +393,7 @@ class HTMLReportGenerator:
 
     def _generate_distribution_table(
         self,
-        distribution: Dict[str, Any],
+        distribution: dict[str, Any],
         total_value: float,
         label_name: str,
     ) -> str:

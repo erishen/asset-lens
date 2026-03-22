@@ -4,29 +4,29 @@ Daily Report Pusher - 日报自动推送
 """
 
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
 from pathlib import Path
+from typing import Any
 
-from ..notification import NotificationMessage, NotificationService, NotificationChannel
+from ..notification import NotificationChannel, NotificationMessage, NotificationService
 from .template_engine import template_engine
 
 
 class DailyReportPusher:
     """日报推送器"""
-    
+
     def __init__(
         self,
-        notification_service: Optional[NotificationService] = None,
-        config_path: Optional[Path] = None,
+        notification_service: NotificationService | None = None,
+        config_path: Path | None = None,
     ):
         self.notification_service = notification_service or NotificationService()
         self.config_path = config_path or Path.home() / ".asset_lens" / "push_config.json"
         self._load_config()
-    
+
     def _load_config(self) -> None:
         """加载推送配置"""
         import json
-        
+
         self._config = {
             "enabled": True,
             "push_time": "18:00",
@@ -37,20 +37,20 @@ class DailyReportPusher:
                 "suggestions",
             ],
         }
-        
+
         if self.config_path.exists():
             try:
-                with open(self.config_path, "r", encoding="utf-8") as f:
+                with open(self.config_path, encoding="utf-8") as f:
                     loaded = json.load(f)
                     self._config.update(loaded)
             except Exception:
                 pass
-    
+
     def generate_daily_report(
         self,
-        portfolio_data: Dict[str, Any],
-        risk_alerts: Optional[List[Dict[str, Any]]] = None,
-        suggestions: Optional[List[str]] = None,
+        portfolio_data: dict[str, Any],
+        risk_alerts: list[dict[str, Any]] | None = None,
+        suggestions: list[str] | None = None,
     ) -> str:
         """
         生成日报
@@ -80,16 +80,16 @@ class DailyReportPusher:
                 "关注市场动态",
             ],
         }
-        
+
         return template_engine.render("daily_report.md.j2", context)
-    
+
     def push_daily_report(
         self,
-        portfolio_data: Dict[str, Any],
-        risk_alerts: Optional[List[Dict[str, Any]]] = None,
-        suggestions: Optional[List[str]] = None,
-        channels: Optional[List[str]] = None,
-    ) -> Dict[str, bool]:
+        portfolio_data: dict[str, Any],
+        risk_alerts: list[dict[str, Any]] | None = None,
+        suggestions: list[str] | None = None,
+        channels: list[str] | None = None,
+    ) -> dict[str, bool]:
         """
         推送日报
         
@@ -102,25 +102,24 @@ class DailyReportPusher:
         Returns:
             各渠道推送结果
         """
-        from ..notification import NotificationChannel
-        
+
         report_content = self.generate_daily_report(
             portfolio_data,
             risk_alerts,
             suggestions,
         )
-        
+
         message = NotificationMessage(
             title="📊 资产日报",
             content=report_content,
             level="info",
         )
-        
+
         if channels is None:
             channel_names = self._config.get("channels", ["console"])
             channels = channel_names if isinstance(channel_names, list) else ["console"]
-        
-        channel_enums: List[Any] = []
+
+        channel_enums: list[Any] = []
         for ch in channels:
             if isinstance(ch, str):
                 try:
@@ -129,16 +128,16 @@ class DailyReportPusher:
                     continue
             else:
                 channel_enums.append(ch)
-        
+
         return self.notification_service.notify(message, channel_enums)
-    
+
     def push_risk_alert(
         self,
         alert_type: str,
         level: str,
         message: str,
-        details: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, bool]:
+        details: dict[str, Any] | None = None,
+    ) -> dict[str, bool]:
         """
         推送风险预警
         
@@ -157,18 +156,18 @@ class DailyReportPusher:
             message=message,
             details=details,
         )
-    
+
     def push_weekly_report(
         self,
-        portfolio_data: Dict[str, Any],
-        weekly_summary: Dict[str, Any],
-        market_regime: Optional[Dict[str, Any]] = None,
-        top_performers: Optional[List[Dict[str, Any]]] = None,
-        bottom_performers: Optional[List[Dict[str, Any]]] = None,
-        risk_alerts: Optional[List[Dict[str, Any]]] = None,
-        suggestions: Optional[List[str]] = None,
-        next_week_tasks: Optional[List[str]] = None,
-    ) -> Dict[str, bool]:
+        portfolio_data: dict[str, Any],
+        weekly_summary: dict[str, Any],
+        market_regime: dict[str, Any] | None = None,
+        top_performers: list[dict[str, Any]] | None = None,
+        bottom_performers: list[dict[str, Any]] | None = None,
+        risk_alerts: list[dict[str, Any]] | None = None,
+        suggestions: list[str] | None = None,
+        next_week_tasks: list[str] | None = None,
+    ) -> dict[str, bool]:
         """
         推送周报
         
@@ -185,12 +184,11 @@ class DailyReportPusher:
         Returns:
             各渠道推送结果
         """
-        from ..notification import NotificationChannel
-        
+
         today = datetime.now()
         start_of_week = today - timedelta(days=today.weekday())
         end_of_week = start_of_week + timedelta(days=6)
-        
+
         context = {
             "title": "资产周报",
             "start_date": start_of_week.strftime("%Y-%m-%d"),
@@ -214,24 +212,24 @@ class DailyReportPusher:
                 "关注市场动态",
             ],
         }
-        
+
         report_content = template_engine.render("weekly_report.md.j2", context)
-        
+
         message = NotificationMessage(
             title="📊 资产周报",
             content=report_content,
             level="info",
         )
-        
+
         channel_names_raw = self._config.get("channels", ["console"])
-        channel_names_list: List[str] = channel_names_raw if isinstance(channel_names_raw, list) else ["console"]
-        channel_enums: List[Any] = []
+        channel_names_list: list[str] = channel_names_raw if isinstance(channel_names_raw, list) else ["console"]
+        channel_enums: list[Any] = []
         for ch in channel_names_list:
             try:
                 channel_enums.append(NotificationChannel(str(ch)))
             except ValueError:
                 continue
-        
+
         return self.notification_service.notify(message, channel_enums)
 
 

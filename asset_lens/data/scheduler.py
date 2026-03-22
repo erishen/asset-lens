@@ -8,8 +8,7 @@ import json
 import threading
 import time
 from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..config import config
 
@@ -62,14 +61,14 @@ class TaskScheduler:
         self.scheduler_path = self.cache_path / "scheduler"
         self.scheduler_path.mkdir(parents=True, exist_ok=True)
         self.log_file = self.scheduler_path / "task_log.json"
-        self.tasks: Dict[str, Dict[str, Any]] = {}
+        self.tasks: dict[str, dict[str, Any]] = {}
         self._load_log()
 
     def _load_log(self) -> None:
         """加载任务日志"""
         if self.log_file.exists():
             try:
-                with open(self.log_file, "r", encoding="utf-8") as f:
+                with open(self.log_file, encoding="utf-8") as f:
                     self.tasks = json.load(f)
             except Exception:
                 self.tasks = {}
@@ -88,7 +87,7 @@ class TaskScheduler:
         }
         self._save_log()
 
-    def task_update_all_data(self) -> Dict[str, Any]:
+    def task_update_all_data(self) -> dict[str, Any]:
         """
         任务: 更新所有数据
 
@@ -98,7 +97,7 @@ class TaskScheduler:
         from .fund_fetcher import fetch_portfolio_fund_quotes
         from .stock_fetcher import stock_fetcher
 
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "task": "update_all_data",
             "start_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "status": "running",
@@ -108,7 +107,7 @@ class TaskScheduler:
         try:
             print("  📡 正在获取基金数据...")
             fund_result = fetch_portfolio_fund_quotes()
-            details_dict: Dict[str, Any] = result["details"]
+            details_dict: dict[str, Any] = result["details"]
             details_dict["funds"] = {
                 "count": len(fund_result.get("data", {})),
                 "status": "success" if fund_result.get("data") else "failed",
@@ -128,7 +127,7 @@ class TaskScheduler:
 
             result["status"] = "completed"
             result["end_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            funds_info: Dict[str, Any] = details_dict.get("funds", {})
+            funds_info: dict[str, Any] = details_dict.get("funds", {})
             self._log_task("update_all_data", "success", f"更新了 {funds_info.get('count', 0)} 只基金")
 
         except Exception as e:
@@ -138,7 +137,7 @@ class TaskScheduler:
 
         return result
 
-    def task_track_stocks(self, pool_name: str = "momentum") -> Dict[str, Any]:
+    def task_track_stocks(self, pool_name: str = "momentum") -> dict[str, Any]:
         """
         任务: 记录股票池每日数据
 
@@ -151,7 +150,7 @@ class TaskScheduler:
         from .market_stock_fetcher import market_stock_fetcher
         from .stock_tracker import StockTracker
 
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "task": "track_stocks",
             "pool_name": pool_name,
             "start_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -168,7 +167,7 @@ class TaskScheduler:
                 if stocks:
                     market_stock_fetcher.save_market_stocks(stocks)
 
-            details_dict: Dict[str, Any] = result["details"]
+            details_dict: dict[str, Any] = result["details"]
             if stocks:
                 count = tracker.record_batch(stocks)
                 details_dict["recorded"] = count
@@ -186,7 +185,7 @@ class TaskScheduler:
 
         return result
 
-    def task_detect_monster(self, pool_name: str = "momentum") -> Dict[str, Any]:
+    def task_detect_monster(self, pool_name: str = "momentum") -> dict[str, Any]:
         """
         任务: 检测妖股信号
 
@@ -198,7 +197,7 @@ class TaskScheduler:
         """
         from .stock_tracker import StockTracker
 
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "task": "detect_monster",
             "pool_name": pool_name,
             "start_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -210,7 +209,7 @@ class TaskScheduler:
             tracker = StockTracker(pool_name)
             signals = tracker.detect_monster_stocks()
 
-            details_dict: Dict[str, Any] = result["details"]
+            details_dict: dict[str, Any] = result["details"]
             details_dict["signals_count"] = len(signals)
             details_dict["signals"] = [
                 {
@@ -231,18 +230,18 @@ class TaskScheduler:
 
         return result
 
-    def task_momentum_screen(self) -> Dict[str, Any]:
+    def task_momentum_screen(self) -> dict[str, Any]:
         """
         任务: 动量策略选股
 
         Returns:
             执行结果
         """
-        from .market_stock_fetcher import market_stock_fetcher
-        from ..trading.stock_pool import StockPool
         from ..strategy.engine import strategy_engine
+        from ..trading.stock_pool import StockPool
+        from .market_stock_fetcher import market_stock_fetcher
 
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "task": "momentum_screen",
             "start_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "status": "running",
@@ -258,7 +257,7 @@ class TaskScheduler:
 
             if stocks:
                 results_list = strategy_engine.screen_stocks(stocks, "momentum", 60)
-                details_dict: Dict[str, Any] = result["details"]
+                details_dict: dict[str, Any] = result["details"]
                 details_dict["screened_count"] = len(results_list)
 
                 pool = StockPool("momentum")
@@ -290,7 +289,7 @@ class TaskScheduler:
 
         return result
 
-    def run_daily_tasks(self) -> List[Dict[str, Any]]:
+    def run_daily_tasks(self) -> list[dict[str, Any]]:
         """
         运行每日任务
 
@@ -333,7 +332,7 @@ class TaskScheduler:
             daily_time: 每日执行时间
             run_on_start: 是否在启动时立即执行一次
         """
-        print(f"\n🚀 启动定时任务调度器")
+        print("\n🚀 启动定时任务调度器")
         print(f"   每日执行时间: {daily_time}")
 
         if run_on_start:
@@ -365,7 +364,7 @@ class TaskScheduler:
         except KeyboardInterrupt:
             print("\n\n⏹️ 调度器已停止")
 
-    def get_task_status(self) -> Dict[str, Any]:
+    def get_task_status(self) -> dict[str, Any]:
         """
         获取任务状态
 

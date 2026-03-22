@@ -10,10 +10,7 @@ Futures data fetcher for asset-lens.
 
 import time
 from datetime import datetime, timedelta
-from decimal import Decimal
-from typing import Any, Dict, List, Optional
-
-from ..config import config
+from typing import Any
 
 
 class FuturesFetcher:
@@ -63,8 +60,8 @@ class FuturesFetcher:
     }
 
     def __init__(self):
-        self._cache: Dict[str, Any] = {}
-        self._cache_time: Dict[str, float] = {}
+        self._cache: dict[str, Any] = {}
+        self._cache_time: dict[str, float] = {}
         self._akshare = None
 
     @property
@@ -85,7 +82,7 @@ class FuturesFetcher:
             return False
         return time.time() - self._cache_time[cache_key] < self.CACHE_DURATION
 
-    def _get_cached(self, cache_key: str) -> Optional[Any]:
+    def _get_cached(self, cache_key: str) -> Any | None:
         """获取缓存数据"""
         if self._is_cache_valid(cache_key):
             return self._cache.get(cache_key)
@@ -96,7 +93,7 @@ class FuturesFetcher:
         self._cache[cache_key] = data
         self._cache_time[cache_key] = time.time()
 
-    def fetch_domestic_quote(self, symbol: str) -> Optional[Dict[str, Any]]:
+    def fetch_domestic_quote(self, symbol: str) -> dict[str, Any] | None:
         """
         获取国内期货行情
 
@@ -151,7 +148,7 @@ class FuturesFetcher:
             print(f"获取期货 {symbol} 行情失败: {e}")
             return None
 
-    def fetch_all_domestic_quotes(self) -> List[Dict[str, Any]]:
+    def fetch_all_domestic_quotes(self) -> list[dict[str, Any]]:
         """
         获取所有国内期货行情
 
@@ -206,9 +203,9 @@ class FuturesFetcher:
     def fetch_domestic_history(
         self,
         symbol: str,
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> list[dict[str, Any]]:
         """
         获取国内期货历史数据
 
@@ -249,7 +246,7 @@ class FuturesFetcher:
             print(f"获取期货 {symbol} 历史数据失败: {e}")
             return []
 
-    def get_commodity_index(self) -> Dict[str, Any]:
+    def get_commodity_index(self) -> dict[str, Any]:
         """
         获取商品指数
 
@@ -290,7 +287,7 @@ class FuturesFetcher:
         return None
 
 
-_futures_fetcher: Optional[FuturesFetcher] = None
+_futures_fetcher: FuturesFetcher | None = None
 
 
 def get_futures_fetcher() -> FuturesFetcher:

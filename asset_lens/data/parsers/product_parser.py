@@ -2,12 +2,10 @@
 Product Parser - 产品解析器
 """
 
-from datetime import date, datetime
+from datetime import date
 from decimal import Decimal
-from pathlib import Path
-from typing import Any, Dict, List, Optional
 
-from ..models import InvestmentProduct, InvestmentType, RiskLevel
+from ..models import InvestmentProduct
 from .field_parsers import (
     parse_boolean,
     parse_date,
@@ -16,7 +14,6 @@ from .field_parsers import (
     parse_investment_type,
     parse_risk_level,
 )
-from .investment_calculator import InvestmentCalculator
 
 
 class ProductParser:
@@ -48,8 +45,8 @@ class ProductParser:
 
     @classmethod
     def parse_row(
-        cls, row: Dict[str, str], reference_date: Optional[date] = None
-    ) -> Optional[InvestmentProduct]:
+        cls, row: dict[str, str], reference_date: date | None = None
+    ) -> InvestmentProduct | None:
         """解析单行数据为投资产品"""
         if not row:
             return None
@@ -96,7 +93,7 @@ class ProductParser:
         return product
 
     @staticmethod
-    def _parse_platform_amounts(row: Dict[str, str]) -> Dict[str, Decimal]:
+    def _parse_platform_amounts(row: dict[str, str]) -> dict[str, Decimal]:
         """解析平台金额"""
         amounts = {}
         platform_fields = {
@@ -110,7 +107,7 @@ class ProductParser:
         return amounts
 
     @staticmethod
-    def _parse_maturity_date(value: Optional[str]) -> Optional[date]:
+    def _parse_maturity_date(value: str | None) -> date | None:
         """解析到期日期"""
         if not value:
             return None
@@ -118,7 +115,7 @@ class ProductParser:
         return dt.date() if dt else None
 
     @staticmethod
-    def _parse_start_date(value: Optional[str]) -> Optional[date]:
+    def _parse_start_date(value: str | None) -> date | None:
         """解析开始日期"""
         if not value:
             return None
@@ -126,7 +123,7 @@ class ProductParser:
         return dt.date() if dt else None
 
     @staticmethod
-    def _parse_int(value: Optional[str]) -> Optional[int]:
+    def _parse_int(value: str | None) -> int | None:
         """解析整数"""
         if not value:
             return None

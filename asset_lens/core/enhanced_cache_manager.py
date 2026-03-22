@@ -4,12 +4,11 @@ Enhanced Cache Manager with TTL and statistics.
 """
 
 import json
-import time
+import logging
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, Optional
-from dataclasses import dataclass, field
-import logging
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -21,14 +20,14 @@ class CacheStats:
     misses: int = 0
     evictions: int = 0
     total_requests: int = 0
-    
+
     @property
     def hit_rate(self) -> float:
         if self.total_requests == 0:
             return 0.0
         return self.hits / self.total_requests
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         return {
             "hits": self.hits,
             "misses": self.misses,
@@ -44,7 +43,7 @@ class CacheConfig:
     ttl: int = 3600
     max_size: int = 100
     enabled: bool = True
-    
+
 
 CACHE_CONFIG = {
     'momentum_screen': CacheConfig(ttl=3600, max_size=100),
@@ -57,44 +56,44 @@ CACHE_CONFIG = {
 
 class EnhancedCacheManager:
     """增强版缓存管理器 - 支持TTL和统计监控"""
-    
+
     DEFAULT_EXPIRY_HOURS = 24
     OFFLINE_MODE = False
-    
+
     def __init__(self, cache_path: Path):
         self.cache_path = cache_path
         self.cache_path.mkdir(parents=True, exist_ok=True)
-        self._stats: Dict[str, CacheStats] = {}
+        self._stats: dict[str, CacheStats] = {}
         self._config = CACHE_CONFIG
-        
+
     def get_cache_config(self, cache_name: str) -> CacheConfig:
         """获取缓存配置"""
         return self._config.get(cache_name, CacheConfig())
-    
+
     def set_cache_config(self, cache_name: str, config: CacheConfig):
         """设置缓存配置"""
         self._config[cache_name] = config
-        
+
     def get_cache_file(self, cache_name: str) -> Path:
         return self.cache_path / f"{cache_name}.json"
-    
+
     def get_stats_file(self, cache_name: str) -> Path:
         return self.cache_path / f"{cache_name}_stats.json"
-    
+
     def _record_hit(self, cache_name: str):
         """记录缓存命中"""
         if cache_name not in self._stats:
             self._stats[cache_name] = CacheStats()
         self._stats[cache_name].hits += 1
         self._stats[cache_name].total_requests += 1
-        
+
     def _record_miss(self, cache_name: str):
         """记录缓存未命中"""
         if cache_name not in self._stats:
             self._stats[cache_name] = CacheStats()
         self._stats[cache_name].misses += 1
         self._stats[cache_name].total_requests += 1
-        
+
     def _record_eviction(self, cache_name: str):
         """记录缓存淘汰"""
         if cache_name not in self._stats:
@@ -121,7 +120,7 @@ class EnhancedCacheManager:
             return False
 
         try:
-            with open(cache_file, "r", encoding="utf-8") as f:
+            with open(cache_file, encoding="utf-8") as f:
                 data = json.load(f)
 
             update_time_str = data.get("更新时间")
@@ -130,12 +129,12 @@ class EnhancedCacheManager:
                 return False
 
             update_time = datetime.strptime(update_time_str, "%Y-%m-%d %H:%M:%S")
-            
+
             config = self.get_cache_config(cache_name)
             ttl_seconds = config.ttl
             if expiry_hours:
                 ttl_seconds = expiry_hours * 3600
-            
+
             expiry_time = update_time + timedelta(seconds=ttl_seconds)
 
             is_valid = datetime.now() < expiry_time
@@ -144,20 +143,20 @@ class EnhancedCacheManager:
             else:
                 self._record_miss(cache_name)
                 self._record_eviction(cache_name)
-                
+
             return is_valid
 
         except (json.JSONDecodeError, ValueError, KeyError):
             self._record_miss(cache_name)
             return False
 
-    def get_cache_age(self, cache_name: str) -> Optional[timedelta]:
+    def get_cache_age(self, cache_name: str) -> timedelta | None:
         cache_file = self.get_cache_file(cache_name)
         if not cache_file.exists():
             return None
 
         try:
-            with open(cache_file, "r", encoding="utf-8") as f:
+            with open(cache_file, encoding="utf-8") as f:
                 data = json.load(f)
 
             update_time_str = data.get("更新时间")
@@ -170,20 +169,20 @@ class EnhancedCacheManager:
         except (json.JSONDecodeError, ValueError, KeyError):
             return None
 
-    def get_cache_age_hours(self, cache_name: str) -> Optional[float]:
+    def get_cache_age_hours(self, cache_name: str) -> float | None:
         age = self.get_cache_age(cache_name)
         if age is None:
             return None
         return age.total_seconds() / 3600
 
-    def read_cache(self, cache_name: str) -> Optional[Dict[str, Any]]:
+    def read_cache(self, cache_name: str) -> dict[str, Any] | None:
         cache_file = self.get_cache_file(cache_name)
         if not cache_file.exists():
             return None
 
         try:
-            with open(cache_file, "r", encoding="utf-8") as f:
-                data: Dict[str, Any] = json.load(f)
+            with open(cache_file, encoding="utf-8") as f:
+                data: dict[str, Any] = json.load(f)
                 return data
         except json.JSONDecodeError:
             return None
@@ -191,7 +190,7 @@ class EnhancedCacheManager:
     def write_cache(
         self,
         cache_name: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         update_time: datetime | None = None,
     ) -> bool:
         cache_file = self.get_cache_file(cache_name)
@@ -237,7 +236,7 @@ class EnhancedCacheManager:
         """手动刷新缓存（清除并标记为需要更新）"""
         return self.clear_cache(cache_name)
 
-    def get_cache_status(self, cache_name: str) -> Dict[str, Any]:
+    def get_cache_status(self, cache_name: str) -> dict[str, Any]:
         cache_file = self.get_cache_file(cache_name)
         config = self.get_cache_config(cache_name)
 
@@ -259,7 +258,7 @@ class EnhancedCacheManager:
 
         return status
 
-    def get_all_cache_status(self) -> Dict[str, Dict[str, Any]]:
+    def get_all_cache_status(self) -> dict[str, dict[str, Any]]:
         status = {}
         for cache_file in self.cache_path.glob("*.json"):
             cache_name = cache_file.stem
@@ -270,36 +269,36 @@ class EnhancedCacheManager:
     def get_cache_stats(self, cache_name: str) -> CacheStats:
         """获取缓存统计信息"""
         return self._stats.get(cache_name, CacheStats())
-    
-    def get_all_stats(self) -> Dict[str, CacheStats]:
+
+    def get_all_stats(self) -> dict[str, CacheStats]:
         """获取所有缓存统计信息"""
         return self._stats
-    
+
     def save_stats(self):
         """保存统计信息到文件"""
         stats_file = self.cache_path / "cache_stats.json"
-        stats_data: Dict[str, Any] = {
+        stats_data: dict[str, Any] = {
             name: stat.to_dict()
             for name, stat in self._stats.items()
         }
         stats_data["update_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
+
         try:
             with open(stats_file, "w", encoding="utf-8") as f:
                 json.dump(stats_data, f, ensure_ascii=False, indent=2)
         except Exception as e:
             logger.error(f"保存统计信息失败: {e}")
-    
+
     def load_stats(self):
         """从文件加载统计信息"""
         stats_file = self.cache_path / "cache_stats.json"
         if not stats_file.exists():
             return
-            
+
         try:
-            with open(stats_file, "r", encoding="utf-8") as f:
+            with open(stats_file, encoding="utf-8") as f:
                 data = json.load(f)
-            
+
             for name, stat_data in data.items():
                 if name != "update_time":
                     self._stats[name] = CacheStats(

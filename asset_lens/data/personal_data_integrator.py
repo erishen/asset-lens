@@ -11,10 +11,10 @@ Personal data integrator for asset-lens.
 
 import csv
 import json
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from ..config import config
 
@@ -24,9 +24,9 @@ class WeeklyIndexRecord:
     """每周指数记录"""
 
     date: str
-    indices: Dict[str, float]  # 指数名称 -> 数值
-    etfs: Dict[str, float]  # ETF名称 -> 数值
-    rates: Dict[str, float]  # 汇率名称 -> 数值
+    indices: dict[str, float]  # 指数名称 -> 数值
+    etfs: dict[str, float]  # ETF名称 -> 数值
+    rates: dict[str, float]  # 汇率名称 -> 数值
 
 
 @dataclass
@@ -72,7 +72,7 @@ class PersonalDataIntegrator:
     def __init__(self):
         self.cache_path = config.cache_path
         self.cache_file = self.cache_path / "personal_market_data.json"
-        self.weekly_records: List[WeeklyIndexRecord] = []
+        self.weekly_records: list[WeeklyIndexRecord] = []
         self.config = PersonalDataConfig()
 
         ts_demo_path = Path(__file__).parent.parent.parent.parent / "ts-demo" / "data"
@@ -85,7 +85,7 @@ class PersonalDataIntegrator:
         """加载缓存数据"""
         if self.cache_file.exists():
             try:
-                with open(self.cache_file, "r", encoding="utf-8") as f:
+                with open(self.cache_file, encoding="utf-8") as f:
                     data = json.load(f)
                     self.weekly_records = [
                         WeeklyIndexRecord(
@@ -174,7 +174,7 @@ class PersonalDataIntegrator:
         self._save_cache()
         return loaded
 
-    def _load_folder_data(self, folder: Path, date_str: str) -> Optional[WeeklyIndexRecord]:
+    def _load_folder_data(self, folder: Path, date_str: str) -> WeeklyIndexRecord | None:
         """加载单个文件夹的数据"""
         indices = {}
         etfs = {}
@@ -201,11 +201,11 @@ class PersonalDataIntegrator:
             )
         return None
 
-    def _parse_index_file(self, file_path: Path) -> Dict[str, float]:
+    def _parse_index_file(self, file_path: Path) -> dict[str, float]:
         """解析指数文件"""
         indices = {}
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 reader = csv.reader(f)
                 next(reader, None)  # 跳过标题行
                 for row in reader:
@@ -221,11 +221,11 @@ class PersonalDataIntegrator:
             print(f"解析指数文件失败 {file_path}: {e}")
         return indices
 
-    def _parse_etf_file(self, file_path: Path) -> Dict[str, float]:
+    def _parse_etf_file(self, file_path: Path) -> dict[str, float]:
         """解析ETF文件"""
         etfs = {}
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 reader = csv.reader(f)
                 next(reader, None)  # 跳过标题行
                 for row in reader:
@@ -241,25 +241,25 @@ class PersonalDataIntegrator:
             print(f"解析ETF文件失败 {file_path}: {e}")
         return etfs
 
-    def _parse_asset_file(self, file_path: Path) -> Dict[str, float]:
+    def _parse_asset_file(self, file_path: Path) -> dict[str, float]:
         """解析资产汇总文件"""
-        rates: Dict[str, float] = {}
+        rates: dict[str, float] = {}
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 reader = csv.reader(f)
                 header = next(reader, None)
                 if not header:
                     return rates
 
-                usd_idx: Optional[int] = None
-                hkd_idx: Optional[int] = None
+                usd_idx: int | None = None
+                hkd_idx: int | None = None
                 for i, h in enumerate(header):
                     if "美元汇率" in h:
                         usd_idx = i
                     elif "港元汇率" in h:
                         hkd_idx = i
 
-                last_row: Optional[List[str]] = None
+                last_row: list[str] | None = None
                 for row in reader:
                     if row:
                         last_row = row
@@ -280,7 +280,7 @@ class PersonalDataIntegrator:
             print(f"解析资产文件失败 {file_path}: {e}")
         return rates
 
-    def get_index_history(self, index_name: str, days: int = 60) -> List[Tuple[str, float]]:
+    def get_index_history(self, index_name: str, days: int = 60) -> list[tuple[str, float]]:
         """
         获取指数历史数据
 
@@ -300,7 +300,7 @@ class PersonalDataIntegrator:
 
         return history
 
-    def get_etf_history(self, etf_name: str, days: int = 60) -> List[Tuple[str, float]]:
+    def get_etf_history(self, etf_name: str, days: int = 60) -> list[tuple[str, float]]:
         """
         获取ETF历史数据
 
@@ -320,7 +320,7 @@ class PersonalDataIntegrator:
 
         return history
 
-    def get_rate_history(self, rate_name: str, days: int = 60) -> List[Tuple[str, float]]:
+    def get_rate_history(self, rate_name: str, days: int = 60) -> list[tuple[str, float]]:
         """
         获取汇率历史数据
 
@@ -340,7 +340,7 @@ class PersonalDataIntegrator:
 
         return history
 
-    def calculate_index_change(self, index_name: str, days: int = 5) -> Tuple[float, float, float]:
+    def calculate_index_change(self, index_name: str, days: int = 5) -> tuple[float, float, float]:
         """
         计算指数涨跌幅
 
@@ -366,7 +366,7 @@ class PersonalDataIntegrator:
 
         return current, change_pct, change
 
-    def get_market_summary(self) -> Dict[str, Any]:
+    def get_market_summary(self) -> dict[str, Any]:
         """
         获取市场概况
 
@@ -412,7 +412,7 @@ class PersonalDataIntegrator:
                     previous_with_rates = record
                     break
 
-        summary: Dict[str, Any] = {
+        summary: dict[str, Any] = {
             "date": self.weekly_records[-1].date,
             "index_date": latest_with_indices.date if latest_with_indices else None,
             "etf_date": latest_with_etfs.date if latest_with_etfs else None,
@@ -423,9 +423,9 @@ class PersonalDataIntegrator:
             "rates": {},
         }
 
-        indices_dict: Dict[str, Any] = summary["indices"]
-        etfs_dict: Dict[str, Any] = summary["etfs"]
-        rates_dict: Dict[str, Any] = summary["rates"]
+        indices_dict: dict[str, Any] = summary["indices"]
+        etfs_dict: dict[str, Any] = summary["etfs"]
+        rates_dict: dict[str, Any] = summary["rates"]
 
         if latest_with_indices:
             for name, key in self.INDEX_MAPPING.items():

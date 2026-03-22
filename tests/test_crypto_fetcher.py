@@ -19,9 +19,7 @@ class TestCryptoFetcher:
     def fetcher(self):
         """创建获取器实例"""
         from asset_lens.data.crypto_fetcher import CryptoFetcher
-        with patch('asset_lens.data.crypto_fetcher.config') as mock_config:
-            mock_config.cache_path = MagicMock()
-            return CryptoFetcher()
+        return CryptoFetcher()
 
     def test_fetcher_init(self, fetcher):
         """测试初始化"""

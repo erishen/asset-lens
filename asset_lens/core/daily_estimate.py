@@ -1,8 +1,7 @@
 """全产品收益估算模块"""
 from decimal import Decimal
-from typing import Optional
 
-from asset_lens.data.models import InvestmentProduct, InvestmentType, RiskLevel
+from asset_lens.data.models import InvestmentProduct
 
 
 class DailyEstimateResult:
@@ -17,7 +16,7 @@ class DailyEstimateResult:
         estimated_daily_return_rate: Decimal,
         expected_annual_return: Decimal,
         market_sensitivity: Decimal,
-        risk_level: Optional[str] = None,
+        risk_level: str | None = None,
     ):
         self.product_name = product_name
         self.product_type = product_type
@@ -90,7 +89,7 @@ def get_market_sensitivity(product_type: str) -> Decimal:
 
 
 def get_adjusted_market_sensitivity(
-    product_type: str, product_name: str, risk_level: Optional[str] = None
+    product_type: str, product_name: str, risk_level: str | None = None
 ) -> Decimal:
     """根据产品类型和风险等级获取调整后的市场敏感度"""
     sensitivity = get_market_sensitivity(product_type)
@@ -115,7 +114,7 @@ def get_adjusted_market_sensitivity(
 
 def estimate_product_return(
     product: InvestmentProduct, market_change: Decimal = Decimal("0"), is_weekly: bool = False
-) -> Optional[DailyEstimateResult]:
+) -> DailyEstimateResult | None:
     """估算单个产品的收益"""
     if not product.current_amount or product.current_amount <= 0:
         return None

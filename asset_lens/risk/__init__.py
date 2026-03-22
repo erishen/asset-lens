@@ -19,12 +19,12 @@ Risk Module - 统一风险入口
     metrics = risk.calculate_metrics(returns)
 """
 
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 if TYPE_CHECKING:
-    from asset_lens.trading.risk_manager import RiskManager
     from asset_lens.monitoring.risk_analyzer import RiskAnalyzer
+    from asset_lens.trading.risk_manager import RiskManager
 
 
 @dataclass
@@ -33,8 +33,8 @@ class RiskSummary:
     risk_score: float
     risk_level: str
     total_position: float
-    warnings: List[str]
-    suggestions: List[str]
+    warnings: list[str]
+    suggestions: list[str]
 
 
 class RiskService:
@@ -44,11 +44,11 @@ class RiskService:
     整合 RiskManager 和 RiskAnalyzer 的功能，
     提供一站式的风险管理与分析服务。
     """
-    
+
     def __init__(self) -> None:
-        self._manager: Optional["RiskManager"] = None
-        self._analyzer: Optional["RiskAnalyzer"] = None
-    
+        self._manager: RiskManager | None = None
+        self._analyzer: RiskAnalyzer | None = None
+
     @property
     def manager(self) -> "RiskManager":
         """获取风险管理器（仓位、止损止盈）"""
@@ -56,7 +56,7 @@ class RiskService:
             from asset_lens.trading.risk_manager import RiskManager
             self._manager = RiskManager()
         return self._manager
-    
+
     @property
     def analyzer(self) -> "RiskAnalyzer":
         """获取风险分析器（指标计算）"""
@@ -64,8 +64,8 @@ class RiskService:
             from asset_lens.monitoring.risk_analyzer import RiskAnalyzer
             self._analyzer = RiskAnalyzer()
         return self._analyzer
-    
-    def get_risk_summary(self, pool_name: str = "default") -> Dict[str, Any]:
+
+    def get_risk_summary(self, pool_name: str = "default") -> dict[str, Any]:
         """
         获取风险摘要
         
@@ -77,13 +77,13 @@ class RiskService:
         Returns:
             风险摘要字典
         """
-        result: Dict[str, Any] = self.manager.get_risk_summary(pool_name)
+        result: dict[str, Any] = self.manager.get_risk_summary(pool_name)
         return result
-    
+
     def calculate_metrics(
         self,
-        returns: List[float],
-        values: Optional[List[float]] = None,
+        returns: list[float],
+        values: list[float] | None = None,
     ) -> Any:
         """
         计算风险指标
@@ -96,8 +96,8 @@ class RiskService:
             RiskMetrics 对象
         """
         return self.analyzer.calculate_all_metrics(returns, values)
-    
-    def calculate_volatility(self, returns: List[float]) -> float:
+
+    def calculate_volatility(self, returns: list[float]) -> float:
         """
         计算波动率
         
@@ -109,8 +109,8 @@ class RiskService:
         """
         result: float = self.analyzer.calculate_volatility(returns)
         return result
-    
-    def calculate_max_drawdown(self, values: List[float]) -> float:
+
+    def calculate_max_drawdown(self, values: list[float]) -> float:
         """
         计算最大回撤
         
@@ -122,10 +122,10 @@ class RiskService:
         """
         result: float = self.analyzer.calculate_max_drawdown(values)
         return result
-    
+
     def calculate_sharpe_ratio(
         self,
-        returns: List[float],
+        returns: list[float],
         risk_free_rate: float = 0.03,
     ) -> float:
         """
@@ -140,12 +140,12 @@ class RiskService:
         """
         result: float = self.analyzer.calculate_sharpe_ratio(returns, risk_free_rate)
         return result
-    
+
     def check_risk_thresholds(
         self,
         metrics: Any,
-        thresholds: Optional[Dict[str, float]] = None,
-    ) -> List[Any]:
+        thresholds: dict[str, float] | None = None,
+    ) -> list[Any]:
         """
         检查风险阈值
         
@@ -156,10 +156,10 @@ class RiskService:
         Returns:
             风险预警列表
         """
-        result: List[Any] = self.analyzer.check_risk_thresholds(metrics, thresholds)
+        result: list[Any] = self.analyzer.check_risk_thresholds(metrics, thresholds)
         return result
-    
-    def generate_risk_report(self, metrics: Any, alerts: List[Any]) -> str:
+
+    def generate_risk_report(self, metrics: Any, alerts: list[Any]) -> str:
         """
         生成风险报告
         
@@ -172,8 +172,8 @@ class RiskService:
         """
         result: str = self.analyzer.generate_risk_report(metrics, alerts)
         return result
-    
-    def detect_market_regime(self, index_returns: List[float]) -> str:
+
+    def detect_market_regime(self, index_returns: list[float]) -> str:
         """
         判断市场环境
         
@@ -186,11 +186,11 @@ class RiskService:
         from asset_lens.monitoring.risk_analyzer import MarketRegime
         regime = self.analyzer.detect_market_regime(index_returns)
         return regime.value
-    
+
     def adjust_for_market_regime(
         self,
-        index_returns: Optional[List[float]] = None,
-    ) -> Dict[str, Any]:
+        index_returns: list[float] | None = None,
+    ) -> dict[str, Any]:
         """
         根据市场环境调整风险阈值
         
@@ -200,9 +200,9 @@ class RiskService:
         Returns:
             调整结果字典
         """
-        result: Dict[str, Any] = self.manager.adjust_for_market_regime(index_returns)
+        result: dict[str, Any] = self.manager.adjust_for_market_regime(index_returns)
         return result
-    
+
     def get_regime_description(self, regime: str) -> str:
         """
         获取市场环境描述

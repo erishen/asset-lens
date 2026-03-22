@@ -2,7 +2,6 @@
 Strategy Routes - 策略相关 API
 """
 
-from typing import List
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -22,13 +21,13 @@ class StrategyInfo(BaseModel):
     take_profit: float = 0
 
 
-@router.get("", response_model=List[StrategyInfo])
+@router.get("", response_model=list[StrategyInfo])
 async def list_strategies():
     """获取策略列表"""
     from ...strategy.engine import strategy_engine
-    
+
     strategies = strategy_engine.list_strategies()
-    
+
     return [
         StrategyInfo(
             name=s.get("name", ""),
@@ -48,21 +47,21 @@ async def list_strategies():
 async def get_strategy(strategy_name: str):
     """获取策略详情"""
     from ...strategy.engine import strategy_engine
-    
+
     strategy = strategy_engine.get_strategy(strategy_name)
-    
+
     if strategy is None:
         raise HTTPException(status_code=404, detail=f"策略 {strategy_name} 不存在")
-    
+
     return {
         "name": strategy.name,
         "description": strategy.description,
         "buy_conditions": [
-            {"name": c.name, "weight": c.weight, "value": c.value} 
+            {"name": c.name, "weight": c.weight, "value": c.value}
             for c in strategy.buy_conditions
         ],
         "sell_conditions": [
-            {"name": c.name, "weight": c.weight, "value": c.value} 
+            {"name": c.name, "weight": c.weight, "value": c.value}
             for c in strategy.sell_conditions
         ],
         "position_size": strategy.position_size,
@@ -82,7 +81,7 @@ async def evaluate_stock(strategy_name: str, code: str):
         code: 股票代码
     """
     from ...strategy.engine import strategy_engine
-    
+
     try:
         result = strategy_engine.evaluate_stock({"code": code}, strategy_name)
         return {
@@ -107,7 +106,7 @@ async def recommend_stocks(
         limit: 返回数量
     """
     from ...strategy.screener import stock_screener
-    
+
     try:
         stocks = stock_screener.screen(filter_type="comprehensive")
         return {

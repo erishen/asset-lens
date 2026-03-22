@@ -10,9 +10,8 @@ Macro economic data fetcher for asset-lens.
 """
 
 import time
-from datetime import datetime, timedelta
-from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from datetime import datetime
+from typing import Any
 
 from ..config import config
 
@@ -76,10 +75,10 @@ class MacroEconomicFetcher:
         },
     }
 
-    def __init__(self, fred_api_key: Optional[str] = None):
+    def __init__(self, fred_api_key: str | None = None):
         self._fred_api_key = fred_api_key or config.fred_api_key
-        self._cache: Dict[str, Dict[str, Any]] = {}
-        self._cache_time: Dict[str, float] = {}
+        self._cache: dict[str, dict[str, Any]] = {}
+        self._cache_time: dict[str, float] = {}
         self._requests = None
 
     @property
@@ -94,13 +93,13 @@ class MacroEconomicFetcher:
             return False
         return time.time() - self._cache_time[cache_key] < self.CACHE_DURATION
 
-    def _get_cached(self, cache_key: str) -> Optional[Dict[str, Any]]:
+    def _get_cached(self, cache_key: str) -> dict[str, Any] | None:
         """获取缓存数据"""
         if self._is_cache_valid(cache_key):
             return self._cache.get(cache_key)
         return None
 
-    def _set_cache(self, cache_key: str, data: Dict[str, Any]):
+    def _set_cache(self, cache_key: str, data: dict[str, Any]):
         """设置缓存"""
         self._cache[cache_key] = data
         self._cache_time[cache_key] = time.time()
@@ -108,9 +107,9 @@ class MacroEconomicFetcher:
     def fetch_fred_series(
         self,
         series_id: str,
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None,
-    ) -> Optional[Dict[str, Any]]:
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> dict[str, Any] | None:
         """
         获取 FRED 数据系列
 
@@ -144,7 +143,7 @@ class MacroEconomicFetcher:
                 params["observation_end"] = end_date
 
             from ..utils.http_client import safe_get
-            
+
             response = safe_get(url, params=params, timeout=30)
 
             if response is not None and response.status_code == 200:
@@ -173,9 +172,9 @@ class MacroEconomicFetcher:
         self,
         indicator_id: str,
         country: str = "all",
-        start_year: Optional[int] = None,
-        end_year: Optional[int] = None,
-    ) -> Optional[Dict[str, Any]]:
+        start_year: int | None = None,
+        end_year: int | None = None,
+    ) -> dict[str, Any] | None:
         """
         获取世界银行指标数据
 
@@ -231,7 +230,7 @@ class MacroEconomicFetcher:
 
         return None
 
-    def get_indicator(self, indicator_key: str) -> Optional[Dict[str, Any]]:
+    def get_indicator(self, indicator_key: str) -> dict[str, Any] | None:
         """
         获取宏观经济指标
 
@@ -254,14 +253,14 @@ class MacroEconomicFetcher:
 
         return None
 
-    def get_interest_rates(self) -> Dict[str, Any]:
+    def get_interest_rates(self) -> dict[str, Any]:
         """
         获取主要国家利率
 
         Returns:
             利率数据
         """
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "us_fed_funds_rate": None,
             "us_10y_treasury": None,
             "fetched_at": datetime.now().isoformat(),
@@ -285,14 +284,14 @@ class MacroEconomicFetcher:
 
         return result
 
-    def get_inflation_data(self) -> Dict[str, Any]:
+    def get_inflation_data(self) -> dict[str, Any]:
         """
         获取通胀数据
 
         Returns:
             通胀数据
         """
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "us_cpi": None,
             "china_cpi": None,
             "fetched_at": datetime.now().isoformat(),
@@ -316,14 +315,14 @@ class MacroEconomicFetcher:
 
         return result
 
-    def get_gdp_data(self) -> Dict[str, Any]:
+    def get_gdp_data(self) -> dict[str, Any]:
         """
         获取 GDP 数据
 
         Returns:
             GDP 数据
         """
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "us_gdp": None,
             "china_gdp": None,
             "world_gdp_growth": None,
@@ -356,7 +355,7 @@ class MacroEconomicFetcher:
 
         return result
 
-    def get_economic_summary(self) -> Dict[str, Any]:
+    def get_economic_summary(self) -> dict[str, Any]:
         """
         获取经济数据摘要
 
@@ -371,10 +370,10 @@ class MacroEconomicFetcher:
         }
 
 
-_macro_fetcher: Optional[MacroEconomicFetcher] = None
+_macro_fetcher: MacroEconomicFetcher | None = None
 
 
-def get_macro_fetcher(fred_api_key: Optional[str] = None) -> MacroEconomicFetcher:
+def get_macro_fetcher(fred_api_key: str | None = None) -> MacroEconomicFetcher:
     """获取宏观经济数据获取器单例"""
     global _macro_fetcher
     if _macro_fetcher is None:

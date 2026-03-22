@@ -5,11 +5,10 @@ Portfolio Calculator - 投资组合计算服务
 
 from datetime import date
 from decimal import Decimal
-from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from .models import InvestmentProduct, InvestmentType, Portfolio
+    from .models import InvestmentProduct, Portfolio
 
 _US_INVESTMENT_TYPES = None
 _HK_INVESTMENT_TYPES = None
@@ -42,7 +41,7 @@ class PortfolioCalculator:
 
     def __init__(self, portfolio: "Portfolio"):
         self._portfolio = portfolio
-        self._cache: Dict[str, Any] = {}
+        self._cache: dict[str, Any] = {}
 
     def clear_cache(self):
         """清除缓存"""
@@ -56,11 +55,10 @@ class PortfolioCalculator:
         self,
         amount: Decimal,
         product: "InvestmentProduct",
-        usd_rate: Optional[Decimal] = None,
-        hkd_rate: Optional[Decimal] = None,
+        usd_rate: Decimal | None = None,
+        hkd_rate: Decimal | None = None,
     ) -> Decimal:
         """统一汇率转换逻辑"""
-        from .models import InvestmentType
 
         usd_rate = usd_rate or self._portfolio.usd_rate
         hkd_rate = hkd_rate or self._portfolio.hkd_rate
@@ -139,7 +137,7 @@ class PortfolioCalculator:
         self._cache[cache_key] = total
         return total
 
-    def calculate_overall_return_rate(self) -> Optional[Decimal]:
+    def calculate_overall_return_rate(self) -> Decimal | None:
         """计算整体收益率"""
         total_initial = self.calculate_total_initial()
         if total_initial == Decimal("0"):
@@ -147,13 +145,13 @@ class PortfolioCalculator:
         total_profit = self.calculate_total_profit()
         return (total_profit / total_initial) * Decimal("100")
 
-    def get_type_distribution(self) -> Dict[str, Any]:
+    def get_type_distribution(self) -> dict[str, Any]:
         """获取类型分布（带缓存）"""
         cache_key = "type_distribution"
         if cache_key in self._cache:
             return self._cache[cache_key]  # type: ignore
 
-        type_stats: Dict[str, Dict[str, Any]] = {}
+        type_stats: dict[str, dict[str, Any]] = {}
         for product in self._portfolio.products:
             type_name = product.investment_type.value
             if type_name not in type_stats:
@@ -178,13 +176,13 @@ class PortfolioCalculator:
         self._cache[cache_key] = type_stats
         return type_stats
 
-    def get_risk_distribution(self) -> Dict[str, Any]:
+    def get_risk_distribution(self) -> dict[str, Any]:
         """获取风险分布（带缓存）"""
         cache_key = "risk_distribution"
         if cache_key in self._cache:
             return self._cache[cache_key]  # type: ignore
 
-        risk_stats: Dict[str, Dict[str, Any]] = {}
+        risk_stats: dict[str, dict[str, Any]] = {}
         for product in self._portfolio.products:
             risk_name = product.risk_level.value
             if risk_name not in risk_stats:
@@ -209,7 +207,7 @@ class PortfolioCalculator:
         self._cache[cache_key] = risk_stats
         return risk_stats
 
-    def _calculate_net_invest(self, product: "InvestmentProduct") -> Optional[Decimal]:
+    def _calculate_net_invest(self, product: "InvestmentProduct") -> Decimal | None:
         """计算产品的净投入"""
         from .models import InvestmentType
         from .transaction_parser import calculate_net_invest_from_transactions

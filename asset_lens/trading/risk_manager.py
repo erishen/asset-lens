@@ -26,9 +26,8 @@ Risk management module for asset-lens.
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from datetime import datetime
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -65,9 +64,9 @@ class RiskWarning:
     warning_type: str
     level: str  # low, medium, high, critical
     message: str
-    code: Optional[str] = None
+    code: str | None = None
     timestamp: str = ""
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
 
 
 class RiskManager:
@@ -85,16 +84,16 @@ class RiskManager:
         self.risk_path.mkdir(parents=True, exist_ok=True)
         self.warnings_file = self.risk_path / "risk_warnings.json"
         self.config = RiskConfig()
-        self.warnings: List[RiskWarning] = []
+        self.warnings: list[RiskWarning] = []
         self._current_regime = None
-        self._regime_thresholds: Dict[str, float] = {}
+        self._regime_thresholds: dict[str, float] = {}
         self._load_warnings()
-    
+
     def adjust_for_market_regime(
         self,
-        index_returns: Optional[List[float]] = None,
+        index_returns: list[float] | None = None,
         regime = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         根据市场环境调整风险阈值
         
@@ -106,23 +105,23 @@ class RiskManager:
             调整结果字典
         """
         from ..monitoring.risk_analyzer import MarketRegime, RiskAnalyzer
-        
+
         analyzer = RiskAnalyzer()
-        
+
         if regime is None and index_returns is not None:
             regime = analyzer.detect_market_regime(index_returns)
         elif regime is None:
             regime = MarketRegime.SIDEWAYS
-        
+
         self._current_regime = regime
         self._regime_thresholds = analyzer.get_regime_thresholds(regime)
-        
+
         if 'stop_loss' in self._regime_thresholds:
             self.config.stop_loss_default = self._regime_thresholds['stop_loss']
-        
+
         if 'position_limit' in self._regime_thresholds:
             self.config.max_total_position = self._regime_thresholds['position_limit']
-        
+
         return {
             "regime": regime.value if isinstance(regime, MarketRegime) else regime,
             "description": analyzer.get_regime_description(regime),
@@ -132,14 +131,14 @@ class RiskManager:
                 "max_total_position": self.config.max_total_position,
             },
         }
-    
-    def get_current_regime(self) -> Optional[str]:
+
+    def get_current_regime(self) -> str | None:
         """获取当前市场环境"""
         if self._current_regime is None:
             return None
         return self._current_regime.value if hasattr(self._current_regime, 'value') else str(self._current_regime)
-    
-    def get_regime_adjusted_thresholds(self) -> Dict[str, float]:
+
+    def get_regime_adjusted_thresholds(self) -> dict[str, float]:
         """获取市场环境调整后的阈值"""
         return self._regime_thresholds
 
@@ -147,7 +146,7 @@ class RiskManager:
         """加载预警历史"""
         if self.warnings_file.exists():
             try:
-                with open(self.warnings_file, "r", encoding="utf-8") as f:
+                with open(self.warnings_file, encoding="utf-8") as f:
                     data = json.load(f)
                     self.warnings = [
                         RiskWarning(
@@ -202,7 +201,7 @@ class RiskManager:
         self,
         pool_name: str = "default",
         total_capital: float = 100000,
-    ) -> List[PositionAdvice]:
+    ) -> list[PositionAdvice]:
         """
         计算仓位建议
 
@@ -219,7 +218,7 @@ class RiskManager:
         pool = StockPool(pool_name)
         environment = market_environment_analyzer.analyze_environment()
 
-        advices: List[PositionAdvice] = []
+        advices: list[PositionAdvice] = []
 
         holding_stocks = [p for p in pool.positions.values() if p.status == "holding"]
 
@@ -271,9 +270,9 @@ class RiskManager:
         self,
         code: str,
         buy_price: float,
-        atr: Optional[float] = None,
-        strategy_name: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        atr: float | None = None,
+        strategy_name: str | None = None,
+    ) -> dict[str, Any]:
         """
         计算止损止盈位
 
@@ -336,7 +335,7 @@ class RiskManager:
     def check_position_concentration(
         self,
         pool_name: str = "default",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         检查持仓集中度
 
@@ -350,7 +349,7 @@ class RiskManager:
 
         pool = StockPool(pool_name)
 
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "pool_name": pool_name,
             "check_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "total_positions": 0,
@@ -380,7 +379,7 @@ class RiskManager:
         if total_value == 0:
             return result
 
-        position_weights: List[Dict[str, Any]] = []
+        position_weights: list[dict[str, Any]] = []
         for pos in holding_stocks:
             value = pos.buy_price * pos.shares
             weight = value / total_value
@@ -429,7 +428,7 @@ class RiskManager:
     def generate_risk_warnings(
         self,
         pool_name: str = "default",
-    ) -> List[RiskWarning]:
+    ) -> list[RiskWarning]:
         """
         生成风险预警
 
@@ -498,7 +497,7 @@ class RiskManager:
 
         return new_warnings
 
-    def get_risk_summary(self, pool_name: str = "default") -> Dict[str, Any]:
+    def get_risk_summary(self, pool_name: str = "default") -> dict[str, Any]:
         """
         获取风险摘要
 

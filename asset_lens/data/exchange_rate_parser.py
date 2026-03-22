@@ -4,10 +4,7 @@
 """
 
 import csv
-from datetime import datetime
-from decimal import Decimal
 from pathlib import Path
-from typing import List
 
 from ..data.models import ExchangeRateHistory
 from .parser_utils import parse_date, parse_decimal
@@ -37,7 +34,7 @@ class ExchangeRateParser:
             return None
 
     @classmethod
-    def parse_csv_file(cls, csv_path: Path) -> List[ExchangeRateHistory]:
+    def parse_csv_file(cls, csv_path: Path) -> list[ExchangeRateHistory]:
         """
         解析汇率历史 CSV 文件
         Args:
@@ -51,7 +48,7 @@ class ExchangeRateParser:
         rates = []
 
         try:
-            with open(csv_path, "r", encoding="utf-8-sig") as f:
+            with open(csv_path, encoding="utf-8-sig") as f:
                 reader = csv.DictReader(f)
 
                 for row_num, row in enumerate(reader, start=2):

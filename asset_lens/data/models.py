@@ -7,10 +7,10 @@ from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from asset_lens.core.platform_loader import PlatformLoader
+    pass
 
 
 class Currency(str, Enum):
@@ -105,7 +105,7 @@ class InvestmentProduct:
     investment_type: InvestmentType  # 投资类型
     name: str  # 产品名称
     risk_level: RiskLevel  # 风险等级
-    platform_amounts: Dict[str, Decimal] = field(default_factory=dict)  # 平台金额字典
+    platform_amounts: dict[str, Decimal] = field(default_factory=dict)  # 平台金额字典
     maturity_date: date | None = None  # 到期时间
     is_rolling: bool = False  # 是否滚动
     start_date: date | None = None  # 开始日期
@@ -127,7 +127,7 @@ class InvestmentProduct:
     # 计算字段
     current_amount: Decimal | None = None  # 当前金额
     annualized_return_irr: Decimal | None = None  # IRR 年化收益率
-    transactions: List[Transaction] = field(default_factory=list)  # 解析后的交易记录
+    transactions: list[Transaction] = field(default_factory=list)  # 解析后的交易记录
 
     def get_amount(self, platform_id: str) -> Decimal:
         """获取平台金额"""
@@ -174,7 +174,7 @@ class InvestmentProduct:
         else:
             return Platform.OTHER
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """转换为字典（与 ts-demo 格式一致）"""
         result = {
             "名称": self.name,
@@ -252,7 +252,7 @@ class AssetSummary:
     """资产汇总记录"""
 
     summary_date: date  # 汇总日期
-    platform_amounts: Dict[str, Decimal] = field(default_factory=dict)  # 平台金额字典
+    platform_amounts: dict[str, Decimal] = field(default_factory=dict)  # 平台金额字典
     credit_card_amount: Decimal = Decimal("0")  # 信用卡金额
     jingdong_white_amount: Decimal = Decimal("0")  # 京东白条金额
     douyin_monthly_amount: Decimal = Decimal("0")  # 抖音月付金额
@@ -304,7 +304,7 @@ class AssetSummary:
         """总投资价值"""
         return self.total_platform_amount + self.total_credit_amount + self.gold_amount
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """转换为字典"""
         result = {
             "汇总日期": self.summary_date.isoformat(),
@@ -346,7 +346,7 @@ class ExchangeRateHistory:
     usd_rate: Decimal | None = None  # 美元汇率
     hkd_rate: Decimal | None = None  # 港元汇率
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """转换为字典"""
         return {
             "汇率日期": self.rate_date.isoformat(),
@@ -378,7 +378,7 @@ class SellRecord:
     transaction_records: str | None = None  # 交易记录
     default_order: int | None = None  # 默认顺序
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """转换为字典"""
         return {
             "卖出日期": self.sell_date.isoformat(),
@@ -406,22 +406,22 @@ class SellRecord:
 class Portfolio:
     """投资组合"""
 
-    products: List[InvestmentProduct] = field(default_factory=list)
+    products: list[InvestmentProduct] = field(default_factory=list)
     usd_rate: Decimal = Decimal("7.1242")  # 美元汇率
     hkd_rate: Decimal = Decimal("0.9157")  # 港元汇率
-    asset_summaries: List[AssetSummary] = field(default_factory=list)  # 资产汇总记录
-    exchange_rate_history: List[ExchangeRateHistory] = field(default_factory=list)  # 汇率历史
-    sell_records: List[SellRecord] = field(default_factory=list)  # 卖出记录
+    asset_summaries: list[AssetSummary] = field(default_factory=list)  # 资产汇总记录
+    exchange_rate_history: list[ExchangeRateHistory] = field(default_factory=list)  # 汇率历史
+    sell_records: list[SellRecord] = field(default_factory=list)  # 卖出记录
 
     def add_product(self, product: InvestmentProduct) -> None:
         """添加投资产品"""
         self.products.append(product)
 
-    def get_by_type(self, investment_type: InvestmentType) -> List[InvestmentProduct]:
+    def get_by_type(self, investment_type: InvestmentType) -> list[InvestmentProduct]:
         """按类型获取投资产品"""
         return [p for p in self.products if p.investment_type == investment_type]
 
-    def get_by_risk(self, risk_level: RiskLevel) -> List[InvestmentProduct]:
+    def get_by_risk(self, risk_level: RiskLevel) -> list[InvestmentProduct]:
         """按风险等级获取投资产品"""
         return [p for p in self.products if p.risk_level == risk_level]
 
@@ -571,9 +571,9 @@ class Portfolio:
             return None
         return (self.total_profit / self.total_initial) * Decimal("100")
 
-    def get_type_distribution(self) -> Dict[str, Any]:
+    def get_type_distribution(self) -> dict[str, Any]:
         """获取类型分布"""
-        type_stats: Dict[str, Dict[str, Any]] = {}
+        type_stats: dict[str, dict[str, Any]] = {}
         for product in self.products:
             type_name = product.investment_type.value
             if type_name not in type_stats:
@@ -597,9 +597,9 @@ class Portfolio:
 
         return type_stats
 
-    def get_risk_distribution(self) -> Dict[str, Any]:
+    def get_risk_distribution(self) -> dict[str, Any]:
         """获取风险分布"""
-        risk_stats: Dict[str, Dict[str, Any]] = {}
+        risk_stats: dict[str, dict[str, Any]] = {}
         for product in self.products:
             risk_name = product.risk_level.value
             if risk_name not in risk_stats:
