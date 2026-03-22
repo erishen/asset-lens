@@ -10,10 +10,9 @@ Market environment analyzer for asset-lens.
 """
 
 import json
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
 
 from ..config import config
 
@@ -30,9 +29,9 @@ class MarketEnvironment:
     volatility: float
     volume_trend: str  # increasing, decreasing, stable
     sentiment: str  # optimistic, pessimistic, neutral
-    hot_sectors: List[str]
-    cold_sectors: List[str]
-    recommended_strategies: List[str]
+    hot_sectors: list[str]
+    cold_sectors: list[str]
+    recommended_strategies: list[str]
     risk_level: str  # low, medium, high
 
 
@@ -41,8 +40,8 @@ class StrategyAdaptation:
     """策略适配"""
 
     strategy_name: str
-    original_params: Dict[str, Any]
-    adapted_params: Dict[str, Any]
+    original_params: dict[str, Any]
+    adapted_params: dict[str, Any]
     reason: str
     expected_performance: str  # good, medium, poor
 
@@ -53,14 +52,14 @@ class MarketEnvironmentAnalyzer:
     def __init__(self):
         self.cache_path = config.cache_path
         self.cache_file = self.cache_path / "market_environment.json"
-        self.history: List[MarketEnvironment] = []
+        self.history: list[MarketEnvironment] = []
         self._load_history()
 
     def _load_history(self) -> None:
         """加载历史记录"""
         if self.cache_file.exists():
             try:
-                with open(self.cache_file, "r", encoding="utf-8") as f:
+                with open(self.cache_file, encoding="utf-8") as f:
                     data = json.load(f)
                     self.history = [
                         MarketEnvironment(
@@ -109,8 +108,8 @@ class MarketEnvironmentAnalyzer:
 
     def analyze_environment(
         self,
-        index_data: Optional[Dict[str, Any]] = None,
-        stocks_data: Optional[List[Dict[str, Any]]] = None,
+        index_data: dict[str, Any] | None = None,
+        stocks_data: list[dict[str, Any]] | None = None,
     ) -> MarketEnvironment:
         """
         分析当前市场环境
@@ -184,7 +183,7 @@ class MarketEnvironmentAnalyzer:
         else:
             return "oscillation"
 
-    def _analyze_volume_trend(self, stocks_data: Optional[List[Dict[str, Any]]]) -> str:
+    def _analyze_volume_trend(self, stocks_data: list[dict[str, Any]] | None) -> str:
         """分析成交量趋势"""
         if not stocks_data:
             return "stable"
@@ -218,13 +217,13 @@ class MarketEnvironmentAnalyzer:
             return "neutral"
 
     def _analyze_sectors(
-        self, stocks_data: Optional[List[Dict[str, Any]]]
-    ) -> Tuple[List[str], List[str]]:
+        self, stocks_data: list[dict[str, Any]] | None
+    ) -> tuple[list[str], list[str]]:
         """分析热门和冷门行业"""
         if not stocks_data:
             return [], []
 
-        sector_changes: Dict[str, List[float]] = {}
+        sector_changes: dict[str, list[float]] = {}
         for stock in stocks_data:
             sector = stock.get("industry", "其他")
             change = stock.get("change_percent", 0)
@@ -247,7 +246,7 @@ class MarketEnvironmentAnalyzer:
 
     def _recommend_strategies(
         self, market_type: str, volatility: float, sentiment: str
-    ) -> List[str]:
+    ) -> list[str]:
         """推荐策略"""
         recommendations = []
 
@@ -374,7 +373,7 @@ class MarketEnvironmentAnalyzer:
             expected_performance=expected,
         )
 
-    def _get_original_params(self, strategy_name: str) -> Dict[str, Any]:
+    def _get_original_params(self, strategy_name: str) -> dict[str, Any]:
         """获取策略原始参数"""
         default_params = {
             "value": {
@@ -432,7 +431,7 @@ class MarketEnvironmentAnalyzer:
         market_type_cn = {"bull": "牛市", "bear": "熊市", "oscillation": "震荡市"}
         report.append(f"\n市场类型: {market_type_cn.get(latest.market_type, latest.market_type)}")
 
-        report.append(f"\n指数表现:")
+        report.append("\n指数表现:")
         report.append(f"  5日涨跌: {latest.index_change_5d:+.2f}%")
         report.append(f"  20日涨跌: {latest.index_change_20d:+.2f}%")
         report.append(f"  60日涨跌: {latest.index_change_60d:+.2f}%")

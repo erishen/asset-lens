@@ -10,9 +10,8 @@ Configuration management for asset-lens.
 """
 
 import json
-import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from dotenv import load_dotenv
 from pydantic import Field, field_validator
@@ -23,64 +22,64 @@ load_dotenv()
 
 class Settings(BaseSettings):
     """应用配置 - 使用 Pydantic BaseSettings"""
-    
+
     data_mode: str = Field(default="sample", description="数据模式: sample 或 real")
-    
-    finnhub_api_key: Optional[str] = Field(default=None, description="Finnhub API 密钥")
-    alphavantage_api_key: Optional[str] = Field(default=None, description="Alpha Vantage API 密钥")
-    tushare_token: Optional[str] = Field(default=None, description="Tushare Token")
-    fred_api_key: Optional[str] = Field(default=None, description="FRED API 密钥")
-    
-    deepseek_api_key: Optional[str] = Field(default=None, description="DeepSeek API 密钥")
+
+    finnhub_api_key: str | None = Field(default=None, description="Finnhub API 密钥")
+    alphavantage_api_key: str | None = Field(default=None, description="Alpha Vantage API 密钥")
+    tushare_token: str | None = Field(default=None, description="Tushare Token")
+    fred_api_key: str | None = Field(default=None, description="FRED API 密钥")
+
+    deepseek_api_key: str | None = Field(default=None, description="DeepSeek API 密钥")
     ai_model: str = Field(default="deepseek-chat", description="AI 模型名称")
     ai_cache_ttl: int = Field(default=3600, description="AI 缓存 TTL（秒）")
-    
-    joinquant_username: Optional[str] = Field(default=None, description="JoinQuant 用户名")
-    joinquant_password: Optional[str] = Field(default=None, description="JoinQuant 密码")
-    
+
+    joinquant_username: str | None = Field(default=None, description="JoinQuant 用户名")
+    joinquant_password: str | None = Field(default=None, description="JoinQuant 密码")
+
     sample_data_path: str = Field(default="data/sample_data", description="示例数据路径")
     real_data_path: str = Field(default="data/real", description="真实数据路径")
     output_path: str = Field(default="output", description="输出路径")
     cache_path: str = Field(default="cache", description="缓存路径")
     config_path: str = Field(default="config", description="配置路径")
-    
+
     default_usd_rate: float = Field(default=6.90, description="默认美元汇率")
     default_hkd_rate: float = Field(default=0.89, description="默认港元汇率")
-    
+
     min_return_threshold: float = Field(default=2.0, description="最小收益阈值")
     workday_ratio: float = Field(default=0.7, description="工作日比例")
-    
+
     output_format: str = Field(default="console,csv", description="输出格式")
     report_language: str = Field(default="zh", description="报告语言")
-    
+
     @field_validator("data_mode")
     @classmethod
     def validate_data_mode(cls, v: str) -> str:
         if v not in ("sample", "real"):
             raise ValueError(f"data_mode 必须是 'sample' 或 'real'，当前值: {v}")
         return v
-    
+
     @field_validator("finnhub_api_key")
     @classmethod
-    def validate_finnhub_api_key(cls, v: Optional[str]) -> Optional[str]:
+    def validate_finnhub_api_key(cls, v: str | None) -> str | None:
         if v and len(v) < 10:
             raise ValueError("FINNHUB_API_KEY 格式不正确，密钥长度应该至少 10 个字符")
         return v
-    
+
     @field_validator("default_usd_rate")
     @classmethod
     def validate_usd_rate(cls, v: float) -> float:
         if not (5.0 < v < 10.0):
             raise ValueError(f"默认美元汇率应该在 5-10 之间，当前值: {v}")
         return v
-    
+
     @field_validator("default_hkd_rate")
     @classmethod
     def validate_hkd_rate(cls, v: float) -> float:
         if not (0.7 < v < 1.2):
             raise ValueError(f"默认港元汇率应该在 0.7-1.2 之间，当前值: {v}")
         return v
-    
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
@@ -93,7 +92,7 @@ settings = Settings()
 class PlatformConfig:
     """平台配置类"""
 
-    def __init__(self, platform_data: Dict[str, Any]):
+    def __init__(self, platform_data: dict[str, Any]):
         self.id: str = platform_data.get("id", "")
         self.name: str = platform_data.get("name", "")
         self.field: str = platform_data.get("field", "")
@@ -104,7 +103,7 @@ class PlatformConfig:
 class RiskLevelConfig:
     """风险等级配置类"""
 
-    def __init__(self, risk_data: Dict[str, Any]):
+    def __init__(self, risk_data: dict[str, Any]):
         self.name: str = risk_data.get("name", "")
         self.color: str = risk_data.get("color", "")
         self.max_allocation: float = risk_data.get("max_allocation", 0.0)
@@ -114,12 +113,12 @@ class RiskLevelConfig:
 class InvestmentTypeConfig:
     """投资类型配置类"""
 
-    def __init__(self, type_data: Dict[str, Any]):
+    def __init__(self, type_data: dict[str, Any]):
         self.id: str = type_data.get("id", "")
         self.name: str = type_data.get("name", "")
         self.risk_level: str = type_data.get("risk_level", "unknown")
         self.description: str = type_data.get("description", "")
-        self.examples: List[str] = type_data.get("examples", [])
+        self.examples: list[str] = type_data.get("examples", [])
 
 
 class Config:
@@ -127,14 +126,14 @@ class Config:
 
     def __init__(self):
         self._settings = settings
-        
+
         self.data_mode: str = self._settings.data_mode
 
         self.finnhub_api_key: str | None = self._settings.finnhub_api_key
         self.alphavantage_api_key: str | None = self._settings.alphavantage_api_key
         self.tushare_token: str | None = self._settings.tushare_token
         self.fred_api_key: str | None = self._settings.fred_api_key
-        
+
         self.joinquant_username: str | None = self._settings.joinquant_username
         self.joinquant_password: str | None = self._settings.joinquant_password
 
@@ -157,10 +156,10 @@ class Config:
 
         self.report_language: str = self._settings.report_language
 
-        self._platforms: List[PlatformConfig] | None = None
-        self._platform_types: Dict[str, str] | None = None
-        self._investment_types: List[InvestmentTypeConfig] | None = None
-        self._risk_levels: Dict[str, RiskLevelConfig] | None = None
+        self._platforms: list[PlatformConfig] | None = None
+        self._platform_types: dict[str, str] | None = None
+        self._investment_types: list[InvestmentTypeConfig] | None = None
+        self._risk_levels: dict[str, RiskLevelConfig] | None = None
 
     def _load_platform_config(self) -> None:
         """加载平台配置文件"""
@@ -174,28 +173,28 @@ class Config:
             return
 
         try:
-            with open(config_file, "r", encoding="utf-8") as f:
+            with open(config_file, encoding="utf-8") as f:
                 data = json.load(f)
 
             self._platforms = [PlatformConfig(p) for p in data.get("platforms", [])]
             self._platform_types = data.get("platform_types", {})
-        except (json.JSONDecodeError, IOError):
+        except (OSError, json.JSONDecodeError):
             self._platforms = []
             self._platform_types = {}
 
     @property
-    def platforms(self) -> List[PlatformConfig]:
+    def platforms(self) -> list[PlatformConfig]:
         """获取平台配置列表"""
         self._load_platform_config()
         return self._platforms or []
 
     @property
-    def platform_types(self) -> Dict[str, str]:
+    def platform_types(self) -> dict[str, str]:
         """获取平台类型映射"""
         self._load_platform_config()
         return self._platform_types or {}
 
-    def get_platform_mapping(self) -> Dict[str, str]:
+    def get_platform_mapping(self) -> dict[str, str]:
         """获取平台名称到字段的映射"""
         return {p.name: p.field for p in self.platforms}
 
@@ -225,7 +224,7 @@ class Config:
             return
 
         try:
-            with open(config_file, "r", encoding="utf-8") as f:
+            with open(config_file, encoding="utf-8") as f:
                 data = json.load(f)
 
             self._investment_types = [
@@ -234,18 +233,18 @@ class Config:
             self._risk_levels = {
                 k: RiskLevelConfig(v) for k, v in data.get("risk_levels", {}).items()
             }
-        except (json.JSONDecodeError, IOError):
+        except (OSError, json.JSONDecodeError):
             self._investment_types = []
             self._risk_levels = {}
 
     @property
-    def investment_types(self) -> List[InvestmentTypeConfig]:
+    def investment_types(self) -> list[InvestmentTypeConfig]:
         """获取投资类型配置列表"""
         self._load_investment_type_config()
         return self._investment_types or []
 
     @property
-    def risk_levels(self) -> Dict[str, RiskLevelConfig]:
+    def risk_levels(self) -> dict[str, RiskLevelConfig]:
         """获取风险等级配置映射"""
         self._load_investment_type_config()
         return self._risk_levels or {}

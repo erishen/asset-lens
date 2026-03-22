@@ -5,8 +5,8 @@ Compare API Routes - 对比分析相关 API
 from fastapi import APIRouter, Query
 
 from ...data.comparison import portfolio_comparator
-from ...data.snapshot import snapshot_manager
 from ...data.csv_parser import CSVParser
+from ...data.snapshot import snapshot_manager
 
 router = APIRouter(prefix="/api/compare", tags=["compare"])
 
@@ -57,7 +57,7 @@ async def create_snapshot():
         total_initial = sum(float(p.initial_amount or 0) for p in products)
         total_profit = total_assets - total_initial
         return_rate = (total_profit / total_initial * 100) if total_initial > 0 else 0
-        
+
         positions = [
             {
                 "code": getattr(p, 'code', ''),
@@ -68,7 +68,7 @@ async def create_snapshot():
             }
             for p in products
         ]
-        
+
         snapshot = snapshot_manager.create_snapshot(
             total_assets=total_assets,
             total_profit=total_profit,
@@ -76,7 +76,7 @@ async def create_snapshot():
             position_count=len(products),
             positions=positions,
         )
-        
+
         return {
             "success": True,
             "snapshot_id": snapshot.snapshot_id,

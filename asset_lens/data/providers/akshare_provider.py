@@ -3,7 +3,7 @@ AkShare Data Provider implementation.
 AkShare 数据源实现
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from . import DataType, ProviderType
 from .base import BaseProvider
@@ -15,7 +15,7 @@ class AkshareProvider(BaseProvider):
     
     使用 AkShare 获取 A 股、基金、期货等数据
     """
-    
+
     def __init__(self, priority: int = 10) -> None:
         super().__init__(
             name="akshare",
@@ -30,7 +30,7 @@ class AkshareProvider(BaseProvider):
             ],
         )
         self._akshare = None
-    
+
     @property
     def akshare(self):
         """延迟加载 AkShare"""
@@ -41,21 +41,21 @@ class AkshareProvider(BaseProvider):
             except ImportError:
                 pass
         return self._akshare
-    
+
     def _check_availability(self) -> bool:
         """检查 AkShare 是否可用"""
         return self.akshare is not None
-    
+
     def fetch(
         self,
         data_type: DataType,
         symbol: str,
         **kwargs,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """获取数据"""
         if not self.is_available():
             return None
-        
+
         try:
             if data_type == DataType.STOCK_CN:
                 return self._fetch_stock_quote(symbol)
@@ -69,15 +69,15 @@ class AkshareProvider(BaseProvider):
                 return None
         except Exception:
             return None
-    
-    def _fetch_stock_quote(self, symbol: str) -> Optional[Dict[str, Any]]:
+
+    def _fetch_stock_quote(self, symbol: str) -> dict[str, Any] | None:
         """获取 A 股行情"""
         try:
             df = self.akshare.stock_zh_a_spot_em()
             row = df[df["代码"] == symbol]
             if row.empty:
                 return None
-            
+
             row = row.iloc[0]
             return {
                 "symbol": symbol,
@@ -95,14 +95,14 @@ class AkshareProvider(BaseProvider):
             }
         except Exception:
             return None
-    
-    def _fetch_fund_quote(self, symbol: str) -> Optional[Dict[str, Any]]:
+
+    def _fetch_fund_quote(self, symbol: str) -> dict[str, Any] | None:
         """获取基金净值"""
         try:
             df = self.akshare.fund_open_fund_info_em(symbol=symbol, indicator="单位净值走势")
             if df is None or df.empty:
                 return None
-            
+
             latest = df.iloc[-1]
             return {
                 "symbol": symbol,
@@ -112,18 +112,18 @@ class AkshareProvider(BaseProvider):
             }
         except Exception:
             return None
-    
-    def _fetch_futures_quote(self, symbol: str) -> Optional[Dict[str, Any]]:
+
+    def _fetch_futures_quote(self, symbol: str) -> dict[str, Any] | None:
         """获取期货行情"""
         try:
             df = self.akshare.futures_main_sina()
             if df is None or df.empty:
                 return None
-            
+
             row = df[df["symbol"] == symbol]
             if row.empty:
                 return None
-            
+
             row = row.iloc[0]
             return {
                 "symbol": symbol,
@@ -135,18 +135,18 @@ class AkshareProvider(BaseProvider):
             }
         except Exception:
             return None
-    
-    def _fetch_index_quote(self, symbol: str) -> Optional[Dict[str, Any]]:
+
+    def _fetch_index_quote(self, symbol: str) -> dict[str, Any] | None:
         """获取指数行情"""
         try:
             df = self.akshare.stock_zh_index_spot_em()
             if df is None or df.empty:
                 return None
-            
+
             row = df[df["代码"] == symbol]
             if row.empty:
                 return None
-            
+
             row = row.iloc[0]
             return {
                 "symbol": symbol,

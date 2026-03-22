@@ -26,7 +26,7 @@ def interactive_analyze():
     )
 
     click.echo(f"\n正在分析 {data_mode} 数据...")
-    click.echo("请运行: make analyze DATA_MODE={}".format(data_mode))
+    click.echo(f"请运行: make analyze DATA_MODE={data_mode}")
 
 
 def interactive_calculate():
@@ -98,9 +98,9 @@ def interactive_update_market():
 
     click.echo(f"\n正在更新市场数据（数据源: {api}）...")
     if async_mode:
-        click.echo("请运行: make update-market-async API={}".format(api))
+        click.echo(f"请运行: make update-market-async API={api}")
     else:
-        click.echo("请运行: make update-market API={}".format(api))
+        click.echo(f"请运行: make update-market API={api}")
 
 
 def interactive_report():

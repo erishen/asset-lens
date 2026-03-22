@@ -6,8 +6,6 @@ Currency converter for asset-lens.
 import json
 from datetime import datetime
 from decimal import Decimal
-from pathlib import Path
-from typing import Dict, Optional
 
 from ..config import config
 from ..data.models import Currency
@@ -17,12 +15,12 @@ class CurrencyConverter:
     """货币转换器"""
 
     def __init__(self):
-        self.rates: Dict[Currency, Decimal] = {
+        self.rates: dict[Currency, Decimal] = {
             Currency.CNY: Decimal("1.0"),  # 人民币汇率为1
         }
 
         # 加载配置中的默认汇率
-        self.default_rates: Dict[Currency, Decimal | None] = {
+        self.default_rates: dict[Currency, Decimal | None] = {
             Currency.USD: Decimal(str(config.default_usd_rate)),
             Currency.HKD: Decimal(str(config.default_hkd_rate)),
         }
@@ -36,7 +34,7 @@ class CurrencyConverter:
 
         if cache_file.exists():
             try:
-                with open(cache_file, "r", encoding="utf-8") as f:
+                with open(cache_file, encoding="utf-8") as f:
                     cached_data = json.load(f)
                     for currency_str, rate in cached_data.get("rates", {}).items():
                         try:

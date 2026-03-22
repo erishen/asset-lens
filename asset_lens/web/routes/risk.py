@@ -14,7 +14,7 @@ async def get_risk_summary():
     """获取风险摘要"""
     try:
         summary = risk_service.get_risk_summary()
-        
+
         return {
             "risk_score": summary.get("risk_score", 0),
             "risk_level": summary.get("risk_level", "unknown"),

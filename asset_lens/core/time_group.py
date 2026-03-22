@@ -4,9 +4,9 @@ Investment time grouping analysis for asset-lens.
 """
 
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date
 from decimal import Decimal
-from typing import Any, Dict, List
+from typing import Any
 
 from ..data.models import InvestmentProduct
 
@@ -23,9 +23,9 @@ class TimeGroupStats:
     total_profit: Decimal  # 总收益
     avg_return_rate: Decimal  # 平均收益率
     avg_holding_days: float  # 平均持有天数
-    products: List[str]  # 产品名称列表
+    products: list[str]  # 产品名称列表
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """转换为字典"""
         return {
             "分组名称": self.group_name,
@@ -45,10 +45,10 @@ class TimeGroupAnalyzer:
 
     def analyze_by_holding_period(
         self,
-        products: List[InvestmentProduct],
+        products: list[InvestmentProduct],
         short_term_days: int = 90,  # 短期：3个月以内
         mid_term_days: int = 365,  # 中期：3个月到1年
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         按持有时间分组分析
 
@@ -63,7 +63,7 @@ class TimeGroupAnalyzer:
         today = date.today()
 
         # 初始化分组
-        groups: Dict[str, Dict[str, Any]] = {
+        groups: dict[str, dict[str, Any]] = {
             "short_term": {
                 "name": "短期投资",
                 "description": f"{short_term_days}天以内",
@@ -178,8 +178,8 @@ class TimeGroupAnalyzer:
 
     def analyze_by_start_year(
         self,
-        products: List[InvestmentProduct],
-    ) -> Dict[str, Any]:
+        products: list[InvestmentProduct],
+    ) -> dict[str, Any]:
         """
         按投资起始年份分组分析
 
@@ -189,7 +189,7 @@ class TimeGroupAnalyzer:
         Returns:
             按投资起始年份分组的结果
         """
-        year_groups: Dict[int, Dict[str, Any]] = {}
+        year_groups: dict[int, dict[str, Any]] = {}
 
         for product in products:
             if not product.current_amount or product.current_amount == 0:

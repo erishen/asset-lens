@@ -4,7 +4,7 @@ Alpha Vantage 数据源实现
 """
 
 import os
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from . import DataType, ProviderType
 from .base import BaseProvider
@@ -19,10 +19,10 @@ class AlphaVantageProvider(BaseProvider):
     
     使用 Alpha Vantage API 获取美股、外汇等数据
     """
-    
+
     BASE_URL = "https://www.alphavantage.co/query"
-    
-    def __init__(self, api_key: Optional[str] = None, priority: int = 30) -> None:
+
+    def __init__(self, api_key: str | None = None, priority: int = 30) -> None:
         super().__init__(
             name="alpha_vantage",
             provider_type=ProviderType.ALPHA_VANTAGE,
@@ -33,8 +33,8 @@ class AlphaVantageProvider(BaseProvider):
             ],
         )
         self._api_key = api_key or os.getenv("ALPHAVANTAGE_API_KEY")
-        self._session: Optional["requests.Session"] = None
-    
+        self._session: requests.Session | None = None
+
     @property
     def session(self):
         """延迟加载 requests session"""
@@ -45,21 +45,21 @@ class AlphaVantageProvider(BaseProvider):
             except ImportError:
                 pass
         return self._session
-    
+
     def _check_availability(self) -> bool:
         """检查 Alpha Vantage 是否可用"""
         return self._api_key is not None and self.session is not None
-    
+
     def fetch(
         self,
         data_type: DataType,
         symbol: str,
         **kwargs,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """获取数据"""
         if not self.is_available():
             return None
-        
+
         try:
             if data_type == DataType.STOCK_US:
                 return self._fetch_stock_quote(symbol)
@@ -69,8 +69,8 @@ class AlphaVantageProvider(BaseProvider):
                 return None
         except Exception:
             return None
-    
-    def _fetch_stock_quote(self, symbol: str) -> Optional[Dict[str, Any]]:
+
+    def _fetch_stock_quote(self, symbol: str) -> dict[str, Any] | None:
         """获取美股行情"""
         try:
             params = {
@@ -78,15 +78,15 @@ class AlphaVantageProvider(BaseProvider):
                 "symbol": symbol,
                 "apikey": self._api_key,
             }
-            
+
             response = self.session.get(self.BASE_URL, params=params, timeout=10)
             if response.status_code != 200:
                 return None
-            
+
             data = response.json()
             if "Global Quote" not in data:
                 return None
-            
+
             quote = data["Global Quote"]
             return {
                 "symbol": symbol,
@@ -102,8 +102,8 @@ class AlphaVantageProvider(BaseProvider):
             }
         except Exception:
             return None
-    
-    def _fetch_index_quote(self, symbol: str) -> Optional[Dict[str, Any]]:
+
+    def _fetch_index_quote(self, symbol: str) -> dict[str, Any] | None:
         """获取指数行情"""
         return self._fetch_stock_quote(symbol)
 

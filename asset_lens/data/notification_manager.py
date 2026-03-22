@@ -14,8 +14,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..config import config
 
@@ -29,7 +28,7 @@ class NotificationConfig:
     email_smtp_port: int = 587
     email_username: str = ""
     email_password: str = ""
-    email_recipients: Optional[List[str]] = None
+    email_recipients: list[str] | None = None
 
     wechat_enabled: bool = False
     wechat_server_key: str = ""
@@ -54,7 +53,7 @@ class NotificationManager:
 
         if config_file.exists():
             try:
-                with open(config_file, "r", encoding="utf-8") as f:
+                with open(config_file, encoding="utf-8") as f:
                     data = json.load(f)
                 return NotificationConfig(**data)
             except Exception:
@@ -66,8 +65,8 @@ class NotificationManager:
         self,
         subject: str,
         content: str,
-        html_content: Optional[str] = None,
-        recipients: Optional[List[str]] = None,
+        html_content: str | None = None,
+        recipients: list[str] | None = None,
     ) -> bool:
         """
         发送邮件通知
@@ -175,9 +174,9 @@ class NotificationManager:
         self,
         title: str,
         content: str,
-        html_content: Optional[str] = None,
-        channels: Optional[List[str]] = None,
-    ) -> Dict[str, bool]:
+        html_content: str | None = None,
+        channels: list[str] | None = None,
+    ) -> dict[str, bool]:
         """
         发送通知（支持多渠道）
 
@@ -203,7 +202,7 @@ class NotificationManager:
 
         return results
 
-    def notify_daily_report(self, report_data: Dict[str, Any]) -> Dict[str, bool]:
+    def notify_daily_report(self, report_data: dict[str, Any]) -> dict[str, bool]:
         """发送每日报告通知"""
         subject = f"每日投资报告 - {datetime.now().strftime('%Y-%m-%d')}"
 
@@ -212,7 +211,7 @@ class NotificationManager:
 
         return self.send_notification(subject, content, html_content)
 
-    def notify_risk_alert(self, alert_data: Dict[str, Any]) -> Dict[str, bool]:
+    def notify_risk_alert(self, alert_data: dict[str, Any]) -> dict[str, bool]:
         """发送风险预警通知"""
         subject = f"⚠️ 风险预警 - {alert_data.get('type', 'Unknown')}"
 
@@ -232,7 +231,7 @@ class NotificationManager:
 
         return self.send_notification(subject, content)
 
-    def notify_trade_signal(self, signal_data: Dict[str, Any]) -> Dict[str, bool]:
+    def notify_trade_signal(self, signal_data: dict[str, Any]) -> dict[str, bool]:
         """发送交易信号通知"""
         subject = f"📊 交易信号 - {signal_data.get('code', '')}"
 
@@ -250,7 +249,7 @@ class NotificationManager:
 
         return self.send_notification(subject, content)
 
-    def _format_daily_report_text(self, data: Dict[str, Any]) -> str:
+    def _format_daily_report_text(self, data: dict[str, Any]) -> str:
         """格式化每日报告文本"""
         lines = [
             "📊 每日投资报告",
@@ -272,7 +271,7 @@ class NotificationManager:
 
         return "\n".join(lines)
 
-    def _format_daily_report_html(self, data: Dict[str, Any]) -> str:
+    def _format_daily_report_html(self, data: dict[str, Any]) -> str:
         """格式化每日报告 HTML"""
         html = f"""
 <!DOCTYPE html>

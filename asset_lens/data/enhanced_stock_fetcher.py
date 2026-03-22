@@ -9,11 +9,11 @@ Enhanced Stock Data Fetcher - 增强版股票数据获取器
 3. 中证指数 - 成分股（备用）
 """
 
-import time
 import logging
+import time
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -22,10 +22,10 @@ logger = logging.getLogger(__name__)
 class DataSourceResult:
     """数据源获取结果"""
     success: bool
-    data: Optional[List[Dict[str, Any]]] = None
+    data: list[dict[str, Any]] | None = None
     source: str = ""
     latency: float = 0.0
-    error: Optional[str] = None
+    error: str | None = None
 
 
 @dataclass
@@ -33,11 +33,11 @@ class DataSourceStatus:
     """数据源状态"""
     name: str
     available: bool = True
-    last_check: Optional[datetime] = None
+    last_check: datetime | None = None
     error_count: int = 0
     success_count: int = 0
-    last_error: Optional[str] = None
-    last_success: Optional[datetime] = None
+    last_error: str | None = None
+    last_success: datetime | None = None
     avg_latency: float = 0.0
 
 
@@ -47,14 +47,14 @@ class EnhancedStockDataFetcher:
     def __init__(self, max_retries: int = 2, timeout: int = 10):
         self.max_retries = max_retries
         self.timeout = timeout
-        self._source_status: Dict[str, DataSourceStatus] = {}
+        self._source_status: dict[str, DataSourceStatus] = {}
 
     def fetch_stocks_for_strategy(
         self,
         min_change: float = 3.0,
         max_change: float = 9.0,
         limit: int = 500,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """获取符合策略条件的股票（多数据源故障切换）"""
         sources = [
             ("eastmoney_spot", self._fetch_eastmoney_spot),
@@ -116,7 +116,7 @@ class EnhancedStockDataFetcher:
         self,
         min_change: float,
         max_change: float,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """从东方财富获取实时行情"""
         import akshare as ak
 
@@ -150,7 +150,7 @@ class EnhancedStockDataFetcher:
         self,
         min_change: float,
         max_change: float,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """从新浪获取实时行情"""
         import akshare as ak
 
@@ -184,7 +184,7 @@ class EnhancedStockDataFetcher:
         self,
         min_change: float,
         max_change: float,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """获取指数成分股（备用方案）"""
         import akshare as ak
 
@@ -217,7 +217,7 @@ class EnhancedStockDataFetcher:
         source: str,
         success: bool,
         latency: float,
-        error: Optional[str] = None,
+        error: str | None = None,
     ):
         """更新数据源状态"""
         if source not in self._source_status:
@@ -237,7 +237,7 @@ class EnhancedStockDataFetcher:
             if status.error_count > 3:
                 status.available = False
 
-    def get_source_stats(self) -> Dict[str, Any]:
+    def get_source_stats(self) -> dict[str, Any]:
         """获取数据源统计信息"""
         stats = {}
         for name, status in self._source_status.items():

@@ -3,21 +3,68 @@ Common parser utilities for asset-lens.
 通用解析工具模块，避免代码重复
 """
 
+import re
 from datetime import datetime
-from decimal import Decimal
-from typing import Dict, List, Optional
-
-from .parsers.field_parsers import (
-    parse_decimal,
-    parse_date,
-    parse_boolean,
-    parse_investment_type,
-    parse_risk_level,
-    parse_investment_days,
-)
+from decimal import Decimal, InvalidOperation
 
 
-SELL_RECORD_FIELDS: List[str] = [
+def parse_date(value: str | None) -> datetime | None:
+    """解析日期字符串"""
+    if not value:
+        return None
+    
+    value = str(value).strip()
+    if not value:
+        return None
+    
+    date_formats = [
+        "%Y-%m-%d",
+        "%Y/%m/%d",
+        "%Y.%m.%d",
+        "%Y%m%d",
+    ]
+    
+    for fmt in date_formats:
+        try:
+            return datetime.strptime(value, fmt)
+        except (ValueError, TypeError):
+            continue
+    
+    if " " in value:
+        date_part = value.split(" ")[0]
+        time_match = re.search(r"(\d{1,2}):(\d{1,2}):?(\d{1,2})?", value)
+        
+        for fmt in date_formats:
+            try:
+                dt = datetime.strptime(date_part, fmt)
+                if time_match:
+                    hour = int(time_match.group(1))
+                    minute = int(time_match.group(2))
+                    second = int(time_match.group(3)) if time_match.group(3) else 0
+                    return dt.replace(hour=hour, minute=minute, second=second)
+                return dt
+            except (ValueError, TypeError):
+                continue
+    
+    return None
+
+
+def parse_decimal(value: str | None) -> Decimal | None:
+    """解析数字字符串"""
+    if not value:
+        return None
+    
+    value_str = str(value).replace(",", "").replace("¥", "").strip()
+    if not value_str:
+        return None
+    
+    try:
+        return Decimal(value_str)
+    except (InvalidOperation, ValueError, TypeError):
+        return None
+
+
+SELL_RECORD_FIELDS: list[str] = [
     "类型",
     "名称",
     "风险",
@@ -51,7 +98,7 @@ SELL_RECORD_FIELDS: List[str] = [
     "默认顺序",
 ]
 
-SELL_RECORD_EXPORT_FIELDS: List[str] = [
+SELL_RECORD_EXPORT_FIELDS: list[str] = [
     "卖出日期",
     "名称",
     "风险等级",
@@ -73,7 +120,7 @@ SELL_RECORD_EXPORT_FIELDS: List[str] = [
 ]
 
 
-def calculate_return_rate(stats: Dict[str, Decimal]) -> Decimal:
+def calculate_return_rate(stats: dict[str, Decimal]) -> Decimal:
     """计算收益率"""
     if stats.get("total_initial", Decimal("0")) > 0:
         return stats["total_profit"] / stats["total_initial"] * Decimal("100")

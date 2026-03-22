@@ -4,16 +4,14 @@
 """
 
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import date
 from decimal import Decimal
 from enum import Enum
-from typing import List, Optional, Tuple
 
 from ..core.holidays import (
     calculate_fund_trading_days,
     calculate_working_days,
     get_last_fund_trading_day,
-    is_fund_trading_day,
 )
 
 
@@ -44,7 +42,7 @@ class Transaction:
 class ParsedTransactions:
     """解析后的交易记录集合"""
 
-    transactions: List[Transaction]
+    transactions: list[Transaction]
     total_buy: Decimal
     total_sell: Decimal
     net_invest: Decimal
@@ -79,7 +77,7 @@ def parse_date(date_str: str, suffix: int) -> date:
     raise ValueError(f"无法解析日期: {date_str}")
 
 
-def parse_stop_periods(transaction_string: str) -> List[Tuple[date, date]]:
+def parse_stop_periods(transaction_string: str) -> list[tuple[date, date]]:
     """
     解析暂停期间
 
@@ -87,7 +85,7 @@ def parse_stop_periods(transaction_string: str) -> List[Tuple[date, date]]:
     - 日期范围格式：2025/10/13-2025/10/15:stop
     - 单日格式：2025/10/29:stop
     """
-    stop_periods: List[Tuple[date, date]] = []
+    stop_periods: list[tuple[date, date]] = []
 
     for tx in transaction_string.split(";"):
         s = tx.strip()
@@ -120,8 +118,8 @@ def parse_period_record(
     period_record: str,
     suffix: int,
     is_qdii: bool = False,
-    stop_periods: Optional[List[Tuple[date, date]]] = None,
-) -> List[Transaction]:
+    stop_periods: list[tuple[date, date]] | None = None,
+) -> list[Transaction]:
     """
     解析定投期间记录
 
@@ -131,7 +129,7 @@ def parse_period_record(
     - 浮动定投：2025/9/19-now:buy:100±20
     - 估值模式定投：2025/9/19-now:buy:100-300-500
     """
-    transactions: List[Transaction] = []
+    transactions: list[Transaction] = []
 
     parts = period_record.split(":")
     if len(parts) < 3:
@@ -254,7 +252,7 @@ def parse_transactions(
         )
 
     cleaned = transaction_string.strip().rstrip(";")
-    transactions: List[Transaction] = []
+    transactions: list[Transaction] = []
 
     stop_periods = parse_stop_periods(cleaned)
 
@@ -308,7 +306,7 @@ def calculate_net_invest_from_transactions(
     transaction_string: str,
     suffix: int,
     is_qdii: bool = False,
-    initial_amount: Optional[Decimal] = None,
+    initial_amount: Decimal | None = None,
 ) -> Decimal:
     """
     从交易记录计算净投入

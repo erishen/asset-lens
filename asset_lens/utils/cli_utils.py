@@ -9,11 +9,12 @@ CLI 工具函数
 - 配置管理工具
 """
 
-import json
 import functools
+import json
+from collections.abc import Callable
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 
 import click
 
@@ -41,7 +42,7 @@ def handle_errors(func: Callable) -> Callable:
     return wrapper
 
 
-def load_portfolio_data(data_mode: str = "sample") -> Tuple[Optional[Dict], Optional[str]]:
+def load_portfolio_data(data_mode: str = "sample") -> tuple[dict | None, str | None]:
     """
     加载投资组合数据
     
@@ -51,12 +52,13 @@ def load_portfolio_data(data_mode: str = "sample") -> Tuple[Optional[Dict], Opti
     Returns:
         (数据字典, 错误消息) 元组
     """
+    from decimal import Decimal
+
     from asset_lens.data.csv_parser import CSVParser
     from asset_lens.data.models import Portfolio
-    from decimal import Decimal
-    
+
     config.set_data_mode(data_mode)
-    
+
     try:
         products = CSVParser.load_data()
         portfolio = Portfolio(
@@ -200,7 +202,7 @@ def check_data_freshness(
     file_path: Path,
     max_age_hours: int = 1,
     time_key: str = "update_time"
-) -> Tuple[bool, Optional[str]]:
+) -> tuple[bool, str | None]:
     """
     检查数据文件的新鲜度
     
@@ -214,9 +216,9 @@ def check_data_freshness(
     """
     if not file_path.exists():
         return True, None
-    
+
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             data = json.load(f)
             update_time_str = data.get(time_key, "")
             if update_time_str:
@@ -228,7 +230,7 @@ def check_data_freshness(
                 return False, update_time_str
     except Exception:
         pass
-    
+
     return True, None
 
 
@@ -241,7 +243,7 @@ def ensure_data_dir() -> None:
     config.output_path.mkdir(parents=True, exist_ok=True)
 
 
-def get_data_dir(data_mode: str) -> Optional[Path]:
+def get_data_dir(data_mode: str) -> Path | None:
     """
     获取数据目录路径
     
@@ -271,7 +273,7 @@ def confirm_action(message: str, default: bool = False) -> bool:
     return click.confirm(message, default=default)
 
 
-def prompt_input(message: str, default: Optional[str] = None) -> Optional[str]:
+def prompt_input(message: str, default: str | None = None) -> str | None:
     """
     提示用户输入
     
@@ -290,7 +292,7 @@ def calculate_profit_metrics(
     principal: float,
     current: float,
     days: int = 365
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """
     计算收益指标
     
@@ -305,7 +307,7 @@ def calculate_profit_metrics(
     profit = current - principal
     profit_rate = (profit / principal * 100) if principal > 0 else 0
     annual_return = (profit_rate * 365 / days) if days > 0 else 0
-    
+
     return {
         "profit": profit,
         "profit_rate": profit_rate,
@@ -315,7 +317,7 @@ def calculate_profit_metrics(
     }
 
 
-def print_profit_summary(metrics: Dict[str, float]) -> None:
+def print_profit_summary(metrics: dict[str, float]) -> None:
     """
     打印收益摘要
     

@@ -13,10 +13,10 @@ Strategy Evaluator - 策略评估与解释层
 - 风险提示
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 
 class MarketStyle(Enum):
@@ -47,8 +47,8 @@ class FactorContribution:
     avg_return: float = 0.0
     correlation: float = 0.0
     importance_rank: int = 0
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         return {
             "factor_name": self.factor_name,
             "category": self.category,
@@ -69,8 +69,8 @@ class StyleSensitivity:
     win_rate: float
     trade_count: int
     avg_holding_days: float
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         return {
             "style": self.style.value,
             "return_rate": round(self.return_rate, 2),
@@ -86,10 +86,10 @@ class FailureAnalysis:
     period: str
     market_style: MarketStyle
     return_rate: float
-    failure_reasons: List[str]
-    affected_factors: List[str]
-    
-    def to_dict(self) -> Dict[str, Any]:
+    failure_reasons: list[str]
+    affected_factors: list[str]
+
+    def to_dict(self) -> dict[str, Any]:
         return {
             "period": self.period,
             "market_style": self.market_style.value,
@@ -108,9 +108,9 @@ class OverfittingCheck:
     out_sample_return: float
     return_gap: float
     sharpe_gap: float
-    warnings: List[str]
-    
-    def to_dict(self) -> Dict[str, Any]:
+    warnings: list[str]
+
+    def to_dict(self) -> dict[str, Any]:
         return {
             "is_overfitted": self.is_overfitted,
             "confidence": round(self.confidence, 2),
@@ -128,15 +128,15 @@ class EvaluationResult:
     strategy_name: str
     usability: StrategyUsability
     total_score: float
-    factor_contributions: List[FactorContribution]
-    style_sensitivities: List[StyleSensitivity]
-    failure_periods: List[FailureAnalysis]
+    factor_contributions: list[FactorContribution]
+    style_sensitivities: list[StyleSensitivity]
+    failure_periods: list[FailureAnalysis]
     overfitting_check: OverfittingCheck
-    risk_warnings: List[str]
-    recommendations: List[str]
+    risk_warnings: list[str]
+    recommendations: list[str]
     evaluation_date: str
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         return {
             "strategy_name": self.strategy_name,
             "usability": self.usability.value,
@@ -153,21 +153,21 @@ class EvaluationResult:
 
 class StrategyEvaluator:
     """策略评估器"""
-    
+
     def __init__(self):
         self.min_sample_trades = 30
         self.overfitting_threshold = 0.3
-    
+
     def analyze_factor_contributions(
         self,
-        trades: List[Dict[str, Any]],
-        factor_data: Dict[str, List[Dict[str, Any]]],
-    ) -> List[FactorContribution]:
+        trades: list[dict[str, Any]],
+        factor_data: dict[str, list[dict[str, Any]]],
+    ) -> list[FactorContribution]:
         """分析因子贡献"""
-        contributions: List[FactorContribution] = []
-        
+        contributions: list[FactorContribution] = []
+
         total_all_profit = sum(t.get("profit", 0) for t in trades if t.get("action") == "sell")
-        
+
         for factor_name, factor_values in factor_data.items():
             factor_trades = []
             for trade in trades:
@@ -179,16 +179,16 @@ class StrategyEvaluator:
                             "factor_value": fv.get("value"),
                         })
                         break
-            
+
             if not factor_trades:
                 continue
-            
+
             win_trades = [t for t in factor_trades if t.get("profit", 0) > 0]
             total_profit = sum(t.get("profit", 0) for t in factor_trades)
             avg_return = sum(t.get("profit_rate", 0) for t in factor_trades) / len(factor_trades)
-            
+
             contribution_pct = (total_profit / total_all_profit * 100) if total_all_profit != 0 else 0.0
-            
+
             contributions.append(FactorContribution(
                 factor_name=factor_name,
                 category=factor_values[0].get("category", "unknown") if factor_values else "unknown",
@@ -199,28 +199,28 @@ class StrategyEvaluator:
                 correlation=0.0,
                 importance_rank=0,
             ))
-        
+
         contributions.sort(key=lambda x: x.total_profit, reverse=True)
         for i, c in enumerate(contributions):
             c.importance_rank = i + 1
-        
+
         return contributions
-    
+
     def analyze_style_sensitivity(
         self,
-        trades: List[Dict[str, Any]],
-        market_styles: List[Dict[str, Any]],
-    ) -> List[StyleSensitivity]:
+        trades: list[dict[str, Any]],
+        market_styles: list[dict[str, Any]],
+    ) -> list[StyleSensitivity]:
         """分析风格敏感度"""
-        sensitivities: List[StyleSensitivity] = []
-        
-        style_trades: Dict[MarketStyle, List[Dict[str, Any]]] = {
+        sensitivities: list[StyleSensitivity] = []
+
+        style_trades: dict[MarketStyle, list[dict[str, Any]]] = {
             MarketStyle.BULL: [],
             MarketStyle.BEAR: [],
             MarketStyle.SIDEWAYS: [],
             MarketStyle.VOLATILE: [],
         }
-        
+
         for trade in trades:
             trade_date = trade.get("date", "")
             for ms in market_styles:
@@ -228,14 +228,14 @@ class StrategyEvaluator:
                     style = MarketStyle(ms.get("style", "sideways"))
                     style_trades[style].append(trade)
                     break
-        
+
         for style, style_trade_list in style_trades.items():
             if not style_trade_list:
                 continue
-            
+
             win_trades = [t for t in style_trade_list if t.get("profit", 0) > 0]
             total_return = sum(t.get("profit_rate", 0) for t in style_trade_list)
-            
+
             holding_days = []
             for t in style_trade_list:
                 sell_date = t.get("sell_date") or t.get("date")
@@ -247,9 +247,9 @@ class StrategyEvaluator:
                         holding_days.append((sell_dt - entry_dt).days)
                     except (ValueError, TypeError):
                         pass
-            
+
             avg_holding = sum(holding_days) / len(holding_days) if holding_days else 0
-            
+
             sensitivities.append(StyleSensitivity(
                 style=style,
                 return_rate=total_return / len(style_trade_list) * 100 if style_trade_list else 0,
@@ -257,18 +257,18 @@ class StrategyEvaluator:
                 trade_count=len(style_trade_list),
                 avg_holding_days=avg_holding,
             ))
-        
+
         return sensitivities
-    
+
     def analyze_failures(
         self,
-        daily_values: List[Dict[str, Any]],
-        market_styles: List[Dict[str, Any]],
+        daily_values: list[dict[str, Any]],
+        market_styles: list[dict[str, Any]],
         threshold: float = -5.0,
-    ) -> List[FailureAnalysis]:
+    ) -> list[FailureAnalysis]:
         """分析失效期"""
-        failures: List[FailureAnalysis] = []
-        
+        failures: list[FailureAnalysis] = []
+
         for dv in daily_values:
             if dv.get("daily_return", 0) < threshold:
                 date = dv.get("date", "")
@@ -277,7 +277,7 @@ class StrategyEvaluator:
                     if ms.get("date") == date:
                         style = MarketStyle(ms.get("style", "sideways"))
                         break
-                
+
                 failures.append(FailureAnalysis(
                     period=date,
                     market_style=style,
@@ -285,35 +285,35 @@ class StrategyEvaluator:
                     failure_reasons=["市场下跌", "策略不适应"],
                     affected_factors=["技术面", "情绪面"],
                 ))
-        
+
         return failures
-    
+
     def check_overfitting(
         self,
-        in_sample_result: Dict[str, Any],
-        out_sample_result: Dict[str, Any],
+        in_sample_result: dict[str, Any],
+        out_sample_result: dict[str, Any],
     ) -> OverfittingCheck:
         """检测过拟合"""
         in_return = in_sample_result.get("total_return", 0)
         out_return = out_sample_result.get("total_return", 0)
         in_sharpe = in_sample_result.get("sharpe_ratio", 0)
         out_sharpe = out_sample_result.get("sharpe_ratio", 0)
-        
+
         return_gap = abs(in_return - out_return)
         sharpe_gap = abs(in_sharpe - out_sharpe)
-        
+
         is_overfitted = return_gap > self.overfitting_threshold * abs(in_return)
-        
-        warnings: List[str] = []
+
+        warnings: list[str] = []
         if is_overfitted:
             warnings.append("样本外表现显著低于样本内，可能存在过拟合")
         if return_gap > 10:
             warnings.append(f"收益差距过大 ({return_gap:.1f}%)")
         if sharpe_gap > 0.5:
             warnings.append(f"夏普比率差距过大 ({sharpe_gap:.2f})")
-        
+
         confidence = 1.0 - (return_gap / 100) if in_return != 0 else 0.5
-        
+
         return OverfittingCheck(
             is_overfitted=is_overfitted,
             confidence=max(0, min(1, confidence)),
@@ -323,7 +323,7 @@ class StrategyEvaluator:
             sharpe_gap=sharpe_gap,
             warnings=warnings,
         )
-    
+
     def determine_usability(
         self,
         total_return: float,
@@ -334,38 +334,38 @@ class StrategyEvaluator:
     ) -> StrategyUsability:
         """判定策略可用性"""
         score = 0
-        
+
         if total_return > 20:
             score += 30
         elif total_return > 10:
             score += 20
         elif total_return > 5:
             score += 10
-        
+
         if sharpe_ratio > 1.5:
             score += 25
         elif sharpe_ratio > 1.0:
             score += 15
         elif sharpe_ratio > 0.5:
             score += 5
-        
+
         if max_drawdown < 10:
             score += 20
         elif max_drawdown < 20:
             score += 10
         elif max_drawdown < 30:
             score += 5
-        
+
         if win_rate > 60:
             score += 15
         elif win_rate > 50:
             score += 10
         elif win_rate > 40:
             score += 5
-        
+
         if overfitting.is_overfitted:
             score -= 20
-        
+
         if score >= 80:
             return StrategyUsability.EXCELLENT
         elif score >= 60:
@@ -376,42 +376,42 @@ class StrategyEvaluator:
             return StrategyUsability.POOR
         else:
             return StrategyUsability.UNUSABLE
-    
+
     def generate_risk_warnings(
         self,
-        result: Dict[str, Any],
+        result: dict[str, Any],
         overfitting: OverfittingCheck,
-        failures: List[FailureAnalysis],
-    ) -> List[str]:
+        failures: list[FailureAnalysis],
+    ) -> list[str]:
         """生成风险提示"""
-        warnings: List[str] = []
-        
+        warnings: list[str] = []
+
         if result.get("max_drawdown", 0) > 20:
             warnings.append(f"最大回撤较大 ({result['max_drawdown']:.1f}%)，需注意风险控制")
-        
+
         if result.get("turnover_rate", 0) > 500:
             warnings.append(f"换手率过高 ({result['turnover_rate']:.1f}%)，交易成本影响大")
-        
+
         if overfitting.is_overfitted:
             warnings.append("策略可能过拟合，实盘表现可能低于预期")
-        
+
         if len(failures) > 10:
             warnings.append(f"失效期较多 ({len(failures)} 次)，策略稳定性不足")
-        
+
         if result.get("win_rate", 0) < 40:
             warnings.append(f"胜率较低 ({result['win_rate']:.1f}%)，需优化选股条件")
-        
+
         return warnings
-    
+
     def generate_recommendations(
         self,
         usability: StrategyUsability,
-        factor_contributions: List[FactorContribution],
-        style_sensitivities: List[StyleSensitivity],
-    ) -> List[str]:
+        factor_contributions: list[FactorContribution],
+        style_sensitivities: list[StyleSensitivity],
+    ) -> list[str]:
         """生成优化建议"""
-        recommendations: List[str] = []
-        
+        recommendations: list[str] = []
+
         if usability == StrategyUsability.EXCELLENT:
             recommendations.append("策略表现优秀，可用于实盘交易")
         elif usability == StrategyUsability.GOOD:
@@ -422,28 +422,28 @@ class StrategyEvaluator:
             recommendations.append("策略表现较差，需要重新设计")
         else:
             recommendations.append("策略不可用，建议重新开发")
-        
+
         if factor_contributions:
             top_factor = factor_contributions[0]
             recommendations.append(f"主要贡献因子: {top_factor.factor_name}，可适当提高权重")
-            
+
             low_factors = [f for f in factor_contributions if f.contribution_pct < 0]
             if low_factors:
                 recommendations.append(f"负贡献因子: {', '.join(f.factor_name for f in low_factors[:3])}，建议移除")
-        
+
         weak_styles = [s for s in style_sensitivities if s.return_rate < 0]
         if weak_styles:
             recommendations.append(f"在 {', '.join(s.style.value for s in weak_styles)} 市场表现较弱，建议添加风格过滤")
-        
+
         return recommendations
-    
+
     def evaluate(
         self,
         strategy_name: str,
-        simulation_result: Dict[str, Any],
-        factor_data: Optional[Dict[str, List[Dict[str, Any]]]] = None,
-        market_styles: Optional[List[Dict[str, Any]]] = None,
-        out_sample_result: Optional[Dict[str, Any]] = None,
+        simulation_result: dict[str, Any],
+        factor_data: dict[str, list[dict[str, Any]]] | None = None,
+        market_styles: list[dict[str, Any]] | None = None,
+        out_sample_result: dict[str, Any] | None = None,
     ) -> EvaluationResult:
         """
         评估策略
@@ -460,19 +460,19 @@ class StrategyEvaluator:
         """
         trades = simulation_result.get("trades", [])
         daily_values = simulation_result.get("daily_values", [])
-        
+
         factor_contributions = []
         if factor_data:
             factor_contributions = self.analyze_factor_contributions(trades, factor_data)
-        
+
         style_sensitivities = []
         if market_styles:
             style_sensitivities = self.analyze_style_sensitivity(trades, market_styles)
-        
+
         failures = []
         if market_styles:
             failures = self.analyze_failures(daily_values, market_styles)
-        
+
         overfitting = OverfittingCheck(
             is_overfitted=False,
             confidence=1.0,
@@ -484,7 +484,7 @@ class StrategyEvaluator:
         )
         if out_sample_result:
             overfitting = self.check_overfitting(simulation_result, out_sample_result)
-        
+
         usability = self.determine_usability(
             simulation_result.get("total_return", 0),
             simulation_result.get("sharpe_ratio", 0),
@@ -492,17 +492,17 @@ class StrategyEvaluator:
             simulation_result.get("win_rate", 0),
             overfitting,
         )
-        
+
         risk_warnings = self.generate_risk_warnings(simulation_result, overfitting, failures)
         recommendations = self.generate_recommendations(usability, factor_contributions, style_sensitivities)
-        
+
         total_score = (
             simulation_result.get("total_return", 0) * 0.3 +
             simulation_result.get("sharpe_ratio", 0) * 20 +
             (100 - simulation_result.get("max_drawdown", 0)) * 0.3 +
             simulation_result.get("win_rate", 0) * 0.2
         )
-        
+
         return EvaluationResult(
             strategy_name=strategy_name,
             usability=usability,

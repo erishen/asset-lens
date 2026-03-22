@@ -11,14 +11,13 @@ Backtesting system for asset-lens.
 
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from datetime import datetime
+from typing import TYPE_CHECKING, Any
 
 from ..config import config
 
 if TYPE_CHECKING:
-    from .engine import StrategyEngine
+    pass
 
 
 @dataclass
@@ -57,8 +56,8 @@ class BacktestResult:
     lose_trades: int
     avg_profit: float
     avg_loss: float
-    trades: List[BacktestTrade] = field(default_factory=list)
-    daily_values: List[Dict[str, Any]] = field(default_factory=list)
+    trades: list[BacktestTrade] = field(default_factory=list)
+    daily_values: list[dict[str, Any]] = field(default_factory=list)
 
 
 class Backtester:
@@ -71,10 +70,10 @@ class Backtester:
     def run_backtest(
         self,
         strategy_name: str,
-        historical_data: Dict[str, List[Dict[str, Any]]],
+        historical_data: dict[str, list[dict[str, Any]]],
         initial_capital: float = 100000,
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
         commission_rate: float = 0.0003,
         slippage_rate: float = 0.001,
     ) -> BacktestResult:
@@ -105,7 +104,7 @@ class Backtester:
             for data in data_list:
                 all_dates_set.add(data.get("date", ""))
 
-        all_dates: List[str] = sorted([d for d in all_dates_set if d])
+        all_dates: list[str] = sorted([d for d in all_dates_set if d])
         if not all_dates:
             raise ValueError("没有历史数据")
 
@@ -119,9 +118,9 @@ class Backtester:
 
         # 初始化
         capital = initial_capital
-        positions: Dict[str, Dict[str, Any]] = {}  # {code: {shares, buy_price, buy_date}}
-        trades: List[BacktestTrade] = []
-        daily_values: List[Dict[str, Any]] = []
+        positions: dict[str, dict[str, Any]] = {}  # {code: {shares, buy_price, buy_date}}
+        trades: list[BacktestTrade] = []
+        daily_values: list[dict[str, Any]] = []
 
         # 遍历每个交易日
         for i, date in enumerate(all_dates):
@@ -383,10 +382,10 @@ class Backtester:
 
     def compare_strategies(
         self,
-        strategies: List[str],
-        historical_data: Dict[str, List[Dict[str, Any]]],
+        strategies: list[str],
+        historical_data: dict[str, list[dict[str, Any]]],
         **kwargs,
-    ) -> Dict[str, BacktestResult]:
+    ) -> dict[str, BacktestResult]:
         """
         比较多个策略
 
@@ -410,11 +409,11 @@ class Backtester:
 
     def get_best_strategy(
         self,
-        strategies: List[str],
-        historical_data: Dict[str, List[Dict[str, Any]]],
+        strategies: list[str],
+        historical_data: dict[str, list[dict[str, Any]]],
         metric: str = "sharpe_ratio",
         **kwargs,
-    ) -> Tuple[str, BacktestResult]:
+    ) -> tuple[str, BacktestResult]:
         """
         获取最佳策略
 

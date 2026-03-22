@@ -5,9 +5,7 @@ Portfolio Analytics module for asset-lens.
 
 import math
 from dataclasses import dataclass
-from datetime import datetime, timedelta
-from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 
 @dataclass
@@ -54,8 +52,8 @@ class PortfolioAnalytics:
 
     def calculate_metrics(
         self,
-        returns: List[float],
-        benchmark_returns: Optional[List[float]] = None,
+        returns: list[float],
+        benchmark_returns: list[float] | None = None,
     ) -> PortfolioMetrics:
         """
         计算投资组合指标
@@ -121,8 +119,8 @@ class PortfolioAnalytics:
 
     def calculate_risk_metrics(
         self,
-        returns: List[float],
-        benchmark_returns: Optional[List[float]] = None,
+        returns: list[float],
+        benchmark_returns: list[float] | None = None,
     ) -> RiskMetrics:
         """
         计算风险指标
@@ -175,7 +173,7 @@ class PortfolioAnalytics:
             information_ratio=information_ratio,
         )
 
-    def _calculate_total_return(self, returns: List[float]) -> float:
+    def _calculate_total_return(self, returns: list[float]) -> float:
         """计算总收益率"""
         if not returns:
             return 0.0
@@ -184,7 +182,7 @@ class PortfolioAnalytics:
             cumulative *= 1 + r
         return (cumulative - 1) * 100
 
-    def _calculate_annualized_return(self, returns: List[float]) -> float:
+    def _calculate_annualized_return(self, returns: list[float]) -> float:
         """计算年化收益率"""
         if not returns:
             return 0.0
@@ -194,7 +192,7 @@ class PortfolioAnalytics:
             return 0.0
         return float(((1 + total_return) ** (1 / n_years) - 1) * 100)
 
-    def _calculate_volatility(self, returns: List[float]) -> float:
+    def _calculate_volatility(self, returns: list[float]) -> float:
         """计算波动率（年化）"""
         if len(returns) < 2:
             return 0.0
@@ -203,14 +201,14 @@ class PortfolioAnalytics:
         daily_vol = math.sqrt(variance)
         return daily_vol * math.sqrt(self.TRADING_DAYS_PER_YEAR) * 100
 
-    def _calculate_sharpe_ratio(self, returns: List[float], volatility: float) -> float:
+    def _calculate_sharpe_ratio(self, returns: list[float], volatility: float) -> float:
         """计算夏普比率"""
         if volatility == 0:
             return 0.0
         annualized_return = self._calculate_annualized_return(returns) / 100
         return (annualized_return - self.risk_free_rate) / (volatility / 100)
 
-    def _calculate_max_drawdown(self, returns: List[float]) -> float:
+    def _calculate_max_drawdown(self, returns: list[float]) -> float:
         """计算最大回撤"""
         if not returns:
             return 0.0
@@ -229,14 +227,14 @@ class PortfolioAnalytics:
 
         return max_dd * 100
 
-    def _calculate_win_rate(self, returns: List[float]) -> float:
+    def _calculate_win_rate(self, returns: list[float]) -> float:
         """计算胜率"""
         if not returns:
             return 0.0
         wins = sum(1 for r in returns if r > 0)
         return wins / len(returns) * 100
 
-    def _calculate_profit_loss_ratio(self, returns: List[float]) -> float:
+    def _calculate_profit_loss_ratio(self, returns: list[float]) -> float:
         """计算盈亏比"""
         profits = [r for r in returns if r > 0]
         losses = [abs(r) for r in returns if r < 0]
@@ -258,7 +256,7 @@ class PortfolioAnalytics:
             return 0.0
         return annualized_return / max_drawdown
 
-    def _calculate_sortino_ratio(self, returns: List[float]) -> float:
+    def _calculate_sortino_ratio(self, returns: list[float]) -> float:
         """计算索提诺比率"""
         if not returns:
             return 0.0
@@ -278,7 +276,7 @@ class PortfolioAnalytics:
         annualized_return = self._calculate_annualized_return(returns) / 100
         return (annualized_return - self.risk_free_rate) / downside_vol
 
-    def _calculate_var(self, returns: List[float], confidence: float) -> float:
+    def _calculate_var(self, returns: list[float], confidence: float) -> float:
         """计算 VaR（历史模拟法）"""
         if not returns:
             return 0.0
@@ -286,7 +284,7 @@ class PortfolioAnalytics:
         index = int((1 - confidence) * len(sorted_returns))
         return abs(sorted_returns[index]) * 100
 
-    def _calculate_expected_shortfall(self, returns: List[float], confidence: float) -> float:
+    def _calculate_expected_shortfall(self, returns: list[float], confidence: float) -> float:
         """计算预期亏损（CVaR）"""
         if not returns:
             return 0.0
@@ -295,7 +293,7 @@ class PortfolioAnalytics:
         tail_returns = sorted_returns[: index + 1]
         return abs(sum(tail_returns) / len(tail_returns)) * 100
 
-    def _calculate_beta(self, returns: List[float], benchmark_returns: List[float]) -> float:
+    def _calculate_beta(self, returns: list[float], benchmark_returns: list[float]) -> float:
         """计算贝塔系数"""
         if len(returns) != len(benchmark_returns) or len(returns) < 2:
             return 1.0
@@ -316,7 +314,7 @@ class PortfolioAnalytics:
         return covariance / benchmark_variance
 
     def _calculate_tracking_error(
-        self, returns: List[float], benchmark_returns: List[float]
+        self, returns: list[float], benchmark_returns: list[float]
     ) -> float:
         """计算跟踪误差"""
         if len(returns) != len(benchmark_returns) or len(returns) < 2:
@@ -329,7 +327,7 @@ class PortfolioAnalytics:
         return math.sqrt(variance) * math.sqrt(self.TRADING_DAYS_PER_YEAR) * 100
 
     def _calculate_information_ratio(
-        self, returns: List[float], benchmark_returns: List[float]
+        self, returns: list[float], benchmark_returns: list[float]
     ) -> float:
         """计算信息比率"""
         tracking_error = self._calculate_tracking_error(returns, benchmark_returns)
@@ -346,9 +344,9 @@ class PortfolioAnalytics:
 
     def generate_report(
         self,
-        returns: List[float],
-        benchmark_returns: Optional[List[float]] = None,
-    ) -> Dict[str, Any]:
+        returns: list[float],
+        benchmark_returns: list[float] | None = None,
+    ) -> dict[str, Any]:
         """
         生成完整的分析报告
 

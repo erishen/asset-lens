@@ -3,15 +3,13 @@ Return Calculator - 收益率计算器
 支持多种投资产品的收益率计算
 """
 
+import logging
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Dict, List, Optional
 
 from ..core.irr_calculator import IRRCalculator
 from ..data.models import InvestmentProduct
 from .parsers.investment_calculator import days360
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +23,8 @@ class ReturnCalculator:
     def calculate_returns(
         self,
         product: InvestmentProduct,
-        transactions: List[Dict],
-        reference_date: Optional[datetime] = None
+        transactions: list[dict],
+        reference_date: datetime | None = None
     ) -> None:
         """
         计算产品收益率
@@ -46,7 +44,7 @@ class ReturnCalculator:
     def _calculate_simple_return(
         self,
         product: InvestmentProduct,
-        transactions: List[Dict]
+        transactions: list[dict]
     ) -> None:
         """计算简单收益率"""
         total_buy = sum(t["amount"] for t in transactions if t["type"] == "buy") if transactions else 0
@@ -70,7 +68,7 @@ class ReturnCalculator:
     def _calculate_dca_simple_return(
         self,
         product: InvestmentProduct,
-        transactions: List[Dict]
+        transactions: list[dict]
     ) -> None:
         """计算定投产品简单收益率"""
         if not product.initial_amount:
@@ -102,7 +100,7 @@ class ReturnCalculator:
     def _calculate_annual_return(
         self,
         product: InvestmentProduct,
-        transactions: List[Dict],
+        transactions: list[dict],
         total_days: int
     ) -> None:
         """计算年化收益率"""
@@ -137,7 +135,7 @@ class ReturnCalculator:
     def _calculate_dca_annual_return(
         self,
         product: InvestmentProduct,
-        transactions: List[Dict],
+        transactions: list[dict],
         total_days: int
     ) -> None:
         """计算定投产品年化收益率"""
@@ -164,7 +162,7 @@ class ReturnCalculator:
     def _calculate_regular_annual_return(
         self,
         product: InvestmentProduct,
-        transactions: List[Dict],
+        transactions: list[dict],
         total_days: int
     ) -> None:
         """计算普通产品年化收益率"""
@@ -232,13 +230,13 @@ class ReturnCalculator:
 
     def _build_cashflows(
         self,
-        transactions: List[Dict],
-        start_date: Optional[date],
-        current_amount: Optional[Decimal],
+        transactions: list[dict],
+        start_date: date | None,
+        current_amount: Decimal | None,
         total_days: int
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """构建现金流"""
-        cashflows: List[Dict] = []
+        cashflows: list[dict] = []
 
         if not start_date:
             return cashflows
@@ -257,7 +255,7 @@ class ReturnCalculator:
                     trans_date = date(int(date_parts[0]), int(date_parts[1]), int(date_parts[2]))
                 else:
                     continue
-            except (ValueError, IndexError) as e:
+            except (ValueError, IndexError):
                 logger.warning(f"日期解析失败: {date_str}", exc_info=True)
                 continue
 
@@ -275,14 +273,14 @@ class ReturnCalculator:
 
     def _build_cashflows_for_dca(
         self,
-        transactions: List[Dict],
-        start_date: Optional[date],
-        current_amount: Optional[Decimal],
+        transactions: list[dict],
+        start_date: date | None,
+        current_amount: Decimal | None,
         total_days: int,
-        initial_amount: Optional[Decimal]
-    ) -> List[Dict]:
+        initial_amount: Decimal | None
+    ) -> list[dict]:
         """为 DCA 产品构建现金流"""
-        cashflows: List[Dict] = []
+        cashflows: list[dict] = []
 
         if not start_date or not initial_amount:
             return cashflows

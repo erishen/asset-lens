@@ -10,9 +10,8 @@ Technical Indicators Calculator.
 5. ATR - 平均真实波幅
 """
 
-from dataclasses import dataclass
-from typing import List, Optional, Tuple
 import math
+from dataclasses import dataclass
 
 
 @dataclass
@@ -28,7 +27,7 @@ class TechnicalIndicators:
     """技术指标计算器"""
 
     @staticmethod
-    def calculate_rsi(prices: List[float], period: int = 14) -> Optional[float]:
+    def calculate_rsi(prices: list[float], period: int = 14) -> float | None:
         """
         计算 RSI (相对强弱指数)
         
@@ -41,10 +40,10 @@ class TechnicalIndicators:
         """
         if len(prices) < period + 1:
             return None
-        
+
         gains: list[float] = []
         losses: list[float] = []
-        
+
         for i in range(1, len(prices)):
             change = prices[i] - prices[i - 1]
             if change > 0:
@@ -53,27 +52,27 @@ class TechnicalIndicators:
             else:
                 gains.append(0.0)
                 losses.append(abs(change))
-        
+
         if len(gains) < period:
             return None
-        
+
         avg_gain = sum(gains[-period:]) / period
         avg_loss = sum(losses[-period:]) / period
-        
+
         if avg_loss == 0:
             return 100.0
-        
+
         rs = avg_gain / avg_loss
         rsi = 100 - (100 / (1 + rs))
-        
+
         return round(rsi, 2)
 
     @staticmethod
     def calculate_boll(
-        prices: List[float], 
-        period: int = 20, 
+        prices: list[float],
+        period: int = 20,
         std_dev: float = 2.0
-    ) -> Optional[Tuple[float, float, float]]:
+    ) -> tuple[float, float, float] | None:
         """
         计算布林带
         
@@ -87,23 +86,23 @@ class TechnicalIndicators:
         """
         if len(prices) < period:
             return None
-        
+
         recent_prices = prices[-period:]
         middle = sum(recent_prices) / period
-        
+
         variance = sum((p - middle) ** 2 for p in recent_prices) / period
         std = math.sqrt(variance)
-        
+
         upper = middle + std_dev * std
         lower = middle - std_dev * std
-        
+
         return (round(upper, 2), round(middle, 2), round(lower, 2))
 
     @staticmethod
     def calculate_obv(
-        prices: List[float], 
-        volumes: List[float]
-    ) -> Optional[float]:
+        prices: list[float],
+        volumes: list[float]
+    ) -> float | None:
         """
         计算 OBV (能量潮)
         
@@ -116,23 +115,23 @@ class TechnicalIndicators:
         """
         if len(prices) != len(volumes) or len(prices) < 2:
             return None
-        
+
         obv = 0.0
         for i in range(1, len(prices)):
             if prices[i] > prices[i - 1]:
                 obv += volumes[i]
             elif prices[i] < prices[i - 1]:
                 obv -= volumes[i]
-        
+
         return round(obv, 2)
 
     @staticmethod
     def calculate_wr(
-        high_prices: List[float],
-        low_prices: List[float],
-        close_prices: List[float],
+        high_prices: list[float],
+        low_prices: list[float],
+        close_prices: list[float],
         period: int = 14
-    ) -> Optional[float]:
+    ) -> float | None:
         """
         计算 WR (威廉指标)
         
@@ -147,25 +146,25 @@ class TechnicalIndicators:
         """
         if len(high_prices) < period:
             return None
-        
+
         recent_high = max(high_prices[-period:])
         recent_low = min(low_prices[-period:])
         current_close = close_prices[-1]
-        
+
         if recent_high == recent_low:
             return None
-        
+
         wr = (recent_high - current_close) / (recent_high - recent_low) * -100
-        
+
         return round(wr, 2)
 
     @staticmethod
     def calculate_atr(
-        high_prices: List[float],
-        low_prices: List[float],
-        close_prices: List[float],
+        high_prices: list[float],
+        low_prices: list[float],
+        close_prices: list[float],
         period: int = 14
-    ) -> Optional[float]:
+    ) -> float | None:
         """
         计算 ATR (平均真实波幅)
         
@@ -180,16 +179,16 @@ class TechnicalIndicators:
         """
         if len(high_prices) < period + 1:
             return None
-        
+
         true_ranges = []
         for i in range(1, len(high_prices)):
             tr1 = high_prices[i] - low_prices[i]
             tr2 = abs(high_prices[i] - close_prices[i - 1])
             tr3 = abs(low_prices[i] - close_prices[i - 1])
             true_ranges.append(max(tr1, tr2, tr3))
-        
+
         atr = sum(true_ranges[-period:]) / period
-        
+
         return round(atr, 4)
 
     @staticmethod

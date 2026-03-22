@@ -3,20 +3,15 @@ DCA (Dollar Cost Average) strategy parser for asset-lens.
 定投策略解析和计算模块，支持4种定投模式
 """
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import List, Optional, Tuple
 
-from ..config import config
 from ..data.models import Currency, InvestmentType, Transaction
 from .holidays import (
     calculate_fund_trading_days,
     calculate_working_days,
     get_last_fund_trading_day,
-    get_last_working_day,
-    is_fund_trading_day,
-    is_working_day,
     parse_stop_periods,
 )
 
@@ -36,7 +31,7 @@ class DCAParser:
     @staticmethod
     def parse_investment_type(
         amount_str: str,
-    ) -> Tuple[DCAInvestmentType, Decimal, Optional[Decimal]]:
+    ) -> tuple[DCAInvestmentType, Decimal, Decimal | None]:
         amount_str = amount_str.strip()
 
         if "--" not in amount_str and amount_str.count("-") == 2:
@@ -82,8 +77,8 @@ class DCAParser:
     @staticmethod
     def parse_date_range(
         date_range_str: str,
-        reference_date: Optional[datetime] = None,
-    ) -> Tuple[Optional[datetime], Optional[datetime]]:
+        reference_date: datetime | None = None,
+    ) -> tuple[datetime | None, datetime | None]:
         if "-" not in date_range_str:
             return None, None
 
@@ -114,7 +109,7 @@ class DCAParser:
         return start_date, end_date
 
     @staticmethod
-    def parse_date(date_str: str) -> Optional[datetime]:
+    def parse_date(date_str: str) -> datetime | None:
         date_formats = [
             "%Y/%m/%d",
             "%Y-%m-%d",
@@ -134,12 +129,12 @@ class DCAParser:
     def parse_transaction_record(
         cls,
         record_str: str,
-        reference_date: Optional[datetime] = None,
+        reference_date: datetime | None = None,
         currency: Currency = Currency.CNY,
-        investment_type: Optional[InvestmentType] = None,
-        product_name: Optional[str] = None,
-    ) -> List[Transaction]:
-        transactions: List[Transaction] = []
+        investment_type: InvestmentType | None = None,
+        product_name: str | None = None,
+    ) -> list[Transaction]:
+        transactions: list[Transaction] = []
 
         if not record_str or not record_str.strip():
             return transactions
@@ -247,10 +242,10 @@ class DCAParser:
         amount: Decimal,
         currency: Currency,
         investment_type: DCAInvestmentType = DCAInvestmentType.FIXED,
-        stop_periods: Optional[List[Tuple[date, date]]] = None,
+        stop_periods: list[tuple[date, date]] | None = None,
         is_qdii: bool = False,
-    ) -> List[Transaction]:
-        transactions: List[Transaction] = []
+    ) -> list[Transaction]:
+        transactions: list[Transaction] = []
 
         start = start_date.date()
         end = end_date.date()
@@ -279,7 +274,7 @@ class DCAParser:
         return transactions
 
     @staticmethod
-    def calculate_total_investment(transactions: List[Transaction], action: str = "buy") -> Decimal:
+    def calculate_total_investment(transactions: list[Transaction], action: str = "buy") -> Decimal:
         total = Decimal("0")
         for t in transactions:
             if t.action.lower() == action.lower():
@@ -287,7 +282,7 @@ class DCAParser:
         return total
 
     @staticmethod
-    def calculate_net_investment(transactions: List[Transaction]) -> Decimal:
+    def calculate_net_investment(transactions: list[Transaction]) -> Decimal:
         buy_total = DCAParser.calculate_total_investment(transactions, "buy")
         sell_total = DCAParser.calculate_total_investment(transactions, "sell")
         return buy_total - sell_total

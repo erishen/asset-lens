@@ -10,11 +10,13 @@ Concurrent Data Fetcher - 并发数据获取器
 """
 
 import asyncio
-import aiohttp
-import time
-from typing import Any, Callable, Dict, List, Optional, Tuple
-from dataclasses import dataclass
 import logging
+import time
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
+
+import aiohttp
 
 logger = logging.getLogger(__name__)
 
@@ -29,18 +31,18 @@ class FetchResult:
     """数据获取结果"""
     code: str
     success: bool
-    data: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
+    data: dict[str, Any] | None = None
+    error: str | None = None
     duration: float = 0.0
     retries: int = 0
 
 
 class ConcurrentDataFetcher:
     """并发数据获取器"""
-    
+
     def __init__(
-        self, 
-        max_concurrent: int = DEFAULT_MAX_CONCURRENT, 
+        self,
+        max_concurrent: int = DEFAULT_MAX_CONCURRENT,
         timeout: int = DEFAULT_TIMEOUT,
         max_retries: int = DEFAULT_MAX_RETRIES,
         retry_delay: float = DEFAULT_RETRY_DELAY
@@ -58,9 +60,9 @@ class ConcurrentDataFetcher:
         self.timeout = aiohttp.ClientTimeout(total=timeout)
         self.max_retries = max_retries
         self.retry_delay = retry_delay
-        self._session: Optional[aiohttp.ClientSession] = None
-        self._connector: Optional[aiohttp.TCPConnector] = None
-    
+        self._session: aiohttp.ClientSession | None = None
+        self._connector: aiohttp.TCPConnector | None = None
+
     async def __aenter__(self):
         """异步上下文管理器入口"""
         self._connector = aiohttp.TCPConnector(
@@ -74,20 +76,20 @@ class ConcurrentDataFetcher:
             timeout=self.timeout
         )
         return self
-    
+
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """异步上下文管理器出口"""
         if self._session:
             await self._session.close()
         if self._connector:
             await self._connector.close()
-    
+
     async def fetch_single(
         self,
         url: str,
-        params: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None
-    ) -> Tuple[bool, Optional[Dict[str, Any]], Optional[str]]:
+        params: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None
+    ) -> tuple[bool, dict[str, Any] | None, str | None]:
         """
         获取单个数据
         
@@ -102,9 +104,9 @@ class ConcurrentDataFetcher:
         if self._session is None:
             return False, None, "Session not initialized"
         session = self._session
-        
-        last_error: Optional[str] = None
-        
+
+        last_error: str | None = None
+
         for attempt in range(self.max_retries):
             try:
                 async with session.get(url, params=params, headers=headers) as response:  # pylint: disable=not-async-context-manager
@@ -129,9 +131,9 @@ class ConcurrentDataFetcher:
                 last_error = str(e)
                 logger.error(f"请求异常: {url}", exc_info=True)
                 break
-        
+
         return False, None, last_error
-    
+
     async def fetch_stock_quote(self, code: str) -> FetchResult:
         """
         获取股票行情
@@ -143,7 +145,7 @@ class ConcurrentDataFetcher:
             获取结果
         """
         start_time = time.time()
-        
+
         # 根据股票代码确定 URL
         if code.startswith(('sh', 'sz')):
             url = f"http://hq.sinajs.cn/list={code}"
@@ -154,9 +156,9 @@ class ConcurrentDataFetcher:
         else:
             url = f"https://api.example.com/stock/{code}"
             headers = {}
-        
+
         success, data, error = await self.fetch_single(url, headers=headers)
-        
+
         return FetchResult(
             code=code,
             success=success,
@@ -164,12 +166,12 @@ class ConcurrentDataFetcher:
             error=error,
             duration=time.time() - start_time
         )
-    
+
     async def fetch_multiple_stocks(
         self,
-        codes: List[str],
-        progress_callback: Optional[Callable] = None
-    ) -> List[FetchResult]:
+        codes: list[str],
+        progress_callback: Callable | None = None
+    ) -> list[FetchResult]:
         """
         并发获取多个股票行情
         
@@ -181,19 +183,19 @@ class ConcurrentDataFetcher:
             获取结果列表
         """
         semaphore = asyncio.Semaphore(self.max_concurrent)
-        
+
         async def fetch_with_semaphore(code: str) -> FetchResult:
             async with semaphore:
                 result = await self.fetch_stock_quote(code)
                 if progress_callback:
                     progress_callback(code, result)
                 return result
-        
+
         tasks = [fetch_with_semaphore(code) for code in codes]
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        
+
         # 处理异常结果
-        final_results: List[FetchResult] = []
+        final_results: list[FetchResult] = []
         for i, result in enumerate(results):
             if isinstance(result, Exception):
                 final_results.append(FetchResult(
@@ -203,9 +205,9 @@ class ConcurrentDataFetcher:
                 ))
             else:
                 final_results.append(result)  # type: ignore[arg-type]
-        
+
         return final_results
-    
+
     async def fetch_fund_nav(self, code: str) -> FetchResult:
         """
         获取基金净值
@@ -217,15 +219,15 @@ class ConcurrentDataFetcher:
             获取结果
         """
         start_time = time.time()
-        
+
         url = f"http://fundgz.1234567.com.cn/js/{code}.js"
         headers = {
             "Referer": "http://fund.eastmoney.com/",
             "User-Agent": "Mozilla/5.0"
         }
-        
+
         success, data, error = await self.fetch_single(url, headers=headers)
-        
+
         return FetchResult(
             code=code,
             success=success,
@@ -233,12 +235,12 @@ class ConcurrentDataFetcher:
             error=error,
             duration=time.time() - start_time
         )
-    
+
     async def fetch_multiple_funds(
         self,
-        codes: List[str],
-        progress_callback: Optional[Callable] = None
-    ) -> List[FetchResult]:
+        codes: list[str],
+        progress_callback: Callable | None = None
+    ) -> list[FetchResult]:
         """
         并发获取多个基金净值
         
@@ -250,19 +252,19 @@ class ConcurrentDataFetcher:
             获取结果列表
         """
         semaphore = asyncio.Semaphore(self.max_concurrent)
-        
+
         async def fetch_with_semaphore(code: str) -> FetchResult:
             async with semaphore:
                 result = await self.fetch_fund_nav(code)
                 if progress_callback:
                     progress_callback(code, result)
                 return result
-        
+
         tasks = [fetch_with_semaphore(code) for code in codes]
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        
+
         # 处理异常结果
-        final_results: List[FetchResult] = []
+        final_results: list[FetchResult] = []
         for i, result in enumerate(results):
             if isinstance(result, Exception):
                 final_results.append(FetchResult(
@@ -272,11 +274,11 @@ class ConcurrentDataFetcher:
                 ))
             else:
                 final_results.append(result)  # type: ignore[arg-type]
-        
+
         return final_results
 
 
-def fetch_stocks_concurrently(codes: List[str], max_concurrent: int = 10) -> List[FetchResult]:
+def fetch_stocks_concurrently(codes: list[str], max_concurrent: int = 10) -> list[FetchResult]:
     """
     同步接口：并发获取股票行情
     
@@ -290,11 +292,11 @@ def fetch_stocks_concurrently(codes: List[str], max_concurrent: int = 10) -> Lis
     async def _fetch():
         async with ConcurrentDataFetcher(max_concurrent=max_concurrent) as fetcher:
             return await fetcher.fetch_multiple_stocks(codes)
-    
+
     return asyncio.run(_fetch())
 
 
-def fetch_funds_concurrently(codes: List[str], max_concurrent: int = 10) -> List[FetchResult]:
+def fetch_funds_concurrently(codes: list[str], max_concurrent: int = 10) -> list[FetchResult]:
     """
     同步接口：并发获取基金净值
     
@@ -308,27 +310,27 @@ def fetch_funds_concurrently(codes: List[str], max_concurrent: int = 10) -> List
     async def _fetch():
         async with ConcurrentDataFetcher(max_concurrent=max_concurrent) as fetcher:
             return await fetcher.fetch_multiple_funds(codes)
-    
+
     return asyncio.run(_fetch())
 
 
 class PerformanceMonitor:
     """性能监控器"""
-    
+
     def __init__(self):
-        self.metrics: Dict[str, List[float]] = {}
-    
+        self.metrics: dict[str, list[float]] = {}
+
     def record(self, operation: str, duration: float):
         """记录性能指标"""
         if operation not in self.metrics:
             self.metrics[operation] = []
         self.metrics[operation].append(duration)
-    
-    def get_stats(self, operation: str) -> Dict[str, float]:
+
+    def get_stats(self, operation: str) -> dict[str, float]:
         """获取统计信息"""
         if operation not in self.metrics:
             return {}
-        
+
         durations = self.metrics[operation]
         return {
             "count": len(durations),
@@ -337,11 +339,11 @@ class PerformanceMonitor:
             "min": min(durations),
             "max": max(durations)
         }
-    
+
     def get_report(self) -> str:
         """生成性能报告"""
         lines = ["=" * 60, "性能监控报告", "=" * 60, ""]
-        
+
         for operation in sorted(self.metrics.keys()):
             stats = self.get_stats(operation)
             lines.append(f"📊 {operation}:")
@@ -351,7 +353,7 @@ class PerformanceMonitor:
             lines.append(f"  • 最小耗时: {stats['min']:.2f}秒")
             lines.append(f"  • 最大耗时: {stats['max']:.2f}秒")
             lines.append("")
-        
+
         lines.append("=" * 60)
         return "\n".join(lines)
 

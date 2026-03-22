@@ -9,11 +9,8 @@ Cryptocurrency data fetcher for asset-lens.
 """
 
 import time
-from datetime import datetime, timedelta
-from decimal import Decimal
-from typing import Any, Dict, List, Optional
-
-from ..config import config
+from datetime import datetime
+from typing import Any
 
 
 class CryptoFetcher:
@@ -33,11 +30,11 @@ class CryptoFetcher:
 
     CACHE_DURATION = 300  # 5分钟缓存
 
-    def __init__(self, exchange: Optional[str] = None) -> None:
+    def __init__(self, exchange: str | None = None) -> None:
         self._exchange_name = exchange or self.DEFAULT_EXCHANGE
         self._exchange = None
-        self._cache: Dict[str, Any] = {}
-        self._cache_time: Dict[str, float] = {}
+        self._cache: dict[str, Any] = {}
+        self._cache_time: dict[str, float] = {}
 
     @property
     def exchange(self):
@@ -69,7 +66,7 @@ class CryptoFetcher:
             return False
         return time.time() - self._cache_time[cache_key] < self.CACHE_DURATION
 
-    def _get_cached(self, cache_key: str) -> Optional[Any]:
+    def _get_cached(self, cache_key: str) -> Any | None:
         """获取缓存数据"""
         if self._is_cache_valid(cache_key):
             return self._cache.get(cache_key)
@@ -85,7 +82,7 @@ class CryptoFetcher:
         self._cache.clear()
         self._cache_time.clear()
 
-    def get_ticker(self, symbol: str) -> Optional[Dict[str, Any]]:
+    def get_ticker(self, symbol: str) -> dict[str, Any] | None:
         """
         获取加密货币实时行情
 
@@ -133,8 +130,8 @@ class CryptoFetcher:
         symbol: str,
         timeframe: str = "1d",
         limit: int = 100,
-        since: Optional[int] = None,
-    ) -> List[Dict[str, Any]]:
+        since: int | None = None,
+    ) -> list[dict[str, Any]]:
         """
         获取 K 线数据
 
@@ -178,7 +175,7 @@ class CryptoFetcher:
             print(f"获取 {symbol} K线数据失败: {e}")
             return []
 
-    def get_order_book(self, symbol: str, limit: int = 20) -> Optional[Dict[str, Any]]:
+    def get_order_book(self, symbol: str, limit: int = 20) -> dict[str, Any] | None:
         """
         获取订单簿（买卖盘）
 
@@ -210,7 +207,7 @@ class CryptoFetcher:
             print(f"获取 {symbol} 订单簿失败: {e}")
             return None
 
-    def get_market_cap(self) -> Optional[Dict[str, Any]]:
+    def get_market_cap(self) -> dict[str, Any] | None:
         """
         获取加密货币总市值（通过 CoinGecko API）
 
@@ -240,7 +237,7 @@ class CryptoFetcher:
 
         return None
 
-    def get_top_cryptos(self, limit: int = 50) -> List[Dict[str, Any]]:
+    def get_top_cryptos(self, limit: int = 50) -> list[dict[str, Any]]:
         """
         获取市值排名前 N 的加密货币
 
@@ -253,7 +250,7 @@ class CryptoFetcher:
         try:
             from ..utils.http_client import safe_get
 
-            url = f"https://api.coingecko.com/api/v3/coins/markets"
+            url = "https://api.coingecko.com/api/v3/coins/markets"
             params = {
                 "vs_currency": "usd",
                 "order": "market_cap_desc",
@@ -294,7 +291,7 @@ class CryptoFetcher:
 
         return []
 
-    def get_supported_symbols(self) -> List[str]:
+    def get_supported_symbols(self) -> list[str]:
         """
         获取交易所支持的所有交易对
 
@@ -336,10 +333,10 @@ class CryptoFetcher:
         return symbol
 
 
-_crypto_fetcher: Optional[CryptoFetcher] = None
+_crypto_fetcher: CryptoFetcher | None = None
 
 
-def get_crypto_fetcher(exchange: Optional[str] = None) -> CryptoFetcher:
+def get_crypto_fetcher(exchange: str | None = None) -> CryptoFetcher:
     """获取加密货币数据获取器单例"""
     global _crypto_fetcher
     if _crypto_fetcher is None:

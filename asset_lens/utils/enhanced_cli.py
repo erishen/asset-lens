@@ -4,20 +4,20 @@ Enhanced CLI Utilities with colors and progress bars.
 """
 
 import sys
-import time
-from typing import Any, Dict, Iterator, List, Optional, Union
-from dataclasses import dataclass, field
+from collections.abc import Iterator, Sized
+from dataclasses import dataclass
 from enum import Enum
-from collections.abc import Sized
+from typing import Any
 
 try:
-    from rich.console import Console
-    from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
-    from rich.table import Table
-    from rich.panel import Panel
-    from rich.syntax import Syntax
     from rich import print as rprint
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
+    from rich.syntax import Syntax
+    from rich.table import Table
     RICH_AVAILABLE = True
+    del rprint  # Remove unused import
 except ImportError:
     RICH_AVAILABLE = False
 
@@ -57,11 +57,11 @@ class ProgressBarConfig:
 
 class EnhancedCLI:
     """增强版 CLI 工具"""
-    
+
     def __init__(self):
         self.console = Console() if RICH_AVAILABLE else None
         self.use_colors = RICH_AVAILABLE or sys.stdout.isatty()
-    
+
     def print_colored(self, message: str, color: Color = Color.WHITE, bold: bool = False):
         """打印彩色文本"""
         if RICH_AVAILABLE and self.console:
@@ -72,23 +72,23 @@ class EnhancedCLI:
             click.echo(click_style)
         else:
             print(message)
-    
+
     def print_success(self, message: str):
         """打印成功消息"""
         self.print_colored(f"✅ {message}", Color.GREEN, bold=True)
-    
+
     def print_error(self, message: str):
         """打印错误消息"""
         self.print_colored(f"❌ {message}", Color.RED, bold=True)
-    
+
     def print_warning(self, message: str):
         """打印警告消息"""
         self.print_colored(f"⚠️  {message}", Color.YELLOW, bold=True)
-    
+
     def print_info(self, message: str):
         """打印信息消息"""
         self.print_colored(f"ℹ️  {message}", Color.BLUE)
-    
+
     def print_header(self, title: str, width: int = 60):
         """打印标题"""
         if RICH_AVAILABLE and self.console:
@@ -97,7 +97,7 @@ class EnhancedCLI:
             print("\n" + "=" * width)
             print(title.center(width))
             print("=" * width + "\n")
-    
+
     def print_subheader(self, title: str, width: int = 60):
         """打印子标题"""
         if RICH_AVAILABLE and self.console:
@@ -107,8 +107,8 @@ class EnhancedCLI:
             print("\n" + "-" * width)
             print(title)
             print("-" * width + "\n")
-    
-    def print_table(self, title: str, headers: List[str], rows: List[List[str]]):
+
+    def print_table(self, title: str, headers: list[str], rows: list[list[str]]):
         """打印表格"""
         if RICH_AVAILABLE and self.console:
             table = Table(title=title, show_header=True, header_style="bold cyan")
@@ -125,29 +125,29 @@ class EnhancedCLI:
             for row in rows:
                 print(" | ".join(row))
             print("-" * 60 + "\n")
-    
-    def print_key_value(self, key: str, value: Any, indent: int = 0, color: Optional[Color] = None):
+
+    def print_key_value(self, key: str, value: Any, indent: int = 0, color: Color | None = None):
         """打印键值对"""
         prefix = " " * indent
         if color:
             self.print_colored(f"{prefix}{key}: {value}", color)
         else:
             print(f"{prefix}{key}: {value}")
-    
-    def print_json(self, data: Dict[str, Any], title: Optional[str] = None):
+
+    def print_json(self, data: dict[str, Any], title: str | None = None):
         """打印 JSON 数据"""
         import json
-        
+
         if title:
             self.print_subheader(title)
-        
+
         if RICH_AVAILABLE and self.console:
             json_str = json.dumps(data, indent=2, ensure_ascii=False)
             syntax = Syntax(json_str, "json", theme="monokai", line_numbers=False)
             self.console.print(syntax)
         else:
             print(json.dumps(data, indent=2, ensure_ascii=False))
-    
+
     def create_progress_bar(self, config: ProgressBarConfig):
         """创建进度条"""
         if RICH_AVAILABLE and self.console:
@@ -156,16 +156,16 @@ class EnhancedCLI:
             return TqdmProgressBar(config)
         else:
             return SimpleProgressBar(config)
-    
-    def progress_iterator(self, iterable: Iterator, description: str = "Processing", total: Optional[int] = None):
+
+    def progress_iterator(self, iterable: Iterator, description: str = "Processing", total: int | None = None):
         """带进度条的迭代器"""
         if total is None:
             try:
                 if isinstance(iterable, Sized):
                     total = len(iterable)
-            except:
+            except (TypeError, AttributeError):
                 total = None
-        
+
         if RICH_AVAILABLE and self.console:
             with Progress(
                 SpinnerColumn(),
@@ -184,7 +184,7 @@ class EnhancedCLI:
         else:
             for item in iterable:
                 yield item
-    
+
     def confirm(self, message: str, default: bool = False) -> bool:
         """确认操作"""
         if CLICK_AVAILABLE:
@@ -192,8 +192,8 @@ class EnhancedCLI:
         else:
             response = input(f"{message} (y/n): ").lower()
             return response == 'y' if response else default
-    
-    def prompt(self, message: str, default: Optional[str] = None) -> str:
+
+    def prompt(self, message: str, default: str | None = None) -> str:
         """提示输入"""
         if CLICK_AVAILABLE:
             result = click.prompt(message, default=default)
@@ -204,7 +204,7 @@ class EnhancedCLI:
                 prompt_msg += f" [{default}]"
             prompt_msg += ": "
             return input(prompt_msg) or default or ""
-    
+
     def clear_screen(self):
         """清屏"""
         if CLICK_AVAILABLE:
@@ -216,13 +216,13 @@ class EnhancedCLI:
 
 class RichProgressBar:
     """Rich 进度条"""
-    
+
     def __init__(self, config: ProgressBarConfig, console):
         self.config = config
         self.console = console
-        self.progress: Optional[Progress] = None
-        self.task: Optional[int] = None
-    
+        self.progress: Progress | None = None
+        self.task: int | None = None
+
     def __enter__(self):
         self.progress = Progress(
             SpinnerColumn(),
@@ -234,16 +234,16 @@ class RichProgressBar:
         self.progress.__enter__()
         self.task = self.progress.add_task(self.config.description, total=self.config.total)
         return self
-    
+
     def __exit__(self, *args):
         if self.progress:
             self.progress.__exit__(*args)
-    
+
     def update(self, advance: int = 1):
         """更新进度"""
         if self.progress and self.task is not None:
             self.progress.advance(self.task, advance)  # type: ignore
-    
+
     def set_description(self, description: str):
         """设置描述"""
         if self.progress and self.task is not None:
@@ -252,24 +252,24 @@ class RichProgressBar:
 
 class TqdmProgressBar:
     """Tqdm 进度条"""
-    
+
     def __init__(self, config: ProgressBarConfig):
         self.config = config
         self.pbar = None
-    
+
     def __enter__(self):
         self.pbar = tqdm(total=self.config.total, desc=self.config.description, unit=self.config.unit)
         return self
-    
+
     def __exit__(self, *args):
         if self.pbar:
             self.pbar.close()
-    
+
     def update(self, advance: int = 1):
         """更新进度"""
         if self.pbar:
             self.pbar.update(advance)
-    
+
     def set_description(self, description: str):
         """设置描述"""
         if self.pbar:
@@ -278,25 +278,25 @@ class TqdmProgressBar:
 
 class SimpleProgressBar:
     """简单进度条"""
-    
+
     def __init__(self, config: ProgressBarConfig):
         self.config = config
         self.current = 0
-    
+
     def __enter__(self):
         self.current = 0
         print(f"{self.config.description}: 0/{self.config.total}")
         return self
-    
+
     def __exit__(self, *args):
         print(f"{self.config.description}: {self.current}/{self.config.total} ✓")
-    
+
     def update(self, advance: int = 1):
         """更新进度"""
         self.current += advance
         percent = (self.current / self.config.total * 100) if self.config.total > 0 else 0
         print(f"{self.config.description}: {self.current}/{self.config.total} ({percent:.1f}%)")
-    
+
     def set_description(self, description: str):
         """设置描述"""
         self.config.description = description

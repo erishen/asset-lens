@@ -9,9 +9,8 @@ import logging
 import os
 from dataclasses import dataclass
 from datetime import datetime
-from decimal import Decimal
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from dotenv import load_dotenv
 
@@ -26,10 +25,10 @@ class AIAnalysisResult:
 
     summary: str
     risk_assessment: str
-    suggestions: List[str]
-    warnings: List[str]
+    suggestions: list[str]
+    warnings: list[str]
     score: int
-    raw_analysis: Optional[str] = None
+    raw_analysis: str | None = None
 
 
 class AIAnalyzer:
@@ -103,7 +102,7 @@ class AIAnalyzer:
                 pass
         return self._client
 
-    def analyze_portfolio(self, portfolio_data: Dict[str, Any]) -> AIAnalysisResult:
+    def analyze_portfolio(self, portfolio_data: dict[str, Any]) -> AIAnalysisResult:
         """
         分析投资组合
 
@@ -118,7 +117,7 @@ class AIAnalyzer:
         else:
             return self._rule_based_analyze(portfolio_data)
 
-    def _ai_analyze(self, portfolio_data: Dict[str, Any]) -> AIAnalysisResult:
+    def _ai_analyze(self, portfolio_data: dict[str, Any]) -> AIAnalysisResult:
         """使用 AI 进行深度分析"""
         cache_key = self._generate_cache_key(portfolio_data, "portfolio_analysis")
 
@@ -155,7 +154,7 @@ class AIAnalyzer:
             logger.error(f"AI 分析失败: {e}", exc_info=True)
             return self._rule_based_analyze(portfolio_data)
 
-    def _rule_based_analyze(self, portfolio_data: Dict[str, Any]) -> AIAnalysisResult:
+    def _rule_based_analyze(self, portfolio_data: dict[str, Any]) -> AIAnalysisResult:
         """基于规则的分析（无 AI 时使用）"""
         summary = self._generate_summary(portfolio_data)
         risk_assessment = self._assess_risk(portfolio_data)
@@ -171,7 +170,7 @@ class AIAnalyzer:
             score=score,
         )
 
-    def _build_analysis_prompt(self, data: Dict[str, Any]) -> str:
+    def _build_analysis_prompt(self, data: dict[str, Any]) -> str:
         """构建 AI 分析提示词"""
         total_value = data.get("total_value", 0)
         total_profit = data.get("total_profit", 0)
@@ -232,7 +231,7 @@ class AIAnalyzer:
 """
         return prompt
 
-    def _parse_ai_response(self, ai_response: str, data: Dict[str, Any]) -> AIAnalysisResult:
+    def _parse_ai_response(self, ai_response: str, data: dict[str, Any]) -> AIAnalysisResult:
         """解析 AI 响应"""
         try:
             json_start = ai_response.find("{")
@@ -254,7 +253,7 @@ class AIAnalyzer:
 
         return self._rule_based_analyze(data)
 
-    def _generate_summary(self, data: Dict[str, Any]) -> str:
+    def _generate_summary(self, data: dict[str, Any]) -> str:
         """生成投资摘要"""
         total_value = data.get("total_value", 0)
         total_profit = data.get("total_profit", 0)
@@ -270,7 +269,7 @@ class AIAnalyzer:
             f"整体收益率 {overall_return}%。"
         )
 
-    def _assess_risk(self, data: Dict[str, Any]) -> str:
+    def _assess_risk(self, data: dict[str, Any]) -> str:
         """评估风险"""
         risk_dist = data.get("risk_distribution", {})
         total_value = float(data.get("total_value", 1))
@@ -295,7 +294,7 @@ class AIAnalyzer:
         else:
             return f"您的投资组合风险较低，低风险产品占比 {low_risk_ratio*100:.1f}%，适合稳健型投资者。"
 
-    def _generate_suggestions(self, data: Dict[str, Any]) -> List[str]:
+    def _generate_suggestions(self, data: dict[str, Any]) -> list[str]:
         """生成投资建议"""
         suggestions = []
 
@@ -327,7 +326,7 @@ class AIAnalyzer:
 
         return suggestions
 
-    def _generate_warnings(self, data: Dict[str, Any]) -> List[str]:
+    def _generate_warnings(self, data: dict[str, Any]) -> list[str]:
         """生成风险警告"""
         warnings = []
 
@@ -350,7 +349,7 @@ class AIAnalyzer:
 
         return warnings
 
-    def _calculate_score(self, data: Dict[str, Any]) -> int:
+    def _calculate_score(self, data: dict[str, Any]) -> int:
         """计算综合评分"""
         score = 60
 
@@ -388,7 +387,7 @@ class AIAnalyzer:
         except (ValueError, TypeError):
             return "0.00"
 
-    def _generate_cache_key(self, data: Dict[str, Any], prefix: str) -> str:
+    def _generate_cache_key(self, data: dict[str, Any], prefix: str) -> str:
         """生成缓存键"""
         key_data = json.dumps(
             {
@@ -400,7 +399,7 @@ class AIAnalyzer:
         )
         return f"{prefix}_{hashlib.md5(key_data.encode()).hexdigest()}"
 
-    def _get_cache(self, key: str) -> Optional[AIAnalysisResult]:
+    def _get_cache(self, key: str) -> AIAnalysisResult | None:
         """获取缓存"""
         if not self.use_cache:
             return None
@@ -410,7 +409,7 @@ class AIAnalyzer:
             return None
 
         try:
-            with open(cache_file, "r", encoding="utf-8") as f:
+            with open(cache_file, encoding="utf-8") as f:
                 cached = json.load(f)
 
             cache_time = datetime.fromisoformat(cached.get("timestamp", "2000-01-01"))
@@ -458,9 +457,9 @@ class AIAnalyzer:
 
     def generate_investment_advice(
         self,
-        portfolio_data: Dict[str, Any],
+        portfolio_data: dict[str, Any],
         risk_preference: str = "balanced",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """生成投资建议"""
         analysis = self.analyze_portfolio(portfolio_data)
 
@@ -488,7 +487,7 @@ class AIAnalyzer:
         else:
             return "需改进"
 
-    def _get_recommended_allocation(self, risk_preference: str) -> Dict[str, int]:
+    def _get_recommended_allocation(self, risk_preference: str) -> dict[str, int]:
         """获取推荐资产配置"""
         allocations = {
             "conservative": {

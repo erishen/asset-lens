@@ -3,22 +3,22 @@ CLI Report Commands.
 CLI 报告命令
 """
 
-import click
-from pathlib import Path
 from datetime import datetime
-from typing import Optional
+from pathlib import Path
+
+import click
 
 from ..config import config
 
 
-def get_data_dir(data_mode: Optional[str] = None) -> Optional[Path]:
+def get_data_dir(data_mode: str | None = None) -> Path | None:
     """获取数据目录"""
     if data_mode:
         config.data_mode = data_mode
     return config.data_path
 
 
-def show_asset_summary(data_mode: Optional[str] = None):
+def show_asset_summary(data_mode: str | None = None):
     """显示资产汇总"""
     from ..data.asset_summary_parser import AssetSummaryParser
 
@@ -34,7 +34,7 @@ def show_asset_summary(data_mode: Optional[str] = None):
 
     if not csv_file.exists():
         click.echo(f"❌ 资产汇总文件不存在: {csv_file}")
-        click.echo(f"💡 提示: 请确保数据目录中有相应的数据文件")
+        click.echo("💡 提示: 请确保数据目录中有相应的数据文件")
         return
 
     try:
@@ -67,13 +67,13 @@ def show_asset_summary(data_mode: Optional[str] = None):
             click.echo(f"\n... 还有 {len(summaries) - 10} 条记录未显示")
 
         click.echo("=" * 80)
-        click.echo(f"💡 提示: 使用 'asset-lens export-asset-summary --output-format csv' 导出完整数据")
+        click.echo("💡 提示: 使用 'asset-lens export-asset-summary --output-format csv' 导出完整数据")
 
     except Exception as e:
         click.echo(f"❌ 读取资产汇总失败: {e}", err=True)
 
 
-def show_exchange_rate_history(data_mode: Optional[str] = None):
+def show_exchange_rate_history(data_mode: str | None = None):
     """显示汇率历史"""
     from ..data.exchange_rate_parser import ExchangeRateParser
 
@@ -89,7 +89,7 @@ def show_exchange_rate_history(data_mode: Optional[str] = None):
 
     if not csv_file.exists():
         click.echo(f"❌ 汇率历史文件不存在: {csv_file}")
-        click.echo(f"💡 提示: 请确保数据目录中有相应的数据文件")
+        click.echo("💡 提示: 请确保数据目录中有相应的数据文件")
         return
 
     try:
@@ -111,7 +111,7 @@ def show_exchange_rate_history(data_mode: Optional[str] = None):
         click.echo(f"❌ 读取汇率历史失败: {e}", err=True)
 
 
-def show_sell_records(data_mode: Optional[str] = None):
+def show_sell_records(data_mode: str | None = None):
     """显示卖出记录"""
     from ..data.sell_record_parser import SellRecordParser
 
@@ -147,7 +147,7 @@ def show_sell_records(data_mode: Optional[str] = None):
         click.echo(f"❌ 读取卖出记录失败: {e}", err=True)
 
 
-def export_asset_summary(output_format: str = "csv", data_mode: Optional[str] = None):
+def export_asset_summary(output_format: str = "csv", data_mode: str | None = None):
     """导出资产汇总"""
     from ..data.asset_summary_parser import AssetSummaryParser
 
@@ -209,7 +209,7 @@ def export_asset_summary(output_format: str = "csv", data_mode: Optional[str] = 
         click.echo(f"❌ 导出失败: {e}", err=True)
 
 
-def export_sell_records(output_format: str = "csv", data_mode: Optional[str] = None):
+def export_sell_records(output_format: str = "csv", data_mode: str | None = None):
     """导出卖出记录"""
     from ..data.sell_record_parser import SellRecordParser
 

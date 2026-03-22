@@ -3,19 +3,18 @@ Asset-Lens Python SDK.
 方便的 Python 调用接口
 """
 
-from datetime import datetime
-from typing import Any, Dict, List, Optional
-from pathlib import Path
-import json
 import logging
+from datetime import datetime
+from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 class AssetLensClient:
     """Asset-Lens 客户端"""
-    
-    def __init__(self, config_path: Optional[Path] = None):
+
+    def __init__(self, config_path: Path | None = None):
         """
         初始化客户端
         
@@ -23,9 +22,9 @@ class AssetLensClient:
             config_path: 配置文件路径
         """
         self.config_path = config_path or Path("config/asset_lens.yaml")
-        self._cache: Dict[str, Any] = {}
-    
-    def get_stock_quote(self, code: str) -> Dict[str, Any]:
+        self._cache: dict[str, Any] = {}
+
+    def get_stock_quote(self, code: str) -> dict[str, Any]:
         """
         获取股票实时行情
         
@@ -42,7 +41,7 @@ class AssetLensClient:
                 capture_output=True,
                 text=True
             )
-            
+
             if result.returncode == 0:
                 return {
                     'success': True,
@@ -62,8 +61,8 @@ class AssetLensClient:
                 'error': str(e),
                 'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
-    
-    def get_fund_nav(self, code: str) -> Dict[str, Any]:
+
+    def get_fund_nav(self, code: str) -> dict[str, Any]:
         """
         获取基金净值
         
@@ -80,7 +79,7 @@ class AssetLensClient:
                 capture_output=True,
                 text=True
             )
-            
+
             if result.returncode == 0:
                 return {
                     'success': True,
@@ -100,8 +99,8 @@ class AssetLensClient:
                 'error': str(e),
                 'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
-    
-    def analyze_portfolio(self) -> Dict[str, Any]:
+
+    def analyze_portfolio(self) -> dict[str, Any]:
         """
         分析投资组合
         
@@ -115,7 +114,7 @@ class AssetLensClient:
                 capture_output=True,
                 text=True
             )
-            
+
             if result.returncode == 0:
                 return {
                     'success': True,
@@ -135,8 +134,8 @@ class AssetLensClient:
                 'error': str(e),
                 'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
-    
-    def screen_stocks(self, strategy: str = "momentum", limit: int = 10) -> Dict[str, Any]:
+
+    def screen_stocks(self, strategy: str = "momentum", limit: int = 10) -> dict[str, Any]:
         """
         股票筛选
         
@@ -154,7 +153,7 @@ class AssetLensClient:
                 capture_output=True,
                 text=True
             )
-            
+
             if result.returncode == 0:
                 return {
                     'success': True,
@@ -174,8 +173,8 @@ class AssetLensClient:
                 'error': str(e),
                 'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
-    
-    def get_market_indices(self) -> Dict[str, Any]:
+
+    def get_market_indices(self) -> dict[str, Any]:
         """
         获取市场指数
         
@@ -189,13 +188,13 @@ class AssetLensClient:
                 'sz399006': '创业板指',
                 'sh000688': '科创50'
             }
-            
+
             results = {}
             for code, name in indices.items():
                 result = self.get_stock_quote(code)
                 if result['success']:
                     results[name] = result
-            
+
             return {
                 'success': True,
                 'data': results,
@@ -208,8 +207,8 @@ class AssetLensClient:
                 'error': str(e),
                 'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
-    
-    def calculate_risk_metrics(self, returns: List[float]) -> Dict[str, Any]:
+
+    def calculate_risk_metrics(self, returns: list[float]) -> dict[str, Any]:
         """
         计算风险指标
         
@@ -221,9 +220,9 @@ class AssetLensClient:
         """
         try:
             from asset_lens.risk import risk_service
-            
+
             metrics = risk_service.calculate_metrics(returns)
-            
+
             return {
                 'success': True,
                 'data': {
@@ -241,8 +240,8 @@ class AssetLensClient:
                 'error': str(e),
                 'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
-    
-    def generate_report(self, report_type: str = "daily") -> Dict[str, Any]:
+
+    def generate_report(self, report_type: str = "daily") -> dict[str, Any]:
         """
         生成报告
         
@@ -254,16 +253,16 @@ class AssetLensClient:
         """
         try:
             from asset_lens.monitoring.investment_monitor import InvestmentMonitor
-            
+
             monitor = InvestmentMonitor()
-            
+
             if report_type == "daily":
                 report = monitor.generate_daily_report()
             elif report_type == "weekly":
                 report = monitor.generate_weekly_report()
             else:
                 report = monitor.generate_daily_report()
-            
+
             return {
                 'success': True,
                 'data': report,
@@ -276,8 +275,8 @@ class AssetLensClient:
                 'error': str(e),
                 'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
-    
-    def add_to_stock_pool(self, code: str, name: str, price: float) -> Dict[str, Any]:
+
+    def add_to_stock_pool(self, code: str, name: str, price: float) -> dict[str, Any]:
         """
         添加股票到股票池
         
@@ -296,7 +295,7 @@ class AssetLensClient:
                 capture_output=True,
                 text=True
             )
-            
+
             if result.returncode == 0:
                 return {
                     'success': True,
@@ -316,8 +315,8 @@ class AssetLensClient:
                 'error': str(e),
                 'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
-    
-    def get_stock_pool_status(self) -> Dict[str, Any]:
+
+    def get_stock_pool_status(self) -> dict[str, Any]:
         """
         获取股票池状态
         
@@ -331,7 +330,7 @@ class AssetLensClient:
                 capture_output=True,
                 text=True
             )
-            
+
             if result.returncode == 0:
                 return {
                     'success': True,
@@ -353,6 +352,6 @@ class AssetLensClient:
             }
 
 
-def create_client(config_path: Optional[Path] = None) -> AssetLensClient:
+def create_client(config_path: Path | None = None) -> AssetLensClient:
     """创建客户端实例"""
     return AssetLensClient(config_path)

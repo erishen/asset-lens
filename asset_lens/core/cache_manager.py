@@ -6,7 +6,7 @@ Cache manager with expiration support.
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class CacheManager:
@@ -36,7 +36,7 @@ class CacheManager:
             return False
 
         try:
-            with open(cache_file, "r", encoding="utf-8") as f:
+            with open(cache_file, encoding="utf-8") as f:
                 data = json.load(f)
 
             update_time_str = data.get("更新时间")
@@ -52,13 +52,13 @@ class CacheManager:
         except (json.JSONDecodeError, ValueError, KeyError):
             return False
 
-    def get_cache_age(self, cache_name: str) -> Optional[timedelta]:
+    def get_cache_age(self, cache_name: str) -> timedelta | None:
         cache_file = self.get_cache_file(cache_name)
         if not cache_file.exists():
             return None
 
         try:
-            with open(cache_file, "r", encoding="utf-8") as f:
+            with open(cache_file, encoding="utf-8") as f:
                 data = json.load(f)
 
             update_time_str = data.get("更新时间")
@@ -71,20 +71,20 @@ class CacheManager:
         except (json.JSONDecodeError, ValueError, KeyError):
             return None
 
-    def get_cache_age_hours(self, cache_name: str) -> Optional[float]:
+    def get_cache_age_hours(self, cache_name: str) -> float | None:
         age = self.get_cache_age(cache_name)
         if age is None:
             return None
         return age.total_seconds() / 3600
 
-    def read_cache(self, cache_name: str) -> Optional[Dict[str, Any]]:
+    def read_cache(self, cache_name: str) -> dict[str, Any] | None:
         cache_file = self.get_cache_file(cache_name)
         if not cache_file.exists():
             return None
 
         try:
-            with open(cache_file, "r", encoding="utf-8") as f:
-                data: Dict[str, Any] = json.load(f)
+            with open(cache_file, encoding="utf-8") as f:
+                data: dict[str, Any] = json.load(f)
                 return data
         except json.JSONDecodeError:
             return None
@@ -92,7 +92,7 @@ class CacheManager:
     def write_cache(
         self,
         cache_name: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         update_time: datetime | None = None,
     ) -> bool:
         cache_file = self.get_cache_file(cache_name)
@@ -129,7 +129,7 @@ class CacheManager:
                 pass
         return cleared
 
-    def get_cache_status(self, cache_name: str) -> Dict[str, Any]:
+    def get_cache_status(self, cache_name: str) -> dict[str, Any]:
         cache_file = self.get_cache_file(cache_name)
 
         status = {
@@ -147,7 +147,7 @@ class CacheManager:
 
         return status
 
-    def get_all_cache_status(self) -> Dict[str, Dict[str, Any]]:
+    def get_all_cache_status(self) -> dict[str, dict[str, Any]]:
         status = {}
         for cache_file in self.cache_path.glob("*.json"):
             cache_name = cache_file.stem
