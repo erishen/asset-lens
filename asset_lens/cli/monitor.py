@@ -14,10 +14,9 @@ def register_monitor_commands(cli: click.Group) -> None:
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     def run_daily_tasks(data_mode: str | None):
         """运行每日任务"""
-        from asset_lens.config import config
+        from asset_lens.cli.helpers import setup_data_mode
 
-        if data_mode:
-            config.data_mode = data_mode
+        setup_data_mode(data_mode)
 
         click.echo("\n📊 运行每日任务")
         click.echo("=" * 60)
@@ -80,8 +79,9 @@ def register_monitor_commands(cli: click.Group) -> None:
         from asset_lens.config import config
         from asset_lens.data.csv_parser import CSVParser
 
-        if data_mode:
-            config.data_mode = data_mode
+        from asset_lens.cli.helpers import setup_data_mode
+
+        setup_data_mode(data_mode)
 
         click.echo("\n📊 个人数据管理")
         click.echo("=" * 60)
