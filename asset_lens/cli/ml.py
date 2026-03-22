@@ -7,12 +7,6 @@ import json
 from pathlib import Path
 
 import click
-import numpy as np
-import pandas as pd
-from rich.console import Console
-from rich.table import Table
-
-console = Console()
 
 
 @click.group()
@@ -27,9 +21,15 @@ def ml():
 @click.option("--output", default="cache/ml/model.pkl", help="模型输出路径")
 def train(model_type: str, prediction_days: int, output: str):
     """训练机器学习模型"""
+    import numpy as np
+    import pandas as pd
+    from rich.console import Console
+    from rich.table import Table
+
     from asset_lens.data.market_stock_fetcher import MarketStockFetcher
     from asset_lens.ml.trainer import ModelTrainer, TrainingConfig
 
+    console = Console()
     console.print("\n🤖 训练机器学习模型")
     console.print(f"   模型类型: {model_type}")
     console.print(f"   预测天数: {prediction_days}")
@@ -144,9 +144,15 @@ def train(model_type: str, prediction_days: int, output: str):
 @click.option("--code", help="股票代码")
 def predict(model: str, code: str):
     """使用模型预测股票"""
+    import numpy as np
+    import pandas as pd
+    from rich.console import Console
+    from rich.table import Table
+
     from asset_lens.data.market_stock_fetcher import MarketStockFetcher
     from asset_lens.ml.predictor import StockPredictor
 
+    console = Console()
     console.print("\n🔮 股票预测")
     console.print("=" * 60)
 
@@ -185,7 +191,7 @@ def predict(model: str, code: str):
 
         console.print("\n📊 数据集统计")
         console.print("=" * 60)
-        console.print(f"  数据源: 市场股票缓存")
+        console.print("  数据源: 市场股票缓存")
         console.print(f"  总股票数: {len(stocks_data)}")
         console.print(f"  使用天数: {n_days} 天")
 
@@ -240,8 +246,12 @@ def predict(model: str, code: str):
 @click.option("--model", default="cache/ml/model.pkl", help="模型路径")
 def importance(model: str):
     """查看模型特征重要性"""
+    from rich.console import Console
+    from rich.table import Table
+
     from asset_lens.ml.predictor import StockPredictor
 
+    console = Console()
     console.print("\n📊 特征重要性分析")
     console.print("=" * 60)
 
@@ -278,6 +288,9 @@ def importance(model: str):
 @ml.command()
 def status():
     """查看 ML 模块状态"""
+    from rich.console import Console
+
+    console = Console()
     console.print("\n🤖 ML 模块状态")
     console.print("=" * 60)
 
@@ -340,8 +353,12 @@ def status():
 @click.option("--output", default="cache/ml/model.pkl", help="模型输出路径")
 def train_db(model_type: str, days: int, output: str):
     """从数据库数据训练模型"""
+    from rich.console import Console
+    from rich.table import Table
+
     from asset_lens.ml.trainer import ModelTrainer
 
+    console = Console()
     console.print("\n🤖 从数据库训练模型")
     console.print(f"   模型类型: {model_type}")
     console.print(f"   数据天数: {days}")
@@ -390,8 +407,12 @@ def train_db(model_type: str, days: int, output: str):
 @click.option("--model", default="cache/ml/model.pkl", help="模型路径")
 def predict_db(code: str, model: str):
     """从数据库数据预测股票"""
+    from rich.console import Console
+    from rich.table import Table
+
     from asset_lens.ml.trainer import ModelTrainer
 
+    console = Console()
     console.print(f"\n🔮 从数据库预测股票: {code}")
     console.print("=" * 60)
 
@@ -434,8 +455,12 @@ def predict_db(code: str, model: str):
 @click.option("--days", default=30, help="查看最近N天的预测")
 def predictions(days: int):
     """查看历史预测记录"""
+    from rich.console import Console
+    from rich.table import Table
+
     from asset_lens.db.database import db_manager
 
+    console = Console()
     console.print(f"\n📊 历史预测记录 (最近{days}天)")
     console.print("=" * 60)
 
@@ -479,9 +504,12 @@ def predictions(days: int):
 @click.option("--model-type", default="lightgbm", help="模型类型")
 def train_adaptive(model_type: str):
     """AI驱动的自适应训练 - 根据市场行情自动调整策略"""
+    from rich.console import Console
+
     from asset_lens.ml.adaptive_trainer import adaptive_trainer
     from asset_lens.strategy.ai_analyzer import AIAnalyzer
 
+    console = Console()
     ai_analyzer = AIAnalyzer()
     initial_tokens = ai_analyzer.total_tokens_used
     initial_cost = ai_analyzer.total_cost
@@ -513,8 +541,11 @@ def train_adaptive(model_type: str):
 @ml.command()
 def analyze_market():
     """ML分析当前市场行情"""
+    from rich.console import Console
+
     from asset_lens.ml.adaptive_trainer import AIMarketAnalyzer
 
+    console = Console()
     console.print("\n📊 ML市场分析")
     console.print("=" * 60)
 
@@ -543,9 +574,12 @@ def analyze_market():
 @ml.command()
 def trade():
     """运行AI模拟交易会话"""
+    from rich.console import Console
+
     from asset_lens.ml.ai_trader import AISimulatedTrader
     from asset_lens.strategy.ai_analyzer import AIAnalyzer
 
+    console = Console()
     ai_analyzer = AIAnalyzer()
     initial_tokens = ai_analyzer.total_tokens_used
     initial_cost = ai_analyzer.total_cost
@@ -582,10 +616,12 @@ def trade_history(days: int):
 @ml.command()
 def portfolio():
     """查看AI模拟交易投资组合"""
+    from rich.console import Console
     from rich.table import Table
 
     from asset_lens.ml.ai_trader import AISimulatedTrader
 
+    console = Console()
     trader = AISimulatedTrader()
     summary = trader.get_portfolio_summary()
 
@@ -632,11 +668,14 @@ def portfolio():
 @ml.command()
 def sector():
     """分析板块轮动情况（使用ML预测）"""
+    from rich.console import Console
     from rich.table import Table
 
     from asset_lens.data.market_stock_fetcher import MarketStockFetcher
     from asset_lens.ml.sector_ml import sector_ml_predictor
     from asset_lens.ml.sector_rotation import sector_analyzer
+
+    console = Console()
 
     console.print("\n📊 板块轮动分析 (ML增强)")
     console.print("=" * 60)
@@ -646,7 +685,7 @@ def sector():
 
     console.print("\n📊 数据集统计")
     console.print("=" * 60)
-    console.print(f"  数据源: 市场股票缓存")
+    console.print("  数据源: 市场股票缓存")
     console.print(f"  总股票数: {len(stocks):,}")
     if stocks:
         up_count = len([s for s in stocks if s.get('change_percent', 0) > 0])
@@ -735,10 +774,14 @@ def sector():
 @click.argument("fund_name")
 def fund_sector(fund_name: str):
     """分析基金所属板块并给出建议
-    
+
     示例: make ml-fund-sector FUND="易方达科技创新混合"
     """
+    from rich.console import Console
+
     from asset_lens.ml.sector_rotation import sector_analyzer
+
+    console = Console()
 
     console.print(f"\n📊 基金板块分析: {fund_name}")
     console.print("=" * 60)
