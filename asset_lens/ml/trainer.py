@@ -105,11 +105,11 @@ class ModelTrainer:
     ) -> tuple[pd.DataFrame, pd.Series]:
         """
         准备训练数据
-        
+
         Args:
             price_data: 价格数据，需包含 close, high, low, volume 等列
             code: 股票代码
-        
+
         Returns:
             X: 特征数据
             y: 标签数据
@@ -148,10 +148,10 @@ class ModelTrainer:
     ) -> tuple[pd.DataFrame, pd.Series]:
         """
         准备多股票训练数据
-        
+
         Args:
             stocks_data: 多只股票的价格数据 {code: DataFrame}
-        
+
         Returns:
             X: 特征数据
             y: 标签数据
@@ -186,11 +186,11 @@ class ModelTrainer:
     ) -> TrainingResult:
         """
         训练模型
-        
+
         Args:
             X: 特征数据
             y: 标签数据
-        
+
         Returns:
             训练结果
         """
@@ -220,7 +220,7 @@ class ModelTrainer:
 
         try:
             auc = roc_auc_score(y_test, y_proba)
-        except:
+        except ValueError:
             auc = 0.5
 
         tscv = TimeSeriesSplit(n_splits=self.config.cv_folds)
@@ -258,10 +258,10 @@ class ModelTrainer:
     ) -> TrainingResult:
         """
         使用市场数据训练模型
-        
+
         Args:
             stocks_data: 多只股票的价格数据
-        
+
         Returns:
             训练结果
         """
@@ -276,12 +276,12 @@ class ModelTrainer:
     ) -> dict[str, Any]:
         """
         回测模型表现
-        
+
         Args:
             price_data: 价格数据
             initial_capital: 初始资金
             position_size: 仓位比例
-        
+
         Returns:
             回测结果
         """
@@ -348,11 +348,11 @@ class ModelTrainer:
     ) -> TrainingResult:
         """
         从数据库读取数据并训练模型
-        
+
         Args:
             codes: 股票代码列表，为空则使用所有可用数据
             days: 历史天数
-        
+
         Returns:
             训练结果
         """
@@ -421,11 +421,11 @@ class ModelTrainer:
     ) -> dict[str, Any]:
         """
         预测单只股票并保存结果
-        
+
         Args:
             code: 股票代码
             save_to_db: 是否保存到数据库
-        
+
         Returns:
             预测结果
         """

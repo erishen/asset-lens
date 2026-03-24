@@ -100,10 +100,10 @@ class TechnicalAnalysis:
     def full_analysis(self, prices: pd.DataFrame) -> dict[str, Any]:
         """
         完整技术分析
-        
+
         Args:
             prices: OHLCV 数据
-            
+
         Returns:
             分析结果
         """
@@ -143,7 +143,7 @@ class RiskAnalysis:
     def __init__(self, risk_free_rate: float = 0.03):
         """
         初始化风险分析工具
-        
+
         Args:
             risk_free_rate: 无风险利率
         """
@@ -156,11 +156,11 @@ class RiskAnalysis:
     ) -> float:
         """
         计算风险价值
-        
+
         Args:
             returns: 收益率序列
             confidence: 置信水平
-            
+
         Returns:
             VaR 值
         """
@@ -173,11 +173,11 @@ class RiskAnalysis:
     ) -> float:
         """
         计算条件风险价值
-        
+
         Args:
             returns: 收益率序列
             confidence: 置信水平
-            
+
         Returns:
             CVaR 值
         """
@@ -187,10 +187,10 @@ class RiskAnalysis:
     def calculate_max_drawdown(self, prices: pd.Series) -> float:
         """
         计算最大回撤
-        
+
         Args:
             prices: 价格序列
-            
+
         Returns:
             最大回撤
         """
@@ -205,11 +205,11 @@ class RiskAnalysis:
     ) -> float:
         """
         计算夏普比率
-        
+
         Args:
             returns: 收益率序列
             periods: 年化周期数
-            
+
         Returns:
             夏普比率
         """
@@ -223,11 +223,11 @@ class RiskAnalysis:
     ) -> float:
         """
         计算索提诺比率
-        
+
         Args:
             returns: 收益率序列
             periods: 年化周期数
-            
+
         Returns:
             索提诺比率
         """
@@ -244,11 +244,11 @@ class RiskAnalysis:
     ) -> float:
         """
         计算卡尔马比率
-        
+
         Args:
             returns: 收益率序列
             periods: 年化周期数
-            
+
         Returns:
             卡尔马比率
         """
@@ -265,11 +265,11 @@ class RiskAnalysis:
     ) -> dict[str, float]:
         """
         完整风险分析
-        
+
         Args:
             returns: 收益率序列
             prices: 价格序列
-            
+
         Returns:
             风险分析结果
         """
@@ -306,11 +306,11 @@ class PortfolioAnalysis:
     ) -> dict[str, Any]:
         """
         分析投资组合
-        
+
         Args:
             holdings: 持仓 {股票代码: 数量}
             prices: 价格数据
-            
+
         Returns:
             分析结果
         """
@@ -345,10 +345,10 @@ class PortfolioAnalysis:
     ) -> pd.DataFrame:
         """
         计算相关性矩阵
-        
+
         Args:
             returns: 收益率数据
-            
+
         Returns:
             相关性矩阵
         """
@@ -361,11 +361,11 @@ class PortfolioAnalysis:
     ) -> float:
         """
         计算贝塔系数
-        
+
         Args:
             stock_returns: 股票收益率
             market_returns: 市场收益率
-            
+
         Returns:
             贝塔系数
         """
@@ -382,12 +382,12 @@ class PortfolioAnalysis:
     ) -> float:
         """
         计算阿尔法
-        
+
         Args:
             stock_returns: 股票收益率
             market_returns: 市场收益率
             risk_free_rate: 无风险利率
-            
+
         Returns:
             阿尔法
         """
@@ -405,11 +405,11 @@ class PortfolioAnalysis:
     ) -> float:
         """
         计算跟踪误差
-        
+
         Args:
             portfolio_returns: 投资组合收益率
             benchmark_returns: 基准收益率
-            
+
         Returns:
             跟踪误差
         """
@@ -422,11 +422,11 @@ class PortfolioAnalysis:
     ) -> float:
         """
         计算信息比率
-        
+
         Args:
             portfolio_returns: 投资组合收益率
             benchmark_returns: 基准收益率
-            
+
         Returns:
             信息比率
         """

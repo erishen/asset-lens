@@ -3,14 +3,21 @@ Asset-Lens REST API.
 基于 FastAPI 的 REST API 实现
 """
 
+import os
 from datetime import datetime
 from typing import Any
 
-from fastapi import Depends, FastAPI, HTTPException, Query, status
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
+
+from asset_lens.api.response import (
+    ERROR_CODES,
+    create_error_response,
+    create_success_response,
+)
 
 app = FastAPI(
     title="Asset-Lens API",
@@ -20,9 +27,11 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8080").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -72,9 +81,19 @@ class MonitorReport(BaseModel):
     content: str
     alerts: list[dict[str, Any]]
 
-API_KEYS = {
-    "demo_key": {"user": "demo", "rate_limit": 100}
-}
+def _load_api_keys() -> dict[str, dict[str, Any]]:
+    """从环境变量加载 API Keys"""
+    api_keys_str = os.getenv("API_KEYS", "")
+    if api_keys_str:
+        import json
+        try:
+            result: dict[str, dict[str, Any]] = json.loads(api_keys_str)
+            return result
+        except json.JSONDecodeError:
+            pass
+    return {"demo_key": {"user": "demo", "rate_limit": 100}}
+
+API_KEYS = _load_api_keys()
 
 request_counts: dict[str, int] = {}
 
@@ -108,11 +127,11 @@ async def check_rate_limit(api_info: dict = Depends(verify_api_key)):
 @app.get("/")
 async def root():
     """根路径"""
-    return {
+    return create_success_response({
         "message": "Welcome to Asset-Lens API",
         "version": "1.0.0",
         "docs": "/docs"
-    }
+    })
 
 @app.get("/api/v1/stocks/{code}", response_model=StockQuote)
 async def get_stock_quote(
@@ -286,7 +305,7 @@ async def screen_stocks(
         筛选结果
     """
     try:
-        return {
+        return create_success_response({
             "strategy": strategy,
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "stocks": [
@@ -297,7 +316,7 @@ async def screen_stocks(
                     "rank": 1
                 }
             ]
-        }
+        })
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -315,7 +334,7 @@ async def get_market_indices(
         市场指数数据
     """
     try:
-        return {
+        return create_success_response({
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "indices": [
                 {
@@ -331,7 +350,7 @@ async def get_market_indices(
                     "change_percent": 2.0
                 }
             ]
-        }
+        })
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -339,15 +358,27 @@ async def get_market_indices(
         ) from e
 
 @app.exception_handler(HTTPException)
-async def http_exception_handler(request, exc):
+async def http_exception_handler(request: Request, exc: HTTPException):
     """HTTP 异常处理"""
+    error_code = "INTERNAL_ERROR"
+    for code, info in ERROR_CODES.items():
+        if info["status_code"] == exc.status_code:
+            error_code = code
+            break
     return JSONResponse(
         status_code=exc.status_code,
-        content={
-            "error": exc.detail,
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
+        content=create_error_response(error_code, exc.detail),
     )
+
+
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
+    """通用异常处理"""
+    return JSONResponse(
+        status_code=500,
+        content=create_error_response("INTERNAL_ERROR", str(exc)),
+    )
+
 
 if __name__ == "__main__":
     import uvicorn

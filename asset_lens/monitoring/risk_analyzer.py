@@ -308,7 +308,8 @@ class RiskAnalyzer:
             try:
                 with open(history_file, encoding='utf-8') as f:
                     history_data = json.load(f)
-            except:
+            except (json.JSONDecodeError, OSError) as e:
+                logger.warning(f"加载历史数据失败: {e}")
                 history_data = []
 
         history_data.append(metrics_data)
@@ -323,17 +324,17 @@ class RiskAnalyzer:
     ) -> MarketRegime:
         """
         判断市场环境
-        
+
         基于指数收益率判断当前市场环境:
         - 牛市: 收益率 > 10%, 波动率 < 25%
         - 熊市: 收益率 < -10%, 波动率 < 30%
         - 危机: 波动率 > 40% 或 最大回撤 > 20%
         - 震荡: 其他情况
-        
+
         Args:
             index_returns: 指数收益率序列
             lookback_periods: 回看期数
-            
+
         Returns:
             MarketRegime 市场环境类型
         """
@@ -370,10 +371,10 @@ class RiskAnalyzer:
     def get_regime_thresholds(self, regime: MarketRegime) -> dict[str, float]:
         """
         根据市场环境获取风险阈值
-        
+
         Args:
             regime: 市场环境类型
-            
+
         Returns:
             风险阈值字典
         """

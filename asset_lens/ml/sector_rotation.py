@@ -70,7 +70,7 @@ class SectorRotationAnalyzer:
     def analyze(self) -> SectorRotationResult:
         """
         分析板块轮动情况
-        
+
         Returns:
             板块轮动分析结果
         """
@@ -247,10 +247,10 @@ class SectorRotationAnalyzer:
     def get_fund_sector_recommendation(self, fund_name: str) -> dict[str, Any]:
         """
         根据基金名称判断所属板块并给出建议
-        
+
         Args:
             fund_name: 基金名称
-        
+
         Returns:
             板块建议
         """
@@ -294,10 +294,10 @@ class SectorRotationAnalyzer:
     def analyze_portfolio_sectors(self, funds: list[str]) -> dict[str, Any]:
         """
         分析投资组合的板块分布
-        
+
         Args:
             funds: 基金名称列表
-        
+
         Returns:
             板块分布分析
         """

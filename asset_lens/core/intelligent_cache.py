@@ -50,7 +50,7 @@ class IntelligentCache:
     ):
         """
         初始化智能缓存
-        
+
         Args:
             max_size: 最大缓存数量
             default_ttl: 默认 TTL（秒）
@@ -88,12 +88,12 @@ class IntelligentCache:
     ) -> Any:
         """
         获取缓存值
-        
+
         Args:
             key: 缓存键
             default: 默认值
             refresh_on_hit: 命中时是否刷新 TTL
-            
+
         Returns:
             缓存值
         """
@@ -134,12 +134,12 @@ class IntelligentCache:
     ) -> bool:
         """
         设置缓存值
-        
+
         Args:
             key: 缓存键
             value: 缓存值
             ttl: TTL（秒），None 表示使用默认值
-            
+
         Returns:
             是否成功
         """
@@ -167,10 +167,10 @@ class IntelligentCache:
     def delete(self, key: str) -> bool:
         """
         删除缓存
-        
+
         Args:
             key: 缓存键
-            
+
         Returns:
             是否成功
         """
@@ -198,7 +198,7 @@ class IntelligentCache:
     def cleanup_expired(self) -> int:
         """
         清理过期缓存
-        
+
         Returns:
             清理的数量
         """
@@ -217,7 +217,7 @@ class IntelligentCache:
     def get_stats(self) -> dict[str, Any]:
         """
         获取统计信息
-        
+
         Returns:
             统计信息
         """
@@ -239,7 +239,7 @@ class IntelligentCache:
     def warmup(self, data: dict[str, Any], ttl: int | None = None):
         """
         缓存预热
-        
+
         Args:
             data: 预热数据 {key: value}
             ttl: TTL
@@ -258,12 +258,12 @@ class IntelligentCache:
     ) -> Any:
         """
         获取或设置缓存
-        
+
         Args:
             key: 缓存键
             factory: 工厂函数
             ttl: TTL
-            
+
         Returns:
             缓存值
         """
@@ -281,10 +281,10 @@ class IntelligentCache:
     ) -> Callable:
         """
         缓存装饰器
-        
+
         Args:
             ttl: TTL
-            
+
         Returns:
             装饰器函数
         """
@@ -298,7 +298,7 @@ class IntelligentCache:
     def save_to_file(self, file_path: Path):
         """
         保存缓存到文件
-        
+
         Args:
             file_path: 文件路径
         """
@@ -320,7 +320,7 @@ class IntelligentCache:
     def load_from_file(self, file_path: Path):
         """
         从文件加载缓存
-        
+
         Args:
             file_path: 文件路径
         """
@@ -355,10 +355,10 @@ intelligent_cache = IntelligentCache(
 def cached(ttl: int | None = None):
     """
     缓存装饰器
-    
+
     Args:
         ttl: TTL（秒）
-        
+
     Returns:
         装饰器函数
     """

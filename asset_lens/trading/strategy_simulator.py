@@ -322,7 +322,7 @@ class StrategySimulator:
 
     def check_stop_loss_take_profit(self, date: str, prices: dict[str, float]) -> list[SimulatedTrade]:
         """检查止损止盈
-        
+
         根据配置的止损类型动态计算止损价格
         """
         trades: list[SimulatedTrade] = []
@@ -392,7 +392,7 @@ class StrategySimulator:
     ) -> SimulationResult:
         """
         运行模拟
-        
+
         Args:
             stock_pool_data: 股票池数据 (包含 score 等信息)
             price_history: 价格历史 {code: [{date, price, ...}]}
@@ -400,7 +400,7 @@ class StrategySimulator:
             end_date: 结束日期
             selection_func: 选股函数
             benchmark_prices: 基准指数价格序列 {date: price}
-            
+
         Returns:
             模拟结果
         """
@@ -482,7 +482,7 @@ class StrategySimulator:
         benchmark_prices: dict[str, float] | None = None,
     ) -> SimulationResult:
         """计算模拟结果
-        
+
         Args:
             start_date: 开始日期
             end_date: 结束日期

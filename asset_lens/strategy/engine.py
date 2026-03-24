@@ -710,11 +710,11 @@ class StrategyEngine:
     ) -> dict[str, Any]:
         """
         使用策略组合评估股票
-        
+
         Args:
             stock: 股票数据
             strategy_weights: 策略权重字典 {"value": 0.4, "momentum": 0.3, ...}
-            
+
         Returns:
             组合评分结果
         """
@@ -786,12 +786,12 @@ class StrategyEngine:
     ) -> list[dict[str, Any]]:
         """
         使用策略组合筛选股票
-        
+
         Args:
             stocks: 股票列表
             strategy_weights: 策略权重
             min_combined_score: 最低综合得分
-            
+
         Returns:
             筛选后的股票列表
         """

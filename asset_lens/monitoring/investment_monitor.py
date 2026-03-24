@@ -297,7 +297,8 @@ class InvestmentMonitor:
             try:
                 with open(alert_file, encoding='utf-8') as f:
                     alerts_data = json.load(f)
-            except:
+            except (json.JSONDecodeError, OSError) as e:
+                logger.warning(f"加载告警历史失败: {e}")
                 alerts_data = []
 
         alerts_data.append({

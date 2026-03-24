@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from ..notification import NotificationChannel, NotificationMessage, NotificationService
+from ..notification import NotificationMessage, NotificationService, NotificationChannel
 from .template_engine import template_engine
 
 
@@ -54,12 +54,12 @@ class DailyReportPusher:
     ) -> str:
         """
         生成日报
-        
+
         Args:
             portfolio_data: 投资组合数据
             risk_alerts: 风险预警列表
             suggestions: 建议列表
-            
+
         Returns:
             日报文本
         """
@@ -92,13 +92,13 @@ class DailyReportPusher:
     ) -> dict[str, bool]:
         """
         推送日报
-        
+
         Args:
             portfolio_data: 投资组合数据
             risk_alerts: 风险预警列表
             suggestions: 建议列表
             channels: 推送渠道列表
-            
+
         Returns:
             各渠道推送结果
         """
@@ -140,13 +140,13 @@ class DailyReportPusher:
     ) -> dict[str, bool]:
         """
         推送风险预警
-        
+
         Args:
             alert_type: 预警类型
             level: 预警级别
             message: 预警消息
             details: 详细信息
-            
+
         Returns:
             各渠道推送结果
         """
@@ -170,7 +170,7 @@ class DailyReportPusher:
     ) -> dict[str, bool]:
         """
         推送周报
-        
+
         Args:
             portfolio_data: 投资组合数据
             weekly_summary: 周度摘要
@@ -180,7 +180,7 @@ class DailyReportPusher:
             risk_alerts: 风险预警
             suggestions: 建议
             next_week_tasks: 下周计划
-            
+
         Returns:
             各渠道推送结果
         """

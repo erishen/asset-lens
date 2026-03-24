@@ -12,10 +12,12 @@ Investment report generator for asset-lens.
 import json
 from dataclasses import dataclass, field
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 from ..config import config
 from ..trading.stock_pool import StockPool
+from .report_printer import ReportPrinter
 
 
 @dataclass
@@ -35,6 +37,7 @@ class InvestmentReportGenerator:
         self.report_path = self.cache_path / "reports"
         self.report_path.mkdir(parents=True, exist_ok=True)
         self.config = ReportConfig()
+        self.printer = ReportPrinter()
 
     def generate_strategy_report(
         self,
@@ -509,24 +512,7 @@ class InvestmentReportGenerator:
 
     def print_report(self, report: dict[str, Any]) -> None:
         """打印报告"""
-        report_type = report.get("report_type", "unknown")
-
-        print("\n" + "=" * 60)
-        print(f"📊 {self._get_report_title(report_type)}")
-        print("=" * 60)
-        print(f"生成时间: {report.get('generate_time', 'N/A')}")
-
-        if report_type == "strategy_report":
-            self._print_strategy_report(report)
-        elif report_type == "pool_report":
-            self._print_pool_report(report)
-        elif report_type == "comparison_report":
-            self._print_comparison_report(report)
-        elif report_type == "risk_report":
-            self._print_risk_report(report)
-
-        print(f"\n📁 报告已保存: {report.get('report_file', 'N/A')}")
-        print("=" * 60)
+        self.printer.print_report(report)
 
     def _get_report_title(self, report_type: str) -> str:
         """获取报告标题"""
@@ -537,78 +523,6 @@ class InvestmentReportGenerator:
             "risk_report": "风险评估报告",
         }
         return titles.get(report_type, "投资报告")
-
-    def _print_strategy_report(self, report: dict[str, Any]) -> None:
-        """打印策略报告"""
-        strategy_info = report.get("strategy_info", {})
-        print(f"\n策略: {strategy_info.get('name', 'N/A')}")
-        print(f"描述: {strategy_info.get('description', 'N/A')}")
-
-        print("\n股票池状态:")
-        pool_status = report.get("pool_status", {})
-        print(f"  总股票数: {pool_status.get('total_stocks', 0)}")
-        print(f"  持有中: {pool_status.get('holding_count', 0)}")
-
-        print("\n绩效表现:")
-        performance = report.get("performance", {})
-        print(f"  总收益: {performance.get('total_profit', 0):.2f}")
-        print(f"  收益率: {performance.get('total_profit_rate', 0):.2%}")
-        print(f"  胜率: {performance.get('win_rate', 0):.2%}")
-
-        if report.get("recommendations"):
-            print("\n建议:")
-            for r in report["recommendations"]:
-                print(f"  • {r.get('message', '')}")
-
-    def _print_pool_report(self, report: dict[str, Any]) -> None:
-        """打印股票池报告"""
-        print(f"\n股票池: {report.get('pool_name', 'N/A')}")
-
-        print("\n概览:")
-        summary = report.get("summary", {})
-        print(f"  总股票数: {summary.get('total_stocks', 0)}")
-        print(f"  总收益: {summary.get('total_profit', 0):.2f}")
-        print(f"  收益率: {summary.get('total_profit_rate', 0):.2%}")
-
-        print("\n风险分析:")
-        risk = report.get("risk_analysis", {})
-        print(f"  风险等级: {risk.get('risk_level', 'N/A')}")
-        print(f"  {risk.get('message', '')}")
-
-    def _print_comparison_report(self, report: dict[str, Any]) -> None:
-        """打印对比报告"""
-        print("\n策略对比:")
-        print("-" * 60)
-        print(f"{'策略':<12} {'股票数':>8} {'胜率':>10} {'收益率':>10} {'风险':>8}")
-        print("-" * 60)
-
-        for item in report.get("comparison", []):
-            print(
-                f"{item.get('name', ''):<12} "
-                f"{item.get('total_stocks', 0):>8} "
-                f"{item.get('win_rate', 0):>10.1%} "
-                f"{item.get('total_profit_rate', 0):>10.2%} "
-                f"{item.get('risk_level', ''):>8}"
-            )
-
-        print("-" * 60)
-
-    def _print_risk_report(self, report: dict[str, Any]) -> None:
-        """打印风险报告"""
-        print(f"\n股票池: {report.get('pool_name', 'N/A')}")
-
-        print("\n风险指标:")
-        metrics = report.get("risk_metrics", {})
-        print(f"  持仓集中度: {metrics.get('concentration', 0):.1%}")
-        print(f"  胜率: {metrics.get('win_rate', 0):.1%}")
-        print(f"  最大亏损: {metrics.get('max_loss', 0):.2%}")
-
-        warnings = report.get("warnings", [])
-        if warnings:
-            print(f"\n⚠️ 警告 ({len(warnings)} 个):")
-            for w in warnings:
-                level_icon = "🔴" if w.get("level") == "high" else "🟡"
-                print(f"  {level_icon} {w.get('message', '')}")
 
     def export_html_report(
         self,

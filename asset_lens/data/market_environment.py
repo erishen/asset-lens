@@ -10,11 +10,14 @@ Market environment analyzer for asset-lens.
 """
 
 import json
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
 from ..config import config
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -79,7 +82,7 @@ class MarketEnvironmentAnalyzer:
                         for e in data.get("history", [])
                     ]
             except Exception as e:
-                print(f"加载市场环境历史失败: {e}")
+                logger.warning(f"加载市场环境历史失败: {e}")
 
     def _save_history(self) -> None:
         """保存历史记录"""

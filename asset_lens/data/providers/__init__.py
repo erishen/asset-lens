@@ -120,7 +120,7 @@ class ProviderHealth:
 class ProviderRegistry:
     """
     数据源注册中心
-    
+
     集中管理数据源选择策略，按优先级返回可用的数据源
     """
 
@@ -149,7 +149,7 @@ class ProviderRegistry:
     ) -> None:
         """
         注册数据源
-        
+
         Args:
             provider: 数据源实例
             data_type: 数据类型（如果不指定，使用 provider 支持的所有类型）
@@ -182,10 +182,10 @@ class ProviderRegistry:
     def unregister(self, provider_name: str) -> bool:
         """
         注销数据源
-        
+
         Args:
             provider_name: 数据源名称
-            
+
         Returns:
             是否成功注销
         """
@@ -209,16 +209,16 @@ class ProviderRegistry:
     ) -> DataProvider | None:
         """
         获取数据源
-        
+
         按优先级返回可用的数据源
-        
+
         Args:
             data_type: 数据类型
             check_availability: 是否检查可用性
-            
+
         Returns:
             数据源实例
-            
+
         Raises:
             NoProviderAvailableError: 没有可用的数据源
         """
@@ -235,10 +235,10 @@ class ProviderRegistry:
     def get_all_providers(self, data_type: DataType) -> list[DataProvider]:
         """
         获取指定数据类型的所有数据源
-        
+
         Args:
             data_type: 数据类型
-            
+
         Returns:
             数据源列表（按优先级排序）
         """
@@ -250,10 +250,10 @@ class ProviderRegistry:
     def get_available_providers(self, data_type: DataType) -> list[DataProvider]:
         """
         获取指定数据类型的可用数据源
-        
+
         Args:
             data_type: 数据类型
-            
+
         Returns:
             可用的数据源列表（按优先级排序）
         """
@@ -275,16 +275,16 @@ class ProviderRegistry:
     ) -> dict[str, Any] | None:
         """
         获取数据
-        
+
         按优先级尝试获取数据，支持自动降级和缓存
-        
+
         Args:
             data_type: 数据类型
             symbol: 代码/符号
             fallback: 是否自动降级到下一个数据源
             use_cache: 是否使用缓存
             **kwargs: 其他参数
-            
+
         Returns:
             数据字典
         """
@@ -331,7 +331,7 @@ class ProviderRegistry:
     def list_providers(self) -> dict[str, list[str]]:
         """
         列出所有注册的数据源
-        
+
         Returns:
             按数据类型分组的数据源名称列表
         """
@@ -347,7 +347,7 @@ class ProviderRegistry:
     def check_availability(self) -> dict[str, dict[str, bool]]:
         """
         检查所有数据源的可用性
-        
+
         Returns:
             按数据类型分组的可用性状态
         """
@@ -364,10 +364,10 @@ class ProviderRegistry:
     def get_health(self, provider_name: str | None = None) -> dict[str, ProviderHealth]:
         """
         获取数据源健康状态
-        
+
         Args:
             provider_name: 指定数据源名称（可选，默认返回所有）
-            
+
         Returns:
             数据源健康状态字典
         """
@@ -427,7 +427,7 @@ class ProviderRegistry:
     def get_health_summary(self) -> dict[str, Any]:
         """
         获取数据源健康摘要
-        
+
         Returns:
             健康摘要字典
         """

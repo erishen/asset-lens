@@ -210,3 +210,5 @@ openclaw/docs/knowledge/
 
 # OpenClaw data (contains real investment data)
 openclaw/data/
+
+data/asset_lens.db

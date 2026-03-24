@@ -8,6 +8,7 @@ Fund data fetcher for asset-lens.
 """
 
 import json
+import logging
 import signal
 import time
 from contextlib import contextmanager
@@ -16,6 +17,8 @@ from pathlib import Path
 from typing import Any
 
 from ..config import config
+
+logger = logging.getLogger(__name__)
 
 
 @contextmanager
@@ -105,7 +108,7 @@ class FundDataFetcher:
                 self._fund_codes_map = result
                 return result
             except Exception as e:
-                print(f"加载基金代码配置失败: {e}")
+                logger.warning(f"加载基金代码配置失败: {e}")
 
         self._fund_codes_map = {}
         return {}
@@ -159,10 +162,10 @@ class FundDataFetcher:
                 }
 
         except TimeoutError as e:
-            print(f"⏱️ {e}")
+            logger.warning(f"获取基金净值超时: {e}")
             return None
         except Exception as e:
-            print(f"获取基金净值失败 {fund_code}: {e}")
+            logger.error(f"获取基金净值失败 {fund_code}: {e}")
             return None
 
     def fetch_fund_quote_eastmoney(self, fund_code: str) -> dict[str, Any] | None:

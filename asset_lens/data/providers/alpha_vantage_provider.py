@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 class AlphaVantageProvider(BaseProvider):
     """
     Alpha Vantage 数据源
-    
+
     使用 Alpha Vantage API 获取美股、外汇等数据
     """
 

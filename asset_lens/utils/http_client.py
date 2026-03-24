@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 def get_session_without_proxy() -> requests.Session:
     """
     创建一个跳过代理的 requests Session
-    
+
     Returns:
         配置为跳过代理的 Session 对象
     """
@@ -42,10 +42,10 @@ def get_session_without_proxy() -> requests.Session:
 def get_request_session(skip_proxy: bool = False) -> requests.Session:
     """
     获取请求 Session
-    
+
     Args:
         skip_proxy: 是否跳过代理
-        
+
     Returns:
         Session 对象
     """
@@ -379,7 +379,7 @@ def with_retry(
 ):
     """
     重试装饰器
-    
+
     Args:
         max_retries: 最大重试次数
         retry_delay: 重试延迟

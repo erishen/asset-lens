@@ -12,7 +12,7 @@ from . import DataProvider, DataType, ProviderType
 class BaseProvider(ABC, DataProvider):
     """
     数据源基类
-    
+
     提供通用的数据源实现框架
     """
 

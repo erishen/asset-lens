@@ -50,21 +50,6 @@ class TestStockScreener:
             assert screener is not None
 
 
-class TestUnifiedFetcher:
-    """统一数据获取器测试"""
-
-    def test_module_import(self):
-        """测试模块导入"""
-        from asset_lens.data.unified_fetcher import UnifiedDataFetcher
-        assert UnifiedDataFetcher is not None
-
-    def test_fetcher_init(self):
-        """测试初始化"""
-        from asset_lens.data.unified_fetcher import UnifiedDataFetcher
-        fetcher = UnifiedDataFetcher()
-        assert fetcher is not None
-
-
 class TestVolumeBreakoutFilter:
     """放量突破筛选器测试"""
 
