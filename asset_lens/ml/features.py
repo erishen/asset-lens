@@ -43,10 +43,10 @@ class FeatureEngineer:
     def calculate_all_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算所有特征
-        
+
         Args:
             df: 股票数据，需包含 close, high, low, volume 等列
-        
+
         Returns:
             添加特征后的 DataFrame
         """
@@ -61,6 +61,7 @@ class FeatureEngineer:
         df = self._add_volume_features(df)
         df = self._add_momentum_features(df)
         df = self._add_volatility_features(df)
+        df = self._add_statistical_features(df)
 
         self.feature_names = [col for col in df.columns if col not in
                               ['open', 'high', 'low', 'close', 'volume', 'amount', 'date', 'code']]
@@ -184,6 +185,56 @@ class FeatureEngineer:
         df['volatility_20d'] = df['pct_change'].rolling(window=20).std()
 
         df['atr'] = self._calculate_atr(df, period=14)
+        df['atr_ratio'] = df['atr'] / df['close']
+
+        df['volatility_ratio'] = df['volatility_5d'] / df['volatility_20d']
+
+        return df
+
+    def _add_trend_features(self, df: pd.DataFrame) -> pd.DataFrame:
+        """趋势特征"""
+        df['trend_strength'] = (df['close'] - df['close'].shift(20)) / df['close'].shift(20)
+        df['trend_consistency'] = (df['pct_change'] > 0).rolling(window=10).mean()
+        df['trend_acceleration'] = df['momentum_5d'] - df['momentum_5d'].shift(5)
+
+        df['higher_high'] = (df['high'] > df['high'].shift(1)).astype(int)
+        df['lower_low'] = (df['low'] < df['low'].shift(1)).astype(int)
+        df['higher_low'] = (df['low'] > df['low'].shift(1)).astype(int)
+        df['lower_high'] = (df['high'] < df['high'].shift(1)).astype(int)
+
+        return df
+
+    def _add_pattern_features(self, df: pd.DataFrame) -> pd.DataFrame:
+        """K线形态特征"""
+        df['doji'] = (abs(df['close'] - df['open']) / (df['high'] - df['low']) < 0.1).astype(int)
+        df['bullish_engulfing'] = (
+            (df['close'] > df['open']) &
+            (df['close'].shift(1) < df['open'].shift(1)) &
+            (df['close'] > df['open'].shift(1)) &
+            (df['open'] < df['close'].shift(1))
+        ).astype(int)
+        df['bearish_engulfing'] = (
+            (df['close'] < df['open']) &
+            (df['close'].shift(1) > df['open'].shift(1)) &
+            (df['close'] < df['open'].shift(1)) &
+            (df['open'] > df['close'].shift(1))
+        ).astype(int)
+        df['hammer'] = (
+            (df['lower_shadow'] > 2 * abs(df['close'] - df['open'])) &
+            (df['upper_shadow'] < 0.1 * (df['high'] - df['low']))
+        ).astype(int)
+
+        return df
+
+    def _add_statistical_features(self, df: pd.DataFrame) -> pd.DataFrame:
+        """统计特征"""
+        for period in [10, 20]:
+            df[f'return_skew_{period}'] = df['pct_change'].rolling(window=period).skew()
+            df[f'return_kurt_{period}'] = df['pct_change'].rolling(window=period).kurt()
+            df[f'price_range_{period}'] = df['high'].rolling(window=period).max() / df['low'].rolling(window=period).min()
+
+        df['price_zscore_20'] = (df['close'] - df['close'].rolling(window=20).mean()) / df['close'].rolling(window=20).std()
+        df['volume_zscore_20'] = (df['volume'] - df['volume'].rolling(window=20).mean()) / df['volume'].rolling(window=20).std()
 
         return df
 
@@ -209,11 +260,11 @@ class FeatureEngineer:
     ) -> pd.DataFrame:
         """
         准备预测特征
-        
+
         Args:
             stock_data: 股票数据字典
             market_data: 市场数据字典（可选）
-        
+
         Returns:
             特征 DataFrame
         """

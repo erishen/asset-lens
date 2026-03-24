@@ -342,14 +342,9 @@ def register_data_commands(cli: click.Group) -> None:
         click.echo(f"   缓存目录: {file_stats['cache_dir']}")
 
     @cli.command("cache-clear")
-    @click.option("--type", "data_type", default=None, help="指定数据类型")
+    @click.option("--type", "data_type", type=click.Choice(["stock_quote", "fund_quote", "market_index", "all"]), help="缓存类型")
     def cache_clear(data_type: str | None):
-        """清空缓存
-        
-        示例:
-            asset-lens cache-clear
-            asset-lens cache-clear --type stock_quote
-        """
+        """清空缓存数据"""
         from asset_lens.data.providers.cache import provider_cache
 
         provider_cache.clear(data_type)
@@ -358,3 +353,139 @@ def register_data_commands(cli: click.Group) -> None:
             click.echo(f"✅ 已清空 {data_type} 缓存")
         else:
             click.echo("✅ 已清空所有缓存")
+
+    @cli.command("fetch-market-stocks")
+    @click.option("--save", is_flag=True, help="保存到缓存文件")
+    @click.option("--limit", "limit", type=int, default=0, help="限制获取数量（0=不限制）")
+    def fetch_market_stocks(save: bool, limit: int):
+        """获取A股市场股票列表（用于ML训练数据）
+
+        示例:
+            asset-lens fetch-market-stocks --save
+            asset-lens fetch-market-stocks --limit 100
+        """
+        from rich.console import Console
+        from rich.table import Table
+
+        from asset_lens.data.market_stock_fetcher import MarketStockFetcher
+
+        console = Console()
+
+        click.echo("\n📊 获取A股市场股票列表")
+        click.echo("=" * 60)
+
+        fetcher = MarketStockFetcher()
+        stocks = fetcher.fetch_all_cn_stocks()
+
+        if not stocks:
+            click.echo("\n❌ 未能获取股票列表", err=True)
+            return
+
+        if limit > 0:
+            stocks = stocks[:limit]
+            click.echo(f"\n📋 限制获取前 {limit} 只股票")
+
+        click.echo(f"\n✅ 成功获取 {len(stocks)} 只股票")
+
+        if save:
+            fetcher.save_market_stocks(stocks)
+            click.echo("📁 数据已保存到缓存文件")
+
+        table = Table(title="股票列表预览（前20只）")
+        table.add_column("代码", style="cyan")
+        table.add_column("名称", style="green")
+        table.add_column("现价", style="yellow")
+        table.add_column("涨跌幅", style="magenta")
+        table.add_column("市值(亿)", style="blue")
+
+        for stock in stocks[:20]:
+            change = stock.get("change_percent", 0)
+            change_str = f"{change:+.2f}%" if change else "-"
+            table.add_row(
+                stock.get("code", ""),
+                stock.get("name", ""),
+                f"{stock.get('current_price', 0):.2f}",
+                change_str,
+                f"{stock.get('market_cap', 0):.1f}",
+            )
+
+        console.print(table)
+
+        click.echo("\n💡 使用 --save 保存到缓存，用于ML训练")
+
+    @cli.command("fetch-history-batch")
+    @click.option("--codes", "codes_str", help="股票代码列表（逗号分隔）")
+    @click.option("--days", default=250, help="历史天数")
+    @click.option("--source", "data_source", default="auto", type=click.Choice(["auto", "akshare", "baostock", "tushare"]), help="数据源")
+    @click.option("--delay", default=0.3, type=float, help="请求间隔（秒）")
+    @click.option("--use-market-stocks", is_flag=True, help="使用市场股票列表")
+    @click.option("--limit", default=0, type=int, help="限制股票数量（0=不限制）")
+    def fetch_history_batch(codes_str: str | None, days: int, data_source: str, delay: float, use_market_stocks: bool, limit: int):
+        """批量获取股票历史K线数据（用于ML训练）
+
+        示例:
+            asset-lens fetch-history-batch --codes sh600519,sz000001 --days 250
+            asset-lens fetch-history-batch --use-market-stocks --limit 50 --days 250
+            asset-lens fetch-history-batch --use-market-stocks --source akshare
+        """
+        from rich.console import Console
+
+        from asset_lens.data.market_stock_fetcher import MarketStockFetcher
+
+        console = Console()
+
+        click.echo("\n📊 批量获取股票历史K线数据")
+        click.echo("=" * 60)
+
+        codes = []
+        if use_market_stocks:
+            click.echo("📋 使用市场股票列表...")
+            fetcher = MarketStockFetcher()
+            stocks = fetcher.get_cached_market_stocks()
+            if not stocks:
+                click.echo("⚠️ 缓存中没有市场股票数据，正在获取...")
+                stocks = fetcher.fetch_all_cn_stocks()
+                if stocks:
+                    fetcher.save_market_stocks(stocks)
+
+            if stocks:
+                codes = [s.get("code", "") for s in stocks if s.get("code")]
+                click.echo(f"✅ 获取到 {len(codes)} 只股票代码")
+        elif codes_str:
+            codes = [c.strip() for c in codes_str.split(",") if c.strip()]
+
+        if not codes:
+            click.echo("\n❌ 请指定股票代码列表或使用 --use-market-stocks", err=True)
+            return
+
+        if limit > 0:
+            codes = codes[:limit]
+            click.echo(f"📋 限制获取前 {limit} 只股票")
+
+        click.echo("\n📊 开始获取历史数据:")
+        click.echo(f"   股票数量: {len(codes)}")
+        click.echo(f"   历史天数: {days}")
+        click.echo(f"   数据源: {data_source}")
+        click.echo(f"   请求间隔: {delay}秒")
+
+        from asset_lens.db.migration import DataMigration
+
+        migration = DataMigration()
+        result = migration.fetch_and_store_history(
+            codes=codes,
+            days=days,
+            data_source=data_source,
+            delay=delay,
+        )
+
+        click.echo("\n📊 获取结果:")
+        click.echo(f"   ✅ 成功: {result.get('success', 0)}")
+        click.echo(f"   ❌ 失败: {result.get('failed', 0)}")
+        click.echo(f"   📈 K线总数: {result.get('total_klines', 0)}")
+
+        if result.get("errors"):
+            click.echo("\n⚠️ 失败的股票:")
+            for err in result["errors"][:10]:
+                click.echo(f"   {err.get('code')}: {err.get('error')}")
+
+        click.echo("\n💡 使用 'asset-lens ml-train-db' 训练模型")

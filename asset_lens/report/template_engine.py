@@ -60,11 +60,11 @@ class ReportTemplateEngine:
     ) -> str:
         """
         渲染报告模板
-        
+
         Args:
             template_name: 模板文件名
             context: 模板上下文数据
-            
+
         Returns:
             渲染后的报告文本
         """
@@ -78,11 +78,11 @@ class ReportTemplateEngine:
     ) -> str:
         """
         渲染模板字符串
-        
+
         Args:
             template_string: 模板字符串
             context: 模板上下文数据
-            
+
         Returns:
             渲染后的报告文本
         """

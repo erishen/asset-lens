@@ -94,7 +94,7 @@ async def get_hot_stocks(
 ):
     """
     获取热门股票
-    
+
     Args:
         market: 市场 (all/sh/sz)
         limit: 返回数量

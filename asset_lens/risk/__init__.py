@@ -8,13 +8,13 @@ Risk Module - 统一风险入口
 
 使用示例:
     from asset_lens.risk import RiskService
-    
+
     # 获取风险服务
     risk = RiskService()
-    
+
     # 获取风险摘要（仓位、止损止盈）
     summary = risk.get_risk_summary()
-    
+
     # 计算风险指标（波动率、夏普比率）
     metrics = risk.calculate_metrics(returns)
 """
@@ -40,7 +40,7 @@ class RiskSummary:
 class RiskService:
     """
     风险服务 - 统一风险入口
-    
+
     整合 RiskManager 和 RiskAnalyzer 的功能，
     提供一站式的风险管理与分析服务。
     """
@@ -68,12 +68,12 @@ class RiskService:
     def get_risk_summary(self, pool_name: str = "default") -> dict[str, Any]:
         """
         获取风险摘要
-        
+
         包含仓位、止损止盈、风险预警等信息
-        
+
         Args:
             pool_name: 股票池名称
-            
+
         Returns:
             风险摘要字典
         """
@@ -87,11 +87,11 @@ class RiskService:
     ) -> Any:
         """
         计算风险指标
-        
+
         Args:
             returns: 收益率序列
             values: 净值序列（可选）
-            
+
         Returns:
             RiskMetrics 对象
         """
@@ -100,10 +100,10 @@ class RiskService:
     def calculate_volatility(self, returns: list[float]) -> float:
         """
         计算波动率
-        
+
         Args:
             returns: 收益率序列
-            
+
         Returns:
             波动率
         """
@@ -113,10 +113,10 @@ class RiskService:
     def calculate_max_drawdown(self, values: list[float]) -> float:
         """
         计算最大回撤
-        
+
         Args:
             values: 净值序列
-            
+
         Returns:
             最大回撤
         """
@@ -130,11 +130,11 @@ class RiskService:
     ) -> float:
         """
         计算夏普比率
-        
+
         Args:
             returns: 收益率序列
             risk_free_rate: 无风险利率
-            
+
         Returns:
             夏普比率
         """
@@ -148,11 +148,11 @@ class RiskService:
     ) -> list[Any]:
         """
         检查风险阈值
-        
+
         Args:
             metrics: 风险指标
             thresholds: 阈值字典
-            
+
         Returns:
             风险预警列表
         """
@@ -162,11 +162,11 @@ class RiskService:
     def generate_risk_report(self, metrics: Any, alerts: list[Any]) -> str:
         """
         生成风险报告
-        
+
         Args:
             metrics: 风险指标
             alerts: 风险预警列表
-            
+
         Returns:
             风险报告文本
         """
@@ -176,10 +176,10 @@ class RiskService:
     def detect_market_regime(self, index_returns: list[float]) -> str:
         """
         判断市场环境
-        
+
         Args:
             index_returns: 指数收益率序列
-            
+
         Returns:
             市场环境类型 (bull/bear/sideways/crisis)
         """
@@ -193,10 +193,10 @@ class RiskService:
     ) -> dict[str, Any]:
         """
         根据市场环境调整风险阈值
-        
+
         Args:
             index_returns: 指数收益率序列
-            
+
         Returns:
             调整结果字典
         """
@@ -206,10 +206,10 @@ class RiskService:
     def get_regime_description(self, regime: str) -> str:
         """
         获取市场环境描述
-        
+
         Args:
             regime: 市场环境类型
-            
+
         Returns:
             市场环境描述
         """

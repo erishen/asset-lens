@@ -40,7 +40,7 @@ class AdvancedStrategies:
     ) -> dict[str, Any] | None:
         """
         动量策略
-        
+
         选股条件：
         1. 价格突破 N 日均线
         2. 成交量放大
@@ -80,7 +80,7 @@ class AdvancedStrategies:
     ) -> dict[str, Any] | None:
         """
         均值回归策略
-        
+
         选股条件：
         1. 价格低于均线
         2. 超卖区域
@@ -113,7 +113,7 @@ class AdvancedStrategies:
     ) -> dict[str, Any] | None:
         """
         突破策略
-        
+
         选股条件：
         1. 价格突破 N 日高点
         2. 成交量放大
@@ -152,7 +152,7 @@ class AdvancedStrategies:
     ) -> dict[str, Any]:
         """
         价值策略
-        
+
         选股条件：
         1. 低市盈率
         2. 低市净率
@@ -194,7 +194,7 @@ class AdvancedStrategies:
     ) -> dict[str, Any]:
         """
         成长策略
-        
+
         选股条件：
         1. 营收增长 > 阈值
         2. 利润增长 > 阈值
@@ -232,7 +232,7 @@ class AdvancedStrategies:
     ) -> dict[str, Any]:
         """
         质量策略
-        
+
         选股条件：
         1. 高 ROE
         2. 低负债率
@@ -273,7 +273,7 @@ class AdvancedStrategies:
     ) -> dict[str, Any]:
         """
         技术策略
-        
+
         选股条件：
         1. RSI 超卖
         2. MACD 金叉
@@ -317,7 +317,7 @@ class AdvancedStrategies:
     ) -> dict[str, Any]:
         """
         多因子策略
-        
+
         综合多个因子评分
         """
         default_weights = {

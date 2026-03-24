@@ -23,7 +23,7 @@ class HTMLReportGenerator:
         """
         self.output_dir = output_dir or Path("output/reports")
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        
+
         template_dir = Path(__file__).parent / "templates"
         self.env = Environment(
             loader=FileSystemLoader(str(template_dir)),
@@ -78,7 +78,7 @@ class HTMLReportGenerator:
     ) -> str:
         """使用 Jinja2 模板生成 HTML 内容"""
         template = self.env.get_template("investment_report.html.j2")
-        
+
         total_value = portfolio_data.get("total_value", 0)
         total_profit = portfolio_data.get("total_profit", 0)
         overall_return_rate = portfolio_data.get("overall_return_rate", 0)
