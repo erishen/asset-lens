@@ -8,12 +8,32 @@ Market stock list fetcher for asset-lens.
 """
 
 import json
+import os
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Generator
 
 from ..config import config
 from ..utils.http_client import get_session_without_proxy
+
+
+@contextmanager
+def _disable_proxy() -> Generator[None, None, None]:
+    """临时禁用代理的上下文管理器"""
+    proxy_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'ALL_PROXY', 'all_proxy']
+    original_values = {}
+    
+    for var in proxy_vars:
+        if var in os.environ:
+            original_values[var] = os.environ[var]
+            del os.environ[var]
+    
+    try:
+        yield
+    finally:
+        for var, value in original_values.items():
+            os.environ[var] = value
 
 
 class MarketStockFetcher:
@@ -140,6 +160,12 @@ class MarketStockFetcher:
         """
         获取所有A股股票（多数据源备选）
 
+        优先级：
+        1. 腾讯财经（最稳定，速度快）
+        2. AkShare（数据全，但东方财富API不稳定）
+        3. Efinance（同上）
+        4. Baostock（稳定但需要补充价格数据）
+
         Args:
             max_pages: 最大页数（AkShare一次性获取，此参数忽略）
 
@@ -148,22 +174,130 @@ class MarketStockFetcher:
         """
         all_stocks = []
 
-        all_stocks = self._fetch_stocks_akshare()
-        if all_stocks:
-            return all_stocks
+        # 优先使用腾讯财经（最稳定）
+        try:
+            all_stocks = self._fetch_stocks_tencent()
+            if all_stocks:
+                return all_stocks
+        except Exception as e:
+            print(f"腾讯财经获取失败: {e}")
+
+        print("腾讯财经获取失败，尝试 AkShare...")
+        try:
+            all_stocks = self._fetch_stocks_akshare()
+            if all_stocks:
+                return all_stocks
+        except Exception as e:
+            print(f"AkShare 获取失败: {e}")
 
         print("AkShare 获取失败，尝试 Efinance...")
-        all_stocks = self._fetch_stocks_efinance()
-        if all_stocks:
-            return all_stocks
+        try:
+            all_stocks = self._fetch_stocks_efinance()
+            if all_stocks:
+                return all_stocks
+        except Exception as e:
+            print(f"Efinance 获取失败: {e}")
 
         print("Efinance 获取失败，尝试 Baostock...")
-        all_stocks = self._fetch_stocks_baostock()
-        if all_stocks:
-            return all_stocks
+        try:
+            all_stocks = self._fetch_stocks_baostock()
+            if all_stocks:
+                return all_stocks
+        except Exception as e:
+            print(f"Baostock 获取失败: {e}")
 
         print("所有数据源获取失败")
         return []
+
+    def _fetch_stocks_tencent(self) -> list[dict[str, Any]]:
+        """使用腾讯财经获取A股列表（最稳定的数据源）
+        
+        策略：先用Baostock获取股票列表，再用腾讯财经补充实时价格
+        """
+        try:
+            print("正在获取A股股票列表(腾讯财经+Baostock)...")
+            
+            # 第一步：用Baostock获取股票列表（稳定可靠）
+            import baostock as bs
+            
+            lg = bs.login()
+            if lg.error_code != '0':
+                print(f"❌ Baostock 登录失败: {lg.error_msg}")
+                return []
+            
+            rs = bs.query_stock_basic()
+            if rs.error_code != '0':
+                print(f"❌ Baostock 查询失败: {rs.error_msg}")
+                bs.logout()
+                return []
+            
+            data_list = []
+            while rs.error_code == '0' and rs.next():
+                data_list.append(rs.get_row_data())
+            bs.logout()
+            
+            if not data_list:
+                print("❌ Baostock: 获取数据为空")
+                return []
+            
+            # 解析股票列表
+            stocks = []
+            for row in data_list:
+                if len(row) < 6:
+                    continue
+                code = str(row[0]) if row[0] else ""
+                name = str(row[1]) if row[1] else ""
+                stock_type = str(row[4]) if len(row) > 4 else ""
+                status = str(row[5]) if len(row) > 5 else ""
+                
+                if not code or not name or stock_type != "1" or status != "1":
+                    continue
+                
+                full_code = code.replace(".", "")
+                if not (full_code.startswith("sh") or full_code.startswith("sz")):
+                    continue
+                
+                stocks.append({
+                    "code": full_code,
+                    "name": name,
+                    "current_price": 0,
+                    "change_percent": 0,
+                    "volume": 0,
+                    "amount": 0,
+                    "turnover_rate": 0,
+                    "pe_ratio": 0,
+                    "market_cap": 0,
+                    "market": "A股",
+                    "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                })
+            
+            print(f"Baostock: 获取 {len(stocks)} 只股票列表")
+            
+            # 第二步：用腾讯财经补充实时价格
+            print("🌐 API请求: https://qt.gtimg.cn/q= (补充实时价格)")
+            stocks = self._enrich_prices_tencent(stocks)
+            
+            # 过滤掉没有价格数据的股票（可能是退市或停牌）
+            valid_stocks: list[dict[str, Any]] = []
+            for s in stocks:
+                price = s.get("current_price")
+                if isinstance(price, (int, float)) and price > 0:
+                    valid_stocks.append(s)
+            
+            if valid_stocks:
+                print(f"✅ 腾讯财经+Baostock: 共获取 {len(valid_stocks)} 只A股股票（有效价格）")
+                return valid_stocks
+            
+            print(f"⚠️ 腾讯财经价格补充失败，返回 {len(stocks)} 只股票（无价格）")
+            return stocks
+            
+        except ImportError:
+            print("⚠️ Baostock 未安装，跳过此数据源")
+            return []
+        except Exception as e:
+            error_msg = str(e).split('\n')[0][:50]
+            print(f"❌ 腾讯财经获取失败: {error_msg}")
+            return []
 
     def _fetch_stocks_akshare(self) -> list[dict[str, Any]]:
         """使用 AkShare 获取A股列表"""
@@ -171,7 +305,8 @@ class MarketStockFetcher:
             print("正在获取A股股票列表(AkShare)...")
             print("🌐 API请求: https://push2.eastmoney.com/api/qt/clist/get (通过AkShare)")
 
-            df = self.akshare.stock_zh_a_spot_em()
+            with _disable_proxy():
+                df = self.akshare.stock_zh_a_spot_em()
 
             if df is None or df.empty:
                 print("❌ AkShare: 获取数据为空")
@@ -181,7 +316,7 @@ class MarketStockFetcher:
             return self._parse_stock_df(df, "akshare")
 
         except Exception as e:
-            error_msg = str(e).split('\n')[0][:50]  # 只显示第一行，最多50字符
+            error_msg = str(e).split('\n')[0][:50]
             print(f"❌ AkShare 获取失败: {error_msg}")
             return []
 
@@ -193,7 +328,8 @@ class MarketStockFetcher:
             print("正在获取A股股票列表(Efinance)...")
             print("🌐 API请求: http://push2.eastmoney.com/api/qt/clist/get (通过Efinance)")
 
-            df = ef.stock.get_realtime_quotes()
+            with _disable_proxy():
+                df = ef.stock.get_realtime_quotes()
 
             if df is None or df.empty:
                 print("❌ Efinance: 获取数据为空")
@@ -206,7 +342,7 @@ class MarketStockFetcher:
             print("⚠️ Efinance 未安装，跳过此数据源")
             return []
         except Exception as e:
-            error_msg = str(e).split('\n')[0][:50]  # 只显示第一行，最多50字符
+            error_msg = str(e).split('\n')[0][:50]
             print(f"❌ Efinance 获取失败: {error_msg}")
             return []
 
@@ -273,67 +409,68 @@ class MarketStockFetcher:
     def _enrich_prices_tencent(self, stocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """使用腾讯财经补充价格数据"""
         try:
-
             print("正在获取实时价格数据(腾讯财经)...")
 
             codes = []
             for stock in stocks:
                 code = stock.get("code", "")
                 if code.startswith("sh"):
-                    codes.append(f"sh{code[2:]}")
+                    codes.append(code)
                 elif code.startswith("sz"):
-                    codes.append(f"sz{code[2:]}")
+                    codes.append(code)
 
             all_prices = {}
-            batch_size = 500
+            batch_size = 100  # 减小批量大小，避免超时
 
+            session = get_session_without_proxy()
+            
             for i in range(0, len(codes), batch_size):
                 batch = codes[i:i+batch_size]
                 url = "https://qt.gtimg.cn/q=" + ",".join(batch)
 
-                session = get_session_without_proxy()
-                resp = session.get(url, timeout=15)
-                resp.encoding = "gbk"
+                try:
+                    resp = session.get(url, timeout=30)
+                    resp.encoding = "gbk"
 
-                for line in resp.text.strip().split("\n"):
-                    if not line or "~" not in line:
-                        continue
-                    try:
-                        if "=" not in line:
+                    for line in resp.text.strip().split("\n"):
+                        if not line or "~" not in line:
                             continue
-                        key_part, value_part = line.split("=", 1)
-                        code_raw = key_part.replace("v_", "").replace("_", "")
+                        try:
+                            if "=" not in line:
+                                continue
+                            key_part, value_part = line.split("=", 1)
+                            code_raw = key_part.replace("v_", "").replace("_", "").lower()
 
-                        parts = value_part.strip('"').split("~")
-                        if len(parts) < 35:
+                            parts = value_part.strip('"').split("~")
+                            if len(parts) < 35:
+                                continue
+
+                            price = float(parts[3]) if parts[3] else 0
+                            change_percent = float(parts[32]) if parts[32] else 0
+                            volume = float(parts[6]) if parts[6] else 0
+                            amount = float(parts[37]) if len(parts) > 37 and parts[37] else 0
+                            turnover_rate = float(parts[38]) if len(parts) > 38 and parts[38] else 0
+                            market_cap = float(parts[45]) if len(parts) > 45 and parts[45] else 0
+
+                            all_prices[code_raw] = {
+                                "price": price,
+                                "change_percent": change_percent,
+                                "volume": int(volume),
+                                "amount": amount,
+                                "turnover_rate": turnover_rate,
+                                "market_cap": market_cap / 100000000 if market_cap > 0 else 0,
+                            }
+                        except (ValueError, IndexError):
                             continue
-
-                        price = float(parts[3]) if parts[3] else 0
-                        change_percent = float(parts[32]) if parts[32] else 0
-                        volume = float(parts[6]) if parts[6] else 0
-                        amount = float(parts[37]) if len(parts) > 37 and parts[37] else 0
-                        turnover_rate = float(parts[38]) if len(parts) > 38 and parts[38] else 0
-                        market_cap = float(parts[45]) if len(parts) > 45 and parts[45] else 0
-
-                        pure_code = code_raw.replace("sh", "").replace("sz", "")
-                        all_prices[pure_code] = {
-                            "price": price,
-                            "change_percent": change_percent,
-                            "volume": int(volume),
-                            "amount": amount,
-                            "turnover_rate": turnover_rate,
-                            "market_cap": market_cap,
-                        }
-                    except (ValueError, IndexError):
-                        continue
+                except Exception as e:
+                    print(f"  批次 {i//batch_size + 1} 获取失败: {str(e)[:50]}")
+                    continue
 
             enriched = 0
             for stock in stocks:
-                code = stock.get("code", "")
-                pure_code = code.replace("sh", "").replace("sz", "")
-
-                if pure_code in all_prices:
-                    price_data = all_prices[pure_code]
+                code = stock.get("code", "").lower()
+                if code in all_prices:
+                    price_data = all_prices[code]
                     stock["current_price"] = price_data["price"]
                     stock["change_percent"] = price_data["change_percent"]
                     stock["volume"] = price_data["volume"]
@@ -517,7 +654,7 @@ class MarketStockFetcher:
 
     def _parse_stock_list_baostock(self, data_list: list) -> list[dict[str, Any]]:
         """解析 Baostock 数据格式
-        
+
         字段: ['code', 'code_name', 'ipoDate', 'outDate', 'type', 'status']
         type: 1=股票, 2=指数, 3=其他
         status: 1=上市, 0=退市
@@ -581,7 +718,7 @@ class MarketStockFetcher:
 
     def get_cached_market_stocks(self, max_age_hours: int = 24) -> list[dict[str, Any]]:
         """获取缓存的市场股票数据
-        
+
         Args:
             max_age_hours: 缓存有效期（小时），默认24小时
         """

@@ -7,9 +7,10 @@ Database manager for asset-lens.
 # mypy: ignore-errors
 
 import json
+from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, Generator
 
 from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
@@ -39,6 +40,19 @@ class DatabaseManager:
     def get_session(self) -> Session:
         """获取数据库会话"""
         return self.SessionLocal()
+
+    @contextmanager
+    def session_scope(self) -> Generator[Session, None, None]:
+        """提供事务范围的会话上下文管理器"""
+        session = self.get_session()
+        try:
+            yield session
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
 
     def close(self):
         """关闭数据库连接"""

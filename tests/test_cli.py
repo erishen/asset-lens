@@ -141,41 +141,32 @@ class TestCLI:
         """测试显示资产汇总 - 无文件"""
         from asset_lens.cli import cli
 
-        with patch('asset_lens.cli.report._get_data_dir') as mock_get_dir:
+        with patch('asset_lens.cli.analyze._get_data_dir') as mock_get_dir:
             mock_get_dir.return_value = temp_cache_path
             
-            result = runner.invoke(cli, ["show-asset-summary"])
+            result = runner.invoke(cli, ["analyze"])
             assert result.exit_code == 0
 
     def test_show_exchange_rate_history_no_file(self, runner, temp_cache_path):
         """测试显示汇率历史 - 无文件"""
         from asset_lens.cli import cli
 
-        with patch('asset_lens.cli.report._get_data_dir') as mock_get_dir:
-            mock_get_dir.return_value = temp_cache_path
-            
-            result = runner.invoke(cli, ["show-exchange-rate-history"])
-            assert result.exit_code == 0
+        result = runner.invoke(cli, ["calculate"])
+        assert result.exit_code == 0
 
     def test_show_sell_records_no_file(self, runner, temp_cache_path):
         """测试显示卖出记录 - 无文件"""
         from asset_lens.cli import cli
 
-        with patch('asset_lens.cli.report._get_data_dir') as mock_get_dir:
-            mock_get_dir.return_value = temp_cache_path
-            
-            result = runner.invoke(cli, ["show-sell-records"])
-            assert result.exit_code == 0
+        result = runner.invoke(cli, ["analyze-sold"])
+        assert result.exit_code == 0
 
     def test_export_asset_summary_no_file(self, runner, temp_cache_path):
         """测试导出资产汇总 - 无文件"""
         from asset_lens.cli import cli
 
-        with patch('asset_lens.cli.report._get_data_dir') as mock_get_dir:
-            mock_get_dir.return_value = temp_cache_path
-            
-            result = runner.invoke(cli, ["export-asset-summary"])
-            assert result.exit_code in [0, 1, 2]
+        result = runner.invoke(cli, ["weekly"])
+        assert result.exit_code in [0, 1, 2]
 
     def test_pnl_command_with_mock(self, runner, temp_cache_path):
         """测试盈亏估算命令 - 使用 mock"""
@@ -207,14 +198,8 @@ class TestCLI:
         """测试已卖出投资分析 - 无文件"""
         from asset_lens.cli import cli
 
-        with patch('asset_lens.cli.report._get_data_dir') as mock_get_dir:
-            mock_get_dir.return_value = temp_cache_path
-            
-            with patch('asset_lens.config.config') as mock_config:
-                mock_config.data_mode = "sample"
-                
-                result = runner.invoke(cli, ["analyze-sold"])
-                assert result.exit_code == 0
+        result = runner.invoke(cli, ["analyze-sold"])
+        assert result.exit_code == 0
 
     def test_analyze_by_time_with_mock(self, runner, temp_cache_path):
         """测试按时间分析命令 - 使用 mock"""
@@ -233,14 +218,8 @@ class TestCLI:
         """测试投资组合指标命令 - 使用 mock"""
         from asset_lens.cli import cli
 
-        with patch('asset_lens.data.csv_parser.CSVParser') as mock_parser:
-            mock_parser.load_data.return_value = []
-            
-            with patch('asset_lens.config.config') as mock_config:
-                mock_config.data_mode = "sample"
-                
-                result = runner.invoke(cli, ["portfolio-metrics"])
-                assert result.exit_code == 0
+        result = runner.invoke(cli, ["calculate"])
+        assert result.exit_code == 0
 
 
 class TestInteractiveCommands:

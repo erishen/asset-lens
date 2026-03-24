@@ -391,7 +391,7 @@ class EnhancedMarketDataFetcher:
 
     def _fetch_from_eastmoney(self, symbol: str) -> dict[str, Any] | None:
         """从东方财富获取全球指数
-        
+
         注意：这是东方财富网站的内部 API，非官方开放接口。
         - 优点：免费、无需注册、响应快速
         - 缺点：可能随时变更、无官方支持、不适合商业用途
@@ -460,7 +460,7 @@ class EnhancedMarketDataFetcher:
 
     def _fetch_from_sina_global(self, symbol: str) -> dict[str, Any] | None:
         """从新浪财经获取全球指数（备份源）
-        
+
         新浪财经全球指数 API:
         - 美股: gb_dji (道琼斯), gb_ixic (纳斯达克), gb_inx (标普500)
         - 港股: hkHSI (恒生指数)
@@ -707,7 +707,7 @@ class EnhancedMarketDataFetcher:
 
     def fetch_foreign_index(self, symbol: str) -> dict[str, Any] | None:
         """获取国外指数（多数据源故障转移）
-        
+
         数据源优先级：
         1. AkShare - 推荐，正规开源库
         2. 东方财富 - 备用，内部API（非官方）

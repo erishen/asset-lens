@@ -5,7 +5,7 @@ CSV 数据读取和解析模块
 
 import csv
 import logging
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -15,63 +15,11 @@ from ..data.models import InvestmentProduct, InvestmentType, RiskLevel
 from .parser_utils import parse_date as _parse_date
 from .parser_utils import parse_decimal as _parse_decimal
 from .parsers.investment_calculator import days360
+from .parsers.exchange_rate_cache import ExchangeRateCache, exchange_rate_cache
 
 logger = logging.getLogger(__name__)
 
-
-class ExchangeRateCache:
-    """汇率缓存管理器"""
-
-    def __init__(self, ttl_seconds: int = 3600):
-        """
-        初始化缓存
-
-        Args:
-            ttl_seconds: 缓存有效期（秒），默认 1 小时
-        """
-        self._cache: dict[str, tuple[float, float]] = {}
-        self._timestamps: dict[str, datetime] = {}
-        self._ttl = ttl_seconds
-
-    def get(self, key: str) -> tuple[float, float] | None:
-        """获取缓存的汇率"""
-        if key not in self._cache:
-            return None
-
-        if datetime.now() - self._timestamps[key] > timedelta(seconds=self._ttl):
-            logger.debug(f"汇率缓存已过期: {key}")
-            del self._cache[key]
-            del self._timestamps[key]
-            return None
-
-        logger.debug(f"使用缓存的汇率: {key}")
-        return self._cache[key]
-
-    def set(self, key: str, value: tuple[float, float]) -> None:
-        """缓存汇率"""
-        self._cache[key] = value
-        self._timestamps[key] = datetime.now()
-        logger.debug(f"缓存汇率: {key} = {value}")
-
-    def clear(self) -> None:
-        """清空缓存"""
-        self._cache.clear()
-        self._timestamps.clear()
-        logger.debug("汇率缓存已清空")
-
-    def get_stats(self) -> dict[str, Any]:
-        """获取缓存统计信息"""
-        return {
-            "size": len(self._cache),
-            "ttl": self._ttl,
-            "entries": list(self._cache.keys())
-        }
-
-
-_exchange_rate_cache = ExchangeRateCache(ttl_seconds=3600)
-
-
-__all__ = ["CSVParser", "days360"]
+__all__ = ["CSVParser", "days360", "ExchangeRateCache", "exchange_rate_cache"]
 
 
 class CSVParser:
@@ -111,18 +59,18 @@ class CSVParser:
     def get_exchange_rates(data_dir: Path) -> tuple[float, float]:
         """
         从数据文件中读取美元和港元汇率（带缓存）
-        
+
         优先从投资产品表格中读取，其次从工作表2中读取
-        
+
         Args:
             data_dir: 数据目录路径
-            
+
         Returns:
             (美元汇率, 港元汇率)
         """
         cache_key = str(data_dir)
 
-        cached = _exchange_rate_cache.get(cache_key)
+        cached = exchange_rate_cache.get(cache_key)
         if cached:
             return cached
 
@@ -178,7 +126,7 @@ class CSVParser:
 
                         if usd_rate != default_usd or hkd_rate != default_hkd:
                             rates = (usd_rate, hkd_rate)
-                            _exchange_rate_cache.set(cache_key, rates)
+                            exchange_rate_cache.set(cache_key, rates)
                             logger.info(f"加载汇率: USD={usd_rate}, HKD={hkd_rate}")
                             return rates
 
@@ -239,7 +187,7 @@ class CSVParser:
                     break
 
             rates = (usd_rate, hkd_rate)
-            _exchange_rate_cache.set(cache_key, rates)
+            exchange_rate_cache.set(cache_key, rates)
             logger.info(f"加载汇率: USD={usd_rate}, HKD={hkd_rate}")
             return rates
 

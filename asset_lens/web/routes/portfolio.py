@@ -71,7 +71,7 @@ async def get_portfolio_items(
 ):
     """
     获取投资组合项目列表
-    
+
     Args:
         investment_type: 投资类型筛选
         sort_by: 排序字段
@@ -121,7 +121,7 @@ async def get_portfolio_performance(
 ):
     """
     获取投资组合绩效分析
-    
+
     Args:
         start_date: 开始日期
         end_date: 结束日期
@@ -139,8 +139,7 @@ async def get_portfolio_performance(
         )
 
         analyzer = ReportGenerator()
-
-        top_performers = analyzer.get_top_performers(portfolio, 5)
+        top_performers = analyzer.portfolio_analyzer.get_top_performers(portfolio, 5)
 
         total_assets = sum(float(p.current_amount or 0) for p in portfolio.products)
         total_profit = sum(float(p.profit_amount or 0) for p in portfolio.products)

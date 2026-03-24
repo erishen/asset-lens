@@ -29,7 +29,7 @@ class StockQuote(BaseModel):
 async def get_stock_quote(code: str):
     """
     获取股票行情 - 使用新浪财经接口
-    
+
     Args:
         code: 股票代码（如 sh600519）
     """
@@ -101,7 +101,7 @@ async def get_stock_quote(code: str):
 async def search_stocks(keyword: str = Query(..., description="搜索关键词")):
     """
     搜索股票
-    
+
     Args:
         keyword: 搜索关键词
     """
@@ -134,7 +134,7 @@ async def get_stock_kline(
 ):
     """
     获取股票 K 线数据
-    
+
     Args:
         code: 股票代码
         ktype: K线类型 (day/week/month)

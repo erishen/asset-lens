@@ -32,9 +32,11 @@ class TestRootEndpoint:
         response = client.get("/")
         assert response.status_code == 200
         data = response.json()
-        assert "message" in data
-        assert "version" in data
-        assert data["version"] == "1.0.0"
+        assert data["success"] is True
+        assert "data" in data
+        assert "message" in data["data"]
+        assert "version" in data["data"]
+        assert data["data"]["version"] == "1.0.0"
 
 
 class TestStockEndpoints:

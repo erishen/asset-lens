@@ -12,28 +12,28 @@ def parse_date(value: str | None) -> datetime | None:
     """解析日期字符串"""
     if not value:
         return None
-    
+
     value = str(value).strip()
     if not value:
         return None
-    
+
     date_formats = [
         "%Y-%m-%d",
         "%Y/%m/%d",
         "%Y.%m.%d",
         "%Y%m%d",
     ]
-    
+
     for fmt in date_formats:
         try:
             return datetime.strptime(value, fmt)
         except (ValueError, TypeError):
             continue
-    
+
     if " " in value:
         date_part = value.split(" ")[0]
         time_match = re.search(r"(\d{1,2}):(\d{1,2}):?(\d{1,2})?", value)
-        
+
         for fmt in date_formats:
             try:
                 dt = datetime.strptime(date_part, fmt)
@@ -45,7 +45,7 @@ def parse_date(value: str | None) -> datetime | None:
                 return dt
             except (ValueError, TypeError):
                 continue
-    
+
     return None
 
 
@@ -53,11 +53,11 @@ def parse_decimal(value: str | None) -> Decimal | None:
     """解析数字字符串"""
     if not value:
         return None
-    
+
     value_str = str(value).replace(",", "").replace("¥", "").strip()
     if not value_str:
         return None
-    
+
     try:
         return Decimal(value_str)
     except (InvalidOperation, ValueError, TypeError):

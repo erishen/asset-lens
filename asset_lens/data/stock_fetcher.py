@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 def with_retry(max_retries: int = 3, retry_delay: float = 2.0, backoff_factor: float = 2.0):
     """
     重试装饰器
-    
+
     Args:
         max_retries: 最大重试次数
         retry_delay: 初始重试延迟（秒）
@@ -124,10 +124,10 @@ class StockDataFetcher:
     def fetch_stock_quote_akshare(self, stock_code: str) -> dict[str, Any] | None:
         """
         获取股票实时行情（AkShare）- 支持多数据源故障切换
-        
+
         Args:
             stock_code: 股票代码（如 sh600519, sz000001, hk00700）
-            
+
         Returns:
             股票行情数据
         """
@@ -143,15 +143,15 @@ class StockDataFetcher:
     def _fetch_cn_stock_with_fallback(self, stock_code: str) -> dict[str, Any] | None:
         """
         获取A股实时行情 - 支持多数据源故障切换
-        
+
         数据源优先级说明：
         1. eastmoney - 免费，实时性好，数据全面（优先）
         2. sina - 免费，实时行情
         3. baostock - 免费，稳定可靠
-        
+
         Args:
             stock_code: 股票代码（如 sh600519, sz000001）
-            
+
         Returns:
             股票行情数据
         """
@@ -179,10 +179,10 @@ class StockDataFetcher:
     def _fetch_cn_stock_quote_sina(self, stock_code: str) -> dict[str, Any] | None:
         """
         获取A股实时行情（新浪数据源）
-        
+
         Args:
             stock_code: 股票代码（如 sh600519, sz000001）
-            
+
         Returns:
             股票行情数据
         """
@@ -245,10 +245,10 @@ class StockDataFetcher:
     def _fetch_cn_stock_quote_baostock(self, stock_code: str) -> dict[str, Any] | None:
         """
         获取A股实时行情（Baostock数据源）
-        
+
         Args:
             stock_code: 股票代码（如 sh600519, sz000001）
-            
+
         Returns:
             股票行情数据
         """
@@ -329,10 +329,10 @@ class StockDataFetcher:
     def _fetch_cn_stock_quote_joinquant(self, stock_code: str) -> dict[str, Any] | None:
         """
         获取A股实时行情（聚宽数据源）
-        
+
         Args:
             stock_code: 股票代码（如 sh600519, sz000001）
-            
+
         Returns:
             股票行情数据
         """
@@ -407,10 +407,10 @@ class StockDataFetcher:
     def _convert_to_jq_code(self, stock_code: str) -> str:
         """
         将股票代码转换为聚宽格式
-        
+
         Args:
             stock_code: 股票代码（如 sh600519, sz000001）
-            
+
         Returns:
             聚宽格式股票代码（如 600519.XSHG, 000001.XSHE）
         """
@@ -426,10 +426,10 @@ class StockDataFetcher:
     def _fetch_cn_stock_quote(self, stock_code: str) -> dict[str, Any] | None:
         """
         获取A股实时行情（AkShare）
-        
+
         Args:
             stock_code: 股票代码（如 sh600519, sz000001）
-            
+
         Returns:
             股票行情数据
         """
@@ -494,10 +494,10 @@ class StockDataFetcher:
     def _fetch_hk_stock_quote(self, stock_code: str) -> dict[str, Any] | None:
         """
         获取港股实时行情（AkShare）
-        
+
         Args:
             stock_code: 股票代码（如 hk00700）
-            
+
         Returns:
             股票行情数据
         """
@@ -562,7 +562,7 @@ class StockDataFetcher:
 
         Returns:
             股票行情数据
-            
+
         Raises:
             ConfigurationError: 如果 API 密钥未配置
         """
@@ -684,22 +684,23 @@ class StockDataFetcher:
     ) -> dict[str, Any]:
         """
         并发获取股票行情（性能优化版本）
-        
+
         Args:
             stock_codes: 股票代码列表
             max_concurrent: 最大并发数
             use_cache: 是否使用缓存
-            
+
         Returns:
             股票行情数据字典
         """
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
         from ..core.intelligent_cache import intelligent_cache
 
         results = {}
         cached_count = 0
         fetch_count = 0
 
-        # 第一阶段：检查缓存
         if use_cache:
             for code in stock_codes:
                 cache_key = f"stock_quote_{code}"
@@ -710,33 +711,32 @@ class StockDataFetcher:
                     cached_count += 1
                     logger.info(f"✅ {code}: 使用缓存数据")
 
-        # 第二阶段：并发获取未缓存的数据
         uncached_codes = [code for code in stock_codes if code not in results]
 
         if uncached_codes:
             logger.info(f"开始并发获取 {len(uncached_codes)} 只股票数据...")
 
-            from .concurrent_fetcher import FetchResult, fetch_stocks_concurrently
-
-            fetch_results: list[FetchResult] = fetch_stocks_concurrently(
-                uncached_codes, max_concurrent
-            )
-
-            for result in fetch_results:
-                if result.success and result.data:
-                    results[result.code] = result.data
-                    fetch_count += 1
-
-                    # 缓存结果
-                    if use_cache:
-                        cache_key = f"stock_quote_{result.code}"
-                        intelligent_cache.set(cache_key, result.data, ttl=60)
-
-                    logger.info(f"✅ {result.code}: {result.data.get('name', 'N/A')} - 获取成功")
+            def fetch_single(code: str) -> tuple[str, dict | None]:
+                if code.startswith(("sh", "sz", "bj")):
+                    data = self.fetch_stock_quote_akshare(code)
                 else:
-                    logger.error(f"❌ {result.code}: {result.error}")
+                    data = self.fetch_us_stock_quote(code)
+                return code, data
 
-        # 保存到文件缓存
+            with ThreadPoolExecutor(max_workers=max_concurrent) as executor:
+                futures = {executor.submit(fetch_single, code): code for code in uncached_codes}
+                for future in as_completed(futures):
+                    code, data = future.result()
+                    if data:
+                        results[code] = data
+                        fetch_count += 1
+                        if use_cache:
+                            cache_key = f"stock_quote_{code}"
+                            intelligent_cache.set(cache_key, data, ttl=60)
+                        logger.info(f"✅ {code}: {data.get('name', 'N/A')} - 获取成功")
+                    else:
+                        logger.error(f"❌ {code}: 获取失败")
+
         cache_data = {
             "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "data": results,

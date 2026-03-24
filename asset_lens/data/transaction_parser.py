@@ -3,9 +3,10 @@
 支持多种交易记录格式：单日交易、定投期间、智能定投等
 """
 
+import logging
 from dataclasses import dataclass
 from datetime import date
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from enum import Enum
 
 from ..core.holidays import (
@@ -13,6 +14,8 @@ from ..core.holidays import (
     calculate_working_days,
     get_last_fund_trading_day,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class InvestmentType(Enum):
@@ -102,13 +105,13 @@ def parse_stop_periods(transaction_string: str) -> list[tuple[date, date]]:
                     start = parse_date(start_str.strip(), 20260307)
                     end = parse_date(end_str.strip(), 20260307)
                     stop_periods.append((start, end))
-                except:
+                except (ValueError, IndexError):
                     pass
         else:
             try:
                 d = parse_date(date_range.strip(), 20260307)
                 stop_periods.append((d, d))
-            except:
+            except (ValueError, IndexError):
                 pass
 
     return stop_periods
@@ -152,7 +155,7 @@ def parse_period_record(
     try:
         start_date = parse_date(start_date_str, suffix)
         end_date = parse_date(end_date_str, suffix)
-    except:
+    except (ValueError, IndexError):
         return transactions
 
     current_date = date(suffix // 10000, (suffix % 10000) // 100, suffix % 100)
@@ -177,7 +180,7 @@ def parse_period_record(
                 daily_amount = normal_valuation
                 total_amount = normal_valuation * work_days
                 investment_type = InvestmentType.VALUATION
-            except:
+            except (ValueError, InvalidOperation):
                 return transactions
         else:
             return transactions
@@ -190,7 +193,7 @@ def parse_period_record(
                 daily_amount = (min_amount + max_amount) / 2
                 total_amount = Decimal("0")
                 investment_type = InvestmentType.SMART
-            except:
+            except (ValueError, InvalidOperation):
                 return transactions
         else:
             return transactions
@@ -201,14 +204,14 @@ def parse_period_record(
             daily_amount = base_amount
             total_amount = base_amount * work_days
             investment_type = InvestmentType.FLOATING
-        except:
+        except (ValueError, InvalidOperation):
             return transactions
     else:
         try:
             daily_amount = Decimal(amount_str)
             total_amount = daily_amount * work_days
             investment_type = InvestmentType.FIXED
-        except:
+        except (ValueError, InvalidOperation):
             return transactions
 
     transactions.append(
@@ -283,8 +286,8 @@ def parse_transactions(
                         amount=amount,
                     )
                 )
-            except:
-                pass
+            except (ValueError, InvalidOperation) as e:
+                logger.debug(f"解析交易记录失败: {parts}, 错误: {e}")
 
     total_buy = sum(tx.amount for tx in transactions if tx.action == "buy")
     total_sell = sum(tx.amount for tx in transactions if tx.action == "sell")

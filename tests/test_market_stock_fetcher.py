@@ -112,36 +112,20 @@ class TestMarketStockFetcher:
 
     def test_fetch_all_cn_stocks_with_mock(self, fetcher):
         """测试获取所有A股股票 - 使用 mock"""
-        mock_data = {
-            "代码": ["600519"],
-            "名称": ["贵州茅台"],
-            "最新价": [1800],
-            "涨跌幅": [2.5],
-            "成交量": [1000000],
-            "成交额": [1800000000],
-            "换手率": [0.5],
-            "市盈率-动态": [30],
-            "总市值": [2000000000000],
-        }
-        mock_df = pd.DataFrame(mock_data)
-
-        mock_ak = MagicMock()
-        mock_ak.stock_zh_a_spot_em.return_value = mock_df
-
-        fetcher._akshare = mock_ak
-
+        mock_stocks = [
+            {"code": "sh600519", "name": "贵州茅台", "current_price": 1800, "change_percent": 2.5, "volume": 1000000}
+        ]
+        
+        fetcher._fetch_stocks_tencent = MagicMock(return_value=mock_stocks)
+        
         result = fetcher.fetch_all_cn_stocks()
         assert len(result) == 1
         assert result[0]["code"] == "sh600519"
 
     def test_fetch_all_cn_stocks_empty_data(self, fetcher):
         """测试获取所有A股股票 - 空数据"""
-        mock_df = pd.DataFrame()
-
-        mock_ak = MagicMock()
-        mock_ak.stock_zh_a_spot_em.return_value = mock_df
-
-        fetcher._akshare = mock_ak
+        fetcher._fetch_stocks_tencent = MagicMock(return_value=[])
+        fetcher._fetch_stocks_akshare = MagicMock(return_value=[])
         fetcher._fetch_stocks_efinance = MagicMock(return_value=[])
         fetcher._fetch_stocks_baostock = MagicMock(return_value=[])
 
@@ -150,10 +134,8 @@ class TestMarketStockFetcher:
 
     def test_fetch_all_cn_stocks_exception(self, fetcher):
         """测试获取所有A股股票 - 异常"""
-        mock_ak = MagicMock()
-        mock_ak.stock_zh_a_spot_em.side_effect = Exception("网络错误")
-
-        fetcher._akshare = mock_ak
+        fetcher._fetch_stocks_tencent = MagicMock(side_effect=Exception("网络错误"))
+        fetcher._fetch_stocks_akshare = MagicMock(return_value=[])
         fetcher._fetch_stocks_efinance = MagicMock(return_value=[])
         fetcher._fetch_stocks_baostock = MagicMock(return_value=[])
 
@@ -294,10 +276,8 @@ class TestMarketStockFetcher:
 
     def test_fetch_all_cn_stocks_none_data(self, fetcher):
         """测试获取所有A股股票 - None 数据"""
-        mock_ak = MagicMock()
-        mock_ak.stock_zh_a_spot_em.return_value = None
-
-        fetcher._akshare = mock_ak
+        fetcher._fetch_stocks_tencent = MagicMock(return_value=None)
+        fetcher._fetch_stocks_akshare = MagicMock(return_value=[])
         fetcher._fetch_stocks_efinance = MagicMock(return_value=[])
         fetcher._fetch_stocks_baostock = MagicMock(return_value=[])
 

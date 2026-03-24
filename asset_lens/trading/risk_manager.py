@@ -96,11 +96,11 @@ class RiskManager:
     ) -> dict[str, Any]:
         """
         根据市场环境调整风险阈值
-        
+
         Args:
             index_returns: 指数收益率序列（用于判断市场环境）
             regime: 直接指定市场环境（可选）
-            
+
         Returns:
             调整结果字典
         """

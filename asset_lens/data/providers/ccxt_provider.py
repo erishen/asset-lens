@@ -13,7 +13,7 @@ from .base import BaseProvider
 class CCXTProvider(BaseProvider):
     """
     CCXT 加密货币数据源
-    
+
     使用 CCXT 获取加密货币数据
     """
 

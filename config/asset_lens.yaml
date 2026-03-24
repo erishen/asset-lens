@@ -1,0 +1,46 @@
+alerts:
+  daily_report_time: '15:00'
+  enable_email: false
+  enable_qq: true
+  enable_wechat: false
+  weekly_report_day: 4
+  weekly_report_time: '16:00'
+cache:
+  enabled: true
+  max_size: 100
+  ttl: 3600
+data_sources:
+  baostock:
+    enabled: true
+    name: Baostock
+    priority: 3
+    retry_times: 2
+    timeout: 30
+  eastmoney:
+    enabled: true
+    name: 东方财富
+    priority: 1
+    retry_times: 3
+    timeout: 30
+  sina:
+    enabled: true
+    name: 新浪
+    priority: 2
+    retry_times: 3
+    timeout: 30
+environment: development
+monitor:
+  check_interval: 300
+  concentration_threshold: 30.0
+  enable_alerts: true
+  max_drawdown_threshold: 10.0
+  price_threshold: 5.0
+  volatility_threshold: 20.0
+user_preferences:
+  excluded_sectors: []
+  investment_goal: balanced
+  max_position_size: 10.0
+  preferred_sectors: []
+  rebalance_frequency: monthly
+  risk_tolerance: moderate
+version: 1.0.0

@@ -24,9 +24,9 @@ from asset_lens.config import config
 def handle_errors(func: Callable) -> Callable:
     """
     错误处理装饰器
-    
+
     自动捕获异常并显示友好的错误消息
-    
+
     Usage:
         @handle_errors
         def my_command():
@@ -45,10 +45,10 @@ def handle_errors(func: Callable) -> Callable:
 def load_portfolio_data(data_mode: str = "sample") -> tuple[dict | None, str | None]:
     """
     加载投资组合数据
-    
+
     Args:
         data_mode: 数据模式 (sample/real)
-        
+
     Returns:
         (数据字典, 错误消息) 元组
     """
@@ -74,11 +74,11 @@ def load_portfolio_data(data_mode: str = "sample") -> tuple[dict | None, str | N
 def format_currency(amount: float, currency: str = "¥") -> str:
     """
     格式化货币显示
-    
+
     Args:
         amount: 金额
         currency: 货币符号
-        
+
     Returns:
         格式化后的字符串
     """
@@ -88,11 +88,11 @@ def format_currency(amount: float, currency: str = "¥") -> str:
 def format_percent(value: float, decimal: int = 2) -> str:
     """
     格式化百分比显示
-    
+
     Args:
         value: 百分比值
         decimal: 小数位数
-        
+
     Returns:
         格式化后的字符串
     """
@@ -102,10 +102,10 @@ def format_percent(value: float, decimal: int = 2) -> str:
 def format_change(value: float) -> str:
     """
     格式化涨跌幅显示
-    
+
     Args:
         value: 涨跌幅值
-        
+
     Returns:
         格式化后的字符串（带正负号）
     """
@@ -120,7 +120,7 @@ def format_change(value: float) -> str:
 def print_section_header(title: str, width: int = 60) -> None:
     """
     打印章节标题
-    
+
     Args:
         title: 标题文本
         width: 分隔线宽度
@@ -134,7 +134,7 @@ def print_section_header(title: str, width: int = 60) -> None:
 def print_sub_header(title: str, width: int = 60) -> None:
     """
     打印子标题
-    
+
     Args:
         title: 标题文本
         width: 分隔线宽度
@@ -148,7 +148,7 @@ def print_sub_header(title: str, width: int = 60) -> None:
 def print_key_value(key: str, value: Any, indent: int = 0) -> None:
     """
     打印键值对
-    
+
     Args:
         key: 键名
         value: 值
@@ -161,7 +161,7 @@ def print_key_value(key: str, value: Any, indent: int = 0) -> None:
 def print_success(message: str) -> None:
     """
     打印成功消息
-    
+
     Args:
         message: 消息内容
     """
@@ -171,7 +171,7 @@ def print_success(message: str) -> None:
 def print_error(message: str) -> None:
     """
     打印错误消息
-    
+
     Args:
         message: 消息内容
     """
@@ -181,7 +181,7 @@ def print_error(message: str) -> None:
 def print_warning(message: str) -> None:
     """
     打印警告消息
-    
+
     Args:
         message: 消息内容
     """
@@ -191,7 +191,7 @@ def print_warning(message: str) -> None:
 def print_info(message: str) -> None:
     """
     打印信息消息
-    
+
     Args:
         message: 消息内容
     """
@@ -205,12 +205,12 @@ def check_data_freshness(
 ) -> tuple[bool, str | None]:
     """
     检查数据文件的新鲜度
-    
+
     Args:
         file_path: 数据文件路径
         max_age_hours: 最大允许的小时数
         time_key: 时间字段名
-        
+
     Returns:
         (是否需要更新, 更新时间字符串) 元组
     """
@@ -246,10 +246,10 @@ def ensure_data_dir() -> None:
 def get_data_dir(data_mode: str) -> Path | None:
     """
     获取数据目录路径
-    
+
     Args:
         data_mode: 数据模式 (sample/real)
-        
+
     Returns:
         数据目录路径
     """
@@ -262,11 +262,11 @@ def get_data_dir(data_mode: str) -> Path | None:
 def confirm_action(message: str, default: bool = False) -> bool:
     """
     确认操作
-    
+
     Args:
         message: 确认消息
         default: 默认值
-        
+
     Returns:
         用户是否确认
     """
@@ -276,11 +276,11 @@ def confirm_action(message: str, default: bool = False) -> bool:
 def prompt_input(message: str, default: str | None = None) -> str | None:
     """
     提示用户输入
-    
+
     Args:
         message: 提示消息
         default: 默认值
-        
+
     Returns:
         用户输入的值
     """
@@ -295,12 +295,12 @@ def calculate_profit_metrics(
 ) -> dict[str, float]:
     """
     计算收益指标
-    
+
     Args:
         principal: 本金
         current: 当前金额
         days: 持有天数
-        
+
     Returns:
         收益指标字典
     """
@@ -320,7 +320,7 @@ def calculate_profit_metrics(
 def print_profit_summary(metrics: dict[str, float]) -> None:
     """
     打印收益摘要
-    
+
     Args:
         metrics: 收益指标字典
     """
@@ -334,12 +334,12 @@ def print_profit_summary(metrics: dict[str, float]) -> None:
 def safe_divide(numerator: float, denominator: float, default: float = 0.0) -> float:
     """
     安全除法
-    
+
     Args:
         numerator: 分子
         denominator: 分母
         default: 默认值（分母为0时）
-        
+
     Returns:
         除法结果
     """
