@@ -187,10 +187,10 @@ class RealtimePnlEstimator:
 
     def _load_fund_codes_config(self) -> dict[str, str]:
         """加载基金代码配置
-        
+
         Returns:
             基金代码映射字典 {关键词: 代码}
-            
+
         Note:
             如果加载失败，返回空字典并记录警告
         """
@@ -283,10 +283,10 @@ class RealtimePnlEstimator:
 
     def _load_stock_codes_config(self) -> dict[str, str]:
         """加载股票代码配置
-        
+
         Returns:
             股票代码映射字典 {关键词: 代码}
-            
+
         Note:
             如果加载失败，返回空字典并记录警告
         """

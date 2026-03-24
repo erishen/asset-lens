@@ -30,11 +30,11 @@ class TechnicalIndicators:
     def calculate_rsi(prices: list[float], period: int = 14) -> float | None:
         """
         计算 RSI (相对强弱指数)
-        
+
         Args:
             prices: 价格列表
             period: 周期，默认14
-            
+
         Returns:
             RSI 值 (0-100)
         """
@@ -75,12 +75,12 @@ class TechnicalIndicators:
     ) -> tuple[float, float, float] | None:
         """
         计算布林带
-        
+
         Args:
             prices: 价格列表
             period: 周期，默认20
             std_dev: 标准差倍数，默认2
-            
+
         Returns:
             (上轨, 中轨, 下轨)
         """
@@ -105,11 +105,11 @@ class TechnicalIndicators:
     ) -> float | None:
         """
         计算 OBV (能量潮)
-        
+
         Args:
             prices: 价格列表
             volumes: 成交量列表
-            
+
         Returns:
             OBV 值
         """
@@ -134,13 +134,13 @@ class TechnicalIndicators:
     ) -> float | None:
         """
         计算 WR (威廉指标)
-        
+
         Args:
             high_prices: 最高价列表
             low_prices: 最低价列表
             close_prices: 收盘价列表
             period: 周期，默认14
-            
+
         Returns:
             WR 值 (-100 to 0)
         """
@@ -167,13 +167,13 @@ class TechnicalIndicators:
     ) -> float | None:
         """
         计算 ATR (平均真实波幅)
-        
+
         Args:
             high_prices: 最高价列表
             low_prices: 最低价列表
             close_prices: 收盘价列表
             period: 周期，默认14
-            
+
         Returns:
             ATR 值
         """

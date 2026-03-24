@@ -47,7 +47,7 @@ _asset_lens_completion() {
         'version:显示版本信息'
         'completion:生成 shell 自动补全脚本'
     )
-    
+
     _describe 'command' commands
 }
 compdef _asset_lens_completion asset-lens
@@ -62,7 +62,7 @@ _asset_lens_completion() {
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     words="analyze summary calculate fetch-stock fetch-fund search-fund update-market estimate-pnl report version completion"
-    
+
     COMPREPLY=( $(compgen -W "${words}" -- ${cur}) )
     return 0
 }

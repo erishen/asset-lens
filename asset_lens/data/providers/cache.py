@@ -210,7 +210,7 @@ class FileCache:
 class ProviderCache:
     """
     数据源缓存管理器
-    
+
     支持多级缓存策略:
     - 热缓存: 内存缓存，适用于高频访问数据
     - 温缓存: 文件缓存，适用于中频访问数据
@@ -249,13 +249,13 @@ class ProviderCache:
     ) -> Any | None:
         """
         获取缓存数据
-        
+
         Args:
             data_type: 数据类型
             provider_name: 数据源名称
             symbol: 代码
             **kwargs: 其他参数
-            
+
         Returns:
             缓存的数据，如果不存在或过期则返回 None
         """
@@ -282,7 +282,7 @@ class ProviderCache:
     ) -> None:
         """
         设置缓存数据
-        
+
         Args:
             data_type: 数据类型
             provider_name: 数据源名称

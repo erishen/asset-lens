@@ -18,7 +18,7 @@ async def compare_weekly():
         result = portfolio_comparator.compare_weekly()
         if result is None:
             return {"success": False, "message": "数据不足，无法进行周度对比"}
-        return {"success": True, "comparison": result.to_dict()}
+        return {"success": True, "comparison": result}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -33,7 +33,7 @@ async def compare_periods(
         result = portfolio_comparator.compare_periods(date1, date2)
         if result is None:
             return {"success": False, "message": f"找不到 {date1} 或 {date2} 的快照数据"}
-        return {"success": True, "comparison": result.to_dict()}
+        return {"success": True, "comparison": result}
     except Exception as e:
         return {"success": False, "error": str(e)}
 

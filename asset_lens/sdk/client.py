@@ -17,7 +17,7 @@ class AssetLensClient:
     def __init__(self, config_path: Path | None = None):
         """
         初始化客户端
-        
+
         Args:
             config_path: 配置文件路径
         """
@@ -27,10 +27,10 @@ class AssetLensClient:
     def get_stock_quote(self, code: str) -> dict[str, Any]:
         """
         获取股票实时行情
-        
+
         Args:
             code: 股票代码（如 sh600519, sz000001）
-            
+
         Returns:
             股票行情数据
         """
@@ -65,10 +65,10 @@ class AssetLensClient:
     def get_fund_nav(self, code: str) -> dict[str, Any]:
         """
         获取基金净值
-        
+
         Args:
             code: 基金代码
-            
+
         Returns:
             基金净值数据
         """
@@ -103,7 +103,7 @@ class AssetLensClient:
     def analyze_portfolio(self) -> dict[str, Any]:
         """
         分析投资组合
-        
+
         Returns:
             投资组合分析数据
         """
@@ -138,11 +138,11 @@ class AssetLensClient:
     def screen_stocks(self, strategy: str = "momentum", limit: int = 10) -> dict[str, Any]:
         """
         股票筛选
-        
+
         Args:
             strategy: 策略类型（momentum, value, reversal, dividend）
             limit: 返回数量
-            
+
         Returns:
             筛选结果
         """
@@ -177,7 +177,7 @@ class AssetLensClient:
     def get_market_indices(self) -> dict[str, Any]:
         """
         获取市场指数
-        
+
         Returns:
             市场指数数据
         """
@@ -211,10 +211,10 @@ class AssetLensClient:
     def calculate_risk_metrics(self, returns: list[float]) -> dict[str, Any]:
         """
         计算风险指标
-        
+
         Args:
             returns: 收益率序列
-            
+
         Returns:
             风险指标数据
         """
@@ -244,10 +244,10 @@ class AssetLensClient:
     def generate_report(self, report_type: str = "daily") -> dict[str, Any]:
         """
         生成报告
-        
+
         Args:
             report_type: 报告类型（daily, weekly, monthly）
-            
+
         Returns:
             报告数据
         """
@@ -279,12 +279,12 @@ class AssetLensClient:
     def add_to_stock_pool(self, code: str, name: str, price: float) -> dict[str, Any]:
         """
         添加股票到股票池
-        
+
         Args:
             code: 股票代码
             name: 股票名称
             price: 买入价格
-            
+
         Returns:
             操作结果
         """
@@ -319,7 +319,7 @@ class AssetLensClient:
     def get_stock_pool_status(self) -> dict[str, Any]:
         """
         获取股票池状态
-        
+
         Returns:
             股票池状态数据
         """

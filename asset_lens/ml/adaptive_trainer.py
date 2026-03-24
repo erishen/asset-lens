@@ -48,10 +48,10 @@ class AIMarketAnalyzer:
     def analyze_market(self, market_data: dict | None = None) -> MarketAnalysis:
         """
         分析市场行情
-        
+
         Args:
             market_data: 市场数据 (指数、涨跌分布等)
-        
+
         Returns:
             市场分析结果
         """
@@ -235,11 +235,11 @@ class AdaptiveMLTrainer:
     ) -> dict[str, Any]:
         """
         分析市场并训练模型
-        
+
         Args:
             custom_market_data: 自定义市场数据
             model_type: 模型类型
-        
+
         Returns:
             训练结果
         """

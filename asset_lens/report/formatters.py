@@ -3,7 +3,7 @@ Report formatting functions.
 报告格式化函数 - 提取公共格式化逻辑
 """
 
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 

@@ -5,7 +5,7 @@ Data models for asset-lens.
 
 from dataclasses import dataclass, field
 from datetime import date
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
@@ -220,10 +220,10 @@ class InvestmentProduct:
                             amount_str = parts[i + 1].replace("¥", "").replace(",", "")
                             try:
                                 total += Decimal(amount_str)
-                            except:
+                            except (ValueError, InvalidOperation):
                                 pass
             return str(total) if total > 0 else None
-        except:
+        except (ValueError, InvalidOperation, AttributeError):
             return None
 
     def _get_total_sell(self) -> str | None:
@@ -240,10 +240,10 @@ class InvestmentProduct:
                             amount_str = parts[i + 1].replace("¥", "").replace(",", "")
                             try:
                                 total += Decimal(amount_str)
-                            except:
+                            except (ValueError, InvalidOperation):
                                 pass
             return str(total) if total > 0 else None
-        except:
+        except (ValueError, InvalidOperation, AttributeError):
             return None
 
 
@@ -519,7 +519,7 @@ class Portfolio:
         if data_dir and data_dir.name.startswith("money_csv_"):
             try:
                 return int(data_dir.name.replace("money_csv_", ""))
-            except:
+            except ValueError:
                 pass
 
         today = date.today()

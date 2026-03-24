@@ -16,7 +16,7 @@ from .providers.alpha_vantage_provider import AlphaVantageProvider
 class UnifiedDataFetcher:
     """
     统一数据获取入口
-    
+
     使用 Provider Registry 自动选择最佳数据源
     """
 
@@ -69,12 +69,12 @@ class UnifiedDataFetcher:
     ) -> dict[str, Any] | None:
         """
         通用数据获取方法
-        
+
         Args:
             data_type: 数据类型
             symbol: 代码
             **kwargs: 其他参数
-            
+
         Returns:
             数据字典
         """

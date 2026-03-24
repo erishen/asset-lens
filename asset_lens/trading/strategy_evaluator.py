@@ -447,14 +447,14 @@ class StrategyEvaluator:
     ) -> EvaluationResult:
         """
         评估策略
-        
+
         Args:
             strategy_name: 策略名称
             simulation_result: 模拟结果
             factor_data: 因子数据
             market_styles: 市场风格数据
             out_sample_result: 样本外结果
-            
+
         Returns:
             评估结果
         """

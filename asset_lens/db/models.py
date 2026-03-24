@@ -165,7 +165,15 @@ def init_database(db_url: str = "sqlite:///./data/asset_lens.db"):
     Returns:
         engine, Session
     """
-    engine = create_engine(db_url, echo=False, pool_pre_ping=True)
+    engine = create_engine(
+        db_url,
+        echo=False,
+        pool_pre_ping=True,
+        pool_size=10,
+        max_overflow=20,
+        pool_recycle=3600,
+        pool_timeout=30,
+    )
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     return engine, Session

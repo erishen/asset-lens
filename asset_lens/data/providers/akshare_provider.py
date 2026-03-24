@@ -12,7 +12,7 @@ from .base import BaseProvider
 class AkshareProvider(BaseProvider):
     """
     AkShare 数据源
-    
+
     使用 AkShare 获取 A 股、基金、期货等数据
     """
 

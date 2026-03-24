@@ -53,7 +53,7 @@ class SnapshotManager:
     ) -> PortfolioSnapshot:
         """
         创建快照
-        
+
         Args:
             total_assets: 总资产
             total_profit: 总收益
@@ -63,7 +63,7 @@ class SnapshotManager:
             risk_metrics: 风险指标
             market_regime: 市场环境
             metadata: 元数据
-            
+
         Returns:
             快照对象
         """
@@ -108,10 +108,10 @@ class SnapshotManager:
     def get_snapshot(self, date_str: str) -> PortfolioSnapshot | None:
         """
         获取指定日期的最新快照
-        
+
         Args:
             date_str: 日期字符串 (YYYY-MM-DD)
-            
+
         Returns:
             快照对象
         """
@@ -139,11 +139,11 @@ class SnapshotManager:
     ) -> list[PortfolioSnapshot]:
         """
         获取日期范围内的快照
-        
+
         Args:
             start_date: 开始日期
             end_date: 结束日期
-            
+
         Returns:
             快照列表
         """
@@ -168,10 +168,10 @@ class SnapshotManager:
     def get_latest_snapshots(self, count: int = 7) -> list[PortfolioSnapshot]:
         """
         获取最近的快照
-        
+
         Args:
             count: 数量
-            
+
         Returns:
             快照列表
         """

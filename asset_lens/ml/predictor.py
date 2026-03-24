@@ -10,7 +10,6 @@ Stock Predictor using Machine Learning.
 
 # pylint: disable=unsupported-assignment-operation,unsubscriptable-object
 
-import json
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -188,13 +187,13 @@ class StockPredictor:
     ) -> "StockPredictor":
         """
         训练模型
-        
+
         Args:
             X: 特征数据
             y: 标签数据
             feature_names: 特征名称
             task: 任务类型 (classification / regression)
-        
+
         Returns:
             self
         """
@@ -218,10 +217,10 @@ class StockPredictor:
     def predict(self, X: pd.DataFrame) -> "np.ndarray":
         """
         预测
-        
+
         Args:
             X: 特征数据
-        
+
         Returns:
             预测结果
         """
@@ -241,10 +240,10 @@ class StockPredictor:
     def predict_proba(self, X: pd.DataFrame) -> "np.ndarray":
         """
         预测概率
-        
+
         Args:
             X: 特征数据
-        
+
         Returns:
             预测概率
         """
@@ -269,12 +268,12 @@ class StockPredictor:
     ) -> PredictionResult:
         """
         预测单只股票
-        
+
         Args:
             stock_data: 股票特征数据
             code: 股票代码
             name: 股票名称
-        
+
         Returns:
             预测结果
         """
@@ -307,12 +306,12 @@ class StockPredictor:
     ) -> list[PredictionResult]:
         """
         批量预测股票
-        
+
         Args:
             stocks_data: 股票特征数据列表
             codes: 股票代码列表
             names: 股票名称列表
-        
+
         Returns:
             预测结果列表
         """

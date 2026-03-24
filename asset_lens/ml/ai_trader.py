@@ -124,7 +124,7 @@ class AISimulatedTrader:
     def analyze_and_generate_signals(self) -> list[TradeSignal]:
         """
         分析市场并生成交易信号
-        
+
         Returns:
             交易信号列表
         """
@@ -370,10 +370,10 @@ class AISimulatedTrader:
     def execute_signals(self, signals: list[TradeSignal]) -> list[TradeRecord]:
         """
         执行交易信号
-        
+
         Args:
             signals: 交易信号列表
-        
+
         Returns:
             交易记录列表
         """
@@ -484,7 +484,7 @@ class AISimulatedTrader:
     def run_trading_session(self) -> dict[str, Any]:
         """
         运行一次完整的交易会话
-        
+
         Returns:
             交易会话结果
         """

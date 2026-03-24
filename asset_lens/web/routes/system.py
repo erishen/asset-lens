@@ -6,7 +6,6 @@ from fastapi import APIRouter, Query
 
 from ...data.providers import provider_registry
 from ...data.providers.cache import provider_cache
-from ...goals import goals_manager
 
 router = APIRouter(tags=["system"])
 
@@ -34,11 +33,7 @@ async def get_cache_stats():
 @router.get("/api/goals")
 async def get_goals():
     """获取投资目标列表"""
-    try:
-        summary = goals_manager.get_summary()
-        return {"success": True, **summary}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    return {"success": True, "goals": [], "message": "Goals module deprecated"}
 
 
 @router.post("/api/goals/add")
@@ -50,14 +45,4 @@ async def add_goal(
     description: str = Query("", description="描述"),
 ):
     """添加投资目标"""
-    try:
-        goal = goals_manager.add_goal(
-            name=name,
-            target_amount=target_amount,
-            target_date=target_date,
-            owner=owner,
-            description=description,
-        )
-        return {"success": True, "goal": goal.to_dict()}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    return {"success": False, "message": "Goals module deprecated"}

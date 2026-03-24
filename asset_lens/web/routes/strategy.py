@@ -28,19 +28,26 @@ async def list_strategies():
 
     strategies = strategy_engine.list_strategies()
 
-    return [
-        StrategyInfo(
+    result = []
+    for s in strategies:
+        buy_cond = s.get("buy_conditions", [])
+        sell_cond = s.get("sell_conditions", [])
+        
+        buy_count = buy_cond if isinstance(buy_cond, int) else len(buy_cond)
+        sell_count = sell_cond if isinstance(sell_cond, int) else len(sell_cond)
+        
+        result.append(StrategyInfo(
             name=s.get("name", ""),
             description=s.get("description", ""),
-            buy_conditions=len(s.get("buy_conditions", [])),
-            sell_conditions=len(s.get("sell_conditions", [])),
+            buy_conditions=buy_count,
+            sell_conditions=sell_count,
             position_size=s.get("position_size", 0),
             max_positions=s.get("max_positions", 0),
             stop_loss=s.get("stop_loss", 0),
             take_profit=s.get("take_profit", 0),
-        )
-        for s in strategies
-    ]
+        ))
+    
+    return result
 
 
 @router.get("/{strategy_name}")
@@ -75,7 +82,7 @@ async def get_strategy(strategy_name: str):
 async def evaluate_stock(strategy_name: str, code: str):
     """
     使用策略评估股票
-    
+
     Args:
         strategy_name: 策略名称
         code: 股票代码
@@ -100,7 +107,7 @@ async def recommend_stocks(
 ):
     """
     获取策略推荐的股票
-    
+
     Args:
         strategy_name: 策略名称
         limit: 返回数量

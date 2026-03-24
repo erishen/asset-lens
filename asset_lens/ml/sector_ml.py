@@ -55,10 +55,10 @@ class SectorMLPredictor:
     def prepare_sector_features(self, sector_stats: dict) -> pd.DataFrame:
         """
         准备板块特征
-        
+
         Args:
             sector_stats: 板块统计数据
-        
+
         Returns:
             特征DataFrame
         """
@@ -107,12 +107,12 @@ class SectorMLPredictor:
     ) -> SectorPrediction:
         """
         预测板块走势
-        
+
         Args:
             sector_name: 板块名称
             sector_stats: 板块统计数据
             market_condition: 市场状态
-        
+
         Returns:
             板块预测结果
         """
@@ -189,11 +189,11 @@ class SectorMLPredictor:
     ) -> list[SectorPrediction]:
         """
         预测所有板块
-        
+
         Args:
             sector_stats: 板块统计数据
             market_condition: 市场状态
-        
+
         Returns:
             所有板块预测结果
         """
@@ -213,10 +213,10 @@ class SectorMLPredictor:
     ) -> dict[str, Any]:
         """
         获取板块轮动建议
-        
+
         Args:
             predictions: 板块预测列表
-        
+
         Returns:
             轮动建议
         """
