@@ -36,6 +36,29 @@ Day 3: 筛选出 A, E   → A 累计入选 2 次，E 新增
 | **熊市** | 20日跌幅 > 10%，60日跌幅 > 20% | dividend, reversal |
 | **震荡市** | 波动率 > 3%，涨跌幅不大 | value, dividend |
 
+### 每日自动任务 (make daily)
+
+`make daily` 是日度分析的核心命令，每天运行一次即可完成全部数据更新：
+
+| 步骤 | 命令 | 功能 |
+|------|------|------|
+| 1 | `update-market-data-fast` | 更新市场指数 |
+| 2 | `db-auto-sync` | 智能同步股票历史数据 |
+| 3 | `pnl` | 估算今日盈亏 |
+| 4 | `auto-trade-dry` | 自动交易信号 |
+| 5 | `fund-holding` | 基金持仓分析 |
+
+**使用方式：**
+```bash
+make daily
+```
+
+**参数设置：**
+```bash
+# 自定义同步参数
+make db-auto-sync DAYS=180 LIMIT=50  # 获取180天历史，每天同步50只
+```
+
 ### 策略自适应
 
 系统会根据市场环境**自动调整策略参数**：
@@ -146,6 +169,24 @@ Day 3: 筛选出 A, E   → A 累计入选 2 次，E 新增
 | "盈亏估算" / "今天盈亏" | `make pnl` |
 | "周盈亏" | `make pnl-weekly` |
 | "收益估算" | `make estimate` |
+
+### Database Management (数据库管理)
+
+| User Intent | Command |
+|-------------|---------|
+| "数据库状态" / "数据统计" | `make db-stats` |
+| "同步股票数据" / "智能同步" | `make db-auto-sync` |
+| "清理旧数据" / "清理过期数据" | `make db-clean-old` |
+| "批量获取数据" | `make db-batch-fetch LIMIT=100 DAYS=180` |
+
+### Testing (测试)
+
+| User Intent | Command |
+|-------------|---------|
+| "运行测试" / "测试" | `make test` |
+| "快速测试" / "核心测试" | `make test-fast` |
+| "测试覆盖率" | `make test-cov` |
+| "收集测试用例" | `make test-collect` |
 
 ## Available Strategies
 
