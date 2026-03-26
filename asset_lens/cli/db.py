@@ -69,6 +69,57 @@ def migrate(cache_file):
         console.print(f"[yellow]迁移结果: {result}[/yellow]")
 
 
+@db.command("clean-old")
+@click.option("--days", default=180, help="保留最近N天的数据")
+@click.option("--confirm", is_flag=True, help="确认执行清理")
+def clean_old(days, confirm):
+    """清理旧数据，只保留最近N天的数据
+
+    示例:
+        asset-lens db clean-old              # 查看会清理多少数据
+        asset-lens db clean-old --confirm    # 确认执行清理
+        asset-lens db clean-old --days 90    # 只保留90天数据
+    """
+    from datetime import datetime, timedelta
+
+    from ..db.database import db_manager
+    from ..db.models import StockKline
+
+    cutoff_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+
+    console.print(f"[bold blue]🧹 清理旧数据[/bold blue]")
+    console.print(f"   保留天数: {days} 天")
+    console.print(f"   截止日期: {cutoff_date}")
+
+    session = db_manager.get_session()
+    try:
+        old_count = session.query(StockKline).filter(StockKline.date < cutoff_date).count()
+        total_count = session.query(StockKline).count()
+
+        console.print(f"\n📊 数据统计:")
+        console.print(f"   总K线数: {total_count:,}")
+        console.print(f"   旧数据数: {old_count:,} (将删除)")
+        console.print(f"   保留数据: {total_count - old_count:,}")
+
+        if old_count == 0:
+            console.print("\n[green]✅ 没有需要清理的旧数据！[/green]")
+            return
+
+        if not confirm:
+            console.print(f"\n[yellow]⚠️ 将删除 {old_count:,} 条旧数据[/yellow]")
+            console.print("[yellow]   使用 --confirm 参数确认执行[/yellow]")
+            return
+
+        deleted = session.query(StockKline).filter(StockKline.date < cutoff_date).delete()
+        session.commit()
+
+        console.print(f"\n[green]✅ 清理完成！[/green]")
+        console.print(f"   删除: {deleted:,} 条")
+
+    finally:
+        session.close()
+
+
 @db.command()
 @click.argument("codes", nargs=-1, required=True)
 @click.option("--days", default=250, help="历史天数")
@@ -224,3 +275,263 @@ def codes():
         table.add_row("...", f"... 还有 {len(all_codes) - 50} 只")
 
     console.print(table)
+
+
+@db.command("update-missing")
+@click.option("--days", default=250, help="检查最近N天的数据")
+@click.option("--limit", default=50, help="最多更新N只股票")
+@click.option("--delay", default=0.3, help="请求间隔秒数")
+@click.option("--source", default="auto", help="数据源 (auto/tushare/baostock/akshare)")
+def update_missing(days, limit, delay, source):
+    """智能更新缺失或过期的股票历史数据
+
+    自动检测数据库中哪些股票的数据缺失或过期，并只更新这些股票。
+
+    示例:
+        asset-lens db update-missing              # 更新缺失数据的股票
+        asset-lens db update-missing --days 365   # 检查最近一年数据
+        asset-lens db update-missing --limit 100  # 最多更新100只
+    """
+    from datetime import datetime, timedelta
+
+    from ..db.database import db_manager
+    from ..db.migration import DataMigration
+
+    console.print("[bold blue]🔍 检查需要更新的股票...[/bold blue]")
+
+    session = db_manager.get_session()
+    try:
+        from sqlalchemy import func as sql_func  # pylint: disable=not-callable
+        from ..db.models import StockKline
+
+        cutoff_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+
+        stocks_with_data = (
+            session.query(
+                StockKline.code,
+                sql_func.max(StockKline.date).label("latest_date"),
+                sql_func.count(StockKline.id).label("count"),  # pylint: disable=not-callable
+            )
+            .group_by(StockKline.code)
+            .all()
+        )
+
+        stocks_to_update = []
+        for stock in stocks_with_data:
+            latest_date = stock.latest_date
+            count = stock.count
+
+            if latest_date < cutoff_date:
+                stocks_to_update.append({
+                    "code": stock.code,
+                    "reason": "数据过期",
+                    "latest_date": latest_date,
+                    "count": count,
+                })
+            elif count < days * 0.5:
+                stocks_to_update.append({
+                    "code": stock.code,
+                    "reason": "数据不足",
+                    "latest_date": latest_date,
+                    "count": count,
+                })
+
+        stocks_to_update.sort(key=lambda x: x["latest_date"])
+
+        if not stocks_to_update:
+            console.print("[green]✅ 所有股票数据都是最新的！[/green]")
+            return
+
+        console.print(f"\n[yellow]发现 {len(stocks_to_update)} 只股票需要更新:[/yellow]")
+
+        table = Table(show_header=True)
+        table.add_column("代码", style="cyan")
+        table.add_column("原因", style="yellow")
+        table.add_column("最新日期", style="white")
+        table.add_column("数据量", style="dim")
+
+        for stock in stocks_to_update[:20]:
+            table.add_row(
+                stock["code"],
+                stock["reason"],
+                stock["latest_date"],
+                str(stock["count"]),
+            )
+
+        if len(stocks_to_update) > 20:
+            table.add_row("...", f"... 还有 {len(stocks_to_update) - 20} 只", "", "")
+
+        console.print(table)
+
+        codes_to_fetch = [s["code"] for s in stocks_to_update[:limit]]
+        console.print(f"\n[bold blue]📥 开始更新 {len(codes_to_fetch)} 只股票...[/bold blue]")
+
+        migration = DataMigration()
+        result = migration.fetch_and_store_history(
+            codes=codes_to_fetch,
+            days=days,
+            data_source=source,
+            delay=delay,
+        )
+
+        console.print("\n[bold green]✅ 更新完成![/bold green]")
+        console.print(f"  成功: {result['success']}")
+        console.print(f"  失败: {result['failed']}")
+        console.print(f"  K线总数: {result['total_klines']}")
+
+    finally:
+        session.close()
+
+
+@db.command("auto-sync")
+@click.option("--days", default=90, help="历史天数")
+@click.option("--daily-limit", default=50, help="每日新增股票数量限制")
+@click.option("--update-limit", default=30, help="每日更新股票数量限制")
+@click.option("--delay", default=0.2, help="请求间隔秒数")
+def auto_sync(days, daily_limit, update_limit, delay):
+    """智能同步股票历史数据（适合 make daily 使用）
+
+    自动检测并执行以下操作：
+    1. 如果数据库为空，自动开始批量下载
+    2. 如果数据库有数据，检查并更新缺失的数据
+    3. 每天自动补全一定数量的新股票
+
+    示例:
+        asset-lens db auto-sync              # 智能同步
+        asset-lens db auto-sync --days 250   # 获取250天历史
+        asset-lens db auto-sync --daily-limit 100  # 每天新增100只
+    """
+    from datetime import datetime, timedelta
+
+    from ..db.database import db_manager
+    from ..db.migration import DataMigration
+    from ..data.market_stock_fetcher import MarketStockFetcher
+
+    console.print("[bold blue]🔄 智能同步股票历史数据[/bold blue]")
+    console.print("=" * 60)
+
+    session = db_manager.get_session()
+    try:
+        from sqlalchemy import func as sql_func  # pylint: disable=not-callable
+        from ..db.models import StockKline
+
+        stats = db_manager.get_statistics()
+        db_stock_count = stats["stock_count"]
+        db_kline_count = stats["kline_count"]
+
+        fetcher = MarketStockFetcher()
+        cached_stocks = fetcher.get_cached_market_stocks(max_age_hours=48)
+        total_market_stocks = len(cached_stocks) if cached_stocks else 5193
+
+        console.print(f"\n📊 当前状态:")
+        console.print(f"   数据库股票数: {db_stock_count}")
+        console.print(f"   数据库K线数: {db_kline_count:,}")
+        console.print(f"   市场股票总数: {total_market_stocks}")
+        console.print(f"   覆盖率: {db_stock_count / total_market_stocks * 100:.1f}%" if total_market_stocks > 0 else "   覆盖率: 0%")
+
+        migration = DataMigration()
+
+        if db_stock_count < 100:
+            console.print(f"\n[yellow]⚠️ 数据库股票数量较少，开始批量下载...[/yellow]")
+            console.print(f"   本次下载: {daily_limit} 只股票")
+            console.print(f"   历史天数: {days} 天")
+
+            if cached_stocks:
+                codes_to_fetch = [s.get("code") for s in cached_stocks[:daily_limit] if s.get("code")]
+            else:
+                codes_to_fetch = None
+
+            result = migration.fetch_and_store_history(
+                codes=codes_to_fetch,
+                days=days,
+                data_source="auto",
+                delay=delay,
+            )
+
+            console.print(f"\n[green]✅ 批量下载完成![/green]")
+            console.print(f"   成功: {result['success']}")
+            console.print(f"   失败: {result['failed']}")
+            console.print(f"   K线总数: {result['total_klines']}")
+
+        else:
+            cutoff_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+
+            stocks_with_data = (
+                session.query(
+                    StockKline.code,
+                    sql_func.max(StockKline.date).label("latest_date"),
+                    sql_func.count(StockKline.id).label("count"),  # pylint: disable=not-callable
+                )
+                .group_by(StockKline.code)
+                .all()
+            )
+
+            stocks_to_update = []
+            for stock in stocks_with_data:
+                if stock.latest_date < cutoff_date:
+                    stocks_to_update.append({
+                        "code": stock.code,
+                        "reason": "数据过期",
+                        "latest_date": stock.latest_date,
+                    })
+                elif stock.count < days * 0.5:
+                    stocks_to_update.append({
+                        "code": stock.code,
+                        "reason": "数据不足",
+                        "latest_date": stock.latest_date,
+                    })
+
+            if stocks_to_update:
+                stocks_to_update.sort(key=lambda x: x["latest_date"])
+                console.print(f"\n[yellow]发现 {len(stocks_to_update)} 只股票需要更新[/yellow]")
+
+                codes_to_update = [s["code"] for s in stocks_to_update[:update_limit]]
+                console.print(f"   本次更新: {len(codes_to_update)} 只")
+
+                result = migration.fetch_and_store_history(
+                    codes=codes_to_update,
+                    days=days,
+                    data_source="auto",
+                    delay=delay,
+                )
+
+                console.print(f"\n[green]✅ 更新完成![/green]")
+                console.print(f"   成功: {result['success']}")
+                console.print(f"   失败: {result['failed']}")
+
+            missing_count = total_market_stocks - db_stock_count
+            if missing_count > 0:
+                console.print(f"\n[cyan]📥 发现 {missing_count} 只股票未下载数据[/cyan]")
+                console.print(f"   本次新增: {min(daily_limit, missing_count)} 只")
+
+                if cached_stocks:
+                    existing_codes = {s.code for s in stocks_with_data}
+                    new_codes = [
+                        s.get("code") for s in cached_stocks
+                        if s.get("code") and s.get("code") not in existing_codes
+                    ][:daily_limit]
+                else:
+                    new_codes = None
+
+                result = migration.fetch_and_store_history(
+                    codes=new_codes,
+                    days=days,
+                    data_source="auto",
+                    delay=delay,
+                )
+
+                console.print(f"\n[green]✅ 新增完成![/green]")
+                console.print(f"   成功: {result['success']}")
+                console.print(f"   失败: {result['failed']}")
+
+            if not stocks_to_update and missing_count <= 0:
+                console.print(f"\n[green]✅ 所有股票数据都是最新的！[/green]")
+
+        new_stats = db_manager.get_statistics()
+        console.print(f"\n📊 更新后状态:")
+        console.print(f"   数据库股票数: {new_stats['stock_count']}")
+        console.print(f"   数据库K线数: {new_stats['kline_count']:,}")
+        console.print(f"   最新日期: {new_stats['latest_date']}")
+
+    finally:
+        session.close()

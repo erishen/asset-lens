@@ -3,7 +3,6 @@ Analyze CLI commands for asset-lens.
 分析命令模块 - 包含 analyze, calculate, pnl, estimate, analyze-sold
 """
 
-from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 
@@ -143,9 +142,13 @@ def register_analyze_commands(cli: click.Group) -> None:
             estimator = RealtimePnlEstimator()
             result = estimator.estimate_portfolio_pnl(products, is_weekly=weekly)
 
-            click.echo(f"\n💰 总资产: ¥{result.get('total_amount', 0):,.2f}")
-            click.echo(f"📈 {period_text}盈亏: ¥{result.get('total_pnl', 0):,.2f}")
-            click.echo(f"📊 收益率: {result.get('return_rate', 0):.2f}%")
+            total_pnl = result.get("total", 0)
+            total_amount = result.get("total_amount", 0)
+            return_rate = result.get("total_return_rate", 0)
+
+            click.echo(f"\n💰 总资产: ¥{total_amount:,.2f}")
+            click.echo(f"📈 {period_text}盈亏: ¥{total_pnl:,.2f}")
+            click.echo(f"📊 收益率: {return_rate:.2f}%")
 
             console = Console()
             table = Table(title=f"\n{period_text}盈亏明细", show_lines=False, expand=False, box=box.SIMPLE)
@@ -157,11 +160,11 @@ def register_analyze_commands(cli: click.Group) -> None:
 
             for detail in result.get("details", [])[:20]:
                 table.add_row(
-                    detail.get("product_name", "")[:25],
-                    detail.get("product_type", ""),
-                    f"¥{detail.get('current_value', 0):,.0f}",
-                    f"¥{detail.get('estimated_pnl', 0):,.0f}",
-                    f"{detail.get('estimated_return_rate', 0):.2f}%",
+                    detail.get("name", "")[:25],
+                    detail.get("type", ""),
+                    f"¥{detail.get('amount', 0):,.0f}",
+                    f"¥{detail.get('pnl', 0):,.0f}",
+                    f"{detail.get('return_rate', 0):.2f}%",
                 )
 
             console.print(table)

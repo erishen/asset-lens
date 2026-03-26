@@ -7,7 +7,6 @@ from datetime import datetime
 import click
 from rich.console import Console
 from rich.panel import Panel
-from rich.table import Table
 
 
 def register_report_commands(cli: click.Group) -> None:
