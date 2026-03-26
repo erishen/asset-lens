@@ -212,3 +212,7 @@ openclaw/docs/knowledge/
 openclaw/data/
 
 data/asset_lens.db
+# Database recovery files
+data/asset_lens_recovered.sql
+data/asset_lens.db.corrupted*
+data/*.sql
