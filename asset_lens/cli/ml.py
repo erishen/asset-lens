@@ -804,3 +804,21 @@ def fund_sector(fund_name: str):
     console.print("\n💡 相关命令:")
     console.print("   make ml-sector          # ML板块轮动分析")
     console.print("   make ml-analyze-market  # ML市场分析")
+<<<<<<< HEAD
+=======
+
+
+def register_ml_commands(cli_group):
+    """注册ML命令到主CLI组"""
+    cli_group.add_command(ml)
+
+
+def get_ml_command():
+    """获取ML命令组"""
+    return ml
+
+
+if __name__ == "__main__":
+    ml()
+
+>>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5

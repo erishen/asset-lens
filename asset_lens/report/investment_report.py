@@ -12,12 +12,19 @@ Investment report generator for asset-lens.
 import json
 from dataclasses import dataclass, field
 from datetime import datetime
+<<<<<<< HEAD
 from pathlib import Path
+=======
+>>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5
 from typing import Any
 
 from ..config import config
 from ..trading.stock_pool import StockPool
 from .report_printer import ReportPrinter
+<<<<<<< HEAD
+=======
+from .report_html import HTMLReportGenerator
+>>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5
 
 
 @dataclass
@@ -548,13 +555,19 @@ class InvestmentReportGenerator:
 
         filepath = self.report_path / output_file
 
+<<<<<<< HEAD
         html_content = self._generate_html(report, include_charts)
+=======
+        html_generator = HTMLReportGenerator()
+        html_content = html_generator.generate_html(report, include_charts)
+>>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5
 
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(html_content)
 
         return str(filepath)
 
+<<<<<<< HEAD
     def _generate_html(self, report: dict[str, Any], include_charts: bool) -> str:
         """生成 HTML 内容"""
         report_type = report.get("report_type", "unknown")
@@ -820,5 +833,7 @@ class InvestmentReportGenerator:
 
         return parts
 
+=======
+>>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5
 
 investment_report_generator = InvestmentReportGenerator()

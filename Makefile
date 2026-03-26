@@ -367,9 +367,37 @@ update-market-data-fast: ## 快速更新市场指数数据（仅关键指数）
 	$(CONDA) python -m asset_lens update-market-data --fast
 
 .PHONY: daily
+<<<<<<< HEAD
 daily: update-market-data-fast pnl auto-trade-dry fund-holding ## 快速日度分析（更新数据+估算盈亏+自动交易信号+基金持仓分析）
+=======
+daily: ## 快速日度分析（更新数据+智能同步股票历史+估算盈亏+自动交易信号+基金持仓分析）
+>>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5
 	@echo ""
+	@echo "============================================================"
+	@echo "🚀 开始日度分析"
+	@echo "============================================================"
+	@echo ""
+	@echo "📌 步骤 1/5: 📈 更新市场指数数据"
+	@$(MAKE) --no-print-directory update-market-data-fast
+	@echo ""
+	@echo "📌 步骤 2/5: 🔄 智能同步股票历史数据"
+	@$(MAKE) --no-print-directory db-auto-sync
+	@echo ""
+	@echo "📌 步骤 3/5: 💰 估算今日盈亏"
+	@$(MAKE) --no-print-directory pnl
+	@echo ""
+	@echo "📌 步骤 4/5: 🤖 自动交易信号（模拟）"
+	@$(MAKE) --no-print-directory auto-trade-dry
+	@echo ""
+	@echo "📌 步骤 5/5: 📊 基金持仓分析"
+	@$(MAKE) --no-print-directory fund-holding
+	@echo ""
+	@echo "============================================================"
 	@echo "✅ 日度分析完成！"
+<<<<<<< HEAD
+=======
+	@echo "============================================================"
+>>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5
 	@echo ""
 	@echo "📊 股票池管理:"
 	@echo "  make stock-pool-list     查看股票池"
@@ -770,6 +798,29 @@ db-verify: ## 验证数据完整性
 	@echo "🔍 验证数据完整性..."
 	$(CONDA) python -m asset_lens db verify
 
+<<<<<<< HEAD
+=======
+.PHONY: db-update-missing
+db-update-missing: ## 智能更新缺失或过期的股票数据（make db-update-missing DAYS=250 LIMIT=50）
+	@echo "🔄 智能更新缺失股票数据..."
+	$(CONDA) python -m asset_lens db update-missing --days $(or $(DAYS),250) --limit $(or $(LIMIT),50)
+
+.PHONY: db-auto-sync
+db-auto-sync: ## 智能同步股票历史数据（适合 daily 使用，自动补全数据）
+	@echo "🔄 智能同步股票历史数据..."
+	$(CONDA) python -m asset_lens db auto-sync --days $(or $(DAYS),180) --daily-limit $(or $(LIMIT),50)
+
+.PHONY: db-clean-old
+db-clean-old: ## 清理旧数据，只保留最近N天（make db-clean-old DAYS=180）
+	@echo "🧹 清理旧数据..."
+	$(CONDA) python -m asset_lens db clean-old --days $(or $(DAYS),180)
+
+.PHONY: db-clean-old-confirm
+db-clean-old-confirm: ## 确认执行清理旧数据
+	@echo "🧹 确认清理旧数据..."
+	$(CONDA) python -m asset_lens db clean-old --days $(or $(DAYS),180) --confirm
+
+>>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5
 .PHONY: db-batch-fetch
 db-batch-fetch: ## 批量获取股票历史数据（make db-batch-fetch LIMIT=100 DAYS=250）
 	@echo "📦 批量获取股票历史数据..."
@@ -902,15 +953,61 @@ show-config: ## 显示当前配置
 # 测试和代码质量
 # ============================================
 .PHONY: test
+<<<<<<< HEAD
 test: ## 运行测试（并行执行）
 	@echo "🧪 运行测试..."
 	@python -m pytest -v --tb=short -n auto 2>/dev/null || python -m pytest -v --tb=short
+=======
+test: ## 运行测试（排除网络相关测试，避免卡住）
+	@echo "🧪 运行测试..."
+	@echo ""
+	@echo "⚠️  注意: 测试可能需要 3-5 分钟，请耐心等待..."
+	@echo "   - 已排除网络相关测试（websocket, scheduler, http_client）"
+	@echo "   - 快速测试请使用: make test-fast"
+	@echo ""
+	@echo "📋 收集测试用例..."
+	@$(CONDA) python -m pytest tests/ --collect-only -q --ignore=tests/test_websocket.py --ignore=tests/test_scheduler.py --ignore=tests/test_scheduler_advanced.py --ignore=tests/test_http_client.py --ignore=tests/test_web_api.py --ignore=tests/test_multi_source_fetcher.py 2>&1 | tail -5
+	@echo ""
+	@echo "🚀 开始执行测试..."
+	@$(CONDA) python -m pytest tests/ -v --tb=short --ignore=tests/test_websocket.py --ignore=tests/test_scheduler.py --ignore=tests/test_scheduler_advanced.py --ignore=tests/test_http_client.py --ignore=tests/test_web_api.py --ignore=tests/test_multi_source_fetcher.py
+
+.PHONY: test-fast
+test-fast: ## 快速测试（仅核心模块）
+	@echo "🧪 快速测试..."
+	@echo "   预计耗时: 10-20 秒"
+	@echo ""
+	@$(CONDA) python -m pytest tests/test_cli.py tests/test_cli_registration.py tests/test_market_stock_fetcher.py tests/test_report_analyzer.py -v --tb=short
+
+.PHONY: test-all
+test-all: ## 运行所有测试（包括网络测试，可能较慢）
+	@echo "🧪 运行所有测试..."
+	@echo ""
+	@echo "⚠️  注意: 包含网络相关测试，可能需要 10+ 分钟"
+	@echo "   - WebSocket 测试"
+	@echo "   - Scheduler 测试"
+	@echo "   - HTTP 客户端测试"
+	@echo "   - 如遇卡住，请按 Ctrl+C 终止"
+	@echo ""
+	@$(CONDA) python -m pytest tests/ -v --tb=short
+>>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5
 
 .PHONY: test-cov
 test-cov: ## 运行测试并生成覆盖率报告
 	@echo "🧪 运行测试并生成覆盖率报告..."
+<<<<<<< HEAD
 	@$(CONDA) python -m pytest --cov=asset_lens --cov-report=html --cov-report=term -n auto 2>/dev/null || $(CONDA) python -m pytest --cov=asset_lens --cov-report=html --cov-report=term
+=======
+	@echo ""
+	@echo "⚠️  注意: 测试可能需要 3-5 分钟，请耐心等待..."
+	@echo ""
+	@$(CONDA) python -m pytest tests/ --cov=asset_lens --cov-report=html --cov-report=term -v --tb=short --ignore=tests/test_websocket.py --ignore=tests/test_scheduler.py --ignore=tests/test_scheduler_advanced.py --ignore=tests/test_http_client.py --ignore=tests/test_web_api.py --ignore=tests/test_multi_source_fetcher.py
+>>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5
 	@echo "✅ 测试完成，覆盖率报告已生成: htmlcov/index.html"
+
+.PHONY: test-collect
+test-collect: ## 收集测试用例（诊断用）
+	@echo "📋 收集测试用例..."
+	@$(CONDA) python -m pytest tests/ --collect-only -q --ignore=tests/test_websocket.py --ignore=tests/test_scheduler.py --ignore=tests/test_scheduler_advanced.py --ignore=tests/test_http_client.py --ignore=tests/test_web_api.py --ignore=tests/test_multi_source_fetcher.py
 
 .PHONY: lint
 lint: ## 运行代码检查（并行执行）

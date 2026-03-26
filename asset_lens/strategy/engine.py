@@ -14,6 +14,10 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from ..config import config
+<<<<<<< HEAD
+=======
+from .portfolio_evaluator import StrategyPortfolioEvaluator
+>>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5
 
 
 @dataclass
@@ -51,6 +55,10 @@ class StrategyEngine:
         self.strategies_path = config.cache_path / "strategies"
         self.strategies_path.mkdir(parents=True, exist_ok=True)
         self.strategies: dict[str, StrategyConfig] = {}
+<<<<<<< HEAD
+=======
+        self.portfolio_evaluator = StrategyPortfolioEvaluator(self)
+>>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5
         self._load_default_strategies()
 
     def _load_default_strategies(self) -> None:
@@ -708,6 +716,7 @@ class StrategyEngine:
         stock: dict[str, Any],
         strategy_weights: dict[str, float] | None = None,
     ) -> dict[str, Any]:
+<<<<<<< HEAD
         """
         使用策略组合评估股票
 
@@ -777,11 +786,20 @@ class StrategyEngine:
             return f"观望 - 综合得分 {combined_score:.1f}，建议等待更好时机"
         else:
             return f"不推荐 - 综合得分 {combined_score:.1f}，不符合多数策略条件"
+=======
+        """使用策略组合评估股票"""
+        return self.portfolio_evaluator.evaluate_strategy_portfolio(stock, strategy_weights)
+
+    def _get_portfolio_recommendation(self, combined_score: float, best_strategy: str | None) -> str:
+        """获取组合建议"""
+        return self.portfolio_evaluator._get_portfolio_recommendation(combined_score, best_strategy)
+>>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5
 
     def screen_with_portfolio(
         self,
         stocks: list[dict[str, Any]],
         strategy_weights: dict[str, float] | None = None,
+<<<<<<< HEAD
         min_combined_score: float = 50.0,
     ) -> list[dict[str, Any]]:
         """
@@ -811,6 +829,12 @@ class StrategyEngine:
 
         results.sort(key=lambda x: x.get("portfolio_score", 0), reverse=True)
         return results
+=======
+        min_combined_score: float = 0.5,
+    ) -> list[dict[str, Any]]:
+        """使用策略组合筛选股票"""
+        return self.portfolio_evaluator.screen_with_portfolio(stocks, strategy_weights, min_combined_score)
+>>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5
 
 
 strategy_engine = StrategyEngine()
