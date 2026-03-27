@@ -211,12 +211,8 @@ openclaw/docs/knowledge/
 # OpenClaw data (contains real investment data)
 openclaw/data/
 
-<<<<<<< HEAD
-data/asset_lens.db
-=======
 data/asset_lens.db
 # Database recovery files
 data/asset_lens_recovered.sql
 data/asset_lens.db.corrupted*
 data/*.sql
->>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5
