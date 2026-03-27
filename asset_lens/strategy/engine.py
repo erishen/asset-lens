@@ -14,10 +14,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from ..config import config
-<<<<<<< HEAD
-=======
 from .portfolio_evaluator import StrategyPortfolioEvaluator
->>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5
 
 
 @dataclass
@@ -55,10 +52,7 @@ class StrategyEngine:
         self.strategies_path = config.cache_path / "strategies"
         self.strategies_path.mkdir(parents=True, exist_ok=True)
         self.strategies: dict[str, StrategyConfig] = {}
-<<<<<<< HEAD
-=======
         self.portfolio_evaluator = StrategyPortfolioEvaluator(self)
->>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5
         self._load_default_strategies()
 
     def _load_default_strategies(self) -> None:
@@ -716,125 +710,21 @@ class StrategyEngine:
         stock: dict[str, Any],
         strategy_weights: dict[str, float] | None = None,
     ) -> dict[str, Any]:
-<<<<<<< HEAD
-        """
-        使用策略组合评估股票
-
-        Args:
-            stock: 股票数据
-            strategy_weights: 策略权重字典 {"value": 0.4, "momentum": 0.3, ...}
-
-        Returns:
-            组合评分结果
-        """
-        if strategy_weights is None:
-            strategy_weights = {
-                "value": 0.3,
-                "momentum": 0.25,
-                "reversal": 0.2,
-                "dividend": 0.25,
-            }
-
-        total_weight = sum(strategy_weights.values())
-        if total_weight == 0:
-            return {"combined_score": 0, "strategies": {}}
-
-        normalized_weights = {k: v / total_weight for k, v in strategy_weights.items()}
-
-        strategy_scores: dict[str, dict[str, Any]] = {}
-        weighted_score = 0.0
-
-        for strategy_name, weight in normalized_weights.items():
-            if strategy_name not in self.strategies:
-                continue
-
-            evaluation = self.evaluate_stock(stock, strategy_name)
-            strategy_scores[strategy_name] = {
-                "score": evaluation["score"],
-                "match": evaluation["match"],
-                "weight": weight,
-                "weighted_score": evaluation["score"] * weight,
-                "matched_conditions": evaluation["matched_conditions"],
-                "total_conditions": evaluation["total_conditions"],
-            }
-
-            weighted_score += evaluation["score"] * weight
-
-        sorted_strategies = sorted(
-            strategy_scores.items(),
-            key=lambda x: x[1]["score"],
-            reverse=True,
-        )
-
-        best_strategy = sorted_strategies[0] if sorted_strategies else (None, {})
-
-        return {
-            "combined_score": round(weighted_score, 2),
-            "best_strategy": best_strategy[0],
-            "best_score": best_strategy[1].get("score", 0),
-            "strategies": strategy_scores,
-            "recommendation": self._get_portfolio_recommendation(weighted_score, best_strategy[0]),
-        }
-
-    def _get_portfolio_recommendation(self, combined_score: float, best_strategy: str | None) -> str:
-        """获取组合推荐"""
-        if combined_score >= 80:
-            return f"强烈推荐 - 综合得分 {combined_score:.1f}，最佳策略: {best_strategy}"
-        elif combined_score >= 60:
-            return f"推荐 - 综合得分 {combined_score:.1f}，最佳策略: {best_strategy}"
-        elif combined_score >= 40:
-            return f"观望 - 综合得分 {combined_score:.1f}，建议等待更好时机"
-        else:
-            return f"不推荐 - 综合得分 {combined_score:.1f}，不符合多数策略条件"
-=======
         """使用策略组合评估股票"""
         return self.portfolio_evaluator.evaluate_strategy_portfolio(stock, strategy_weights)
 
     def _get_portfolio_recommendation(self, combined_score: float, best_strategy: str | None) -> str:
         """获取组合建议"""
         return self.portfolio_evaluator._get_portfolio_recommendation(combined_score, best_strategy)
->>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5
 
     def screen_with_portfolio(
         self,
         stocks: list[dict[str, Any]],
         strategy_weights: dict[str, float] | None = None,
-<<<<<<< HEAD
-        min_combined_score: float = 50.0,
-    ) -> list[dict[str, Any]]:
-        """
-        使用策略组合筛选股票
-
-        Args:
-            stocks: 股票列表
-            strategy_weights: 策略权重
-            min_combined_score: 最低综合得分
-
-        Returns:
-            筛选后的股票列表
-        """
-        results = []
-
-        for stock in stocks:
-            portfolio_result = self.evaluate_strategy_portfolio(stock, strategy_weights)
-
-            if portfolio_result["combined_score"] >= min_combined_score:
-                results.append({
-                    **stock,
-                    "portfolio_score": portfolio_result["combined_score"],
-                    "best_strategy": portfolio_result["best_strategy"],
-                    "strategy_scores": portfolio_result["strategies"],
-                    "recommendation": portfolio_result["recommendation"],
-                })
-
-        results.sort(key=lambda x: x.get("portfolio_score", 0), reverse=True)
-        return results
-=======
         min_combined_score: float = 0.5,
     ) -> list[dict[str, Any]]:
         """使用策略组合筛选股票"""
         return self.portfolio_evaluator.screen_with_portfolio(stocks, strategy_weights, min_combined_score)
->>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5
 
 
 strategy_engine = StrategyEngine()

@@ -4,10 +4,6 @@ Console printer for asset-lens.
 """
 
 from decimal import Decimal
-<<<<<<< HEAD
-from pathlib import Path
-=======
->>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5
 from typing import Any
 
 from rich.console import Console
