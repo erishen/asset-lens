@@ -804,8 +804,6 @@ def fund_sector(fund_name: str):
     console.print("\n💡 相关命令:")
     console.print("   make ml-sector          # ML板块轮动分析")
     console.print("   make ml-analyze-market  # ML市场分析")
-<<<<<<< HEAD
-=======
 
 
 def register_ml_commands(cli_group):
@@ -821,4 +819,3 @@ def get_ml_command():
 if __name__ == "__main__":
     ml()
 
->>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5

@@ -69,8 +69,6 @@ def migrate(cache_file):
         console.print(f"[yellow]迁移结果: {result}[/yellow]")
 
 
-<<<<<<< HEAD
-=======
 @db.command("clean-old")
 @click.option("--days", default=180, help="保留最近N天的数据")
 @click.option("--confirm", is_flag=True, help="确认执行清理")
@@ -122,7 +120,6 @@ def clean_old(days, confirm):
         session.close()
 
 
->>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5
 @db.command()
 @click.argument("codes", nargs=-1, required=True)
 @click.option("--days", default=250, help="历史天数")
@@ -278,8 +275,6 @@ def codes():
         table.add_row("...", f"... 还有 {len(all_codes) - 50} 只")
 
     console.print(table)
-<<<<<<< HEAD
-=======
 
 
 @db.command("update-missing")
@@ -540,4 +535,3 @@ def auto_sync(days, daily_limit, update_limit, delay):
 
     finally:
         session.close()
->>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5

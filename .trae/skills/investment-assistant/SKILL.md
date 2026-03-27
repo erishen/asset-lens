@@ -36,8 +36,6 @@ Day 3: 筛选出 A, E   → A 累计入选 2 次，E 新增
 | **熊市** | 20日跌幅 > 10%，60日跌幅 > 20% | dividend, reversal |
 | **震荡市** | 波动率 > 3%，涨跌幅不大 | value, dividend |
 
-<<<<<<< HEAD
-=======
 ### 每日自动任务 (make daily)
 
 `make daily` 是日度分析的核心命令，每天运行一次即可完成全部数据更新：
@@ -61,7 +59,6 @@ make daily
 make db-auto-sync DAYS=180 LIMIT=50  # 获取180天历史，每天同步50只
 ```
 
->>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5
 ### 策略自适应
 
 系统会根据市场环境**自动调整策略参数**：
@@ -173,8 +170,6 @@ make db-auto-sync DAYS=180 LIMIT=50  # 获取180天历史，每天同步50只
 | "周盈亏" | `make pnl-weekly` |
 | "收益估算" | `make estimate` |
 
-<<<<<<< HEAD
-=======
 ### Database Management (数据库管理)
 
 | User Intent | Command |
@@ -193,7 +188,6 @@ make db-auto-sync DAYS=180 LIMIT=50  # 获取180天历史，每天同步50只
 | "测试覆盖率" | `make test-cov` |
 | "收集测试用例" | `make test-collect` |
 
->>>>>>> dc6f1577dc16b06a31034a9bddf68e7a7ca679b5
 ## Available Strategies
 
 1. **value** - 价值投资策略
