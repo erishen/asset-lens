@@ -4,7 +4,7 @@
 """
 
 from decimal import Decimal
-from typing import Any
+from typing import Any, Dict, List
 
 from rich.console import Console
 from rich.panel import Panel
@@ -20,7 +20,7 @@ class CalculateReportGenerator:
     def __init__(self):
         self.console = Console(force_terminal=True)
 
-    def generate_calculate_report(self, portfolio: Portfolio) -> dict[str, Any]:
+    def generate_calculate_report(self, portfolio: Portfolio) -> Dict[str, Any]:
         products_with_return = self._get_products_with_return(portfolio)
         products_without_return = self._get_products_without_return(portfolio)
 
@@ -89,22 +89,22 @@ class CalculateReportGenerator:
             "no_return_value": no_return_value,
         }
 
-    def _get_products_with_return(self, portfolio: Portfolio) -> list[InvestmentProduct]:
+    def _get_products_with_return(self, portfolio: Portfolio) -> List[InvestmentProduct]:
         return [
             p
             for p in portfolio.products
             if p.annual_return is not None and p.start_date is not None
         ]
 
-    def _get_products_without_return(self, portfolio: Portfolio) -> list[InvestmentProduct]:
+    def _get_products_without_return(self, portfolio: Portfolio) -> List[InvestmentProduct]:
         return [p for p in portfolio.products if p.annual_return is None or p.start_date is None]
 
     def _get_type_distribution(
-        self, products: list[InvestmentProduct]
-    ) -> dict[str, dict[str, Any]]:
+        self, products: List[InvestmentProduct]
+    ) -> Dict[str, Dict[str, Any]]:
         usd_rate = Decimal(str(config.default_usd_rate))
         hkd_rate = Decimal(str(config.default_hkd_rate))
-        type_stats: dict[str, dict[str, Any]] = {}
+        type_stats: Dict[str, Dict[str, Any]] = {}
 
         for product in products:
             type_name = self._get_raw_type(product)
@@ -254,7 +254,7 @@ class CalculateReportGenerator:
             return "transaction"
         return "normal"
 
-    def print_calculate_report(self, report: dict[str, Any]) -> None:
+    def print_calculate_report(self, report: Dict[str, Any]) -> None:
         self.console.print("")
 
         self._print_return_explanation()
@@ -291,7 +291,7 @@ class CalculateReportGenerator:
         )
         self.console.print(explanation)
 
-    def _print_top_performers(self, products: list[InvestmentProduct]) -> None:
+    def _print_top_performers(self, products: List[InvestmentProduct]) -> None:
         self.console.print("\n[bold green]📈 收益率排名前10的产品：[/bold green]")
 
         table = Table(
@@ -324,7 +324,7 @@ class CalculateReportGenerator:
 
         self._print_transaction_details(products[:10], "top")
 
-    def _print_negative_performers(self, products: list[InvestmentProduct]) -> None:
+    def _print_negative_performers(self, products: List[InvestmentProduct]) -> None:
         self.console.print("\n[bold red]📉 收益率为负的产品：[/bold red]")
 
         table = Table(
@@ -357,7 +357,7 @@ class CalculateReportGenerator:
 
         self._print_transaction_details(products, "negative")
 
-    def _print_low_positive_performers(self, products: list[InvestmentProduct]) -> None:
+    def _print_low_positive_performers(self, products: List[InvestmentProduct]) -> None:
         self.console.print("\n[bold yellow]📊 收益率0-2.0%的产品：[/bold yellow]")
 
         table = Table(
@@ -390,7 +390,7 @@ class CalculateReportGenerator:
 
         self._print_transaction_details(products, "low")
 
-    def _print_transaction_details(self, products: list[InvestmentProduct], section: str) -> None:
+    def _print_transaction_details(self, products: List[InvestmentProduct], section: str) -> None:
         trans_products = [p for p in products if self._has_transactions(p)]
 
         if trans_products:
@@ -420,7 +420,7 @@ class CalculateReportGenerator:
                     f"[{color}]{label}：{product.name}，{trans_info}，收益率：{annual} ({actual})[/{color}]"
                 )
 
-    def _print_summary(self, report: dict[str, Any]) -> None:
+    def _print_summary(self, report: Dict[str, Any]) -> None:
         total_inv = report["total_investment"]
         total_val = report["total_value"]
         no_return_val = report["no_return_value"]
@@ -465,7 +465,7 @@ class CalculateReportGenerator:
 
         self.console.print(type_table)
 
-    def _print_no_return_products(self, report: dict[str, Any]) -> None:
+    def _print_no_return_products(self, report: Dict[str, Any]) -> None:
         self.console.print("\n[bold]📋 无收益率数据的投资：[/bold]")
 
         no_return_table = Table(show_header=True, header_style="bold magenta", box=None)

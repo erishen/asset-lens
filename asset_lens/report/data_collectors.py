@@ -4,11 +4,11 @@ Report Data Collectors - 报告数据收集器
 提供统一的数据收集功能，支持渐进式重构。
 """
 
-import logging
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 from decimal import Decimal
-from typing import Any
+import logging
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class CollectedData:
     """收集的数据"""
     timestamp: str
-    data: dict[str, Any]
+    data: Dict[str, Any]
     source: str
 
 
@@ -25,12 +25,12 @@ class ReportDataCollector:
     """报告数据收集器 - 统一收集报告所需的数据"""
 
     def __init__(self):
-        self.collected: dict[str, CollectedData] = {}
+        self.collected: Dict[str, CollectedData] = {}
 
     def collect_portfolio_data(
         self,
-        products: list[Any],
-    ) -> dict[str, Any]:
+        products: List[Any],
+    ) -> Dict[str, Any]:
         """
         收集投资组合数据
 
@@ -42,13 +42,13 @@ class ReportDataCollector:
         """
         total_amount = Decimal("0")
         total_cost = Decimal("0")
-        by_type: dict[str, dict[str, Decimal]] = {}
-        by_platform: dict[str, dict[str, Decimal]] = {}
+        by_type: Dict[str, Dict[str, Decimal]] = {}
+        by_platform: Dict[str, Dict[str, Decimal]] = {}
 
         for product in products:
             amount = getattr(product, "current_amount", Decimal("0")) or Decimal("0")
             cost = getattr(product, "initial_amount", Decimal("0")) or Decimal("0")
-
+            
             total_amount += amount
             total_cost += cost
 
@@ -99,8 +99,8 @@ class ReportDataCollector:
 
     def collect_market_data(
         self,
-        indexes: dict[str, Any],
-    ) -> dict[str, Any]:
+        indexes: Dict[str, Any],
+    ) -> Dict[str, Any]:
         """
         收集市场数据
 
@@ -125,8 +125,8 @@ class ReportDataCollector:
 
     def collect_performance_data(
         self,
-        performance_history: list[dict[str, Any]],
-    ) -> dict[str, Any]:
+        performance_history: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
         """
         收集业绩数据
 
@@ -162,7 +162,7 @@ class ReportDataCollector:
 
         return data
 
-    def get_collected_data(self, key: str) -> dict[str, Any] | None:
+    def get_collected_data(self, key: str) -> Optional[Dict[str, Any]]:
         """
         获取已收集的数据
 
@@ -175,7 +175,7 @@ class ReportDataCollector:
         collected = self.collected.get(key)
         return collected.data if collected else None
 
-    def get_all_collected(self) -> dict[str, dict[str, Any]]:
+    def get_all_collected(self) -> Dict[str, Dict[str, Any]]:
         """
         获取所有已收集的数据
 

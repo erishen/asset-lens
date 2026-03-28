@@ -4,12 +4,12 @@ Chart Generator - 图表生成器
 提供报告图表生成功能。
 """
 
-import json
-import logging
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 from pathlib import Path
-from typing import Any
+import json
+import logging
 
 logger = logging.getLogger(__name__)
 
@@ -30,16 +30,16 @@ class ChartConfig:
 class ChartGenerator:
     """图表生成器 - 生成报告所需的图表数据"""
 
-    def __init__(self, output_dir: Path | None = None):
+    def __init__(self, output_dir: Optional[Path] = None):
         self.output_dir = output_dir or Path(".")
         if self.output_dir:
             self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def generate_all_charts(
         self,
-        portfolio_data: dict[str, Any],
+        portfolio_data: Dict[str, Any],
         prefix: str = "",
-    ) -> dict[str, Path]:
+    ) -> Dict[str, Path]:
         """
         生成所有图表
 
@@ -107,8 +107,8 @@ class ChartGenerator:
 
     def generate_asset_allocation_chart(
         self,
-        type_distribution: dict[str, Any],
-        filename: str | None = None,
+        type_distribution: Dict[str, Any],
+        filename: Optional[str] = None,
     ) -> Path:
         """
         生成资产配置图表
@@ -144,8 +144,8 @@ class ChartGenerator:
 
     def generate_risk_distribution_chart(
         self,
-        risk_distribution: dict[str, Any],
-        filename: str | None = None,
+        risk_distribution: Dict[str, Any],
+        filename: Optional[str] = None,
     ) -> Path:
         """
         生成风险分布图表
@@ -178,8 +178,8 @@ class ChartGenerator:
 
     def generate_return_distribution_chart(
         self,
-        return_distribution: dict[str, Any],
-        filename: str | None = None,
+        return_distribution: Dict[str, Any],
+        filename: Optional[str] = None,
     ) -> Path:
         """
         生成收益分布图表
@@ -212,8 +212,8 @@ class ChartGenerator:
 
     def generate_monthly_returns_chart(
         self,
-        monthly_returns: list[dict[str, Any]],
-        filename: str | None = None,
+        monthly_returns: List[Dict[str, Any]],
+        filename: Optional[str] = None,
     ) -> Path:
         """
         生成月度收益图表
@@ -246,8 +246,8 @@ class ChartGenerator:
 
     def generate_cumulative_returns_chart(
         self,
-        cumulative_returns: list[dict[str, Any]],
-        filename: str | None = None,
+        cumulative_returns: List[Dict[str, Any]],
+        filename: Optional[str] = None,
     ) -> Path:
         """
         生成累计收益图表
@@ -280,8 +280,8 @@ class ChartGenerator:
 
     def generate_top_products_chart(
         self,
-        top_products: list[dict[str, Any]],
-        filename: str | None = None,
+        top_products: List[Dict[str, Any]],
+        filename: Optional[str] = None,
     ) -> Path:
         """
         生成最佳产品图表
@@ -314,9 +314,9 @@ class ChartGenerator:
 
     def generate_pie_chart_data(
         self,
-        data: dict[str, float],
+        data: Dict[str, float],
         title: str = "资产分布",
-    ) -> dict[str, Any]:
+    ) -> Dict[str, Any]:
         """
         生成饼图数据
 
@@ -347,11 +347,11 @@ class ChartGenerator:
 
     def generate_bar_chart_data(
         self,
-        labels: list[str],
-        values: list[float],
+        labels: List[str],
+        values: List[float],
         title: str = "收益对比",
-        colors: list[str] | None = None,
-    ) -> dict[str, Any]:
+        colors: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
         """
         生成柱状图数据
 
@@ -381,10 +381,10 @@ class ChartGenerator:
 
     def generate_line_chart_data(
         self,
-        labels: list[str],
-        datasets: list[dict[str, Any]],
+        labels: List[str],
+        datasets: List[Dict[str, Any]],
         title: str = "收益曲线",
-    ) -> dict[str, Any]:
+    ) -> Dict[str, Any]:
         """
         生成折线图数据
 
@@ -405,9 +405,9 @@ class ChartGenerator:
 
     def save_chart_config(
         self,
-        chart_data: dict[str, Any],
+        chart_data: Dict[str, Any],
         filename: str,
-    ) -> Path | None:
+    ) -> Optional[Path]:
         """
         保存图表配置到文件
 
