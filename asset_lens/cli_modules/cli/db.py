@@ -19,7 +19,7 @@ def db():
 @db.command()
 def stats():
     """显示数据库统计信息"""
-    from ..db.database import db_manager
+    from asset_lens.db.database import db_manager
 
     stats_data = db_manager.get_statistics()
 
@@ -52,7 +52,7 @@ def migrate(cache_file):
     """从JSON缓存迁移数据到数据库"""
     from pathlib import Path
 
-    from ..db.migration import DataMigration
+    from asset_lens.db.migration import DataMigration
 
     migration = DataMigration()
 
@@ -82,8 +82,8 @@ def clean_old(days, confirm):
     """
     from datetime import datetime, timedelta
 
-    from ..db.database import db_manager
-    from ..db.models import StockKline
+    from asset_lens.db.database import db_manager
+    from asset_lens.db.models import StockKline
 
     cutoff_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
 
@@ -131,7 +131,7 @@ def fetch(codes, days, source, delay):
     示例:
         asset-lens db fetch sh600519 sz000001 --days 365
     """
-    from ..db.migration import DataMigration
+    from asset_lens.db.migration import DataMigration
 
     codes_list = list(codes)
     migration = DataMigration()
@@ -159,7 +159,7 @@ def kline(code, start, end, limit):
     示例:
         asset-lens db kline sh600519 --limit 10
     """
-    from ..db.database import db_manager
+    from asset_lens.db.database import db_manager
 
     klines = db_manager.get_klines(code, start, end, limit)
 
@@ -195,7 +195,7 @@ def kline(code, start, end, limit):
 @click.option("--days", default=365, help="保留最近N天的数据")
 def clean(days):
     """清理旧数据"""
-    from ..db.database import db_manager
+    from asset_lens.db.database import db_manager
 
     console.print(f"[yellow]正在清理 {days} 天前的旧数据...[/yellow]")
     deleted = db_manager.clear_old_data(days)
@@ -205,7 +205,7 @@ def clean(days):
 @db.command()
 def verify():
     """验证数据完整性"""
-    from ..db.migration import DataMigration
+    from asset_lens.db.migration import DataMigration
 
     migration = DataMigration()
     result = migration.verify_data()
@@ -232,7 +232,7 @@ def info(code):
     示例:
         asset-lens db info sh600519
     """
-    from ..db.database import db_manager
+    from asset_lens.db.database import db_manager
 
     if code:
         stock_info = db_manager.get_stock_info(code)
@@ -254,7 +254,7 @@ def info(code):
 @db.command()
 def codes():
     """列出所有有数据的股票代码"""
-    from ..db.database import db_manager
+    from asset_lens.db.database import db_manager
 
     all_codes = db_manager.get_stock_codes()
 
@@ -294,15 +294,15 @@ def update_missing(days, limit, delay, source):
     """
     from datetime import datetime, timedelta
 
-    from ..db.database import db_manager
-    from ..db.migration import DataMigration
+    from asset_lens.db.database import db_manager
+    from asset_lens.db.migration import DataMigration
 
     console.print("[bold blue]🔍 检查需要更新的股票...[/bold blue]")
 
     session = db_manager.get_session()
     try:
         from sqlalchemy import func as sql_func  # pylint: disable=not-callable
-        from ..db.models import StockKline
+        from asset_lens.db.models import StockKline
 
         cutoff_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
 
@@ -403,9 +403,9 @@ def auto_sync(days, daily_limit, update_limit, delay):
     """
     from datetime import datetime, timedelta
 
-    from ..db.database import db_manager
-    from ..db.migration import DataMigration
-    from ..data.market_stock_fetcher import MarketStockFetcher
+    from asset_lens.db.database import db_manager
+    from asset_lens.db.migration import DataMigration
+    from asset_lens.data.market_stock_fetcher import MarketStockFetcher
 
     console.print("[bold blue]🔄 智能同步股票历史数据[/bold blue]")
     console.print("=" * 60)
@@ -413,7 +413,7 @@ def auto_sync(days, daily_limit, update_limit, delay):
     session = db_manager.get_session()
     try:
         from sqlalchemy import func as sql_func  # pylint: disable=not-callable
-        from ..db.models import StockKline
+        from asset_lens.db.models import StockKline
 
         stats = db_manager.get_statistics()
         db_stock_count = stats["stock_count"]
