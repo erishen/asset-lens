@@ -19,7 +19,7 @@ def register_report_commands(cli: click.Group) -> None:
         """生成周度投资报告"""
         from pathlib import Path
 
-        from asset_lens.cli.helpers import load_products, setup_data_mode
+        from asset_lens.cli_modules.cli.helpers import load_products, setup_data_mode
 
         setup_data_mode(data_mode)
 
@@ -87,7 +87,7 @@ def register_report_commands(cli: click.Group) -> None:
         """生成投资分析图表"""
         from pathlib import Path
 
-        from asset_lens.cli.helpers import load_products, setup_data_mode
+        from asset_lens.cli_modules.cli.helpers import load_products, setup_data_mode
         from asset_lens.data.chart_generator import ChartGenerator
 
         setup_data_mode(data_mode)
@@ -131,7 +131,7 @@ def register_report_commands(cli: click.Group) -> None:
         """生成投资分析报告（PDF）"""
         from pathlib import Path
 
-        from asset_lens.cli.helpers import load_products, setup_data_mode
+        from asset_lens.cli_modules.cli.helpers import load_products, setup_data_mode
         from asset_lens.report.pdf_report import PDFReportGenerator
 
         setup_data_mode(data_mode)
@@ -161,7 +161,7 @@ def register_report_commands(cli: click.Group) -> None:
         """生成投资分析报告（HTML）"""
         from pathlib import Path
 
-        from asset_lens.cli.helpers import load_products, setup_data_mode
+        from asset_lens.cli_modules.cli.helpers import load_products, setup_data_mode
         from asset_lens.report.html_report import HTMLReportGenerator
 
         setup_data_mode(data_mode)
@@ -187,7 +187,7 @@ def register_report_commands(cli: click.Group) -> None:
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     def ai_analyze(data_mode: str | None):
         """使用 AI 分析投资组合"""
-        from asset_lens.cli.helpers import load_products, setup_data_mode
+        from asset_lens.cli_modules.cli.helpers import load_products, setup_data_mode
 
         setup_data_mode(data_mode)
 

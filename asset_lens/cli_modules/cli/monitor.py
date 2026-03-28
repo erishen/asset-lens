@@ -17,7 +17,7 @@ def register_monitor_commands(cli: click.Group) -> None:
         """运行每日任务（更新数据 + 生成报告）"""
         from datetime import datetime
 
-        from asset_lens.cli.helpers import setup_data_mode
+        from asset_lens.cli_modules.cli.helpers import setup_data_mode
 
         setup_data_mode(data_mode)
 
@@ -87,7 +87,7 @@ def register_monitor_commands(cli: click.Group) -> None:
         if not skip_report:
             click.echo("\n4️⃣ 生成投资报告...")
             try:
-                from asset_lens.cli.helpers import get_hkd_rate, get_usd_rate, load_products
+                from asset_lens.cli_modules.cli.helpers import get_hkd_rate, get_usd_rate, load_products
                 from asset_lens.config import config
                 from asset_lens.data.models import Portfolio
                 from asset_lens.report.analyzer import report_generator
@@ -227,7 +227,7 @@ def register_monitor_commands(cli: click.Group) -> None:
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     def personal_data(data_mode: str | None):
         """管理个人数据"""
-        from asset_lens.cli.helpers import setup_data_mode
+        from asset_lens.cli_modules.cli.helpers import setup_data_mode
         from asset_lens.config import config
         from asset_lens.data.csv_parser import CSVParser
 

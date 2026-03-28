@@ -207,7 +207,7 @@ def register_stock_pool_commands(cli: click.Group) -> None:
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     def investment_status(data_mode: str | None):
         """显示投资状态"""
-        from asset_lens.cli.helpers import setup_data_mode
+        from asset_lens.cli_modules.cli.helpers import setup_data_mode
         from asset_lens.data.csv_parser import CSVParser
 
         setup_data_mode(data_mode)
@@ -230,7 +230,7 @@ def register_stock_pool_commands(cli: click.Group) -> None:
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     def investment_report(data_mode: str | None):
         """生成投资报告"""
-        from asset_lens.cli.helpers import setup_data_mode
+        from asset_lens.cli_modules.cli.helpers import setup_data_mode
         from asset_lens.report.investment_report import investment_report_generator
 
         setup_data_mode(data_mode)
