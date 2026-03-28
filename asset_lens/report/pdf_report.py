@@ -5,8 +5,9 @@ PDF 报告生成模块 - 使用 reportlab 生成专业投资报告
 
 import os
 from datetime import datetime
+from decimal import Decimal
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -28,7 +29,7 @@ from reportlab.platypus import (
 class PDFReportGenerator:
     """PDF 报告生成器"""
 
-    def __init__(self, output_dir: Path | None = None):
+    def __init__(self, output_dir: Optional[Path] = None):
         """
         初始化 PDF 报告生成器
 
@@ -100,9 +101,9 @@ class PDFReportGenerator:
 
     def generate_investment_report(
         self,
-        portfolio_data: dict[str, Any],
-        analysis_result: dict[str, Any] | None = None,
-        charts: dict[str, Path] | None = None,
+        portfolio_data: Dict[str, Any],
+        analysis_result: Optional[Dict[str, Any]] = None,
+        charts: Optional[Dict[str, Path]] = None,
         filename: str = "investment_report.pdf",
     ) -> Path:
         """
@@ -131,7 +132,7 @@ class PDFReportGenerator:
 
         story.append(
             Paragraph(
-                "投资组合分析报告",
+                f"投资组合分析报告",
                 self.styles["ChineseTitle"],
             )
         )
