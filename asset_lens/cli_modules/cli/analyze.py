@@ -100,6 +100,11 @@ def register_analyze_commands(cli: click.Group) -> None:
         """计算所有投资产品的收益率（快捷命令）"""
         from asset_lens.report.calculate_report import calculate_report_generator
         from asset_lens.config import config
+        from asset_lens.data.csv_parser import CSVParser
+        from asset_lens.data.models import Portfolio
+        from asset_lens.core.dca_parser import dca_parser
+        from asset_lens.core.irr_calculator import irr_calculator
+        from datetime import datetime
 
         if data_mode:
             config.data_mode = data_mode
@@ -150,7 +155,8 @@ def register_analyze_commands(cli: click.Group) -> None:
                         product.annualized_return_irr = simple_return
         print("✅ 收益率计算完成")
         print("\n📝 正在生成计算报告...")
-        calculate_report_generator.generate_report(portfolio)
+        report = calculate_report_generator.generate_calculate_report(portfolio)
+        calculate_report_generator.print_calculate_report(report)
         click.echo("\n✅ 计算完成!")
 
     @cli.command()
