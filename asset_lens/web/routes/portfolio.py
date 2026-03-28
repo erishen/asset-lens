@@ -139,7 +139,8 @@ async def get_portfolio_performance(
         )
 
         analyzer = ReportGenerator()
-        top_performers = analyzer.portfolio_analyzer.get_top_performers(portfolio, 5)
+        report = analyzer.generate_analysis_report(portfolio)
+        top_performers = report.get("top_performers", [])[:5]
 
         total_assets = sum(float(p.current_amount or 0) for p in portfolio.products)
         total_profit = sum(float(p.profit_amount or 0) for p in portfolio.products)

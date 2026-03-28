@@ -24,30 +24,33 @@ def register_predict_commands(cli: click.Group) -> None:
             analyzer = StockActivityAnalyzer()
 
             if code:
-                result = analyzer.predict_etf(code, days)
-                click.echo(f"\n📈 {code} 预测结果:")
-                click.echo(f"  当前价格: ¥{result.current_price:.2f}")
-                click.echo(f"  预测价格: ¥{result.predicted_price:.2f}")
-                click.echo(f"  预测涨跌: {result.predicted_change:.2f}%")
-                click.echo(f"  置信度: {result.confidence:.1f}%")
-                click.echo(f"  趋势: {result.trend}")
+                result = analyzer.predict_etf(code, [])
+                if result:
+                    click.echo(f"\n📈 {code} 预测结果:")
+                    click.echo(f"  当前价格: ¥{result.current_price:.2f}")
+                    click.echo(f"  预测价格: ¥{result.predicted_price:.2f}")
+                    click.echo(f"  预测涨跌: {result.predicted_change:.2f}%")
+                    click.echo(f"  置信度: {result.confidence:.1f}%")
+                    click.echo(f"  趋势: {result.trend}")
 
-                if result.related_stocks:
-                    console = Console()
-                    table = Table(title="相关股票")
-                    table.add_column("代码", style="cyan")
-                    table.add_column("名称", style="green")
-                    table.add_column("涨跌幅", justify="right")
-                    table.add_column("市值", justify="right")
+                    if hasattr(result, 'related_stocks') and result.related_stocks:
+                        console = Console()
+                        table = Table(title="相关股票")
+                        table.add_column("代码", style="cyan")
+                        table.add_column("名称", style="green")
+                        table.add_column("涨跌幅", justify="right")
+                        table.add_column("市值", justify="right")
 
-                    for stock in result.related_stocks[:10]:
-                        table.add_row(
-                            stock.get("code", ""),
-                            stock.get("name", ""),
-                            f"{stock.get('change_percent', 0):.2f}%",
-                            f"¥{stock.get('market_cap', 1):,.1f}",
-                        )
-                    console.print(table)
+                        for stock in result.related_stocks[:10]:
+                            table.add_row(
+                                stock.get("code", ""),
+                                stock.get("name", ""),
+                                f"{stock.get('change_percent', 0):.2f}%",
+                                f"¥{stock.get('market_cap', 1):,.1f}",
+                            )
+                        console.print(table)
+                else:
+                    click.echo(f"❌ 无法预测 {code}")
             else:
                 click.echo("请使用 --code 参数指定 ETF 代码")
                 click.echo("示例: asset-lens predict-etf --code 510050 --days 5")

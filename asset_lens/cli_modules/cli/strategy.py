@@ -488,7 +488,7 @@ def register_strategy_commands(cli: click.Group) -> None:
                 return
 
             holding_codes = {s["code"] for s in holding_stocks}
-            industry_count = {}
+            industry_count: dict[str, int] = {}
 
             for stock in watching_stocks:
                 if stock["code"] in holding_codes:
