@@ -161,10 +161,12 @@ class ReportGenerator:
         """打印控制台报告"""
         self.console_printer.print_report(report)
 
-    def save_csv_report(self, report: dict[str, Any], output_path: Path | None) -> Path | None:
+    def save_csv_report(self, report: dict[str, Any], output_path: Path | None = None) -> Path:
         """保存 CSV 报告"""
         if output_path is None:
             output_path = config.project_root / "output" / "report.csv"
+        elif output_path.is_dir():
+            output_path = output_path / "report.csv"
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -187,13 +189,21 @@ class ReportGenerator:
         """保存 JSON 报告"""
         if output_path is None:
             output_path = config.project_root / "output" / "report.json"
+        elif output_path.is_dir():
+            output_path = output_path / "report.json"
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         def decimal_default(obj):
             if isinstance(obj, Decimal):
+                return float(obj)
+            if isinstance(obj, Path):
                 return str(obj)
-            raise TypeError
+            if hasattr(obj, "isoformat"):
+                return obj.isoformat()
+            if hasattr(obj, "__dict__"):
+                return obj.__dict__
+            return str(obj)
 
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(report, f, ensure_ascii=False, indent=2, default=decimal_default)

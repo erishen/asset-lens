@@ -70,11 +70,14 @@ class ConsolePrinter:
         table.add_column("占比", justify="right")
 
         for type_name, stats in type_dist.items():
+            percentage = stats.get("percentage", 0)
+            if isinstance(percentage, str):
+                percentage = percentage.replace("%", "")
             table.add_row(
                 type_name,
                 str(stats.get("count", 0)),
                 f"¥{stats.get('total_value', 0)}",
-                f"{stats.get('percentage', 0):.1f}%",
+                f"{float(percentage):.1f}%",
             )
 
         console.print(table)
@@ -91,12 +94,15 @@ class ConsolePrinter:
         table.add_column("金额", justify="right")
         table.add_column("占比", justify="right")
 
-        for risk_name, stats in risk_dist.items():
+        for risk_level, stats in risk_dist.items():
+            percentage = stats.get("percentage", 0)
+            if isinstance(percentage, str):
+                percentage = percentage.replace("%", "")
             table.add_row(
-                risk_name,
+                risk_level,
                 str(stats.get("count", 0)),
                 f"¥{stats.get('total_value', 0)}",
-                f"{stats.get('percentage', 0):.1f}%",
+                f"{float(percentage):.1f}%",
             )
 
         console.print(table)
