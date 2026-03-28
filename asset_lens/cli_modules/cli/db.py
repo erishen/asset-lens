@@ -355,7 +355,7 @@ def update_missing(days, limit, delay, source):
                 stock["code"],
                 stock["reason"],
                 stock["latest_date"],
-                str(stock["count"]),
+                str(stock.get("count", 0)),
             )
 
         if len(stocks_to_update) > 20:
@@ -511,14 +511,15 @@ def auto_sync(days, daily_limit, update_limit, delay):
                         if s.get("code") and s.get("code") not in existing_codes
                     ][:daily_limit]
                 else:
-                    new_codes = None
+                    new_codes = []
 
-                result = migration.fetch_and_store_history(
-                    codes=new_codes,
-                    days=days,
-                    data_source="auto",
-                    delay=delay,
-                )
+                if new_codes:
+                    result = migration.fetch_and_store_history(
+                        codes=new_codes,
+                        days=days,
+                        data_source="auto",
+                        delay=delay,
+                    )
 
                 console.print(f"\n[green]✅ 新增完成![/green]")
                 console.print(f"   成功: {result['success']}")
