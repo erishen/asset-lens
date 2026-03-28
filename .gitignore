@@ -216,3 +216,7 @@ data/asset_lens.db
 data/asset_lens_recovered.sql
 data/asset_lens.db.corrupted*
 data/*.sql
+
+# Real investment data (privacy protection)
+data/sample_data/投资产品.csv
+data/投资产品.csv
