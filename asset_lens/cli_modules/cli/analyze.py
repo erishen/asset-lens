@@ -98,7 +98,7 @@ def register_analyze_commands(cli: click.Group) -> None:
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     def calculate(data_mode: str | None):
         """计算投资组合的收益"""
-        from asset_lens.cli.helpers import (
+        from asset_lens.cli_modules.cli.helpers import (
             load_products,
             setup_data_mode,
         )
