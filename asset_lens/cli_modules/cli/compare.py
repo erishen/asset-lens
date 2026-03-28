@@ -85,7 +85,7 @@ def register_compare_commands(cli: click.Group) -> None:
                 '公募固收': ['公募固收'],
             }
 
-            type_stats = {}
+            type_stats: dict[str, dict[str, Decimal | int]] = {}
             for group_name, types in type_groups.items():
                 type_stats[group_name] = {
                     'before': Decimal('0'),
@@ -108,14 +108,16 @@ def register_compare_commands(cli: click.Group) -> None:
             type_table.add_column("变化", justify="right")
             type_table.add_column("变化率", justify="right")
 
-            sorted_stats = sorted(type_stats.items(), key=lambda x: abs(x[1]['after'] - x[1]['before']), reverse=True)
+            sorted_stats = sorted(type_stats.items(), key=lambda x: abs(Decimal(str(x[1]['after'])) - Decimal(str(x[1]['before']))), reverse=True)
 
             console = Console()
 
             for group_name, stats in sorted_stats:
-                if stats['before'] > 0 or stats['after'] > 0:
-                    change = stats['after'] - stats['before']
-                    change_rate = (change / stats['before'] * 100) if stats['before'] > 0 else Decimal('0')
+                before_val = Decimal(str(stats['before']))
+                after_val = Decimal(str(stats['after']))
+                if before_val > 0 or after_val > 0:
+                    change = after_val - before_val
+                    change_rate = (change / before_val * 100) if before_val > 0 else Decimal('0')
                     change_str = f"¥{change:,.0f}"
                     if change < 0:
                         change_str = f"[red]¥{change:,.0f}[/red]"
@@ -123,8 +125,8 @@ def register_compare_commands(cli: click.Group) -> None:
                         change_str = f"[green]¥{change:,.0f}[/green]"
                     type_table.add_row(
                         group_name,
-                        f"¥{stats['before']:,.0f}",
-                        f"¥{stats['after']:,.0f}",
+                        f"¥{before_val:,.0f}",
+                        f"¥{after_val:,.0f}",
                         change_str,
                         f"{change_rate:.2f}%",
                     )

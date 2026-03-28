@@ -278,7 +278,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                         (result.risk_level or "未知")[:4],
                         f"¥{result.current_value:,.0f}",
                         f"¥{result.estimated_daily_return:,.0f}",
-                        f"{result.estimated_return_rate:.2f}%",
+                        f"{result.estimated_daily_return_rate:.2f}%",
                     )
 
                 console.print(table)
@@ -300,7 +300,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                         (result.risk_level or "未知")[:4],
                         f"¥{result.current_value:,.0f}",
                         f"¥{result.estimated_daily_return:,.0f}",
-                        f"{result.estimated_return_rate:.2f}%",
+                        f"{result.estimated_daily_return_rate:.2f}%",
                     )
 
                 console.print(table)

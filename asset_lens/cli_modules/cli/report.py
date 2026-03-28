@@ -114,7 +114,7 @@ def register_report_commands(cli: click.Group) -> None:
                 ]
             }
 
-            chart_data = chart_gen.generate_profit_curve(portfolio_data)
+            chart_data = chart_gen.generate_profit_curve("default")
             click.echo(f"\n✅ 图表数据已生成")
             chart_gen.print_chart_summary(chart_data)
 

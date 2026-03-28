@@ -248,7 +248,7 @@ def register_monitor_commands(cli: click.Group) -> None:
                 total_value = sum(p.current_amount or 0 for p in products)
                 click.echo(f"  总资产: ¥{total_value:,.2f}")
 
-                platforms = {}
+                platforms: dict[str, int] = {}
                 for p in products:
                     platform = p.platform or "未知"
                     platforms[platform] = platforms.get(platform, 0) + 1
