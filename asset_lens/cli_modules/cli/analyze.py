@@ -99,6 +99,7 @@ def register_analyze_commands(cli: click.Group) -> None:
     def calculate(data_mode: str | None):
         """计算所有投资产品的收益率（快捷命令）"""
         from asset_lens.report.calculate_report import calculate_report_generator
+        from asset_lens.config import config
 
         if data_mode:
             config.data_mode = data_mode
