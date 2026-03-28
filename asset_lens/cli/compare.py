@@ -31,14 +31,28 @@ def register_compare_commands(cli: click.Group) -> None:
 
         try:
             data_dir = Path("data")
-            data_dirs = sorted([d for d in data_dir.iterdir() if d.is_dir()], key=lambda x: x.name)
+            all_dirs = sorted([d for d in data_dir.iterdir() if d.is_dir()], key=lambda x: x.name)
+
+            data_dirs = []
+            for d in all_dirs:
+                csv_files = list(d.glob("*.csv"))
+                if csv_files:
+                    data_dirs.append(d)
+                else:
+                    sub_dirs = [sd for sd in d.iterdir() if sd.is_dir()]
+                    for sd in sub_dirs:
+                        csv_files = list(sd.glob("*.csv"))
+                        if csv_files:
+                            data_dirs.append(sd)
 
             if not data_dirs:
-                click.echo("❌ 没有找到数据目录", err=True)
+                click.echo("❌ 没有找到包含 CSV 文件的数据目录", err=True)
+                click.echo("💡 提示: 请确保数据目录下有 CSV 文件", err=True)
                 return
 
             if len(data_dirs) < 2:
-                click.echo("❌ 需要至少两个数据目录进行对比", err=True)
+                click.echo("❌ 需要至少两个包含 CSV 文件的数据目录进行对比", err=True)
+                click.echo(f"💡 当前找到 {len(data_dirs)} 个目录: {[d.name for d in data_dirs]}", err=True)
                 return
 
             before_dir = data_dirs[-2] if not before else next((d for d in data_dirs if before in d.name), data_dirs[-2])
