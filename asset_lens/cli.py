@@ -310,10 +310,13 @@ def analyze(data_mode, output_format, data_path):
         click.echo(f"❌ 加载数据失败: {e}", err=True)
         raise click.Abort()
 
+    data_dir = _get_data_dir(config.data_mode)
+    usd_rate, hkd_rate = CSVParser.get_exchange_rates(data_dir) if data_dir else (config.default_usd_rate, config.default_hkd_rate)
+
     portfolio = Portfolio(
         products=products,
-        usd_rate=Decimal(str(config.default_usd_rate)),
-        hkd_rate=Decimal(str(config.default_hkd_rate)),
+        usd_rate=Decimal(str(usd_rate)),
+        hkd_rate=Decimal(str(hkd_rate)),
     )
 
     print("\n🔢 正在计算收益率...")
