@@ -83,10 +83,15 @@ class ReportGenerator:
         Returns:
             包含美元和港元汇率的字典
         """
+        from ..data.csv_parser import CSVParser
+
+        data_dir = config.get_latest_data_dir()
+        usd_rate, hkd_rate = CSVParser.get_exchange_rates(data_dir) if data_dir else (config.default_usd_rate, config.default_hkd_rate)
+
         return {
-            "usd_rate": str(config.default_usd_rate),
-            "hkd_rate": str(config.default_hkd_rate),
-            "source": "config",
+            "usd_rate": str(usd_rate),
+            "hkd_rate": str(hkd_rate),
+            "source": "csv_file" if data_dir else "config",
         }
 
     def generate_portfolio_summary(self, portfolio: Portfolio) -> Dict[str, Any]:
