@@ -129,7 +129,7 @@ class TestCLIRegistration:
         assert main_cli is not None
 
     def test_cli_module_main_entry(self):
-        """测试 CLI 模块主入口"""
-        from asset_lens.cli.__main__ import cli as module_cli
+        """测试 CLI 模块的 __main__ 入口"""
+        from asset_lens.cli_modules.cli.__main__ import cli as module_cli
         
         assert module_cli is not None

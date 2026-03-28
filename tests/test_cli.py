@@ -141,7 +141,7 @@ class TestCLI:
         """测试显示资产汇总 - 无文件"""
         from asset_lens.cli import cli
 
-        with patch('asset_lens.cli.analyze._get_data_dir') as mock_get_dir:
+        with patch('asset_lens.cli_modules.cli.analyze._get_data_dir') as mock_get_dir:
             mock_get_dir.return_value = temp_cache_path
             
             result = runner.invoke(cli, ["analyze"])
