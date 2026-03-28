@@ -61,7 +61,7 @@ def register_predict_commands(cli: click.Group) -> None:
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     def ml_analyze_market(data_mode: str | None):
         """ML 市场分析"""
-        from asset_lens.cli.helpers import setup_data_mode
+        from asset_lens.cli_modules.cli.helpers import setup_data_mode
         from asset_lens.data.market_environment import MarketEnvironmentAnalyzer
 
         setup_data_mode(data_mode)
@@ -87,7 +87,7 @@ def register_predict_commands(cli: click.Group) -> None:
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     def ml_sector(data_mode: str | None):
         """ML 板块轮动分析"""
-        from asset_lens.cli.helpers import setup_data_mode
+        from asset_lens.cli_modules.cli.helpers import setup_data_mode
         from asset_lens.ml.sector_rotation import SectorRotationAnalyzer
 
         setup_data_mode(data_mode)

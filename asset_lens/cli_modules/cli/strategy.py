@@ -16,7 +16,7 @@ def register_strategy_commands(cli: click.Group) -> None:
     @click.option("--strategy-name", type=str, help="策略名称")
     def strategy(data_mode: str | None, strategy_name: str | None):
         """运行投资策略"""
-        from asset_lens.cli.helpers import setup_data_mode
+        from asset_lens.cli_modules.cli.helpers import setup_data_mode
 
         setup_data_mode(data_mode)
 
@@ -239,7 +239,7 @@ def register_strategy_commands(cli: click.Group) -> None:
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     def optimize_strategy(data_mode: str | None):
         """优化策略参数"""
-        from asset_lens.cli.helpers import setup_data_mode
+        from asset_lens.cli_modules.cli.helpers import setup_data_mode
 
         setup_data_mode(data_mode)
 

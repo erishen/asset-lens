@@ -20,7 +20,7 @@ def register_compare_commands(cli: click.Group) -> None:
         """投资组合对比分析"""
         from pathlib import Path
 
-        from asset_lens.cli.helpers import setup_data_mode
+        from asset_lens.cli_modules.cli.helpers import setup_data_mode
         from asset_lens.core.comparison import ComparisonAnalyzer
         from asset_lens.data.csv_parser import CSVParser
 
@@ -166,7 +166,7 @@ def register_compare_commands(cli: click.Group) -> None:
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     def analyze_by_time(data_mode: str | None):
         """按投资时间分组分析"""
-        from asset_lens.cli.helpers import load_products, setup_data_mode
+        from asset_lens.cli_modules.cli.helpers import load_products, setup_data_mode
         from asset_lens.core.time_group import TimeGroupAnalyzer
 
         setup_data_mode(data_mode)

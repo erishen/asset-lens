@@ -40,7 +40,7 @@ def register_analyze_commands(cli: click.Group) -> None:
     @click.option("--data-path", type=click.Path(exists=True), help="自定义数据路径")
     def analyze(data_mode: str | None, output_format: str, data_path: str | None):
         """分析投资组合并生成报告"""
-        from asset_lens.cli.helpers import (
+        from asset_lens.cli_modules.cli.helpers import (
             load_products,
             setup_data_mode,
         )
@@ -97,63 +97,67 @@ def register_analyze_commands(cli: click.Group) -> None:
     @cli.command()
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     def calculate(data_mode: str | None):
-        """计算投资组合的收益"""
-        from asset_lens.cli_modules.cli.helpers import (
-            load_products,
-            setup_data_mode,
+        """计算所有投资产品的收益率（快捷命令）"""
+        from asset_lens.report.calculate_report import calculate_report_generator
+
+        if data_mode:
+            config.data_mode = data_mode
+            print(f"使用数据模式: {data_mode}")
+
+        print("\n📊 正在加载数据...")
+        try:
+            products = CSVParser.load_data()
+            print(f"✅ 成功加载 {len(products)} 个投资产品")
+        except Exception as e:
+            click.echo(f"❌ 加载数据失败: {e}", err=True)
+            raise click.Abort()
+
+        data_dir = _get_data_dir(config.data_mode)
+        usd_rate, hkd_rate = CSVParser.get_exchange_rates(data_dir) if data_dir else (config.default_usd_rate, config.default_hkd_rate)
+
+        portfolio = Portfolio(
+            products=products,
+            usd_rate=Decimal(str(usd_rate)),
+            hkd_rate=Decimal(str(hkd_rate)),
         )
 
-        setup_data_mode(data_mode)
+        print("\n🔢 正在计算收益率...")
+        reference_date = datetime.now()
 
-        click.echo("\n📊 计算投资组合收益")
-        click.echo("=" * 60)
-
-        try:
-            products = load_products()
-            click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
-
-            total_amount = sum(float(p.current_amount or 0) for p in products)
-            total_initial = sum(float(p.initial_amount or 0) for p in products)
-            total_profit = total_amount - total_initial
-            total_return = (total_profit / total_initial * 100) if total_initial > 0 else 0
-
-            click.echo(f"\n💰 总资产: ¥{total_amount:,.2f}")
-            click.echo(f"💵 总投入: ¥{total_initial:,.2f}")
-            click.echo(f"📈 总收益: ¥{total_profit:,.2f}")
-            click.echo(f"📊 收益率: {total_return:.2f}%")
-
-            console = Console()
-            table = Table(title="\n收益率排名 (前10)", show_lines=False, expand=False, box=box.SIMPLE)
-            table.add_column("产品名称", style="cyan", no_wrap=True, overflow="ellipsis", width=25)
-            table.add_column("类型", style="green", no_wrap=True, width=10)
-            table.add_column("金额", justify="right", style="yellow", width=12)
-            table.add_column("收益", justify="right", width=10)
-            table.add_column("收益率", justify="right", width=10)
-
-            sorted_products = sorted(products, key=lambda p: float(p.return_rate or 0), reverse=True)[:10]
-            for product in sorted_products:
-                profit = float(product.current_amount or 0) - float(product.initial_amount or 0)
-                table.add_row(
-                    product.name[:25],
-                    product.investment_type.value if product.investment_type else "未知",
-                    f"¥{float(product.current_amount or 0):,.0f}",
-                    f"¥{profit:,.0f}",
-                    f"{float(product.return_rate or 0):.2f}%",
+        for product in portfolio.products:
+            if product.transaction_records:
+                transactions = dca_parser.parse_transaction_record(
+                    product.transaction_records,
+                    reference_date=reference_date,
                 )
+                product.transactions = transactions
 
-            console.print(table)
-
-            click.echo("\n✅ 计算完成！")
-
-        except Exception as e:
-            click.echo(f"❌ 计算失败: {e}", err=True)
+                if transactions and product.current_amount:
+                    irr = irr_calculator.calculate_annualized_irr(
+                        transactions=transactions,
+                        current_value=product.current_amount,
+                        reference_date=reference_date,
+                    )
+                    product.annualized_return_irr = irr
+                else:
+                    if product.initial_amount and product.current_amount and product.investment_days:
+                        simple_return = irr_calculator.calculate_simple_annual_return(
+                            initial_amount=product.initial_amount,
+                            current_amount=product.current_amount,
+                            days=product.investment_days,
+                        )
+                        product.annualized_return_irr = simple_return
+        print("✅ 收益率计算完成")
+        print("\n📝 正在生成计算报告...")
+        calculate_report_generator.generate_report(portfolio)
+        click.echo("\n✅ 计算完成!")
 
     @cli.command()
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     @click.option("--weekly", is_flag=True, help="周盈亏模式")
     def pnl(data_mode: str | None, weekly: bool):
         """估算今日/本周盈亏"""
-        from asset_lens.cli.helpers import load_products, setup_data_mode
+        from asset_lens.cli_modules.cli.helpers import load_products, setup_data_mode
         from asset_lens.core.realtime_pnl import RealtimePnlEstimator
 
         setup_data_mode(data_mode)
@@ -206,7 +210,7 @@ def register_analyze_commands(cli: click.Group) -> None:
     @click.option("--weekly", is_flag=True, help="周预估模式")
     def estimate(data_mode: str | None, weekly: bool):
         """全产品收益估算（基于预期年化收益率）"""
-        from asset_lens.cli.helpers import load_products, setup_data_mode
+        from asset_lens.cli_modules.cli.helpers import load_products, setup_data_mode
         from asset_lens.core.daily_estimate import estimate_all_products
         from asset_lens.core.realtime_pnl import RealtimePnlEstimator
 
@@ -306,7 +310,7 @@ def register_analyze_commands(cli: click.Group) -> None:
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     def analyze_sold(data_mode: str | None):
         """分析已卖出产品"""
-        from asset_lens.cli.helpers import load_products, setup_data_mode
+        from asset_lens.cli_modules.cli.helpers import load_products, setup_data_mode
 
         setup_data_mode(data_mode)
 

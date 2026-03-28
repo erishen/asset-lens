@@ -85,7 +85,7 @@ def register_data_commands(cli: click.Group) -> None:
 
         自动匹配基金代码并获取净值
         """
-        from asset_lens.cli.helpers import setup_data_mode
+        from asset_lens.cli_modules.cli.helpers import setup_data_mode
         from asset_lens.data.fund_fetcher import fetch_portfolio_fund_quotes
 
         setup_data_mode(data_mode)
@@ -145,7 +145,7 @@ def register_data_commands(cli: click.Group) -> None:
 
         一键更新所有需要的数据
         """
-        from asset_lens.cli.helpers import setup_data_mode
+        from asset_lens.cli_modules.cli.helpers import setup_data_mode
         from asset_lens.data.enhanced_market_data_fetcher import enhanced_market_data_fetcher
         from asset_lens.data.fund_fetcher import fetch_portfolio_fund_quotes
         from asset_lens.data.stock_fetcher import stock_fetcher
