@@ -56,14 +56,20 @@ def register_analyze_commands(cli: click.Group) -> None:
             products = load_products()
             click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
 
+            from asset_lens.data.models import Portfolio
+            portfolio = Portfolio(products=products)
+
             report_gen = ReportGenerator()
-            report = report_gen.generate_analysis_report(products)
+            report = report_gen.generate_analysis_report(portfolio)
 
             click.echo("\n📈 投资组合概览:")
-            summary = report.get("summary", {})
-            click.echo(f"  总资产: ¥{summary.get('total_amount', 0):,.2f}")
-            click.echo(f"  总收益: ¥{summary.get('total_profit', 0):,.2f}")
-            click.echo(f"  总收益率: {summary.get('total_return_rate', 0):.2f}%")
+            summary = report.get("portfolio_summary", {})
+            total_value = summary.get("total_value", "0")
+            total_profit = summary.get("total_profit", "0")
+            total_return_rate = summary.get("total_return_rate", "0%")
+            click.echo(f"  总资产: ¥{float(total_value):,.2f}")
+            click.echo(f"  总收益: ¥{float(total_profit):,.2f}")
+            click.echo(f"  总收益率: {total_return_rate}")
 
             if output_format in ["console", "all"]:
                 console = Console()
@@ -115,6 +121,27 @@ def register_analyze_commands(cli: click.Group) -> None:
             click.echo(f"💵 总投入: ¥{total_initial:,.2f}")
             click.echo(f"📈 总收益: ¥{total_profit:,.2f}")
             click.echo(f"📊 收益率: {total_return:.2f}%")
+
+            console = Console()
+            table = Table(title="\n收益率排名 (前10)", show_lines=False, expand=False, box=box.SIMPLE)
+            table.add_column("产品名称", style="cyan", no_wrap=True, overflow="ellipsis", width=25)
+            table.add_column("类型", style="green", no_wrap=True, width=10)
+            table.add_column("金额", justify="right", style="yellow", width=12)
+            table.add_column("收益", justify="right", width=10)
+            table.add_column("收益率", justify="right", width=10)
+
+            sorted_products = sorted(products, key=lambda p: float(p.return_rate or 0), reverse=True)[:10]
+            for product in sorted_products:
+                profit = float(product.current_amount or 0) - float(product.initial_amount or 0)
+                table.add_row(
+                    product.name[:25],
+                    product.investment_type.value if product.investment_type else "未知",
+                    f"¥{float(product.current_amount or 0):,.0f}",
+                    f"¥{profit:,.0f}",
+                    f"{float(product.return_rate or 0):.2f}%",
+                )
+
+            console.print(table)
 
             click.echo("\n✅ 计算完成！")
 
