@@ -86,11 +86,13 @@ class TestCLI:
 
         with patch('asset_lens.data.csv_parser.CSVParser') as mock_parser:
             mock_parser.load_data.return_value = []
+            mock_parser.get_exchange_rates.return_value = (7.0, 0.9)
             
             with patch('asset_lens.config.config') as mock_config:
                 mock_config.default_usd_rate = 7.0
                 mock_config.default_hkd_rate = 0.9
                 mock_config.data_mode = "sample"
+                mock_config.get_latest_data_dir.return_value = None
                 
                 result = runner.invoke(cli, ["calculate", "--data-mode", "sample"])
                 assert result.exit_code == 0
