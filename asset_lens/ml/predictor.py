@@ -237,7 +237,7 @@ class StockPredictor:
         result = self.model.predict(X)
         return np.asarray(result)
 
-    def predict_proba(self, X: pd.DataFrame) -> "np.ndarray":
+    def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
         """
         预测概率
 
@@ -249,6 +249,13 @@ class StockPredictor:
         """
         if self.model is None:
             raise ValueError("模型未训练，请先调用 fit() 或 load_model()")
+
+        # 检查缺失的特征并填充默认值
+        missing_features = set(self.feature_names) - set(X.columns)
+        if missing_features:
+            logger.warning(f"缺失特征: {missing_features}，将使用默认值 0")
+            for feat in missing_features:
+                X[feat] = 0.0
 
         X = X[self.feature_names].fillna(0)
         X = X.replace([np.inf, -np.inf], 0)
