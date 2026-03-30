@@ -90,8 +90,10 @@ def register_strategy_commands(cli: click.Group) -> None:
                 for stock in result[:limit]:
                     code = stock.get('code', stock.get('symbol', 'N/A'))
                     name = stock.get('name', 'N/A')
-                    score = stock.get('score', 0)
-                    click.echo(f"  {code} - {name} ({score:.2f})")
+                    score = stock.get('strategy_score', stock.get('score', 0))
+                    change_percent = stock.get('change_percent', 0)
+                    current_price = stock.get('current_price', 0)
+                    click.echo(f"  {code} - {name} (得分: {score:.1f}, 涨幅: {change_percent:+.2f}%, 价格: {current_price:.2f})")
 
             click.echo("\n✅ 筛选完成！")
 

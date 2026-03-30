@@ -75,7 +75,10 @@ app.include_router(report_router)
 
 @app.get("/")
 async def root():
-    """API 根路径"""
+    """Dashboard 页面"""
+    static_path = Path(__file__).parent / "static" / "index.html"
+    if static_path.exists():
+        return FileResponse(str(static_path))
     return {
         "name": "Asset Lens API",
         "version": "1.0.0",

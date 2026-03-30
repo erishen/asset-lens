@@ -4,6 +4,7 @@ Database CLI commands for asset-lens.
 """
 
 import click
+from typing import Any
 from rich.console import Console
 from rich.table import Table
 
@@ -282,7 +283,7 @@ def codes():
 @click.option("--limit", default=50, help="最多更新N只股票")
 @click.option("--delay", default=0.3, help="请求间隔秒数")
 @click.option("--source", default="auto", help="数据源 (auto/tushare/baostock/akshare)")
-def update_missing(days, limit, delay, source):
+def update_missing(days, limit, delay, source) -> None:
     """智能更新缺失或过期的股票历史数据
 
     自动检测数据库中哪些股票的数据缺失或过期，并只更新这些股票。
@@ -316,7 +317,7 @@ def update_missing(days, limit, delay, source):
             .all()
         )
 
-        stocks_to_update = []
+        stocks_to_update: list[dict[str, Any]] = []
         for stock in stocks_with_data:
             latest_date = stock.latest_date
             count = stock.count
@@ -350,11 +351,11 @@ def update_missing(days, limit, delay, source):
         table.add_column("最新日期", style="white")
         table.add_column("数据量", style="dim")
 
-        for stock in stocks_to_update[:20]:
+        for stock in stocks_to_update[:20]:  # type: ignore
             table.add_row(
-                stock["code"],
-                stock["reason"],
-                stock["latest_date"],
+                stock.get("code", ""),
+                stock.get("reason", ""),
+                stock.get("latest_date", ""),
                 str(stock.get("count", 0)),
             )
 
@@ -437,9 +438,9 @@ def auto_sync(days, daily_limit, update_limit, delay):
             console.print(f"   历史天数: {days} 天")
 
             if cached_stocks:
-                codes_to_fetch = [s.get("code") for s in cached_stocks[:daily_limit] if s.get("code")]
+                codes_to_fetch = [str(s.get("code")) for s in cached_stocks[:daily_limit] if s.get("code")]
             else:
-                codes_to_fetch = None
+                codes_to_fetch = []
 
             result = migration.fetch_and_store_history(
                 codes=codes_to_fetch,
@@ -515,7 +516,7 @@ def auto_sync(days, daily_limit, update_limit, delay):
 
                 if new_codes:
                     result = migration.fetch_and_store_history(
-                        codes=new_codes,
+                        codes=[str(code) for code in new_codes if code],
                         days=days,
                         data_source="auto",
                         delay=delay,

@@ -445,8 +445,8 @@
                             <div class="card-value" :class="summary.total_profit >= 0 ? 'positive' : 'negative'">
                                 {{ formatMoney(summary.total_profit) }}
                             </div>
-                            <div class="card-change" :class="summary.total_return >= 0 ? 'positive' : 'negative'">
-                                收益率: {{ summary.total_return.toFixed(2) }}%
+                            <div class="card-change" :class="(summary.total_return || 0) >= 0 ? 'positive' : 'negative'">
+                                收益率: {{ (summary.total_return || 0).toFixed(2) }}%
                             </div>
                         </div>
                         <div class="card">
@@ -485,10 +485,10 @@
                             <tbody>
                                 <tr v-for="item in paginatedItems" :key="item.name">
                                     <td>{{ item.name }}</td>
-                                    <td><span class="tag" :class="getTypeClass(item.type)">{{ item.type }}</span></td>
+                                    <td><span class="tag" :class="getTypeClass(item.investment_type || item.type)">{{ item.investment_type || item.type }}</span></td>
                                     <td>{{ formatMoney(item.current_amount) }}</td>
-                                    <td :class="item.profit >= 0 ? 'positive' : 'negative'">{{ formatMoney(item.profit) }}</td>
-                                    <td :class="item.profit_rate >= 0 ? 'positive' : 'negative'">{{ item.profit_rate.toFixed(2) }}%</td>
+                                    <td :class="(item.profit_amount || item.profit || 0) >= 0 ? 'positive' : 'negative'">{{ formatMoney(item.profit_amount || item.profit || 0) }}</td>
+                                    <td :class="(item.return_rate || item.profit_rate || 0) >= 0 ? 'positive' : 'negative'">{{ (item.return_rate || item.profit_rate || 0).toFixed(2) }}%</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -512,9 +512,9 @@
                             <div class="card-title">{{ strategy.name }}</div>
                             <div class="card-value" style="font-size: 1rem;">{{ strategy.description || '暂无描述' }}</div>
                             <div class="card-change">
-                                仓位: {{ (strategy.position_size * 100).toFixed(0) }}% | 
-                                止损: {{ (strategy.stop_loss * 100).toFixed(0) }}% |
-                                止盈: {{ (strategy.take_profit * 100).toFixed(0) }}%
+                                仓位: {{ ((strategy.position_size || 0) * 100).toFixed(0) }}% | 
+                                止损: {{ (Math.abs(strategy.stop_loss || 0) * 100).toFixed(0) }}% |
+                                止盈: {{ ((strategy.take_profit || 0) * 100).toFixed(0) }}%
                             </div>
                         </div>
                     </div>
@@ -694,8 +694,9 @@
                 };
 
                 const formatMoney = (value) => {
-                    if (!value) return '¥0';
+                    if (value === null || value === undefined) return '¥0';
                     const num = parseFloat(value);
+                    if (isNaN(num)) return '¥0';
                     if (num >= 10000) {
                         return '¥' + (num / 10000).toFixed(2) + '万';
                     }
@@ -703,13 +704,25 @@
                 };
 
                 const getTypeClass = (type) => {
+                    if (!type) return 'tag';
                     const typeMap = {
                         'A股': 'tag-stock',
                         '股票': 'tag-stock',
+                        '美股': 'tag-stock',
+                        'ETF': 'tag-stock',
                         '基金': 'tag-fund',
+                        '定投基金': 'tag-fund',
+                        '个人养老金': 'tag-fund',
                         '债券': 'tag-bond',
                         '现金': 'tag-cash',
+                        '货币': 'tag-cash',
+                        '理财': 'tag-fund',
+                        '特别国债': 'tag-bond',
+                        '黄金': 'tag-stock',
                     };
+                    if (type.includes('基金') || type.includes('理财')) return 'tag-fund';
+                    if (type.includes('债')) return 'tag-bond';
+                    if (type.includes('现金') || type.includes('货币')) return 'tag-cash';
                     return typeMap[type] || 'tag';
                 };
 
@@ -724,7 +737,7 @@
 
                     const typeData = {};
                     portfolioItems.value.forEach(item => {
-                        const type = item.type || '其他';
+                        const type = item.investment_type || item.type || '其他';
                         typeData[type] = (typeData[type] || 0) + parseFloat(item.current_amount || 0);
                     });
 
@@ -782,7 +795,7 @@
 
                     const allProfitData = portfolioItems.value.map(item => ({
                         name: item.name,
-                        value: parseFloat(item.profit || 0)
+                        value: parseFloat(item.profit_amount || item.profit || 0)
                     }));
                     
                     const profitData = sampleData(allProfitData, 20);
@@ -875,9 +888,9 @@
                     }
 
                     const strategyNames = strategies.value.map(s => s.name);
-                    const positionSizes = strategies.value.map(s => (s.position_size * 100).toFixed(0));
-                    const stopLosses = strategies.value.map(s => Math.abs(s.stop_loss * 100).toFixed(0));
-                    const takeProfits = strategies.value.map(s => (s.take_profit * 100).toFixed(0));
+                    const positionSizes = strategies.value.map(s => ((s.position_size || 0) * 100).toFixed(0));
+                    const stopLosses = strategies.value.map(s => (Math.abs(s.stop_loss || 0) * 100).toFixed(0));
+                    const takeProfits = strategies.value.map(s => ((s.take_profit || 0) * 100).toFixed(0));
 
                     const isMobile = window.innerWidth <= 768;
 
@@ -944,8 +957,8 @@
                     }
 
                     const data = strategies.value.map(s => [
-                        Math.abs(s.stop_loss * 100),
-                        s.take_profit * 100,
+                        Math.abs(s.stop_loss || 0) * 100,
+                        (s.take_profit || 0) * 100,
                         s.name
                     ]);
 
