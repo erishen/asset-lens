@@ -586,24 +586,24 @@ strategy-list: ## 列出所有可用策略
 	$(CONDA) python -m asset_lens strategy --strategy-name list 2>/dev/null || echo "💡 使用 make help 查看可用命令"
 
 .PHONY: strategy-show
-strategy-show: ## 显示策略详情（make strategy-show NAME=value）
+strategy-show: ## 显示策略详情（make strategy-show NAME=momentum）
 	@echo "📊 显示策略详情..."
-	$(CONDA) python -m asset_lens strategy --strategy-name $(NAME)
+	$(CONDA) python -m asset_lens strategy --strategy-name $(or $(NAME),momentum)
 
 .PHONY: strategy-set
-strategy-set: ## 设置当前策略（make strategy-set NAME=value）
+strategy-set: ## 设置当前策略（make strategy-set NAME=momentum）
 	@echo "📊 设置当前策略..."
-	$(CONDA) python -m asset_lens strategy --strategy-name $(NAME)
+	$(CONDA) python -m asset_lens strategy --strategy-name $(or $(NAME),momentum)
 
 .PHONY: strategy-screen
-strategy-screen: ## 使用策略筛选股票（make strategy-screen NAME=value）
+strategy-screen: ## 使用策略筛选股票（make strategy-screen STRATEGY=momentum）
 	@echo "📊 使用策略筛选股票..."
-	$(CONDA) python -m asset_lens strategy --strategy-name $(NAME)
+	$(CONDA) python -m asset_lens screen-stocks --strategy $(or $(STRATEGY),momentum)
 
 .PHONY: backtest
-backtest: ## 策略回测（make backtest STRATEGY=value）
+backtest: ## 策略回测（make backtest STRATEGY=momentum）
 	@echo "📊 策略回测..."
-	$(CONDA) python -m asset_lens backtest --strategy $(STRATEGY)
+	$(CONDA) python -m asset_lens backtest --strategy $(or $(STRATEGY),momentum)
 
 .PHONY: backtest-value
 backtest-value: ## 价值策略回测
@@ -674,7 +674,7 @@ ml-train: ## 训练机器学习模型
 .PHONY: ml-predict
 ml-predict: ## 使用模型预测股票（make ml-predict CODE=sh600519）
 	@echo "🔮 预测股票..."
-	$(CONDA) python -m asset_lens ml predict --code $(CODE)
+	$(CONDA) python -m asset_lens ml predict --code $(or $(CODE),sh600519)
 
 .PHONY: ml-importance
 ml-importance: ## 查看模型特征重要性
@@ -689,7 +689,7 @@ ml-train-db: ## 从数据库训练模型
 .PHONY: ml-predict-db
 ml-predict-db: ## 从数据库预测股票（make ml-predict-db CODE=sh600519）
 	@echo "🔮 从数据库预测股票..."
-	$(CONDA) python -m asset_lens ml predict-db $(CODE)
+	$(CONDA) python -m asset_lens ml predict-db $(or $(CODE),sh600519)
 
 .PHONY: ml-predictions
 ml-predictions: ## 查看历史预测记录
@@ -850,7 +850,7 @@ market-environment: ## 分析市场环境
 .PHONY: adapt-strategy
 adapt-strategy: ## 适配策略参数（make adapt-strategy STRATEGY=momentum）
 	@echo "📊 适配策略参数..."
-	$(CONDA) python -m asset_lens market-environment --adapt $(STRATEGY)
+	$(CONDA) python -m asset_lens market-environment --adapt $(or $(STRATEGY),momentum)
 
 # ============================================
 # 个人数据整合
