@@ -230,17 +230,90 @@ def register_stock_pool_commands(cli: click.Group) -> None:
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     def investment_report(data_mode: str | None):
         """生成投资报告"""
+        from rich.console import Console
+        from rich.table import Table
+        from rich.panel import Panel
         from asset_lens.cli_modules.cli.helpers import setup_data_mode
         from asset_lens.report.investment_report import investment_report_generator
 
         setup_data_mode(data_mode)
+        console = Console()
 
-        click.echo("\n📊 生成投资报告")
-        click.echo("=" * 60)
+        console.print("\n[bold cyan]📊 生成投资报告[/bold cyan]")
+        console.print("=" * 60)
 
         try:
-            report_path = investment_report_generator.generate_pool_report()
-            click.echo(f"\n✅ 报告已生成: {report_path}")
+            report = investment_report_generator.generate_pool_report()
+
+            summary = report.get("summary", {})
+            console.print(Panel(
+                f"[bold]股票总数:[/bold] {summary.get('total_stocks', 0)}\n"
+                f"[bold]关注中:[/bold] {summary.get('watching_count', 0)}\n"
+                f"[bold]持有中:[/bold] {summary.get('holding_count', 0)}\n"
+                f"[bold]已卖出:[/bold] {summary.get('sold_count', 0)}\n"
+                f"[bold]总盈亏:[/bold] ¥{summary.get('total_profit', 0):.2f}\n"
+                f"[bold]总收益率:[/bold] {summary.get('total_profit_rate', 0):.2f}%",
+                title="📈 投资概况",
+                border_style="cyan"
+            ))
+
+            positions = report.get("positions", [])
+            if positions:
+                holding_positions = [p for p in positions if p.get("status") == "holding"]
+                if holding_positions:
+                    table = Table(title="💼 持仓明细", show_lines=False)
+                    table.add_column("代码", style="cyan", width=10)
+                    table.add_column("名称", style="white", width=12)
+                    table.add_column("买入价", justify="right", style="yellow", width=10)
+                    table.add_column("现价", justify="right", style="green", width=10)
+                    table.add_column("盈亏", justify="right", width=12)
+                    table.add_column("收益率", justify="right", width=10)
+
+                    for pos in holding_positions[:20]:
+                        buy_price = pos.get("buy_price", 0)
+                        current_price = pos.get("current_price", 0)
+                        profit = (current_price - buy_price) * pos.get("shares", 0) if buy_price else 0
+                        profit_rate = ((current_price - buy_price) / buy_price * 100) if buy_price else 0
+
+                        profit_str = f"¥{profit:.2f}" if profit >= 0 else f"-¥{abs(profit):.2f}"
+                        profit_rate_str = f"{profit_rate:+.2f}%"
+
+                        table.add_row(
+                            pos.get("code", ""),
+                            pos.get("name", ""),
+                            f"{buy_price:.2f}",
+                            f"{current_price:.2f}",
+                            f"[green]{profit_str}[/green]" if profit >= 0 else f"[red]{profit_str}[/red]",
+                            f"[green]{profit_rate_str}[/green]" if profit_rate >= 0 else f"[red]{profit_rate_str}[/red]"
+                        )
+
+                    console.print(table)
+
+            performance = report.get("performance", {})
+            if performance:
+                console.print(Panel(
+                    f"[bold]胜率:[/bold] {performance.get('win_rate', 0):.1f}%\n"
+                    f"[bold]平均收益率:[/bold] {performance.get('avg_profit_rate', 0):.2f}%\n"
+                    f"[bold]最大盈利:[/bold] ¥{performance.get('max_profit', 0):.2f}\n"
+                    f"[bold]最大亏损:[/bold] ¥{performance.get('max_loss', 0):.2f}",
+                    title="📊 绩效分析",
+                    border_style="yellow"
+                ))
+
+            risk = report.get("risk_analysis", {})
+            if risk:
+                risk_level = risk.get("risk_level", "unknown")
+                risk_color = {"low": "green", "medium": "yellow", "high": "red"}.get(risk_level, "white")
+                console.print(Panel(
+                    f"[bold]风险等级:[/bold] [{risk_color}]{risk_level.upper()}[/{risk_color}]\n"
+                    f"[bold]风险提示:[/bold] {risk.get('message', '')}\n"
+                    f"[bold]最大持仓权重:[/bold] {risk.get('max_position_weight', 0)*100:.1f}%\n"
+                    f"[bold]持仓数量:[/bold] {risk.get('position_count', 0)}",
+                    title="⚠️ 风险分析",
+                    border_style="red"
+                ))
+
+            console.print(f"\n[green]✅ 报告已保存到: {report.get('report_file', '')}[/green]")
 
         except Exception as e:
-            click.echo(f"❌ 生成失败: {e}", err=True)
+            console.print(f"[red]❌ 生成失败: {e}[/red]")
