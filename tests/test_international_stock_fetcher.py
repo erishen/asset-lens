@@ -46,29 +46,26 @@ class TestFetchHkStockQuote:
 
     def test_fetch_hk_stock_quote_success(self, fetcher):
         """Test fetch_hk_stock_quote success"""
-        mock_df = pd.DataFrame({
-            "代码": ["00700"],
-            "名称": ["腾讯控股"],
-            "最新价": [350.0],
-            "涨跌幅": [2.5],
-            "涨跌额": [8.5],
-            "成交量": [10000000],
-            "成交额": [3500000000],
-            "最高": [355.0],
-            "最低": [345.0],
-            "今开": [348.0],
-            "昨收": [341.5],
-        })
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "Global Quote": {
+                "01. symbol": "00700",
+                "02. open": "348.0",
+                "03. high": "355.0",
+                "04. low": "345.0",
+                "05. price": "350.0",
+                "08. previous close": "341.5",
+                "09. change": "8.5",
+                "10. change percent": "2.5%",
+            }
+        }
+        mock_response.raise_for_status = MagicMock()
 
-        mock_ak = MagicMock()
-        mock_ak.stock_hk_spot_em.return_value = mock_df
-
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch('requests.get', return_value=mock_response):
             result = fetcher.fetch_hk_stock_quote("00700")
 
             assert result is not None
             assert result["code"] == "00700"
-            assert result["name"] == "腾讯控股"
             assert result["market"] == "HK"
 
     def test_fetch_hk_stock_quote_not_found(self, fetcher):
@@ -121,29 +118,26 @@ class TestFetchUsStockQuote:
 
     def test_fetch_us_stock_quote_success(self, fetcher):
         """Test fetch_us_stock_quote success"""
-        mock_df = pd.DataFrame({
-            "代码": ["AAPL"],
-            "名称": ["苹果"],
-            "最新价": [180.0],
-            "涨跌幅": [1.5],
-            "涨跌额": [2.7],
-            "成交量": [50000000],
-            "成交额": [9000000000],
-            "最高": [182.0],
-            "最低": [178.0],
-            "今开": [179.0],
-            "昨收": [177.3],
-        })
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "Global Quote": {
+                "01. symbol": "AAPL",
+                "02. open": "179.0",
+                "03. high": "182.0",
+                "04. low": "178.0",
+                "05. price": "180.0",
+                "08. previous close": "177.3",
+                "09. change": "2.7",
+                "10. change percent": "1.5%",
+            }
+        }
+        mock_response.raise_for_status = MagicMock()
 
-        mock_ak = MagicMock()
-        mock_ak.stock_us_spot_em.return_value = mock_df
-
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch('requests.get', return_value=mock_response):
             result = fetcher.fetch_us_stock_quote("AAPL")
 
             assert result is not None
             assert result["code"] == "AAPL"
-            assert result["name"] == "苹果"
             assert result["market"] == "US"
 
     def test_fetch_us_stock_quote_not_found(self, fetcher):
