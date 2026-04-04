@@ -159,9 +159,12 @@ class TestFetchUsStockQuote:
         mock_ak = MagicMock()
         mock_ak.stock_us_spot_em.side_effect = Exception("API error")
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
-            result = fetcher.fetch_us_stock_quote("AAPL")
-            assert result is None
+        with patch('requests.get') as mock_get:
+            mock_get.side_effect = Exception("AlphaVantage API error")
+            
+            with patch.dict('sys.modules', {'akshare': mock_ak}):
+                result = fetcher.fetch_us_stock_quote("AAPL")
+                assert result is None
 
 
 class TestFetchHkStockHistory:

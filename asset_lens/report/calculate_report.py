@@ -206,6 +206,13 @@ class CalculateReportGenerator:
             return str(max(amounts, key=lambda k: amounts[k] or Decimal("0")))
         return "未知"
 
+    def _format_amount(self, amount: Decimal | None) -> str:
+        if amount is None or amount == Decimal("0"):
+            return "-"
+        if amount >= Decimal("10000"):
+            return f"{float(amount) / 10000:.2f}万"
+        return f"{float(amount):.0f}"
+
     def _has_transactions(self, product: InvestmentProduct) -> bool:
         if product.transaction_records and product.transaction_records.strip():
             return True
@@ -301,11 +308,12 @@ class CalculateReportGenerator:
             row_styles=["", "dim"],
             expand=True,
         )
-        table.add_column("名称", style="cyan", no_wrap=True)
-        table.add_column("平台", width=6, no_wrap=True)
-        table.add_column("天数", justify="right", width=4)
-        table.add_column("年化", justify="right", width=7, style="bold green")
-        table.add_column("实际", justify="right", width=6, style="green")
+        table.add_column("名称", style="cyan", max_width=35, no_wrap=True)
+        table.add_column("平台", justify="center", width=8)
+        table.add_column("天数", justify="right", width=6)
+        table.add_column("金额", justify="right", width=10)
+        table.add_column("年化收益", justify="right", width=10, style="bold green")
+        table.add_column("实际收益", justify="right", width=10, style="green")
 
         for product in products:
             name = product.name
@@ -315,10 +323,11 @@ class CalculateReportGenerator:
 
             platform = self._get_main_platform(product)
             days = f"{product.investment_days}" if product.investment_days else "-"
+            amount = self._format_amount(product.current_amount)
             annual = f"{product.annual_return:.2f}%" if product.annual_return else "-"
             actual = f"{product.return_rate:.2f}%" if product.return_rate else "-"
 
-            table.add_row(name, platform, days, annual, actual)
+            table.add_row(name, platform, days, amount, annual, actual)
 
         self.console.print(table)
 
@@ -334,11 +343,12 @@ class CalculateReportGenerator:
             row_styles=["", "dim"],
             expand=True,
         )
-        table.add_column("名称", style="cyan", no_wrap=True)
-        table.add_column("平台", width=6, no_wrap=True)
-        table.add_column("天数", justify="right", width=4)
-        table.add_column("年化", justify="right", width=7, style="bold red")
-        table.add_column("实际", justify="right", width=6, style="red")
+        table.add_column("名称", style="cyan", max_width=35, no_wrap=True)
+        table.add_column("平台", justify="center", width=8)
+        table.add_column("天数", justify="right", width=6)
+        table.add_column("金额", justify="right", width=10)
+        table.add_column("年化收益", justify="right", width=10, style="bold red")
+        table.add_column("实际收益", justify="right", width=10, style="red")
 
         for product in products:
             name = product.name
@@ -348,10 +358,11 @@ class CalculateReportGenerator:
 
             platform = self._get_main_platform(product)
             days = f"{product.investment_days}" if product.investment_days else "-"
+            amount = self._format_amount(product.current_amount)
             annual = f"{product.annual_return:.2f}%" if product.annual_return else "-"
             actual = f"{product.return_rate:.2f}%" if product.return_rate else "-"
 
-            table.add_row(name, platform, days, annual, actual)
+            table.add_row(name, platform, days, amount, annual, actual)
 
         self.console.print(table)
 
@@ -367,11 +378,12 @@ class CalculateReportGenerator:
             row_styles=["", "dim"],
             expand=True,
         )
-        table.add_column("名称", style="cyan", no_wrap=True)
-        table.add_column("平台", width=6, no_wrap=True)
-        table.add_column("天数", justify="right", width=4)
-        table.add_column("年化", justify="right", width=7, style="bold yellow")
-        table.add_column("实际", justify="right", width=6, style="yellow")
+        table.add_column("名称", style="cyan", max_width=35, no_wrap=True)
+        table.add_column("平台", justify="center", width=8)
+        table.add_column("天数", justify="right", width=6)
+        table.add_column("金额", justify="right", width=10)
+        table.add_column("年化收益", justify="right", width=10, style="bold yellow")
+        table.add_column("实际收益", justify="right", width=10, style="yellow")
 
         for product in products:
             name = product.name
@@ -381,10 +393,11 @@ class CalculateReportGenerator:
 
             platform = self._get_main_platform(product)
             days = f"{product.investment_days}" if product.investment_days else "-"
+            amount = self._format_amount(product.current_amount)
             annual = f"{product.annual_return:.2f}%" if product.annual_return else "-"
             actual = f"{product.return_rate:.2f}%" if product.return_rate else "-"
 
-            table.add_row(name, platform, days, annual, actual)
+            table.add_row(name, platform, days, amount, annual, actual)
 
         self.console.print(table)
 
