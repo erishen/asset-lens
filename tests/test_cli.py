@@ -103,12 +103,15 @@ class TestCLI:
 
         with patch('asset_lens.data.csv_parser.CSVParser') as mock_parser:
             mock_parser.load_data.return_value = []
+            mock_parser.get_exchange_rates.return_value = (7.0, 0.9)
             
             with patch('asset_lens.config.config') as mock_config:
                 mock_config.default_usd_rate = 7.0
                 mock_config.default_hkd_rate = 0.9
                 mock_config.data_mode = "sample"
                 mock_config.output_path = temp_cache_path
+                mock_config.project_root = temp_cache_path
+                mock_config.get_latest_data_dir.return_value = None
                 
                 result = runner.invoke(cli, ["analyze", "--data-mode", "sample"])
                 assert result.exit_code == 0
@@ -143,11 +146,20 @@ class TestCLI:
         """测试显示资产汇总 - 无文件"""
         from asset_lens.cli import cli
 
-        with patch('asset_lens.cli_modules.cli.analyze._get_data_dir') as mock_get_dir:
-            mock_get_dir.return_value = temp_cache_path
+        with patch('asset_lens.data.csv_parser.CSVParser.load_data') as mock_load:
+            mock_load.return_value = []
             
-            result = runner.invoke(cli, ["analyze"])
-            assert result.exit_code == 0
+            with patch('asset_lens.cli_modules.cli.analyze._get_data_dir') as mock_get_dir:
+                mock_get_dir.return_value = None
+                
+                with patch('asset_lens.config.config') as mock_config:
+                    mock_config.default_usd_rate = 7.0
+                    mock_config.default_hkd_rate = 0.9
+                    mock_config.data_mode = "sample"
+                    mock_config.output_path = temp_cache_path
+                    
+                    result = runner.invoke(cli, ["analyze", "--data-mode", "sample"])
+                    assert result.exit_code == 0
 
     def test_show_exchange_rate_history_no_file(self, runner, temp_cache_path):
         """测试显示汇率历史 - 无文件"""

@@ -45,54 +45,101 @@ def register_analyze_commands(cli: click.Group) -> None:
             setup_data_mode,
         )
         from asset_lens.config import config
-        from asset_lens.report.analyzer import ReportGenerator
+        from asset_lens.report.analyzer import report_generator
+        from asset_lens.data.csv_parser import CSVParser
+        from asset_lens.data.models import Portfolio
+        from asset_lens.core.dca_parser import dca_parser
+        from asset_lens.core.irr_calculator import irr_calculator
+        from asset_lens.data.sell_record_parser import SellRecordParser
+        from datetime import datetime
 
         setup_data_mode(data_mode)
 
-        click.echo("\n📊 投资组合分析")
-        click.echo("=" * 60)
-
+        print("\n📊 正在加载数据...")
         try:
-            products = load_products()
-            click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
-
-            from asset_lens.data.models import Portfolio
-            portfolio = Portfolio(products=products)
-
-            report_gen = ReportGenerator()
-            report = report_gen.generate_analysis_report(portfolio)
-
-            click.echo("\n📈 投资组合概览:")
-            summary = report.get("portfolio_summary", {})
-            total_value = summary.get("total_value", "0")
-            total_profit = summary.get("total_profit", "0")
-            total_return_rate = summary.get("total_return_rate", "0%")
-            click.echo(f"  总资产: ¥{float(total_value):,.2f}")
-            click.echo(f"  总收益: ¥{float(total_profit):,.2f}")
-            click.echo(f"  总收益率: {total_return_rate}")
-
-            if output_format in ["console", "all"]:
-                console = Console()
-                table = Table(title="\n产品明细", show_lines=False, expand=False, box=box.SIMPLE)
-                table.add_column("产品名称", style="cyan", no_wrap=True, overflow="ellipsis", width=25)
-                table.add_column("类型", style="green", no_wrap=True, width=10)
-                table.add_column("金额", justify="right", style="yellow", width=12)
-                table.add_column("收益率", justify="right", width=10)
-
-                for product in sorted(products, key=lambda p: float(p.return_rate or 0), reverse=True)[:20]:
-                    table.add_row(
-                        product.name[:25],
-                        product.investment_type.value if product.investment_type else "未知",
-                        f"¥{float(product.current_amount or 0):,.0f}",
-                        f"{float(product.return_rate or 0):.2f}%",
-                    )
-
-                console.print(table)
-
-            click.echo("\n✅ 分析完成！")
-
+            if data_path:
+                products = CSVParser.load_data(Path(data_path))
+            else:
+                products = CSVParser.load_data()
+            print(f"✅ 成功加载 {len(products)} 个投资产品")
         except Exception as e:
-            click.echo(f"❌ 分析失败: {e}", err=True)
+            click.echo(f"❌ 加载数据失败: {e}", err=True)
+            raise click.Abort()
+
+        data_dir = _get_data_dir(config.data_mode)
+        try:
+            usd_rate, hkd_rate = CSVParser.get_exchange_rates(data_dir) if data_dir else (config.default_usd_rate, config.default_hkd_rate)
+        except Exception:
+            usd_rate, hkd_rate = config.default_usd_rate, config.default_hkd_rate
+
+        portfolio = Portfolio(
+            products=products,
+            usd_rate=Decimal(str(usd_rate)),
+            hkd_rate=Decimal(str(hkd_rate)),
+        )
+
+        print("\n🔢 正在计算收益率...")
+        reference_date = datetime.now()
+
+        for product in portfolio.products:
+            if product.transaction_records:
+                transactions = dca_parser.parse_transaction_record(
+                    product.transaction_records,
+                    reference_date=reference_date,
+                )
+                product.transactions = transactions
+
+                if transactions and product.current_amount:
+                    irr = irr_calculator.calculate_annualized_irr(
+                        transactions=transactions,
+                        current_value=product.current_amount,
+                        reference_date=reference_date,
+                    )
+                    product.annualized_return_irr = irr
+                else:
+                    if product.initial_amount and product.current_amount and product.investment_days:
+                        simple_return = irr_calculator.calculate_simple_annual_return(
+                            initial_amount=product.initial_amount,
+                            current_amount=product.current_amount,
+                            days=product.investment_days,
+                        )
+                        product.annualized_return_irr = simple_return
+            else:
+                if product.initial_amount and product.current_amount and product.investment_days:
+                    simple_return = irr_calculator.calculate_simple_annual_return(
+                        initial_amount=product.initial_amount,
+                        current_amount=product.current_amount,
+                        days=product.investment_days,
+                    )
+                    product.annualized_return_irr = simple_return
+
+        print("✅ 收益率计算完成")
+
+        sell_records = []
+        try:
+            sell_records = SellRecordParser.load_sell_records()
+            if sell_records:
+                print(f"✅ 成功加载 {len(sell_records)} 条卖出记录")
+        except Exception as e:
+            print(f"⚠️  加载卖出记录失败: {e}")
+
+        print("\n📝 正在生成分析报告...")
+        report_data = report_generator.generate_analysis_report(portfolio, sell_records)
+
+        report_data["products"] = [
+            p.to_dict() for p in portfolio.products if p.annual_return is not None
+        ]
+
+        if output_format in ["console", "all"]:
+            report_generator.print_console_report(report_data)
+
+        if output_format in ["csv", "all"]:
+            csv_file = report_generator.save_csv_report(report_data, config.output_path)
+
+        if output_format in ["json", "all"]:
+            json_file = report_generator.save_json_report(report_data, config.output_path)
+
+        print("\n✅ 分析完成!")
 
     @cli.command()
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
@@ -119,7 +166,10 @@ def register_analyze_commands(cli: click.Group) -> None:
             raise click.Abort()
 
         data_dir = _get_data_dir(config.data_mode)
-        usd_rate, hkd_rate = CSVParser.get_exchange_rates(data_dir) if data_dir else (config.default_usd_rate, config.default_hkd_rate)
+        try:
+            usd_rate, hkd_rate = CSVParser.get_exchange_rates(data_dir) if data_dir else (config.default_usd_rate, config.default_hkd_rate)
+        except Exception:
+            usd_rate, hkd_rate = config.default_usd_rate, config.default_hkd_rate
 
         portfolio = Portfolio(
             products=products,
