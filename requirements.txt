@@ -43,7 +43,7 @@ types-requests>=2.28.0
 types-PyYAML>=6.0.0
 
 # Optional: AI Analysis
-litellm>=1.0.0
+litellm>=1.83.0
 
 # Financial Data - AkShare (开源免费，无需注册)
 akshare>=1.17.0
