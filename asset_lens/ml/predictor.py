@@ -97,13 +97,16 @@ class StockPredictor:
 
             if task == "classification":
                 return lgb.LGBMClassifier(
-                    n_estimators=100,
-                    max_depth=5,
-                    learning_rate=0.1,
-                    num_leaves=31,
-                    min_child_samples=20,
+                    n_estimators=300,
+                    max_depth=8,
+                    learning_rate=0.03,
+                    num_leaves=127,
+                    min_child_samples=5,
                     subsample=0.8,
                     colsample_bytree=0.8,
+                    reg_alpha=0.05,
+                    reg_lambda=0.05,
+                    min_split_gain=0.01,
                     random_state=42,
                     verbose=-1,
                     **kwargs
