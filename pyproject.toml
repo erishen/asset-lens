@@ -71,7 +71,7 @@ dev = [
     "types-PyYAML>=6.0.0",
 ]
 ai = [
-    "litellm>=1.0.0",
+    "litellm>=1.83.0",
 ]
 all = [
     "asset-lens[dev,ai]",
