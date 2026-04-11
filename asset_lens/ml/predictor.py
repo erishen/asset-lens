@@ -131,13 +131,16 @@ class StockPredictor:
 
             if task == "classification":
                 return xgb.XGBClassifier(
-                    n_estimators=100,
-                    max_depth=5,
-                    learning_rate=0.1,
+                    n_estimators=300,
+                    max_depth=8,
+                    learning_rate=0.03,
                     subsample=0.8,
                     colsample_bytree=0.8,
+                    reg_alpha=0.05,
+                    reg_lambda=0.05,
+                    min_child_weight=3,
+                    gamma=0.01,
                     random_state=42,
-                    use_label_encoder=False,
                     eval_metric='logloss',
                     **kwargs
                 )
