@@ -141,7 +141,7 @@ class DCAParser:
 
         stop_periods = parse_stop_periods(record_str)
 
-        record_parts = record_str.split(";")
+        record_parts = record_str.replace("；", ";").split(";")
 
         for part in record_parts:
             part = part.strip()
