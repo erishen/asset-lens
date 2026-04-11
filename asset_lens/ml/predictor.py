@@ -323,19 +323,19 @@ class StockPredictor:
 
         if self.model_type == "ensemble" and isinstance(self.model, dict):
             probas = []
-            weights = []
+            weights_list: list[float] = []
             for name, model in self.model.items():
                 proba = model.predict_proba(X)
                 probas.append(proba)
                 if name == 'lightgbm':
-                    weights.append(0.5)
+                    weights_list.append(0.5)
                 elif name == 'xgboost':
-                    weights.append(0.5)
-            weights = np.array(weights) / sum(weights)
+                    weights_list.append(0.5)
+            weights_arr = np.array(weights_list) / sum(weights_list)
             weighted_proba = np.zeros_like(probas[0])
             for i, proba in enumerate(probas):
-                weighted_proba += weights[i] * proba
-            return weighted_proba
+                weighted_proba += weights_arr[i] * proba
+            return np.asarray(weighted_proba)
         else:
             result = self.model.predict_proba(X)
             return np.asarray(result)
