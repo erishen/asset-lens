@@ -223,11 +223,14 @@ class ModelTrainer:
         except ValueError:
             auc = 0.5
 
-        tscv = TimeSeriesSplit(n_splits=self.config.cv_folds)
-        cv_scores = cross_val_score(
-            self.predictor.model, X, y,
-            cv=tscv, scoring='accuracy'
-        )
+        if self.model_type == "ensemble":
+            cv_scores = [accuracy]
+        else:
+            tscv = TimeSeriesSplit(n_splits=self.config.cv_folds)
+            cv_scores = cross_val_score(
+                self.predictor.model, X, y,
+                cv=tscv, scoring='accuracy'
+            )
 
         feature_importance = self.predictor.get_feature_importance()
 
