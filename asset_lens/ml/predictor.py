@@ -183,6 +183,45 @@ class StockPredictor:
         else:
             raise ValueError(f"不支持的模型类型: {self.model_type}")
 
+    def _create_ensemble_models(self, task: str = "classification") -> dict[str, Any]:
+        """创建集成模型"""
+        models = {}
+
+        if HAS_LIGHTGBM:
+            if task == "classification":
+                models['lightgbm'] = lgb.LGBMClassifier(
+                    n_estimators=300,
+                    max_depth=8,
+                    learning_rate=0.03,
+                    num_leaves=127,
+                    min_child_samples=5,
+                    subsample=0.8,
+                    colsample_bytree=0.8,
+                    reg_alpha=0.05,
+                    reg_lambda=0.05,
+                    min_split_gain=0.01,
+                    random_state=42,
+                    verbose=-1,
+                )
+
+        if HAS_XGBOOST:
+            if task == "classification":
+                models['xgboost'] = xgb.XGBClassifier(
+                    n_estimators=300,
+                    max_depth=8,
+                    learning_rate=0.03,
+                    subsample=0.8,
+                    colsample_bytree=0.8,
+                    reg_alpha=0.05,
+                    reg_lambda=0.05,
+                    min_child_weight=3,
+                    gamma=0.01,
+                    random_state=42,
+                    eval_metric='logloss',
+                )
+
+        return models
+
     def fit(
         self,
         X: pd.DataFrame,
@@ -213,8 +252,14 @@ class StockPredictor:
             X_scaled = self.scaler.fit_transform(X)
             X = pd.DataFrame(X_scaled, columns=self.feature_names, index=X.index)
 
-        self.model = self._create_model(task, **kwargs)
-        self.model.fit(X, y)
+        if self.model_type == "ensemble":
+            self.model = self._create_ensemble_models(task)
+            for name, model in self.model.items():
+                model.fit(X, y)
+                logger.info(f"集成模型训练完成: {name}")
+        else:
+            self.model = self._create_model(task, **kwargs)
+            self.model.fit(X, y)
 
         logger.info(f"模型训练完成: {self.model_type}, 特征数: {len(self.feature_names)}")
 
@@ -240,8 +285,12 @@ class StockPredictor:
             X_scaled = self.scaler.transform(X)
             X = pd.DataFrame(X_scaled, columns=self.feature_names, index=X.index)
 
-        result = self.model.predict(X)
-        return np.asarray(result)
+        if self.model_type == "ensemble" and isinstance(self.model, dict):
+            proba = self.predict_proba(X)
+            return (proba[:, 1] >= 0.5).astype(int)
+        else:
+            result = self.model.predict(X)
+            return np.asarray(result)
 
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
         """
@@ -270,8 +319,24 @@ class StockPredictor:
             X_scaled = self.scaler.transform(X)
             X = pd.DataFrame(X_scaled, columns=self.feature_names, index=X.index)
 
-        result = self.model.predict_proba(X)
-        return np.asarray(result)
+        if self.model_type == "ensemble" and isinstance(self.model, dict):
+            probas = []
+            weights = []
+            for name, model in self.model.items():
+                proba = model.predict_proba(X)
+                probas.append(proba)
+                if name == 'lightgbm':
+                    weights.append(0.5)
+                elif name == 'xgboost':
+                    weights.append(0.5)
+            weights = np.array(weights) / sum(weights)
+            weighted_proba = np.zeros_like(probas[0])
+            for i, proba in enumerate(probas):
+                weighted_proba += weights[i] * proba
+            return weighted_proba
+        else:
+            result = self.model.predict_proba(X)
+            return np.asarray(result)
 
     def predict_stock(
         self,
@@ -362,7 +427,17 @@ class StockPredictor:
         if self.model is None:
             raise ValueError("模型未训练")
 
-        if hasattr(self.model, 'feature_importances_'):
+        if self.model_type == "ensemble" and isinstance(self.model, dict):
+            importances = []
+            for name, model in self.model.items():
+                if hasattr(model, 'feature_importances_'):
+                    importances.append(model.feature_importances_)
+                elif hasattr(model, 'get_score'):
+                    importance_dict = model.get_score(importance_type='gain')
+                    imp = [importance_dict.get(f'f{i}', 0) for i in range(len(self.feature_names))]
+                    importances.append(imp)
+            importance = np.mean(importances, axis=0)
+        elif hasattr(self.model, 'feature_importances_'):
             importance = self.model.feature_importances_
         elif hasattr(self.model, 'get_score'):
             importance_dict = self.model.get_score(importance_type='gain')
