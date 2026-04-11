@@ -176,7 +176,7 @@ class InvestmentCalculator:
         if not records_str:
             return transactions
 
-        for record in records_str.split(";"):
+        for record in records_str.replace("；", ";").split(";"):
             record = record.strip()
             if not record:
                 continue

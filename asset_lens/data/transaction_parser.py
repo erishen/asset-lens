@@ -90,7 +90,7 @@ def parse_stop_periods(transaction_string: str) -> list[tuple[date, date]]:
     """
     stop_periods: list[tuple[date, date]] = []
 
-    for tx in transaction_string.split(";"):
+    for tx in transaction_string.replace("；", ";").split(";"):
         s = tx.strip()
         if ":stop" not in s:
             continue
@@ -259,7 +259,7 @@ def parse_transactions(
 
     stop_periods = parse_stop_periods(cleaned)
 
-    for tx in cleaned.split(";"):
+    for tx in cleaned.replace("；", ";").split(";"):
         s = tx.strip()
         if not s:
             continue

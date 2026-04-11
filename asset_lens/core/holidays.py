@@ -226,7 +226,7 @@ def parse_stop_periods(record_str: str) -> list[tuple]:
     if not record_str:
         return stop_periods
 
-    parts = record_str.split(";")
+    parts = record_str.replace("；", ";").split(";")
 
     for part in parts:
         part = part.strip()
