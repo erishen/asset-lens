@@ -97,18 +97,19 @@ class StockPredictor:
 
             if task == "classification":
                 return lgb.LGBMClassifier(
-                    n_estimators=300,
+                    n_estimators=370,
                     max_depth=8,
-                    learning_rate=0.03,
-                    num_leaves=127,
-                    min_child_samples=5,
-                    subsample=0.8,
-                    colsample_bytree=0.8,
-                    reg_alpha=0.05,
-                    reg_lambda=0.05,
-                    min_split_gain=0.01,
+                    learning_rate=0.069,
+                    num_leaves=214,
+                    min_child_samples=13,
+                    subsample=0.726,
+                    colsample_bytree=0.788,
+                    reg_alpha=0.03,
+                    reg_lambda=0.042,
+                    min_split_gain=0.052,
                     random_state=42,
                     verbose=-1,
+                    n_jobs=-1,
                     **kwargs
                 )
             else:
@@ -131,17 +132,18 @@ class StockPredictor:
 
             if task == "classification":
                 return xgb.XGBClassifier(
-                    n_estimators=300,
-                    max_depth=8,
-                    learning_rate=0.03,
-                    subsample=0.8,
-                    colsample_bytree=0.8,
-                    reg_alpha=0.05,
-                    reg_lambda=0.05,
-                    min_child_weight=3,
-                    gamma=0.01,
+                    n_estimators=377,
+                    max_depth=10,
+                    learning_rate=0.039,
+                    subsample=0.994,
+                    colsample_bytree=0.603,
+                    reg_alpha=0.0054,
+                    reg_lambda=0.03,
+                    min_child_weight=2,
+                    gamma=0.014,
                     random_state=42,
                     eval_metric='logloss',
+                    n_jobs=-1,
                     **kwargs
                 )
             else:
