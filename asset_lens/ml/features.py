@@ -61,6 +61,8 @@ class FeatureEngineer:
         df = self._add_volume_features(df)
         df = self._add_momentum_features(df)
         df = self._add_volatility_features(df)
+        df = self._add_trend_features(df)
+        df = self._add_pattern_features(df)
         df = self._add_statistical_features(df)
 
         self.feature_names = [col for col in df.columns if col not in
