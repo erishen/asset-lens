@@ -420,7 +420,8 @@ def register_data_commands(cli: click.Group) -> None:
     @click.option("--delay", default=0.3, type=float, help="请求间隔（秒）")
     @click.option("--use-market-stocks", is_flag=True, help="使用市场股票列表")
     @click.option("--limit", default=0, type=int, help="限制股票数量（0=不限制）")
-    def fetch_history_batch(codes_str: str | None, days: int, data_source: str, delay: float, use_market_stocks: bool, limit: int):
+    @click.option("--skip-existing", is_flag=True, default=True, help="跳过已有历史数据的股票")
+    def fetch_history_batch(codes_str: str | None, days: int, data_source: str, delay: float, use_market_stocks: bool, limit: int, skip_existing: bool):
         """批量获取股票历史K线数据（用于ML训练）
 
         示例:
@@ -457,6 +458,15 @@ def register_data_commands(cli: click.Group) -> None:
         if not codes:
             click.echo("\n❌ 请指定股票代码列表或使用 --use-market-stocks", err=True)
             return
+
+        if skip_existing:
+            from asset_lens.db.database import db_manager
+            existing_codes = db_manager.get_stock_codes_with_klines()
+            original_count = len(codes)
+            codes = [c for c in codes if c not in existing_codes]
+            skipped = original_count - len(codes)
+            if skipped > 0:
+                click.echo(f"📋 跳过已有历史数据的股票: {skipped} 只")
 
         if limit > 0:
             codes = codes[:limit]

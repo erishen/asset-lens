@@ -129,6 +129,21 @@ class DatabaseManager:
         finally:
             session.close()
 
+    def get_stock_codes_with_klines(self) -> set[str]:
+        """
+        获取已有K线数据的股票代码集合
+
+        Returns:
+            股票代码集合
+        """
+        session = self.get_session()
+        try:
+            from sqlalchemy import distinct
+            results = session.query(distinct(StockKline.code)).all()
+            return {r[0] for r in results}
+        finally:
+            session.close()
+
     def get_klines(
         self,
         code: str,
