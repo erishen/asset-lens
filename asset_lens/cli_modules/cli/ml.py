@@ -16,7 +16,7 @@ def ml():
 
 
 @ml.command()
-@click.option("--model-type", default="lightgbm", help="模型类型 (lightgbm/xgboost/randomforest)")
+@click.option("--model-type", default="lightgbm", help="模型类型 (lightgbm/xgboost/randomforest/stacking)")
 @click.option("--prediction-days", default=5, help="预测天数")
 @click.option("--output", default="cache/ml/model.pkl", help="模型输出路径")
 def train(model_type: str, prediction_days: int, output: str):
