@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -64,6 +65,11 @@ class FeatureEngineer:
         df = self._add_trend_features(df)
         df = self._add_pattern_features(df)
         df = self._add_statistical_features(df)
+        df = self._add_williams_r(df)
+        df = self._add_cci(df)
+        df = self._add_obv(df)
+        df = self._add_adx(df)
+        df = self._add_mfi(df)
 
         self.feature_names = [col for col in df.columns if col not in
                               ['open', 'high', 'low', 'close', 'volume', 'amount', 'date', 'code']]
@@ -237,6 +243,84 @@ class FeatureEngineer:
 
         df['price_zscore_20'] = (df['close'] - df['close'].rolling(window=20).mean()) / df['close'].rolling(window=20).std()
         df['volume_zscore_20'] = (df['volume'] - df['volume'].rolling(window=20).mean()) / df['volume'].rolling(window=20).std()
+
+        return df
+
+    def _add_williams_r(self, df: pd.DataFrame) -> pd.DataFrame:
+        """威廉指标 Williams %R"""
+        period = 14
+        high_max = df['high'].rolling(window=period).max()
+        low_min = df['low'].rolling(window=period).min()
+        df['williams_r'] = (high_max - df['close']) / (high_max - low_min) * -100
+        df['williams_oversold'] = (df['williams_r'] < -80).astype(int)
+        df['williams_overbought'] = (df['williams_r'] > -20).astype(int)
+        return df
+
+    def _add_cci(self, df: pd.DataFrame) -> pd.DataFrame:
+        """CCI指标"""
+        period = 20
+        tp = (df['high'] + df['low'] + df['close']) / 3
+        ma = tp.rolling(window=period).mean()
+        md = tp.rolling(window=period).apply(lambda x: abs(x - x.mean()).mean())
+        df['cci'] = (tp - ma) / (0.015 * md)
+        df['cci_oversold'] = (df['cci'] < -100).astype(int)
+        df['cci_overbought'] = (df['cci'] > 100).astype(int)
+        return df
+
+    def _add_obv(self, df: pd.DataFrame) -> pd.DataFrame:
+        """OBV指标"""
+        df['obv'] = (np.sign(df['close'].diff()) * df['volume']).fillna(0).cumsum()
+        df['obv_ma10'] = df['obv'].rolling(window=10).mean()
+        df['obv_ma20'] = df['obv'].rolling(window=20).mean()
+        df['obv_signal'] = (df['obv'] > df['obv_ma10']).astype(int)
+        return df
+
+    def _add_adx(self, df: pd.DataFrame) -> pd.DataFrame:
+        """ADX指标"""
+        period = 14
+        high = df['high']
+        low = df['low']
+        close = df['close']
+
+        plus_dm = high.diff()
+        minus_dm = low.diff()
+        plus_dm[plus_dm < 0] = 0
+        minus_dm[minus_dm > 0] = 0
+
+        tr = pd.concat([
+            high - low,
+            abs(high - close.shift(1)),
+            abs(low - close.shift(1))
+        ], axis=1).max(axis=1)
+
+        atr = tr.rolling(window=period).mean()
+        plus_di = 100 * (plus_dm.rolling(window=period).mean() / atr)
+        minus_di = 100 * (abs(minus_dm).rolling(window=period).mean() / atr)
+
+        dx = 100 * abs(plus_di - minus_di) / (plus_di + minus_di)
+        df['adx'] = dx.rolling(window=period).mean()
+        df['plus_di'] = plus_di
+        df['minus_di'] = minus_di
+        df['trend_strength_adx'] = (df['adx'] > 25).astype(int)
+
+        return df
+
+    def _add_mfi(self, df: pd.DataFrame) -> pd.DataFrame:
+        """MFI指标"""
+        period = 14
+        tp = (df['high'] + df['low'] + df['close']) / 3
+        mf = tp * df['volume']
+
+        positive_mf = mf.where(tp > tp.shift(1), 0)
+        negative_mf = mf.where(tp < tp.shift(1), 0)
+
+        positive_sum = positive_mf.rolling(window=period).sum()
+        negative_sum = negative_mf.rolling(window=period).sum()
+
+        mfi_ratio = positive_sum / negative_sum.replace(0, np.inf)
+        df['mfi'] = 100 - (100 / (1 + mfi_ratio))
+        df['mfi_oversold'] = (df['mfi'] < 20).astype(int)
+        df['mfi_overbought'] = (df['mfi'] > 80).astype(int)
 
         return df
 

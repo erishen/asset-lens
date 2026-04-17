@@ -421,7 +421,9 @@ def register_data_commands(cli: click.Group) -> None:
     @click.option("--use-market-stocks", is_flag=True, help="使用市场股票列表")
     @click.option("--limit", default=0, type=int, help="限制股票数量（0=不限制）")
     @click.option("--skip-existing", is_flag=True, default=False, help="跳过已有历史数据的股票")
-    def fetch_history_batch(codes_str: str | None, days: int, data_source: str, delay: float, use_market_stocks: bool, limit: int, skip_existing: bool):
+    @click.option("--concurrent", is_flag=True, default=False, help="使用并发获取（更快）")
+    @click.option("--workers", default=5, type=int, help="并发数（仅并发模式有效）")
+    def fetch_history_batch(codes_str: str | None, days: int, data_source: str, delay: float, use_market_stocks: bool, limit: int, skip_existing: bool, concurrent: bool, workers: int):
         """批量获取股票历史K线数据（用于ML训练）
 
         示例:
@@ -476,17 +478,28 @@ def register_data_commands(cli: click.Group) -> None:
         click.echo(f"   股票数量: {len(codes)}")
         click.echo(f"   历史天数: {days}")
         click.echo(f"   数据源: {data_source}")
-        click.echo(f"   请求间隔: {delay}秒")
+        if concurrent:
+            click.echo(f"   并发模式: 开启 ({workers} 个线程)")
+        else:
+            click.echo(f"   请求间隔: {delay}秒")
 
         from asset_lens.db.migration import DataMigration
 
         migration = DataMigration()
-        result = migration.fetch_and_store_history(
-            codes=codes,
-            days=days,
-            data_source=data_source,
-            delay=delay,
-        )
+        if concurrent:
+            result = migration.fetch_and_store_history_concurrent(
+                codes=codes,
+                days=days,
+                data_source=data_source,
+                max_workers=workers,
+            )
+        else:
+            result = migration.fetch_and_store_history(
+                codes=codes,
+                days=days,
+                data_source=data_source,
+                delay=delay,
+            )
 
         click.echo("\n📊 获取结果:")
         click.echo(f"   ✅ 成功: {result.get('success', 0)}")

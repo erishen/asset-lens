@@ -213,6 +213,119 @@ class DataMigration:
 
         return result
 
+    def fetch_and_store_history_concurrent(
+        self,
+        codes: list[str],
+        days: int = 250,
+        data_source: str = "auto",
+        max_workers: int = 5,
+        batch_delay: float = 0.1,
+    ) -> dict[str, Any]:
+        """
+        并发获取并存储历史K线数据
+
+        Args:
+            codes: 股票代码列表
+            days: 历史天数
+            data_source: 数据源 (auto/tushare/baostock/akshare)
+            max_workers: 最大并发数
+            batch_delay: 批次间隔
+
+        Returns:
+            获取结果统计
+        """
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        import threading
+
+        from ..data.stock_history_fetcher import StockHistoryFetcher
+
+        console.print("[bold blue]开始并发获取历史数据...[/bold blue]")
+        console.print(f"  股票数量: {len(codes)}")
+        console.print(f"  历史天数: {days}")
+        console.print(f"  数据源: {data_source}")
+        console.print(f"  并发数: {max_workers}")
+
+        fetcher = StockHistoryFetcher()
+        result: dict[str, Any] = {
+            "total": len(codes),
+            "success": 0,
+            "failed": 0,
+            "total_klines": 0,
+            "errors": [],
+        }
+        result_lock = threading.Lock()
+
+        def fetch_single(code: str) -> tuple[str, dict[str, Any] | None, str | None]:
+            try:
+                if data_source == "tushare":
+                    history = fetcher.fetch_history_tushare(code, days)
+                elif data_source == "baostock":
+                    history = fetcher.fetch_history_baostock(code, days)
+                elif data_source == "akshare":
+                    history = fetcher.fetch_history_akshare_daily(code, days)
+                else:
+                    history = fetcher.fetch_history(code, days)
+                return (code, history, None)
+            except Exception as e:
+                return (code, None, str(e))
+
+        log_id = self.db.log_sync(
+            data_type="kline",
+            data_source=data_source,
+            records_total=len(codes),
+        )
+
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TaskProgressColumn(),
+            console=console,
+        ) as progress:
+            task = progress.add_task("并发获取中...", total=len(codes))
+            completed = 0
+
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = {executor.submit(fetch_single, code): code for code in codes}
+
+                for future in as_completed(futures):
+                    code, history, error = future.result()
+
+                    with result_lock:
+                        if history:
+                            klines: list[dict[str, Any]] = history.get("klines", [])
+                            source = history.get("data_source", "Unknown")
+                            self.db.save_klines(code, klines, source)
+                            result["success"] += 1
+                            result["total_klines"] += len(klines)
+                        else:
+                            result["failed"] += 1
+                            if error:
+                                result["errors"].append({"code": code, "error": error})
+
+                    completed += 1
+                    progress.update(task, completed=completed, description=f"获取 {code}")
+
+                    if batch_delay > 0 and completed % max_workers == 0:
+                        import time
+                        time.sleep(batch_delay)
+
+        fetcher.baostock_logout()
+
+        self.db.update_sync_log(
+            log_id,
+            records_success=result["success"],
+            records_failed=result["failed"],
+            status="success" if result["failed"] == 0 else "partial",
+        )
+
+        console.print("\n[bold green]并发获取完成![/bold green]")
+        console.print(f"  成功: {result['success']} 只股票")
+        console.print(f"  失败: {result['failed']} 只股票")
+        console.print(f"  K线总数: {result['total_klines']} 条")
+
+        return result
+
     def show_statistics(self):
         """显示数据库统计信息"""
         stats = self.db.get_statistics()
