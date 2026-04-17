@@ -37,7 +37,8 @@ except ImportError:
     logger.warning("XGBoost 未安装，使用 pip install xgboost 安装")
 
 try:
-    from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+    from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, StackingClassifier
+    from sklearn.linear_model import LogisticRegression
     from sklearn.preprocessing import StandardScaler
     HAS_SKLEARN = True
 except ImportError:
@@ -182,6 +183,12 @@ class StockPredictor:
                     **kwargs
                 )
 
+        elif self.model_type == "stacking":
+            if not HAS_SKLEARN:
+                raise ImportError("sklearn 未安装")
+            if task == "classification":
+                return self._create_stacking_model()
+
         else:
             raise ValueError(f"不支持的模型类型: {self.model_type}")
 
@@ -223,6 +230,66 @@ class StockPredictor:
                 )
 
         return models
+
+    def _create_stacking_model(self) -> Any:
+        """创建Stacking集成模型"""
+        estimators = []
+
+        if HAS_LIGHTGBM:
+            estimators.append(('lgb', lgb.LGBMClassifier(
+                n_estimators=100,
+                max_depth=6,
+                learning_rate=0.05,
+                num_leaves=31,
+                min_child_samples=20,
+                subsample=0.8,
+                colsample_bytree=0.8,
+                random_state=42,
+                verbose=-1,
+                n_jobs=1,
+            )))
+
+        if HAS_XGBOOST:
+            estimators.append(('xgb', xgb.XGBClassifier(
+                n_estimators=100,
+                max_depth=6,
+                learning_rate=0.05,
+                subsample=0.8,
+                colsample_bytree=0.8,
+                reg_alpha=0.05,
+                reg_lambda=0.05,
+                random_state=42,
+                eval_metric='logloss',
+                use_label_encoder=False,
+                n_jobs=1,
+            )))
+
+        if HAS_SKLEARN:
+            estimators.append(('rf', RandomForestClassifier(
+                n_estimators=50,
+                max_depth=8,
+                min_samples_split=5,
+                min_samples_leaf=2,
+                random_state=42,
+                n_jobs=1,
+            )))
+
+        if not estimators:
+            raise ValueError("没有可用的基模型")
+
+        stacking = StackingClassifier(
+            estimators=estimators,
+            final_estimator=LogisticRegression(
+                C=1.0,
+                max_iter=1000,
+                random_state=42,
+            ),
+            cv=3,
+            stack_method='predict_proba',
+            n_jobs=-1,
+        )
+
+        return stacking
 
     def fit(
         self,
@@ -444,8 +511,21 @@ class StockPredictor:
         elif hasattr(self.model, 'get_score'):
             importance_dict = self.model.get_score(importance_type='gain')
             importance = [importance_dict.get(f'f{i}', 0) for i in range(len(self.feature_names))]
+        elif hasattr(self.model, 'estimators_') and self.model_type == 'stacking':
+            importances = []
+            for estimator_item in self.model.estimators_:
+                if hasattr(estimator_item, 'estimator'):
+                    estimator = estimator_item.estimator
+                else:
+                    estimator = estimator_item
+                if hasattr(estimator, 'feature_importances_'):
+                    importances.append(estimator.feature_importances_)
+            if importances:
+                importance = np.mean(importances, axis=0)
+            else:
+                importance = np.zeros(len(self.feature_names))
         else:
-            raise ValueError("模型不支持特征重要性")
+            importance = np.zeros(len(self.feature_names))
 
         df = pd.DataFrame({
             'feature': self.feature_names,
