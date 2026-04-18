@@ -146,6 +146,9 @@ asset-lens/
 | `make analyze` | 投资组合分析 | 按需 |
 | `make weekly` | 生成周报 | 每周 |
 | `make ai-analyze` | AI 深度分析 | 按需 |
+| `make ml-fetch-history` | 更新股票历史数据 | 每周 |
+| `make ml-train-db` | 训练ML模型 | 每周 |
+| `make ml-predict` | ML预测 | 按需 |
 | `make test` | 运行测试 | 开发时 |
 | `make lint` | 代码检查 | 开发时 |
 | `make clean` | 清理输出 | 按需 |
@@ -287,7 +290,10 @@ make web
 - **pandas / numpy** - 数据处理
 - **click** - CLI 框架
 - **rich** - 美化输出
+- **LightGBM / XGBoost** - 机器学习
+- **scikit-learn** - 模型工具
 - **openai** - AI 分析（可选）
+- **FastAPI** - Web API（可选）
 
 ---
 
@@ -306,8 +312,56 @@ make web
 |------|------|------|
 | 阶段一 | ✅ | 资产数据模型与收益分析框架 |
 | 阶段二 | ✅ | 股票/基金筛选、实时数据、AI 分析 |
-| 阶段三 | 🚧 | Web 化、数据可视化、PDF 报告 |
-| 阶段四 | 📋 | 机器学习、AI 建议增强 |
+| 阶段三 | ✅ | Web 化、数据可视化、PDF 报告 |
+| 阶段四 | ✅ | 机器学习、AI 建议增强 |
+
+---
+
+## 🤖 机器学习功能
+
+### ML 模型训练
+
+```bash
+# 更新股票历史数据
+make ml-fetch-history
+
+# 训练模型（LightGBM，推荐）
+make ml-train-db
+
+# 训练其他模型类型
+python -m asset_lens ml train-db --model-type xgboost
+python -m asset_lens ml train-db --model-type stacking
+
+# 模型预测
+make ml-predict
+```
+
+### 模型性能
+
+| 模型 | 准确率 | AUC | 训练时间 |
+|------|--------|-----|----------|
+| **LightGBM** | **70.83%** | **78.63%** | ~100秒 |
+| XGBoost | ~68% | ~76% | ~120秒 |
+| Stacking | ~64% | ~70% | ~5000秒 |
+
+### 技术指标特征
+
+模型使用 80+ 技术指标特征：
+
+| 类别 | 指标 |
+|------|------|
+| 趋势 | MA、EMA、MACD、ADX |
+| 震荡 | RSI、KDJ、CCI、Williams %R |
+| 量价 | OBV、MFI、成交量比 |
+| 波动 | BOLL、ATR、波动率 |
+| 统计 | 偏度、峰度、Z-Score |
+
+### 并发数据获取
+
+```bash
+# 使用并发模式加速数据获取（3-5倍提速）
+python -m asset_lens fetch-history-batch --use-market-stocks --concurrent --workers 10
+```
 
 ---
 
