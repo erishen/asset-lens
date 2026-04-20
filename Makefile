@@ -5,6 +5,7 @@
 PYTHON := python
 CONDA_ENV := asset-lens
 CONDA := conda run -n $(CONDA_ENV)
+UV := $(CONDA) uv
 PROJECT_DIR := $(shell pwd)
 VERSION := 1.0.0
 
@@ -65,6 +66,9 @@ help: ## 显示帮助信息
 	@echo "    make install-dev      安装开发依赖"
 	@echo "    make update           更新项目依赖"
 	@echo "    make list-pkgs        列出已安装的包"
+	@echo "    make uv-install       使用 uv 安装依赖（更快）"
+	@echo "    make uv-sync          使用 uv 同步依赖"
+	@echo "    make uv-lock          使用 uv 锁定依赖"
 	@echo ""
 	@echo "  🚀 项目初始化:"
 	@echo "    make init             初始化项目"
@@ -221,7 +225,24 @@ install-dev: ## 安装开发依赖
 	@echo "📥 安装开发依赖..."
 	$(CONDA) pip install -r requirements.txt
 	$(CONDA) pip install black isort mypy pylint pytest pytest-cov
-	@echo "✅ 开发依赖安装完成"
+
+.PHONY: uv-install
+uv-install: ## 使用 uv 安装依赖（更快）
+	@echo "⚡ 使用 uv 安装依赖..."
+	$(UV) pip install -e .
+	@echo "✅ uv 安装完成"
+
+.PHONY: uv-sync
+uv-sync: ## 使用 uv 同步依赖
+	@echo "🔄 使用 uv 同步依赖..."
+	$(UV) sync
+	@echo "✅ uv 同步完成"
+
+.PHONY: uv-lock
+uv-lock: ## 使用 uv 锁定依赖
+	@echo "🔒 使用 uv 锁定依赖..."
+	$(UV) lock
+	@echo "✅ uv 锁定完成"
 
 .PHONY: update
 update: ## 更新项目依赖
