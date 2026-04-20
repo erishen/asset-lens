@@ -77,8 +77,11 @@ class TestCalculateReport:
 
     def test_module_import(self):
         """测试模块导入"""
-        try:
-            from asset_lens.report.calculate_report import CalculateReport
-            assert CalculateReport is not None
-        except ImportError:
-            pytest.skip("CalculateReport not available")
+        from asset_lens.report.calculate_report import CalculateReportGenerator
+        assert CalculateReportGenerator is not None
+
+    def test_generator_init(self):
+        """测试生成器初始化"""
+        from asset_lens.report.calculate_report import CalculateReportGenerator
+        generator = CalculateReportGenerator()
+        assert generator is not None

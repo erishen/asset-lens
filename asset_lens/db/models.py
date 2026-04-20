@@ -5,6 +5,7 @@ Database models for asset-lens.
 
 # mypy: ignore-errors
 
+import warnings
 from datetime import datetime
 
 from sqlalchemy import (
@@ -18,8 +19,9 @@ from sqlalchemy import (
     Text,
     create_engine,
 )
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker
+
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="sqlalchemy")
 
 Base = declarative_base()
 
