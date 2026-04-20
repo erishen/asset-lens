@@ -537,3 +537,149 @@ def auto_sync(days, daily_limit, update_limit, delay):
 
     finally:
         session.close()
+
+
+@db.command()
+def optimize():
+    """优化数据库性能
+
+    执行以下优化操作：
+    1. 启用 WAL 模式（提升并发性能）
+    2. 优化 PRAGMA 设置
+    3. 创建优化索引
+    4. 分析表统计信息
+
+    示例:
+        asset-lens db optimize
+    """
+    from asset_lens.db.database import db_manager
+    from asset_lens.db.optimizer import db_optimizer
+
+    console.print("[bold blue]⚡ 数据库优化[/bold blue]")
+    console.print("=" * 60)
+
+    session = db_manager.get_session()
+    try:
+        result = db_optimizer.run_full_optimization(session)
+
+        console.print(f"\n开始时间: {result['start_time']}")
+        console.print(f"结束时间: {result['end_time']}")
+
+        for opt in result["optimizations"]:
+            status_emoji = "✅" if opt["status"] == "success" else "❌"
+            console.print(f"\n{status_emoji} {opt['action']}")
+            console.print(f"   {opt['message']}")
+
+            if opt["action"] == "create_indexes":
+                if opt["created"]:
+                    console.print(f"   新建索引: {', '.join(opt['created'])}")
+                if opt["skipped"]:
+                    console.print(f"   已存在: {len(opt['skipped'])} 个")
+
+            if opt["action"] == "optimize_pragmas":
+                for pragma, value in opt["settings"].items():
+                    console.print(f"   {pragma}: {value}")
+
+        console.print(f"\n[bold green]✅ 优化完成![/bold green]")
+        console.print(f"   成功: {result['summary']['success']}")
+        console.print(f"   失败: {result['summary']['failed']}")
+
+        stats = db_optimizer.get_table_stats(session)
+        console.print(f"\n📊 表统计:")
+        for table, info in stats.items():
+            console.print(f"   {table}: {info['row_count']:,} 行")
+
+    finally:
+        session.close()
+
+
+@db.command()
+def indexes():
+    """查看数据库索引
+
+    示例:
+        asset-lens db indexes
+    """
+    from asset_lens.db.database import db_manager
+    from asset_lens.db.optimizer import db_optimizer
+
+    session = db_manager.get_session()
+    try:
+        indexes_list = db_optimizer.get_index_usage(session)
+
+        if not indexes_list:
+            console.print("[yellow]没有找到索引[/yellow]")
+            return
+
+        table = Table(title=f"数据库索引 (共 {len(indexes_list)} 个)")
+        table.add_column("索引名", style="cyan")
+        table.add_column("表名", style="green")
+
+        for idx in indexes_list:
+            table.add_row(idx["name"], idx["table"])
+
+        console.print(table)
+
+    finally:
+        session.close()
+
+
+@db.command()
+@click.argument("query")
+@click.option("--iterations", default=3, help="迭代次数")
+def benchmark(query, iterations):
+    """基准测试查询性能
+
+    示例:
+        asset-lens db benchmark "SELECT COUNT(*) FROM stock_klines"
+    """
+    from asset_lens.db.database import db_manager
+    from asset_lens.db.optimizer import db_optimizer
+
+    session = db_manager.get_session()
+    try:
+        console.print(f"[bold blue]📊 查询性能测试[/bold blue]")
+        console.print(f"查询: {query}")
+        console.print(f"迭代: {iterations} 次")
+        console.print("")
+
+        result = db_optimizer.benchmark_query(session, query, iterations)
+
+        table = Table(title="测试结果")
+        table.add_column("指标", style="cyan")
+        table.add_column("值", style="green")
+
+        table.add_row("平均时间", f"{result['avg_time_ms']:.2f} ms")
+        table.add_row("最小时间", f"{result['min_time_ms']:.2f} ms")
+        table.add_row("最大时间", f"{result['max_time_ms']:.2f} ms")
+
+        console.print(table)
+
+    finally:
+        session.close()
+
+
+@db.command()
+def vacuum():
+    """清理数据库碎片，释放空间
+
+    示例:
+        asset-lens db vacuum
+    """
+    from asset_lens.db.optimizer import db_optimizer
+
+    console.print("[bold blue]🧹 清理数据库碎片[/bold blue]")
+    console.print("")
+
+    result = db_optimizer.vacuum_database()
+
+    if result["status"] == "success":
+        console.print(f"[green]✅ {result['message']}[/green]")
+        if result["before_size"] > 0:
+            before_mb = result["before_size"] / 1024 / 1024
+            after_mb = result["after_size"] / 1024 / 1024
+            console.print(f"   清理前: {before_mb:.2f} MB")
+            console.print(f"   清理后: {after_mb:.2f} MB")
+            console.print(f"   释放: {result['freed_mb']:.2f} MB")
+    else:
+        console.print(f"[red]❌ 清理失败: {result['message']}[/red]")

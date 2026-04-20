@@ -708,6 +708,44 @@ endif
 	$(CONDA) python -m asset_lens ml fund-sector "$(FUND)"
 
 # ============================================
+# 高级机器学习
+# ============================================
+.PHONY: ml-optimize
+ml-optimize: ## 使用 Optuna 优化超参数（make ml-optimize MODEL=lightgbm TRIALS=50）
+	@echo "🔧 超参数优化..."
+	$(CONDA) python -m asset_lens ml-advanced optimize --model $(or $(MODEL),lightgbm) --trials $(or $(TRIALS),50)
+
+.PHONY: ml-train-cv
+ml-train-cv: ## 使用时间序列交叉验证训练模型（make ml-train-cv MODEL=lightgbm）
+	@echo "🎯 交叉验证训练..."
+	$(CONDA) python -m asset_lens ml-advanced train --model $(or $(MODEL),lightgbm)
+
+.PHONY: ml-train-optimize
+ml-train-optimize: ## 优化超参数后训练模型
+	@echo "🎯 优化后训练..."
+	$(CONDA) python -m asset_lens ml-advanced train --model $(or $(MODEL),lightgbm) --optimize
+
+.PHONY: ml-explain
+ml-explain: ## 使用 SHAP 解释模型预测
+	@echo "📊 模型解释..."
+	$(CONDA) python -m asset_lens ml-advanced explain
+
+.PHONY: ml-select-features
+ml-select-features: ## 特征选择（make ml-select-features K=50）
+	@echo "🔍 特征选择..."
+	$(CONDA) python -m asset_lens ml-advanced select-features --k $(or $(K),50)
+
+.PHONY: ml-ensemble
+ml-ensemble: ## 训练集成模型
+	@echo "🤖 训练集成模型..."
+	$(CONDA) python -m asset_lens ml-advanced ensemble
+
+.PHONY: ml-compare
+ml-compare: ## 比较不同模型性能
+	@echo "📊 模型性能比较..."
+	$(CONDA) python -m asset_lens ml-advanced compare
+
+# ============================================
 # 数据库管理
 # ============================================
 .PHONY: db-stats
@@ -849,49 +887,39 @@ show-config: ## 显示当前配置
 .PHONY: test
 test: ## 运行测试（排除网络相关测试，避免卡住）
 	@echo "🧪 运行测试..."
-	@echo ""
-	@echo "⚠️  注意: 测试可能需要 3-5 分钟，请耐心等待..."
-	@echo "   - 已排除网络相关测试（websocket, scheduler, http_client）"
-	@echo "   - 快速测试请使用: make test-fast"
-	@echo ""
-	@echo "📋 收集测试用例..."
-	@$(CONDA) python -m pytest tests/ --collect-only -q --ignore=tests/test_websocket.py --ignore=tests/test_scheduler.py --ignore=tests/test_scheduler_advanced.py --ignore=tests/test_http_client.py --ignore=tests/test_web_api.py --ignore=tests/test_multi_source_fetcher.py 2>&1 | tail -5
-	@echo ""
-	@echo "🚀 开始执行测试..."
-	@$(CONDA) python -m pytest tests/ -v --tb=short --ignore=tests/test_websocket.py --ignore=tests/test_scheduler.py --ignore=tests/test_scheduler_advanced.py --ignore=tests/test_http_client.py --ignore=tests/test_web_api.py --ignore=tests/test_multi_source_fetcher.py
+	@echo "   正在启动测试进程..."
+	@$(CONDA) python -m pytest tests/ --tb=short
 
 .PHONY: test-fast
 test-fast: ## 快速测试（仅核心模块）
 	@echo "🧪 快速测试..."
-	@echo "   预计耗时: 10-20 秒"
-	@echo ""
-	@$(CONDA) python -m pytest tests/test_cli.py tests/test_cli_registration.py tests/test_market_stock_fetcher.py tests/test_report_analyzer.py -v --tb=short
+	@$(CONDA) python -m pytest tests/test_cli.py tests/test_cli_registration.py tests/test_market_stock_fetcher.py tests/test_report_analyzer.py
 
 .PHONY: test-all
 test-all: ## 运行所有测试（包括网络测试，可能较慢）
 	@echo "🧪 运行所有测试..."
-	@echo ""
-	@echo "⚠️  注意: 包含网络相关测试，可能需要 10+ 分钟"
-	@echo "   - WebSocket 测试"
-	@echo "   - Scheduler 测试"
-	@echo "   - HTTP 客户端测试"
-	@echo "   - 如遇卡住，请按 Ctrl+C 终止"
-	@echo ""
-	@$(CONDA) python -m pytest tests/ -v --tb=short
+	@$(CONDA) python -m pytest tests/ --ignore=
 
 .PHONY: test-cov
 test-cov: ## 运行测试并生成覆盖率报告
 	@echo "🧪 运行测试并生成覆盖率报告..."
-	@echo ""
-	@echo "⚠️  注意: 测试可能需要 3-5 分钟，请耐心等待..."
-	@echo ""
-	@$(CONDA) python -m pytest tests/ --cov=asset_lens --cov-report=html --cov-report=term -v --tb=short --ignore=tests/test_websocket.py --ignore=tests/test_scheduler.py --ignore=tests/test_scheduler_advanced.py --ignore=tests/test_http_client.py --ignore=tests/test_web_api.py --ignore=tests/test_multi_source_fetcher.py
+	@$(CONDA) python -m pytest tests/ --cov=asset_lens --cov-report=html --cov-report=term
 	@echo "✅ 测试完成，覆盖率报告已生成: htmlcov/index.html"
+
+.PHONY: test-verbose
+test-verbose: ## 运行测试（详细输出）
+	@echo "🧪 运行测试（详细模式）..."
+	@$(CONDA) python -m pytest tests/ -v --tb=long
+
+.PHONY: test-failed
+test-failed: ## 只运行上次失败的测试
+	@echo "🧪 运行上次失败的测试..."
+	@$(CONDA) python -m pytest tests/ --lf
 
 .PHONY: test-collect
 test-collect: ## 收集测试用例（诊断用）
 	@echo "📋 收集测试用例..."
-	@$(CONDA) python -m pytest tests/ --collect-only -q --ignore=tests/test_websocket.py --ignore=tests/test_scheduler.py --ignore=tests/test_scheduler_advanced.py --ignore=tests/test_http_client.py --ignore=tests/test_web_api.py --ignore=tests/test_multi_source_fetcher.py
+	@$(CONDA) python -m pytest tests/ --collect-only
 
 .PHONY: lint
 lint: ## 运行代码检查（并行执行）
@@ -1294,3 +1322,149 @@ ifndef CODE
 endif
 	@echo "📊 查看基金持仓明细..."
 	@$(CONDA) python scripts/fund_holding_analysis.py --detail $(CODE)
+
+# ============================================
+# 数据库优化
+# ============================================
+.PHONY: db-optimize
+db-optimize: ## 优化数据库性能（WAL模式+索引+PRAGMA优化）
+	@echo "⚡ 优化数据库性能..."
+	$(CONDA) python -m asset_lens db optimize
+
+.PHONY: db-indexes
+db-indexes: ## 查看数据库索引
+	@echo "📋 查看数据库索引..."
+	$(CONDA) python -m asset_lens db indexes
+
+.PHONY: db-benchmark
+db-benchmark: ## 基准测试查询性能（make db-benchmark QUERY="SELECT COUNT(*) FROM stock_klines"）
+ifndef QUERY
+	@echo "❌ 错误: 需要提供查询语句"
+	@echo ""
+	@echo "用法: make db-benchmark QUERY=\"SELECT COUNT(*) FROM stock_klines\""
+	@exit 1
+endif
+	@echo "📊 基准测试查询性能..."
+	$(CONDA) python -m asset_lens db benchmark "$(QUERY)"
+
+.PHONY: db-vacuum
+db-vacuum: ## 清理数据库碎片，释放空间
+	@echo "🧹 清理数据库碎片..."
+	$(CONDA) python -m asset_lens db vacuum
+
+# ============================================
+# 风险预警系统
+# ============================================
+.PHONY: risk-status
+risk-status: ## 查看风险预警状态
+	@echo "📊 查看风险预警状态..."
+	$(CONDA) python -m asset_lens risk status
+
+.PHONY: risk-alerts
+risk-alerts: ## 显示最近的预警列表（make risk-alerts HOURS=24）
+	@echo "🚨 显示最近的预警列表..."
+	$(CONDA) python -m asset_lens risk alerts --hours $(or $(HOURS),24)
+
+.PHONY: risk-check
+risk-check: ## 运行风险检查
+	@echo "🔍 运行风险检查..."
+	$(CONDA) python -m asset_lens risk check
+
+.PHONY: risk-report
+risk-report: ## 生成风险预警报告
+	@echo "📊 生成风险预警报告..."
+	$(CONDA) python -m asset_lens risk report
+
+.PHONY: risk-config
+risk-config: ## 配置风险预警阈值
+	@echo "⚙️ 配置风险预警阈值..."
+	$(CONDA) python -m asset_lens risk config
+
+.PHONY: risk-clear
+risk-clear: ## 清除所有预警
+	@echo "🧹 清除所有预警..."
+	$(CONDA) python -m asset_lens risk clear
+
+# ============================================
+# 通知系统
+# ============================================
+.PHONY: notify-status
+notify-status: ## 显示通知服务状态
+	@echo "📊 显示通知服务状态..."
+	$(CONDA) python -m asset_lens notify status
+
+.PHONY: notify-send
+notify-send: ## 发送通知（make notify-send TITLE="标题" CONTENT="内容"）
+ifndef TITLE
+	@echo "❌ 错误: 需要提供标题"
+	@echo ""
+	@echo "用法: make notify-send TITLE=\"标题\" CONTENT=\"内容\""
+	@exit 1
+endif
+	@echo "📤 发送通知..."
+	$(CONDA) python -m asset_lens notify send "$(TITLE)" "$(CONTENT)"
+
+.PHONY: notify-test
+notify-test: ## 测试通知渠道（make notify-test CHANNEL=dingtalk）
+ifndef CHANNEL
+	@echo "❌ 错误: 需要提供渠道名称"
+	@echo ""
+	@echo "用法: make notify-test CHANNEL=dingtalk"
+	@echo ""
+	@echo "可用渠道: dingtalk, wecom, telegram, feishu, serverchan"
+	@exit 1
+endif
+	@echo "🧪 测试通知渠道..."
+	$(CONDA) python -m asset_lens notify test $(CHANNEL)
+
+.PHONY: notify-history
+notify-history: ## 显示通知历史
+	@echo "📋 显示通知历史..."
+	$(CONDA) python -m asset_lens notify history
+
+# ============================================
+# 定时任务调度器
+# ============================================
+.PHONY: scheduler-start
+scheduler-start: ## 启动调度器
+	@echo "▶️ 启动调度器..."
+	$(CONDA) python -m asset_lens scheduler start
+
+.PHONY: scheduler-stop
+scheduler-stop: ## 停止调度器
+	@echo "⏹️ 停止调度器..."
+	$(CONDA) python -m asset_lens scheduler stop
+
+.PHONY: scheduler-status
+scheduler-status: ## 显示调度器状态
+	@echo "📊 显示调度器状态..."
+	$(CONDA) python -m asset_lens scheduler status
+
+.PHONY: scheduler-run
+scheduler-run: ## 手动运行任务（make scheduler-run TASK=risk_check）
+ifndef TASK
+	@echo "❌ 错误: 需要提供任务名称"
+	@echo ""
+	@echo "用法: make scheduler-run TASK=risk_check"
+	@echo ""
+	@echo "可用任务: update_data, risk_check, backup, daily_report"
+	@exit 1
+endif
+	@echo "▶️ 运行任务..."
+	$(CONDA) python -m asset_lens scheduler run $(TASK)
+
+.PHONY: scheduler-list
+scheduler-list: ## 列出所有可用任务
+	@echo "📋 列出所有可用任务..."
+	$(CONDA) python -m asset_lens scheduler list-tasks
+
+.PHONY: scheduler-history
+scheduler-history: ## 显示任务执行历史（make scheduler-history TASK=risk_check）
+ifndef TASK
+	@echo "❌ 错误: 需要提供任务名称"
+	@echo ""
+	@echo "用法: make scheduler-history TASK=risk_check"
+	@exit 1
+endif
+	@echo "📋 显示任务执行历史..."
+	$(CONDA) python -m asset_lens scheduler history $(TASK)

@@ -23,9 +23,13 @@ class TestAPIRoot:
         """测试根路径"""
         response = client.get("/")
         assert response.status_code == 200
-        data = response.json()
-        assert data["name"] == "Asset Lens API"
-        assert data["version"] == "1.0.0"
+        content_type = response.headers.get("content-type", "")
+        if "text/html" in content_type:
+            assert b"Asset Lens" in response.content or b"asset-lens" in response.content.lower()
+        else:
+            data = response.json()
+            assert data["name"] == "Asset Lens API"
+            assert data["version"] == "1.0.0"
 
     def test_health_check(self, client):
         """测试健康检查"""

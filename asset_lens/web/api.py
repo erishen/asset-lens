@@ -59,6 +59,7 @@ from .routes import (
     strategy_router,
     system_router,
 )
+from .dashboard_enhanced import router as dashboard_router
 
 app.include_router(stock_router)
 app.include_router(portfolio_router)
@@ -71,6 +72,7 @@ app.include_router(backup_router)
 app.include_router(recommendation_router)
 app.include_router(stock_pool_router)
 app.include_router(report_router)
+app.include_router(dashboard_router)
 
 
 @app.get("/")

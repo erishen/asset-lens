@@ -11,9 +11,13 @@ from .core import register_core_commands
 from .data import register_data_commands
 from .db import db as db_group
 from .ml import ml as ml_group
+from .ml_advanced import register_ml_advanced_commands
 from .monitor import register_monitor_commands
+from .notify import register_notify_commands
 from .predict import register_predict_commands
 from .report import register_report_commands
+from .risk import register_risk_commands
+from .scheduler import register_scheduler_commands
 from .stock_pool import register_stock_pool_commands
 from .strategy import register_strategy_commands
 
@@ -37,6 +41,10 @@ register_compare_commands(cli)
 register_strategy_commands(cli)
 register_stock_pool_commands(cli)
 register_monitor_commands(cli)
+register_risk_commands(cli)
+register_ml_advanced_commands(cli)
+register_notify_commands(cli)
+register_scheduler_commands(cli)
 
 # 注册 ML 命令组
 cli.add_command(ml_group, name="ml")
