@@ -7,10 +7,11 @@ Database manager for asset-lens.
 # mypy: ignore-errors
 
 import json
+from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Generator
+from typing import Any
 
 from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
@@ -333,7 +334,7 @@ class DatabaseManager:
         try:
             record = (
                 session.query(MLModel)
-                .filter(MLModel.name == name, MLModel.is_active == True)
+                .filter(MLModel.name == name, MLModel.is_active)
                 .order_by(desc(MLModel.created_at))
                 .first()
             )

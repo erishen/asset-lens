@@ -314,7 +314,7 @@ def _interactive_analyze():
         default="sample",
     )
 
-    output_format = click.prompt(
+    click.prompt(
         "选择输出格式",
         type=click.Choice(["console", "csv", "json", "all"]),
         default="console",

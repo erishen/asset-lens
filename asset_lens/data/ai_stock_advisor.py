@@ -455,7 +455,7 @@ class AIStockAdvisor:
         data = {
             "type": type(advice).__name__,
             "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "advice": {k: v for k, v in advice.__dict__.items()},
+            "advice": dict(advice.__dict__.items()),
         }
 
         with open(filepath, "w", encoding="utf-8") as f:

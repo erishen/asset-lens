@@ -394,7 +394,7 @@ class ModelTrainer:
             from ..db.database import db_manager
 
             fi_df = result.feature_importance.head(20)
-            feature_importance_dict = dict(zip(fi_df['feature'], fi_df['importance']))
+            feature_importance_dict = dict(zip(fi_df['feature'], fi_df['importance'], strict=False))
 
             model_id = db_manager.save_ml_model(
                 name="stock_predictor",

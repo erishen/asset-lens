@@ -8,8 +8,20 @@ Machine Learning Module for asset-lens.
 - RandomForest: 随机森林，可解释性强
 """
 
+from .advanced_trainer import AdvancedMLTrainer
+from .backtest import BacktestConfig, BacktestEngine, BacktestResult, SignalValidator, generate_backtest_report
 from .features import FeatureEngineer
 from .predictor import StockPredictor
 from .trainer import ModelTrainer
 
-__all__ = ["FeatureEngineer", "StockPredictor", "ModelTrainer"]
+__all__ = [
+    "FeatureEngineer",
+    "StockPredictor",
+    "ModelTrainer",
+    "AdvancedMLTrainer",
+    "BacktestEngine",
+    "BacktestConfig",
+    "BacktestResult",
+    "SignalValidator",
+    "generate_backtest_report",
+]

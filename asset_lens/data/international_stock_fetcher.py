@@ -10,11 +10,12 @@ Hong Kong and US stock data fetcher for asset-lens.
 
 import json
 import time
-import requests
 from collections.abc import Callable
 from datetime import datetime
 from functools import wraps
 from typing import Any
+
+import requests
 
 from ..config import config
 
@@ -110,36 +111,35 @@ class InternationalStockFetcher:
         def _fetch():
             try:
                 # 使用 AlphaVantage MCP 服务获取港股数据
-                import json
                 import requests
-                
+
                 # 从环境变量获取 API Key
                 api_key = "O5NA4NQDO6NSH97X"  # 使用配置文件中的 API Key
-                
+
                 # 构建 AlphaVantage API 请求
-                url = f"https://www.alphavantage.co/query"
+                url = "https://www.alphavantage.co/query"
                 params = {
                     "function": "GLOBAL_QUOTE",
                     "symbol": code,
                     "apikey": api_key
                 }
-                
+
                 response = requests.get(url, params=params, timeout=10)
                 response.raise_for_status()
-                
+
                 data = response.json()
                 quote = data.get("Global Quote", {})
-                
+
                 if not quote:
                     return None
-                
+
                 # 解析 AlphaVantage 数据格式
                 current_price = float(quote.get("05. price", 0))
                 prev_close = float(quote.get("08. previous close", 0))
                 change = float(quote.get("09. change", 0))
                 change_percent_str = quote.get("10. change percent", "0%").replace("%", "")
                 change_percent = float(change_percent_str)
-                
+
                 return {
                     "code": code,
                     "name": quote.get("01. symbol", code),  # AlphaVantage 返回的是代码
@@ -156,7 +156,7 @@ class InternationalStockFetcher:
                     "market": "HK",
                     "data_source": "AlphaVantage_API",
                 }
-                
+
             except Exception as e:
                 print(f"AlphaVantage API 获取港股失败: {e}，回退到 AkShare")
                 # 回退到原有的 AkShare 实现
@@ -171,10 +171,10 @@ class InternationalStockFetcher:
     def _fetch_hk_stock_quote_akshare(self, code: str) -> dict[str, Any] | None:
         """
         使用 AkShare 获取港股实时行情（回退方案）
-        
+
         Args:
             code: 股票代码（如 00700, 09988）
-            
+
         Returns:
             行情数据
         """
@@ -182,17 +182,17 @@ class InternationalStockFetcher:
 
         try:
             df = ak.stock_hk_spot_em()
-            
+
             if df is None or df.empty:
                 return None
-                
+
             row = df[df["代码"] == code]
-            
+
             if row.empty:
                 return None
-                
+
             row = row.iloc[0]
-            
+
             return {
                 "code": str(row.get("代码", "")),
                 "name": str(row.get("名称", "")),
@@ -227,35 +227,34 @@ class InternationalStockFetcher:
         def _fetch():
             try:
                 # 使用 AlphaVantage API 服务获取美股数据
-                import json
-                
+
                 # 从环境变量获取 API Key
                 api_key = "O5NA4NQDO6NSH97X"  # 使用配置文件中的 API Key
-                
+
                 # 构建 AlphaVantage API 请求
-                url = f"https://www.alphavantage.co/query"
+                url = "https://www.alphavantage.co/query"
                 params = {
                     "function": "GLOBAL_QUOTE",
                     "symbol": symbol,
                     "apikey": api_key
                 }
-                
+
                 response = requests.get(url, params=params, timeout=10)
                 response.raise_for_status()
-                
+
                 data = response.json()
                 quote = data.get("Global Quote", {})
-                
+
                 if not quote:
                     return None
-                
+
                 # 解析 AlphaVantage 数据格式
                 current_price = float(quote.get("05. price", 0))
                 prev_close = float(quote.get("08. previous close", 0))
                 change = float(quote.get("09. change", 0))
                 change_percent_str = quote.get("10. change percent", "0%").replace("%", "")
                 change_percent = float(change_percent_str)
-                
+
                 return {
                     "code": symbol,
                     "name": quote.get("01. symbol", symbol),  # AlphaVantage 返回的是代码
@@ -272,7 +271,7 @@ class InternationalStockFetcher:
                     "market": "US",
                     "data_source": "AlphaVantage_API",
                 }
-                
+
             except Exception as e:
                 print(f"AlphaVantage API 获取失败: {e}，回退到 AkShare")
                 # 回退到原有的 AkShare 实现
@@ -287,10 +286,10 @@ class InternationalStockFetcher:
     def _fetch_us_stock_quote_akshare(self, symbol: str) -> dict[str, Any] | None:
         """
         使用 AkShare 获取美股实时行情（回退方案）
-        
+
         Args:
             symbol: 股票代码（如 AAPL, GOOGL）
-            
+
         Returns:
             行情数据
         """
@@ -298,17 +297,17 @@ class InternationalStockFetcher:
 
         try:
             df = ak.stock_us_spot_em()
-            
+
             if df is None or df.empty:
                 return None
-                
+
             row = df[df["代码"] == symbol]
-            
+
             if row.empty:
                 return None
-                
+
             row = row.iloc[0]
-            
+
             return {
                 "code": str(row.get("代码", "")),
                 "name": str(row.get("名称", "")),

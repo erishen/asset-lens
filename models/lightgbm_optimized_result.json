@@ -1,0 +1,71 @@
+{
+  "model_type": "lightgbm",
+  "accuracy": 0.6765,
+  "precision": 0.7025,
+  "recall": 0.6508,
+  "f1_score": 0.6757,
+  "auc": 0.7495,
+  "cv_scores": [
+    0.6117,
+    0.6232,
+    0.627,
+    0.6386,
+    0.6513
+  ],
+  "feature_importance": [
+    {
+      "feature": "adx",
+      "importance": 1490,
+      "importance_pct": 2.9504950495049505
+    },
+    {
+      "feature": "close_ma60_ratio",
+      "importance": 1217,
+      "importance_pct": 2.40990099009901
+    },
+    {
+      "feature": "turnover_rate",
+      "importance": 1208,
+      "importance_pct": 2.392079207920792
+    },
+    {
+      "feature": "ma60",
+      "importance": 1137,
+      "importance_pct": 2.2514851485148513
+    },
+    {
+      "feature": "price_range_20",
+      "importance": 1133,
+      "importance_pct": 2.2435643564356433
+    },
+    {
+      "feature": "volatility_10d",
+      "importance": 1126,
+      "importance_pct": 2.2297029702970295
+    },
+    {
+      "feature": "atr_ratio",
+      "importance": 1116,
+      "importance_pct": 2.2099009900990096
+    },
+    {
+      "feature": "macd_signal",
+      "importance": 1094,
+      "importance_pct": 2.166336633663366
+    },
+    {
+      "feature": "minus_di",
+      "importance": 1076,
+      "importance_pct": 2.130693069306931
+    },
+    {
+      "feature": "return_skew_20",
+      "importance": 1061,
+      "importance_pct": 2.100990099009901
+    }
+  ],
+  "training_samples": 555481,
+  "test_samples": 138871,
+  "training_time": 122.59,
+  "timestamp": "2026-04-21T15:10:42.642709"
+}

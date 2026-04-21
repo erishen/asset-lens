@@ -9,10 +9,11 @@ Market stock list fetcher for asset-lens.
 
 import json
 import os
+from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Generator
+from typing import Any
 
 from ..config import config
 from ..utils.http_client import get_session_without_proxy
@@ -23,12 +24,12 @@ def _disable_proxy() -> Generator[None, None, None]:
     """临时禁用代理的上下文管理器"""
     proxy_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'ALL_PROXY', 'all_proxy']
     original_values = {}
-    
+
     for var in proxy_vars:
         if var in os.environ:
             original_values[var] = os.environ[var]
             del os.environ[var]
-    
+
     try:
         yield
     finally:
@@ -211,35 +212,35 @@ class MarketStockFetcher:
 
     def _fetch_stocks_tencent(self) -> list[dict[str, Any]]:
         """使用腾讯财经获取A股列表（最稳定的数据源）
-        
+
         策略：先用Baostock获取股票列表，再用腾讯财经补充实时价格
         """
         try:
             print("正在获取A股股票列表(腾讯财经+Baostock)...")
-            
+
             # 第一步：用Baostock获取股票列表（稳定可靠）
             import baostock as bs
-            
+
             lg = bs.login()
             if lg.error_code != '0':
                 print(f"❌ Baostock 登录失败: {lg.error_msg}")
                 return []
-            
+
             rs = bs.query_stock_basic()
             if rs.error_code != '0':
                 print(f"❌ Baostock 查询失败: {rs.error_msg}")
                 bs.logout()
                 return []
-            
+
             data_list = []
             while rs.error_code == '0' and rs.next():
                 data_list.append(rs.get_row_data())
             bs.logout()
-            
+
             if not data_list:
                 print("❌ Baostock: 获取数据为空")
                 return []
-            
+
             # 解析股票列表
             stocks = []
             for row in data_list:
@@ -249,14 +250,14 @@ class MarketStockFetcher:
                 name = str(row[1]) if row[1] else ""
                 stock_type = str(row[4]) if len(row) > 4 else ""
                 status = str(row[5]) if len(row) > 5 else ""
-                
+
                 if not code or not name or stock_type != "1" or status != "1":
                     continue
-                
+
                 full_code = code.replace(".", "")
                 if not (full_code.startswith("sh") or full_code.startswith("sz")):
                     continue
-                
+
                 stocks.append({
                     "code": full_code,
                     "name": name,
@@ -270,27 +271,27 @@ class MarketStockFetcher:
                     "market": "A股",
                     "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 })
-            
+
             print(f"Baostock: 获取 {len(stocks)} 只股票列表")
-            
+
             # 第二步：用腾讯财经补充实时价格
             print("🌐 API请求: https://qt.gtimg.cn/q= (补充实时价格)")
             stocks = self._enrich_prices_tencent(stocks)
-            
+
             # 过滤掉没有价格数据的股票（可能是退市或停牌）
             valid_stocks: list[dict[str, Any]] = []
             for s in stocks:
                 price = s.get("current_price")
                 if isinstance(price, (int, float)) and price > 0:
                     valid_stocks.append(s)
-            
+
             if valid_stocks:
                 print(f"✅ 腾讯财经+Baostock: 共获取 {len(valid_stocks)} 只A股股票（有效价格）")
                 return valid_stocks
-            
+
             print(f"⚠️ 腾讯财经价格补充失败，返回 {len(stocks)} 只股票（无价格）")
             return stocks
-            
+
         except ImportError:
             print("⚠️ Baostock 未安装，跳过此数据源")
             return []
@@ -423,7 +424,7 @@ class MarketStockFetcher:
             batch_size = 100  # 减小批量大小，避免超时
 
             session = get_session_without_proxy()
-            
+
             for i in range(0, len(codes), batch_size):
                 batch = codes[i:i+batch_size]
                 url = "https://qt.gtimg.cn/q=" + ",".join(batch)

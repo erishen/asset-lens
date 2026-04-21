@@ -37,9 +37,9 @@ except ImportError:
     HAS_SHAP = False
 
 try:
-    from sklearn.model_selection import TimeSeriesSplit, cross_val_score
     from sklearn.feature_selection import SelectKBest, f_classif, mutual_info_classif
-    from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+    from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score
+    from sklearn.model_selection import TimeSeriesSplit, cross_val_score
     HAS_SKLEARN = True
 except ImportError:
     HAS_SKLEARN = False
@@ -376,7 +376,7 @@ class AdvancedMLTrainer:
 
         feature_importance: dict[str, float] = {}
         if hasattr(model, 'feature_importances_'):
-            for name, importance in zip(X.columns, model.feature_importances_):
+            for name, importance in zip(X.columns, model.feature_importances_, strict=False):
                 feature_importance[name] = float(importance)
 
         shap_values = {}
@@ -422,7 +422,7 @@ class AdvancedMLTrainer:
 
             mean_shap = np.abs(shap_vals).mean(axis=0)
 
-            return {name: float(val) for name, val in zip(X.columns, mean_shap)}
+            return {name: float(val) for name, val in zip(X.columns, mean_shap, strict=False)}
 
         except Exception as e:
             logger.warning(f"SHAP 计算失败: {e}")

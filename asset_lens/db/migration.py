@@ -91,7 +91,7 @@ class DataMigration:
                     data_source = history.get("data_source", "Unknown")
 
                     if klines:
-                        saved = self.db.save_klines(code, klines, data_source)
+                        self.db.save_klines(code, klines, data_source)
                         result["total_klines"] += len(klines)
                         result["success_count"] += 1
                     else:
@@ -234,8 +234,8 @@ class DataMigration:
         Returns:
             获取结果统计
         """
-        from concurrent.futures import ThreadPoolExecutor, as_completed
         import threading
+        from concurrent.futures import ThreadPoolExecutor, as_completed
 
         from ..data.stock_history_fetcher import StockHistoryFetcher
 

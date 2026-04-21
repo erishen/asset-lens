@@ -392,7 +392,6 @@ class PersonalDataIntegrator:
 
         previous_with_indices = None
         previous_with_etfs = None
-        previous_with_rates = None
 
         if latest_with_indices:
             for record in reversed(self.weekly_records):
@@ -409,7 +408,6 @@ class PersonalDataIntegrator:
         if latest_with_rates:
             for record in reversed(self.weekly_records):
                 if record.date != latest_with_rates.date and record.rates:
-                    previous_with_rates = record
                     break
 
         summary: dict[str, Any] = {

@@ -4,13 +4,13 @@ Scheduler module for asset-lens.
 """
 
 from .task_scheduler import (
-    TaskScheduler,
+    ScheduleType,
     TaskConfig,
     TaskResult,
+    TaskScheduler,
     TaskStatus,
-    ScheduleType,
-    task_scheduler,
     register_default_tasks,
+    task_scheduler,
 )
 
 __all__ = [

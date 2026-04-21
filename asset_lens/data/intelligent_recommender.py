@@ -543,7 +543,7 @@ class IntelligentRecommender:
             "recommendations": [
                 {
                     "type": type(r).__name__,
-                    **{k: v for k, v in r.__dict__.items()},
+                    **dict(r.__dict__.items()),
                 }
                 for r in recommendations
             ],

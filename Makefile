@@ -746,6 +746,34 @@ ml-compare: ## 比较不同模型性能
 	$(CONDA) python -m asset_lens ml-advanced compare
 
 # ============================================
+# ML 训练和回测
+# ============================================
+.PHONY: ml-train-opt
+ml-train-opt: ## 训练模型（含超参数优化，make ml-train-opt MODEL=lightgbm TRIALS=50）
+	@echo "🚀 训练模型（含优化）..."
+	$(CONDA) python -m asset_lens ml-train train --model $(or $(MODEL),lightgbm) --optimize --trials $(or $(TRIALS),50)
+
+.PHONY: ml-train-ensemble
+ml-train-ensemble: ## 训练集成模型（LightGBM + XGBoost）
+	@echo "🔀 训练集成模型..."
+	$(CONDA) python -m asset_lens ml-train ensemble
+
+.PHONY: ml-backtest
+ml-backtest: ## 运行 ML 模型回测
+	@echo "📊 运行 ML 模型回测..."
+	$(CONDA) python -m asset_lens ml-train backtest --capital $(or $(CAPITAL),100000)
+
+.PHONY: ml-validate
+ml-validate: ## 验证信号有效性
+	@echo "📊 验证信号有效性..."
+	$(CONDA) python -m asset_lens ml-train validate
+
+.PHONY: ml-optimize-all
+ml-optimize-all: ## 优化所有模型超参数
+	@echo "🔧 优化所有模型超参数..."
+	$(CONDA) python -m asset_lens ml-train optimize --trials $(or $(TRIALS),100)
+
+# ============================================
 # 数据库管理
 # ============================================
 .PHONY: db-stats

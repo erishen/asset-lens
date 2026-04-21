@@ -322,7 +322,7 @@ def register_data_commands(cli: click.Group) -> None:
 
         from asset_lens.data.providers.cache import provider_cache
 
-        console = Console()
+        Console()
 
         click.echo("\n📊 缓存统计")
         click.echo("=" * 60)
@@ -435,7 +435,7 @@ def register_data_commands(cli: click.Group) -> None:
 
         from asset_lens.data.market_stock_fetcher import MarketStockFetcher
 
-        console = Console()
+        Console()
 
         click.echo("\n📊 批量获取股票历史K线数据")
         click.echo("=" * 60)

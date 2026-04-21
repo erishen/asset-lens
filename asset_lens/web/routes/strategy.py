@@ -32,10 +32,10 @@ async def list_strategies():
     for s in strategies:
         buy_cond = s.get("buy_conditions", [])
         sell_cond = s.get("sell_conditions", [])
-        
+
         buy_count = buy_cond if isinstance(buy_cond, int) else len(buy_cond)
         sell_count = sell_cond if isinstance(sell_cond, int) else len(sell_cond)
-        
+
         result.append(StrategyInfo(
             name=s.get("name", ""),
             description=s.get("description", ""),
@@ -46,7 +46,7 @@ async def list_strategies():
             stop_loss=s.get("stop_loss", 0),
             take_profit=s.get("take_profit", 0),
         ))
-    
+
     return result
 
 

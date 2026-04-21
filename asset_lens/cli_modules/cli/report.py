@@ -99,10 +99,10 @@ def register_report_commands(cli: click.Group) -> None:
             products = load_products()
             click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
 
-            output_dir = Path(output)
+            Path(output)
             chart_gen = ChartGenerator()
 
-            portfolio_data = {
+            {
                 "products": [
                     {
                         "name": p.name,
@@ -115,7 +115,7 @@ def register_report_commands(cli: click.Group) -> None:
             }
 
             chart_data = chart_gen.generate_profit_curve("default")
-            click.echo(f"\n✅ 图表数据已生成")
+            click.echo("\n✅ 图表数据已生成")
             chart_gen.print_chart_summary(chart_data)
 
             click.echo("\n✅ 图表生成完成！")

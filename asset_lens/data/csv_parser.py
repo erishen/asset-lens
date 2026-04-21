@@ -14,8 +14,8 @@ from ..config import config
 from ..data.models import InvestmentProduct, InvestmentType, RiskLevel
 from .parser_utils import parse_date as _parse_date
 from .parser_utils import parse_decimal as _parse_decimal
-from .parsers.investment_calculator import days360
 from .parsers.exchange_rate_cache import ExchangeRateCache, exchange_rate_cache
+from .parsers.investment_calculator import days360
 
 logger = logging.getLogger(__name__)
 
@@ -415,7 +415,7 @@ class CSVParser:
         from ..core.irr_calculator import IRRCalculator
 
         irr_calculator = IRRCalculator()
-        dca_parser = DCAParser()
+        DCAParser()
 
         for product in products:
             transactions = []

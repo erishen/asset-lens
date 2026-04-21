@@ -5,8 +5,8 @@ Scheduler CLI commands for asset-lens.
 
 import click
 from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
+from rich.table import Table
 
 console = Console()
 
@@ -20,7 +20,7 @@ def scheduler():
 @scheduler.command()
 def start():
     """启动调度器"""
-    from asset_lens.scheduler.task_scheduler import task_scheduler, register_default_tasks
+    from asset_lens.scheduler.task_scheduler import register_default_tasks, task_scheduler
 
     if task_scheduler.is_running():
         console.print("[yellow]⚠️ 调度器已在运行[/yellow]")
@@ -54,7 +54,7 @@ def status():
     is_running = task_scheduler.is_running()
 
     console.print(Panel.fit(
-        f"[bold cyan]调度器状态[/bold cyan]",
+        "[bold cyan]调度器状态[/bold cyan]",
         subtitle=f"{'🟢 运行中' if is_running else '🔴 已停止'}"
     ))
 
@@ -101,7 +101,7 @@ def run(task_name):
         asset-lens scheduler run risk_check
         asset-lens scheduler run update_data
     """
-    from asset_lens.scheduler.task_scheduler import task_scheduler, register_default_tasks
+    from asset_lens.scheduler.task_scheduler import register_default_tasks, task_scheduler
 
     register_default_tasks()
 
@@ -114,7 +114,7 @@ def run(task_name):
         return
 
     if result.status.value == "completed":
-        console.print(f"[green]✅ 任务完成[/green]")
+        console.print("[green]✅ 任务完成[/green]")
         console.print(f"   耗时: {result.duration:.2f}s")
         if result.result:
             console.print(f"   结果: {result.result}")

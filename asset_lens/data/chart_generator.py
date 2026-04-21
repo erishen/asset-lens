@@ -87,7 +87,7 @@ class ChartGenerator:
             for r in records:
                 all_dates.add(r.date)
 
-        sorted_dates = sorted(list(all_dates))[-days:]
+        sorted_dates = sorted(all_dates)[-days:]
 
         profit_rates: list[float] = []
         for date in sorted_dates:

@@ -16,8 +16,8 @@ from typing import Any
 
 from ..config import config
 from ..trading.stock_pool import StockPool
-from .report_printer import ReportPrinter
 from .report_html import HTMLReportGenerator
+from .report_printer import ReportPrinter
 
 
 @dataclass

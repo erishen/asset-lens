@@ -6,7 +6,6 @@ Advanced ML CLI commands for asset-lens.
 import click
 from rich.console import Console
 from rich.table import Table
-from rich.panel import Panel
 
 console = Console()
 
@@ -19,12 +18,11 @@ def ml_advanced():
 
 def _prepare_training_data():
     """准备训练数据"""
+    import pandas as pd
+
     from asset_lens.db.database import db_manager
     from asset_lens.db.models import StockKline
-    from asset_lens.ml.features import FeatureEngineer
     from asset_lens.ml.trainer import ModelTrainer
-    import pandas as pd
-    import numpy as np
 
     session = db_manager.get_session()
     try:
@@ -78,7 +76,7 @@ def _prepare_training_data():
                     all_codes.append(code)
                     all_names.append(code)
 
-            except Exception as e:
+            except Exception:
                 continue
 
         if not all_X:
@@ -104,11 +102,11 @@ def optimize(model, trials, timeout):
         asset-lens ml-advanced optimize --model lightgbm --trials 100
         asset-lens ml-advanced optimize --model xgboost --timeout 300
     """
-    console.print(f"[bold blue]🔧 超参数优化[/bold blue]")
+    console.print("[bold blue]🔧 超参数优化[/bold blue]")
     console.print(f"模型: {model}, 优化次数: {trials}")
 
     try:
-        from asset_lens.ml.advanced_trainer import advanced_trainer, HAS_OPTUNA
+        from asset_lens.ml.advanced_trainer import HAS_OPTUNA, advanced_trainer
 
         if not HAS_OPTUNA:
             console.print("[red]❌ Optuna 未安装，使用 pip install optuna 安装[/red]")
@@ -130,7 +128,7 @@ def optimize(model, trials, timeout):
                 timeout=timeout,
             )
 
-        console.print(f"\n[bold green]✅ 优化完成![/bold green]")
+        console.print("\n[bold green]✅ 优化完成![/bold green]")
         console.print(f"最佳 AUC: {result.best_value:.4f}")
         console.print(f"优化次数: {result.n_trials}")
         console.print(f"优化时间: {result.optimization_time:.2f}s")
@@ -171,7 +169,7 @@ def train(model, cv_splits, optimize):
         asset-lens ml-advanced train --model lightgbm
         asset-lens ml-advanced train --model xgboost --optimize
     """
-    console.print(f"[bold blue]🎯 模型训练（时间序列交叉验证）[/bold blue]")
+    console.print("[bold blue]🎯 模型训练（时间序列交叉验证）[/bold blue]")
 
     try:
         from asset_lens.ml.advanced_trainer import advanced_trainer
@@ -204,7 +202,7 @@ def train(model, cv_splits, optimize):
                 cv_splits=cv_splits,
             )
 
-        console.print(f"\n[bold green]✅ 训练完成![/bold green]")
+        console.print("\n[bold green]✅ 训练完成![/bold green]")
         console.print(f"训练时间: {result.training_time:.2f}s")
 
         metrics_table = Table(title="模型指标")
@@ -257,10 +255,10 @@ def explain(sample_size):
         asset-lens ml-advanced explain
         asset-lens ml-advanced explain --sample-size 200
     """
-    console.print(f"[bold blue]📊 模型解释（SHAP）[/bold blue]")
+    console.print("[bold blue]📊 模型解释（SHAP）[/bold blue]")
 
     try:
-        from asset_lens.ml.advanced_trainer import advanced_trainer, HAS_SHAP
+        from asset_lens.ml.advanced_trainer import HAS_SHAP, advanced_trainer
 
         if not HAS_SHAP:
             console.print("[red]❌ SHAP 未安装，使用 pip install shap 安装[/red]")
@@ -292,8 +290,8 @@ def explain(sample_size):
 
         console.print(shap_table)
 
-        console.print(f"\n[dim]SHAP 值表示特征对预测结果的平均影响程度[/dim]")
-        console.print(f"[dim]正值表示增加上涨概率，负值表示增加下跌概率[/dim]")
+        console.print("\n[dim]SHAP 值表示特征对预测结果的平均影响程度[/dim]")
+        console.print("[dim]正值表示增加上涨概率，负值表示增加下跌概率[/dim]")
 
     except Exception as e:
         console.print(f"[red]❌ 解释失败: {e}[/red]")
@@ -309,7 +307,7 @@ def select_features(k, method):
         asset-lens ml-advanced select-features --k 30
         asset-lens ml-advanced select-features --k 50 --method f_classif
     """
-    console.print(f"[bold blue]🔍 特征选择[/bold blue]")
+    console.print("[bold blue]🔍 特征选择[/bold blue]")
 
     try:
         from asset_lens.ml.advanced_trainer import advanced_trainer
@@ -346,7 +344,7 @@ def ensemble():
     示例:
         asset-lens ml-advanced ensemble
     """
-    console.print(f"[bold blue]🤖 集成模型训练[/bold blue]")
+    console.print("[bold blue]🤖 集成模型训练[/bold blue]")
 
     try:
         from asset_lens.ml.advanced_trainer import advanced_trainer
@@ -363,7 +361,7 @@ def ensemble():
         with console.status("[bold green]训练中...[/bold green]"):
             result = advanced_trainer.train_ensemble(X, y)
 
-        console.print(f"\n[bold green]✅ 集成模型训练完成![/bold green]")
+        console.print("\n[bold green]✅ 集成模型训练完成![/bold green]")
         console.print(f"训练时间: {result.training_time:.2f}s")
         console.print(f"特征数: {result.n_features}")
 
@@ -389,10 +387,10 @@ def compare():
     示例:
         asset-lens ml-advanced compare
     """
-    console.print(f"[bold blue]📊 模型性能比较[/bold blue]")
+    console.print("[bold blue]📊 模型性能比较[/bold blue]")
 
     try:
-        from asset_lens.ml.advanced_trainer import advanced_trainer, HAS_LIGHTGBM, HAS_XGBOOST
+        from asset_lens.ml.advanced_trainer import HAS_LIGHTGBM, HAS_XGBOOST, advanced_trainer
 
         X, y, codes, names = _prepare_training_data()
 

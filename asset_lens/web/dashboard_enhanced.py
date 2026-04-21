@@ -7,7 +7,6 @@ import asyncio
 import json
 import logging
 from datetime import datetime
-from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -527,6 +526,7 @@ ENHANCED_DASHBOARD_HTML = """
             <div class="nav">
                 <button class="nav-btn" :class="{ active: currentTab === 'overview' }" @click="currentTab = 'overview'">概览</button>
                 <button class="nav-btn" :class="{ active: currentTab === 'portfolio' }" @click="currentTab = 'portfolio'">投资组合</button>
+                <button class="nav-btn" :class="{ active: currentTab === 'signals' }" @click="currentTab = 'signals'">ML信号</button>
                 <button class="nav-btn" :class="{ active: currentTab === 'risk' }" @click="currentTab = 'risk'">风险预警</button>
                 <button class="nav-btn" :class="{ active: currentTab === 'market' }" @click="currentTab = 'market'">市场行情</button>
             </div>
@@ -597,6 +597,76 @@ ENHANCED_DASHBOARD_HTML = """
                 </div>
             </div>
 
+            <div v-show="currentTab === 'signals'">
+                <div class="cards">
+                    <div class="card">
+                        <div class="card-title">模型状态</div>
+                        <div class="card-value" :class="mlSignals.model_status === 'loaded' ? 'positive' : 'negative'">
+                            {{ mlSignals.model_status === 'loaded' ? '已加载' : '未加载' }}
+                        </div>
+                        <div class="card-change">{{ mlSignals.total || 0 }} 个信号</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">看涨信号</div>
+                        <div class="card-value positive">{{ bullishSignals }}</div>
+                        <div class="card-change">置信度 > 60%</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">看跌信号</div>
+                        <div class="card-value negative">{{ bearishSignals }}</div>
+                        <div class="card-change">置信度 > 60%</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">强信号</div>
+                        <div class="card-value">{{ strongSignals }}</div>
+                        <div class="card-change">置信度 > 70%</div>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <div class="chart-title">ML 预测信号</div>
+                    <div v-if="mlSignals.signals.length === 0" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                        <span v-if="mlSignals.model_status !== 'loaded'">⚠️ {{ mlSignals.message || '模型未加载，请先训练模型' }}</span>
+                        <span v-else>📊 暂无预测信号</span>
+                    </div>
+                    <table v-else>
+                        <thead>
+                            <tr>
+                                <th>代码</th>
+                                <th>名称</th>
+                                <th>预测</th>
+                                <th>置信度</th>
+                                <th>上涨概率</th>
+                                <th>下跌概率</th>
+                                <th>信号强度</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="signal in mlSignals.signals" :key="signal.code">
+                                <td>{{ signal.code }}</td>
+                                <td>{{ signal.name }}</td>
+                                <td :class="signal.prediction === 'up' ? 'positive' : 'negative'">
+                                    {{ signal.prediction === 'up' ? '📈 看涨' : '📉 看跌' }}
+                                </td>
+                                <td>{{ (signal.confidence * 100).toFixed(1) }}%</td>
+                                <td class="positive">{{ (signal.up_prob * 100).toFixed(1) }}%</td>
+                                <td class="negative">{{ (signal.down_prob * 100).toFixed(1) }}%</td>
+                                <td>
+                                    <span class="tag" :class="signal.signal_strength === 'strong' ? 'tag-stock' : signal.signal_strength === 'medium' ? 'tag-fund' : 'tag-cash'">
+                                        {{ signal.signal_strength === 'strong' ? '强' : signal.signal_strength === 'medium' ? '中' : '弱' }}
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">信号置信度分布</div>
+                    <div id="signalChart" class="chart"></div>
+                </div>
+            </div>
+
             <div v-show="currentTab === 'risk'">
                 <div class="alert-panel">
                     <div class="chart-title">风险预警</div>
@@ -639,7 +709,7 @@ ENHANCED_DASHBOARD_HTML = """
     </div>
 
     <script>
-        const { createApp, ref, onMounted, nextTick, watch } = Vue;
+        const { createApp, ref, onMounted, nextTick, watch, computed } = Vue;
 
         createApp({
             setup() {
@@ -653,6 +723,7 @@ ENHANCED_DASHBOARD_HTML = """
                 const risk = ref({ score: 50, level: '中', alerts_count: 0 });
                 const market = ref({ indexes: [] });
                 const alerts = ref([]);
+                const mlSignals = ref({ signals: [], model_status: 'unknown', total: 0 });
 
                 let ws = null;
                 let charts = {};
@@ -725,6 +796,30 @@ ENHANCED_DASHBOARD_HTML = """
                         console.error('获取数据失败:', e);
                     }
                 };
+
+                const fetchMLSignals = async () => {
+                    try {
+                        const res = await fetch('/api/ml/signals');
+                        const data = await res.json();
+                        mlSignals.value = data;
+                        nextTick(() => initSignalChart());
+                    } catch (e) {
+                        console.error('获取 ML 信号失败:', e);
+                        mlSignals.value = { signals: [], model_status: 'error', total: 0, message: e.message };
+                    }
+                };
+
+                const bullishSignals = computed(() => {
+                    return mlSignals.value.signals.filter(s => s.prediction === 'up' && s.confidence > 0.6).length;
+                });
+
+                const bearishSignals = computed(() => {
+                    return mlSignals.value.signals.filter(s => s.prediction === 'down' && s.confidence > 0.6).length;
+                });
+
+                const strongSignals = computed(() => {
+                    return mlSignals.value.signals.filter(s => s.confidence > 0.7).length;
+                });
 
                 const initCharts = () => {
                     initAllocationChart();
@@ -824,8 +919,42 @@ ENHANCED_DASHBOARD_HTML = """
                     });
                 };
 
+                const initSignalChart = () => {
+                    const el = document.getElementById('signalChart');
+                    if (!el) return;
+
+                    if (charts.signal) charts.signal.dispose();
+
+                    const textColor = theme.value === 'dark' ? '#fff' : '#1a1a2e';
+                    const signals = mlSignals.value.signals || [];
+
+                    const confidenceRanges = [
+                        { name: '50-60%', count: signals.filter(s => s.confidence >= 0.5 && s.confidence < 0.6).length },
+                        { name: '60-70%', count: signals.filter(s => s.confidence >= 0.6 && s.confidence < 0.7).length },
+                        { name: '70-80%', count: signals.filter(s => s.confidence >= 0.7 && s.confidence < 0.8).length },
+                        { name: '80-90%', count: signals.filter(s => s.confidence >= 0.8 && s.confidence < 0.9).length },
+                        { name: '90-100%', count: signals.filter(s => s.confidence >= 0.9).length },
+                    ];
+
+                    charts.signal = echarts.init(el);
+                    charts.signal.setOption({
+                        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                        grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                        xAxis: { type: 'category', data: confidenceRanges.map(r => r.name), axisLabel: { color: textColor } },
+                        yAxis: { type: 'value', axisLabel: { color: textColor } },
+                        series: [{
+                            type: 'bar',
+                            data: confidenceRanges.map((r, i) => ({
+                                value: r.count,
+                                itemStyle: { color: i < 2 ? '#888' : i < 4 ? '#00c853' : '#00d2ff' }
+                            }))
+                        }]
+                    });
+                };
+
                 onMounted(() => {
                     fetchData();
+                    fetchMLSignals();
                     connectWebSocket();
                     window.addEventListener('resize', () => {
                         Object.values(charts).forEach(chart => chart && chart.resize());
@@ -838,7 +967,8 @@ ENHANCED_DASHBOARD_HTML = """
 
                 return {
                     theme, currentTab, wsConnected, lastUpdate,
-                    summary, items, risk, market, alerts,
+                    summary, items, risk, market, alerts, mlSignals,
+                    bullishSignals, bearishSignals, strongSignals,
                     toggleTheme, formatMoney
                 };
             }
