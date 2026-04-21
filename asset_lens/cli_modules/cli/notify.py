@@ -5,8 +5,8 @@ Notification CLI commands for asset-lens.
 
 import click
 from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
+from rich.table import Table
 
 console = Console()
 
@@ -65,8 +65,8 @@ def send(title, content, channel):
         asset-lens notify send "预警" "价格异常" -c dingtalk -c telegram
     """
     from asset_lens.notification.enhanced_notification import (
-        enhanced_notification_service,
         NotificationMessage,
+        enhanced_notification_service,
     )
 
     channels = list(channel) if channel else None
@@ -77,7 +77,7 @@ def send(title, content, channel):
         level="info",
     )
 
-    console.print(f"[bold blue]📤 发送通知...[/bold blue]")
+    console.print("[bold blue]📤 发送通知...[/bold blue]")
 
     results = enhanced_notification_service.send(message, channels, skip_cooldown=True)
 
@@ -171,7 +171,7 @@ def alert(alert_type, message, level, suggestion, channel):
 
     channels = list(channel) if channel else None
 
-    console.print(f"[bold yellow]⚠️ 发送风险预警...[/bold yellow]")
+    console.print("[bold yellow]⚠️ 发送风险预警...[/bold yellow]")
 
     results = enhanced_notification_service.notify_risk_alert(
         alert_type=alert_type,
@@ -184,7 +184,7 @@ def alert(alert_type, message, level, suggestion, channel):
     if results:
         success = all(results.values())
         if success:
-            console.print(f"[green]✅ 预警通知发送成功[/green]")
+            console.print("[green]✅ 预警通知发送成功[/green]")
         else:
             failed = [k for k, v in results.items() if not v]
             console.print(f"[yellow]⚠️ 部分渠道发送失败: {', '.join(failed)}[/yellow]")

@@ -96,36 +96,27 @@ class StockPredictor:
             if not HAS_LIGHTGBM:
                 raise ImportError("LightGBM 未安装")
 
+            default_params = {
+                'n_estimators': 390,
+                'max_depth': 11,
+                'learning_rate': 0.0775,
+                'num_leaves': 227,
+                'min_child_samples': 9,
+                'subsample': 0.97,
+                'colsample_bytree': 0.811,
+                'reg_alpha': 0.00109,
+                'reg_lambda': 0.0018,
+                'min_split_gain': 0.00128,
+                'random_state': 42,
+                'verbose': -1,
+                'n_jobs': -1,
+            }
+            default_params.update(kwargs)
+
             if task == "classification":
-                return lgb.LGBMClassifier(
-                    n_estimators=390,
-                    max_depth=11,
-                    learning_rate=0.0775,
-                    num_leaves=227,
-                    min_child_samples=9,
-                    subsample=0.97,
-                    colsample_bytree=0.811,
-                    reg_alpha=0.00109,
-                    reg_lambda=0.0018,
-                    min_split_gain=0.00128,
-                    random_state=42,
-                    verbose=-1,
-                    n_jobs=-1,
-                    **kwargs
-                )
+                return lgb.LGBMClassifier(**default_params)
             else:
-                return lgb.LGBMRegressor(
-                    n_estimators=100,
-                    max_depth=5,
-                    learning_rate=0.1,
-                    num_leaves=31,
-                    min_child_samples=20,
-                    subsample=0.8,
-                    colsample_bytree=0.8,
-                    random_state=42,
-                    verbose=-1,
-                    **kwargs
-                )
+                return lgb.LGBMRegressor(**default_params)
 
         elif self.model_type == "xgboost":
             if not HAS_XGBOOST:
@@ -469,7 +460,7 @@ class StockPredictor:
         probas = self.predict_proba(X)
 
         results = []
-        for i, (code, name) in enumerate(zip(codes, names)):
+        for i, (code, name) in enumerate(zip(codes, names, strict=False)):
             proba = probas[i]
             up_prob = proba[1] if len(proba) > 1 else proba[0]
             down_prob = proba[0] if len(proba) > 1 else 1 - proba[0]

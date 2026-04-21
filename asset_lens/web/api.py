@@ -21,10 +21,8 @@ from pathlib import Path
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-
-from ..config import config
+from fastapi.staticfiles import StaticFiles
 
 logger = logging.getLogger(__name__)
 
@@ -46,20 +44,21 @@ app.add_middleware(
     allow_headers=CORS_HEADERS,
 )
 
+from .dashboard_enhanced import router as dashboard_router
 from .routes import (
     backup_router,
     compare_router,
     market_router,
+    ml_router,
     portfolio_router,
     recommendation_router,
     report_router,
     risk_router,
-    stock_router,
     stock_pool_router,
+    stock_router,
     strategy_router,
     system_router,
 )
-from .dashboard_enhanced import router as dashboard_router
 
 app.include_router(stock_router)
 app.include_router(portfolio_router)
@@ -73,6 +72,7 @@ app.include_router(recommendation_router)
 app.include_router(stock_pool_router)
 app.include_router(report_router)
 app.include_router(dashboard_router)
+app.include_router(ml_router)
 
 
 @app.get("/")

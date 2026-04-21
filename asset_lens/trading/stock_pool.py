@@ -550,7 +550,6 @@ class StockPool:
 
         added_count = 0
         updated_count = 0
-        skipped_count = 0
 
         for stock in stocks_to_add:
             code = stock.get("code", "")

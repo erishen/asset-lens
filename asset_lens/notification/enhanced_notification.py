@@ -13,18 +13,19 @@ Enhanced Notification Service for asset-lens.
 8. 通知历史记录
 """
 
+import base64
 import hashlib
 import hmac
-import base64
 import json
 import logging
 import time
 import urllib.parse
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import requests
 

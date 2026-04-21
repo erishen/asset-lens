@@ -51,7 +51,7 @@ def register_strategy_commands(cli: click.Group) -> None:
 
         try:
             from asset_lens.strategy.backtester import Backtester
-            backtester = Backtester()
+            Backtester()
 
             click.echo("\n📈 回测配置:")
             click.echo(f"  策略: {strategy}")
@@ -250,7 +250,7 @@ def register_strategy_commands(cli: click.Group) -> None:
 
         try:
             from asset_lens.strategy.engine import StrategyEngine
-            engine = StrategyEngine()
+            StrategyEngine()
 
             click.echo("\n📈 可用优化方法:")
             click.echo("  - optimize_strategy_params(): 参数优化")
@@ -490,7 +490,6 @@ def register_strategy_commands(cli: click.Group) -> None:
                 return
 
             holding_codes = {s["code"] for s in holding_stocks}
-            industry_count: dict[str, int] = {}
 
             for stock in watching_stocks:
                 if stock["code"] in holding_codes:

@@ -3,8 +3,9 @@ Database CLI commands for asset-lens.
 数据库管理命令
 """
 
-import click
 from typing import Any
+
+import click
 from rich.console import Console
 from rich.table import Table
 
@@ -88,7 +89,7 @@ def clean_old(days, confirm):
 
     cutoff_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
 
-    console.print(f"[bold blue]🧹 清理旧数据[/bold blue]")
+    console.print("[bold blue]🧹 清理旧数据[/bold blue]")
     console.print(f"   保留天数: {days} 天")
     console.print(f"   截止日期: {cutoff_date}")
 
@@ -97,7 +98,7 @@ def clean_old(days, confirm):
         old_count = session.query(StockKline).filter(StockKline.date < cutoff_date).count()
         total_count = session.query(StockKline).count()
 
-        console.print(f"\n📊 数据统计:")
+        console.print("\n📊 数据统计:")
         console.print(f"   总K线数: {total_count:,}")
         console.print(f"   旧数据数: {old_count:,} (将删除)")
         console.print(f"   保留数据: {total_count - old_count:,}")
@@ -114,7 +115,7 @@ def clean_old(days, confirm):
         deleted = session.query(StockKline).filter(StockKline.date < cutoff_date).delete()
         session.commit()
 
-        console.print(f"\n[green]✅ 清理完成！[/green]")
+        console.print("\n[green]✅ 清理完成！[/green]")
         console.print(f"   删除: {deleted:,} 条")
 
     finally:
@@ -303,6 +304,7 @@ def update_missing(days, limit, delay, source) -> None:
     session = db_manager.get_session()
     try:
         from sqlalchemy import func as sql_func  # pylint: disable=not-callable
+
         from asset_lens.db.models import StockKline
 
         cutoff_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
@@ -404,9 +406,9 @@ def auto_sync(days, daily_limit, update_limit, delay):
     """
     from datetime import datetime, timedelta
 
+    from asset_lens.data.market_stock_fetcher import MarketStockFetcher
     from asset_lens.db.database import db_manager
     from asset_lens.db.migration import DataMigration
-    from asset_lens.data.market_stock_fetcher import MarketStockFetcher
 
     console.print("[bold blue]🔄 智能同步股票历史数据[/bold blue]")
     console.print("=" * 60)
@@ -414,6 +416,7 @@ def auto_sync(days, daily_limit, update_limit, delay):
     session = db_manager.get_session()
     try:
         from sqlalchemy import func as sql_func  # pylint: disable=not-callable
+
         from asset_lens.db.models import StockKline
 
         stats = db_manager.get_statistics()
@@ -424,7 +427,7 @@ def auto_sync(days, daily_limit, update_limit, delay):
         cached_stocks = fetcher.get_cached_market_stocks(max_age_hours=48)
         total_market_stocks = len(cached_stocks) if cached_stocks else 5193
 
-        console.print(f"\n📊 当前状态:")
+        console.print("\n📊 当前状态:")
         console.print(f"   数据库股票数: {db_stock_count}")
         console.print(f"   数据库K线数: {db_kline_count:,}")
         console.print(f"   市场股票总数: {total_market_stocks}")
@@ -433,7 +436,7 @@ def auto_sync(days, daily_limit, update_limit, delay):
         migration = DataMigration()
 
         if db_stock_count < 100:
-            console.print(f"\n[yellow]⚠️ 数据库股票数量较少，开始批量下载...[/yellow]")
+            console.print("\n[yellow]⚠️ 数据库股票数量较少，开始批量下载...[/yellow]")
             console.print(f"   本次下载: {daily_limit} 只股票")
             console.print(f"   历史天数: {days} 天")
 
@@ -449,7 +452,7 @@ def auto_sync(days, daily_limit, update_limit, delay):
                 delay=delay,
             )
 
-            console.print(f"\n[green]✅ 批量下载完成![/green]")
+            console.print("\n[green]✅ 批量下载完成![/green]")
             console.print(f"   成功: {result['success']}")
             console.print(f"   失败: {result['failed']}")
             console.print(f"   K线总数: {result['total_klines']}")
@@ -496,7 +499,7 @@ def auto_sync(days, daily_limit, update_limit, delay):
                     delay=delay,
                 )
 
-                console.print(f"\n[green]✅ 更新完成![/green]")
+                console.print("\n[green]✅ 更新完成![/green]")
                 console.print(f"   成功: {result['success']}")
                 console.print(f"   失败: {result['failed']}")
 
@@ -522,15 +525,15 @@ def auto_sync(days, daily_limit, update_limit, delay):
                         delay=delay,
                     )
 
-                console.print(f"\n[green]✅ 新增完成![/green]")
+                console.print("\n[green]✅ 新增完成![/green]")
                 console.print(f"   成功: {result['success']}")
                 console.print(f"   失败: {result['failed']}")
 
             if not stocks_to_update and missing_count <= 0:
-                console.print(f"\n[green]✅ 所有股票数据都是最新的！[/green]")
+                console.print("\n[green]✅ 所有股票数据都是最新的！[/green]")
 
         new_stats = db_manager.get_statistics()
-        console.print(f"\n📊 更新后状态:")
+        console.print("\n📊 更新后状态:")
         console.print(f"   数据库股票数: {new_stats['stock_count']}")
         console.print(f"   数据库K线数: {new_stats['kline_count']:,}")
         console.print(f"   最新日期: {new_stats['latest_date']}")
@@ -580,12 +583,12 @@ def optimize():
                 for pragma, value in opt["settings"].items():
                     console.print(f"   {pragma}: {value}")
 
-        console.print(f"\n[bold green]✅ 优化完成![/bold green]")
+        console.print("\n[bold green]✅ 优化完成![/bold green]")
         console.print(f"   成功: {result['summary']['success']}")
         console.print(f"   失败: {result['summary']['failed']}")
 
         stats = db_optimizer.get_table_stats(session)
-        console.print(f"\n📊 表统计:")
+        console.print("\n📊 表统计:")
         for table, info in stats.items():
             console.print(f"   {table}: {info['row_count']:,} 行")
 
@@ -638,7 +641,7 @@ def benchmark(query, iterations):
 
     session = db_manager.get_session()
     try:
-        console.print(f"[bold blue]📊 查询性能测试[/bold blue]")
+        console.print("[bold blue]📊 查询性能测试[/bold blue]")
         console.print(f"查询: {query}")
         console.print(f"迭代: {iterations} 次")
         console.print("")

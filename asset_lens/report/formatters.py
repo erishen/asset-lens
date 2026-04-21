@@ -4,13 +4,12 @@ Report Formatters - 报告格式化工具
 提供统一的报告格式化函数。
 """
 
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Optional, Union
 
 
 def format_currency(
-    value: Union[float, int, Decimal, str],
+    value: float | int | Decimal | str,
     currency: str = "¥",
     decimal_places: int = 2,
     show_sign: bool = False,
@@ -40,7 +39,7 @@ def format_currency(
 
 
 def format_percentage(
-    value: Union[float, int, Decimal, str],
+    value: float | int | Decimal | str,
     decimal_places: int = 2,
     show_sign: bool = True,
 ) -> str:
@@ -68,7 +67,7 @@ def format_percentage(
 
 
 def format_date(
-    value: Union[datetime, date, str],
+    value: datetime | date | str,
     fmt: str = "%Y-%m-%d",
 ) -> str:
     """
@@ -91,7 +90,7 @@ def format_date(
 
 
 def format_number(
-    value: Union[float, int, Decimal, str],
+    value: float | int | Decimal | str,
     decimal_places: int = 2,
     thousand_separator: bool = True,
 ) -> str:
@@ -118,7 +117,7 @@ def format_number(
     return f"{value:.{decimal_places}f}"
 
 
-def format_large_number(value: Union[float, int]) -> str:
+def format_large_number(value: float | int) -> str:
     """
     格式化大数字（使用万、亿单位）
 

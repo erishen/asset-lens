@@ -9,7 +9,6 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import wraps
 from threading import Lock
-from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -178,7 +177,7 @@ class Histogram:
                     lines.append(f"{self.name}_bucket{bucket_label} {cumulative}")
 
                 cumulative += counts[-1]
-                inf_label = f'{{le="+Inf"}}' if not labels else "{" + ",".join(f'{k}="{v}"' for k, v in labels.items()) + ',le="+Inf"}'
+                inf_label = '{le="+Inf"}' if not labels else "{" + ",".join(f'{k}="{v}"' for k, v in labels.items()) + ',le="+Inf"}'
                 lines.append(f"{self.name}_bucket{inf_label} {cumulative}")
                 lines.append(f"{self.name}_sum{label_str} {self._sums[key]}")
                 lines.append(f"{self.name}_count{label_str} {cumulative}")

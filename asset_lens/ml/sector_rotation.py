@@ -210,7 +210,7 @@ class SectorRotationAnalyzer:
     ) -> str:
         """获取板块建议"""
         avg_change = stats.get("avg_change", 0)
-        up_ratio = stats.get("up_ratio", 0)
+        stats.get("up_ratio", 0)
 
         if strength == "strong":
             if avg_change > 2:

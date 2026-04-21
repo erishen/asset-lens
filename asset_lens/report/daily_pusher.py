@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from ..notification import NotificationMessage, NotificationService, NotificationChannel
+from ..notification import NotificationChannel, NotificationMessage, NotificationService
 from .template_engine import template_engine
 
 

@@ -55,7 +55,7 @@ def train(model_type: str, prediction_days: int, output: str):
 
         for stock in stocks_data[:200]:
             code = stock.get('code', '')
-            name = stock.get('name', '')
+            stock.get('name', '')
             current_price = stock.get('current_price', 10)
 
             if not code or current_price <= 0:
@@ -585,7 +585,7 @@ def trade():
     initial_cost = ai_analyzer.total_cost
 
     trader = AISimulatedTrader()
-    result = trader.run_trading_session()
+    trader.run_trading_session()
 
     final_tokens = ai_analyzer.total_tokens_used
     final_cost = ai_analyzer.total_cost

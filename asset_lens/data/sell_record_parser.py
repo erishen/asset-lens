@@ -117,7 +117,7 @@ class SellRecordParser:
                         continue
 
                     if len(values) >= len(fieldnames):
-                        row = dict(zip(fieldnames, values))
+                        row = dict(zip(fieldnames, values, strict=False))
                         record = cls.parse_row(row)
                         if record:
                             records.append(record)

@@ -5,8 +5,8 @@ Risk Alert CLI commands for asset-lens.
 
 import click
 from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
+from rich.table import Table
 
 console = Console()
 
@@ -25,7 +25,7 @@ def status():
     summary = risk_alert_system.get_alert_summary()
 
     console.print(Panel.fit(
-        f"[bold cyan]风险预警系统状态[/bold cyan]",
+        "[bold cyan]风险预警系统状态[/bold cyan]",
         subtitle=f"预警总数: {summary['total_alerts']}"
     ))
 
@@ -113,8 +113,8 @@ def report():
 @risk.command()
 def check():
     """运行风险检查（基于当前投资组合）"""
-    from asset_lens.monitoring.risk_alert import risk_alert_system
     from asset_lens.data.csv_parser import CSVParser
+    from asset_lens.monitoring.risk_alert import risk_alert_system
     from asset_lens.monitoring.risk_analyzer import RiskAnalyzer
 
     console.print("[bold blue]🔍 运行风险检查...[/bold blue]")
@@ -179,7 +179,7 @@ def check():
         else:
             console.print("\n[green]✅ 风险检查通过，没有发现预警[/green]")
 
-        console.print(f"\n[dim]检查项目: 最大回撤、波动率、集中度、止损止盈[/dim]")
+        console.print("\n[dim]检查项目: 最大回撤、波动率、集中度、止损止盈[/dim]")
 
     except Exception as e:
         console.print(f"[red]❌ 风险检查失败: {e}[/red]")
@@ -193,7 +193,7 @@ def check():
 @click.option("--take-profit", type=float, help="止盈线 (%)")
 def config(max_drawdown, volatility, concentration, stop_loss, take_profit):
     """配置风险预警阈值"""
-    from asset_lens.monitoring.risk_alert import risk_alert_system, RiskAlertConfig
+    from asset_lens.monitoring.risk_alert import risk_alert_system
 
     current_config = risk_alert_system.config
 

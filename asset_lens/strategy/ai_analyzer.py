@@ -79,7 +79,7 @@ class AIAnalyzer:
         name = stock_data.get('name', '')
         price = stock_data.get('price', 0)
         change = stock_data.get('change_percent', 0)
-        volume = stock_data.get('volume', 0)
+        stock_data.get('volume', 0)
         turnover = stock_data.get('turnover_rate', 0)
         cap = stock_data.get('market_cap', 0)
         pe = stock_data.get('pe_ratio', 0)

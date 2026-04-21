@@ -5,24 +5,20 @@ Return analysis report generator for asset-lens.
 
 import csv
 import json
-from datetime import date, datetime
+from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-from rich.text import Text
 
 from ..config import config
-from ..core.sold_investment import SoldInvestmentAnalyzer, SoldInvestmentStats
+from ..core.sold_investment import SoldInvestmentAnalyzer
 from ..core.time_group import TimeGroupAnalyzer
 from ..data.models import (
-    InvestmentProduct,
-    InvestmentType,
     Portfolio,
-    RiskLevel,
     SellRecord,
 )
 
@@ -39,8 +35,8 @@ class ReportGenerator:
     def generate_analysis_report(
         self,
         portfolio: Portfolio,
-        sell_records: List[SellRecord] | None = None,
-    ) -> Dict[str, Any]:
+        sell_records: list[SellRecord] | None = None,
+    ) -> dict[str, Any]:
         """生成完整的分析报告
 
         Args:
@@ -77,7 +73,7 @@ class ReportGenerator:
 
         return report
 
-    def get_exchange_rates(self) -> Dict[str, Any]:
+    def get_exchange_rates(self) -> dict[str, Any]:
         """获取汇率信息
 
         Returns:
@@ -94,7 +90,7 @@ class ReportGenerator:
             "source": "csv_file" if data_dir else "config",
         }
 
-    def generate_portfolio_summary(self, portfolio: Portfolio) -> Dict[str, Any]:
+    def generate_portfolio_summary(self, portfolio: Portfolio) -> dict[str, Any]:
         """生成投资组合摘要
 
         Args:
@@ -133,7 +129,7 @@ class ReportGenerator:
         ) / Decimal(str(len(positive_products)))
         return f"{avg_return:.2f}%"
 
-    def get_top_performers(self, portfolio: Portfolio, top_n: int = 10) -> List[Dict[str, Any]]:
+    def get_top_performers(self, portfolio: Portfolio, top_n: int = 10) -> list[dict[str, Any]]:
         """获取收益率最高的产品
 
         Args:
@@ -172,7 +168,7 @@ class ReportGenerator:
 
     def get_low_return_products(
         self, portfolio: Portfolio, threshold: float = 2.0
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """获取低收益产品列表
 
         Args:
@@ -204,7 +200,7 @@ class ReportGenerator:
             for p in low_return_products
         ]
 
-    def get_short_term_observation_products(self, portfolio: Portfolio) -> List[Dict[str, Any]]:
+    def get_short_term_observation_products(self, portfolio: Portfolio) -> list[dict[str, Any]]:
         """获取短期需要观察的产品
 
         Args:
@@ -235,7 +231,7 @@ class ReportGenerator:
             for p in short_term_products
         ]
 
-    def get_high_return_reference_products(self, portfolio: Portfolio) -> List[Dict[str, Any]]:
+    def get_high_return_reference_products(self, portfolio: Portfolio) -> list[dict[str, Any]]:
         """获取高收益参考产品
 
         Args:
@@ -262,7 +258,7 @@ class ReportGenerator:
             for p in high_return_products[:10]
         ]
 
-    def get_type_distribution(self, portfolio: Portfolio) -> Dict[str, Any]:
+    def get_type_distribution(self, portfolio: Portfolio) -> dict[str, Any]:
         """获取投资类型分布
 
         Args:
@@ -283,7 +279,7 @@ class ReportGenerator:
             for type_name, stats in type_stats.items()
         }
 
-    def get_risk_distribution(self, portfolio: Portfolio) -> Dict[str, Any]:
+    def get_risk_distribution(self, portfolio: Portfolio) -> dict[str, Any]:
         risk_stats = portfolio.get_risk_distribution()
 
         return {
@@ -296,7 +292,7 @@ class ReportGenerator:
             for risk_name, stats in risk_stats.items()
         }
 
-    def generate_time_group_analysis(self, portfolio: Portfolio) -> Dict[str, Any]:
+    def generate_time_group_analysis(self, portfolio: Portfolio) -> dict[str, Any]:
         result = self.time_analyzer.analyze_by_holding_period(portfolio.products)
 
         groups = []
@@ -326,8 +322,8 @@ class ReportGenerator:
         }
 
     def generate_sold_analysis(
-        self, sell_records: List[SellRecord] | None = None
-    ) -> Optional[Dict[str, Any]]:
+        self, sell_records: list[SellRecord] | None = None
+    ) -> dict[str, Any] | None:
         if not sell_records:
             return None
 
@@ -364,7 +360,7 @@ class ReportGenerator:
             ],
         }
 
-    def generate_special_bonds_analysis(self, portfolio: Portfolio) -> List[Dict[str, Any]]:
+    def generate_special_bonds_analysis(self, portfolio: Portfolio) -> list[dict[str, Any]]:
         special_bonds = []
         bond_keywords = ["特别国债", "国债"]
 
@@ -394,7 +390,7 @@ class ReportGenerator:
 
         return special_bonds
 
-    def generate_risk_warnings(self, portfolio: Portfolio) -> List[Dict[str, Any]]:
+    def generate_risk_warnings(self, portfolio: Portfolio) -> list[dict[str, Any]]:
         warnings = []
 
         low_returns = self.get_low_return_products(portfolio, threshold=config.min_return_threshold)
@@ -473,10 +469,10 @@ class ReportGenerator:
 
         return warnings
 
-    def generate_optimization_suggestions(self, portfolio: Portfolio) -> List[Dict[str, Any]]:
+    def generate_optimization_suggestions(self, portfolio: Portfolio) -> list[dict[str, Any]]:
         suggestions = []
 
-        type_dist = portfolio.get_type_distribution()
+        portfolio.get_type_distribution()
         total_value = portfolio.total_value
 
         low_returns = self.get_low_return_products(portfolio, threshold=2.0)
@@ -532,7 +528,7 @@ class ReportGenerator:
                 details.append(f"• 可参考的高收益产品 ({len(high_return_ref)}个):")
                 for i, p in enumerate(high_return_ref[:5], 1):
                     amount_str = self._format_money_value(p["current_amount"])
-                    profit_str = self._format_money(p["profit_amount"])
+                    self._format_money(p["profit_amount"])
                     name = p["name"][:20] + "..." if len(p["name"]) > 20 else p["name"]
                     details.append(f"  {i}. {name} ({amount_str}) - {p['annual_return']}")
 
@@ -595,7 +591,7 @@ class ReportGenerator:
 
         return suggestions
 
-    def generate_investment_advice(self, portfolio: Portfolio) -> List[str]:
+    def generate_investment_advice(self, portfolio: Portfolio) -> list[str]:
         advice = []
 
         if portfolio.overall_return_rate:
@@ -616,8 +612,8 @@ class ReportGenerator:
     def generate_comprehensive_evaluation(
         self,
         portfolio: Portfolio,
-        sell_records: List[SellRecord] | None = None,
-    ) -> Dict[str, Any]:
+        sell_records: list[SellRecord] | None = None,
+    ) -> dict[str, Any]:
         total_initial = Decimal("0")
         total_profit = Decimal("0")
         total_value = Decimal("0")
@@ -768,7 +764,7 @@ class ReportGenerator:
         else:
             return "⚠️  整体投资表现较低，建议优化投资策略"
 
-    def generate_investment_efficiency(self, portfolio: Portfolio) -> Dict[str, Any]:
+    def generate_investment_efficiency(self, portfolio: Portfolio) -> dict[str, Any]:
         total_value = portfolio.total_value or Decimal("0")
         total_initial = portfolio.total_initial or Decimal("0")
 
@@ -802,7 +798,7 @@ class ReportGenerator:
             else 0,
         }
 
-    def print_console_report(self, report: Dict[str, Any]) -> None:
+    def print_console_report(self, report: dict[str, Any]) -> None:
         console = Console(force_terminal=True)
 
         console.print("")
@@ -815,13 +811,13 @@ class ReportGenerator:
         console.print(title)
 
         exchange_rates = report.get("exchange_rates", {})
-        console.print(f"\n[bold]💵 汇率信息:[/bold]")
+        console.print("\n[bold]💵 汇率信息:[/bold]")
         console.print(f"   美元汇率: [cyan]{exchange_rates.get('usd_rate', '-')}[/cyan] CNY/USD")
         console.print(f"   港元汇率: [cyan]{exchange_rates.get('hkd_rate', '-')}[/cyan] CNY/HKD")
 
         sold_analysis = report.get("sold_investment_analysis")
         if sold_analysis:
-            console.print(f"\n[bold green]📊 已实现收益分析[/bold green]")
+            console.print("\n[bold green]📊 已实现收益分析[/bold green]")
 
             sold_table = Table(show_header=False, box=None)
             sold_table.add_column("指标", style="bold", no_wrap=True)
@@ -834,21 +830,21 @@ class ReportGenerator:
             sold_table.add_row("平均年化收益率", f"[yellow]{sold_analysis['avg_return_rate']}[/yellow]")
             console.print(sold_table)
 
-            console.print(f"\n[dim]📊 收益率说明：")
+            console.print("\n[dim]📊 收益率说明：")
             console.print("[dim]• 已实现收益率：卖出记录中的收益率，包含所有卖出部分的总收益")
             console.print("[dim]• 年化收益率：直接从CSV读取预计算的年化数据（包含年化收益和复利年化）")
             console.print("[dim]  注意：卖出记录的年化收益率为CSV中预先计算的数据，未使用IRR计算")
             console.print("[dim]  对于有多次交易记录的产品，当前年化收益可能与实际IRR存在差异[/dim]")
 
             if sold_analysis.get("top_performers"):
-                console.print(f"\n[bold green]表现最好的已卖出产品:[/bold green]")
+                console.print("\n[bold green]表现最好的已卖出产品:[/bold green]")
                 for i, p in enumerate(sold_analysis["top_performers"][:3], 1):
                     console.print(
                         f"  [green]{i}. {p['name']}: {p['return_rate']} ({p['holding_days']}天)[/green]"
                     )
 
             if sold_analysis.get("worst_performers"):
-                console.print(f"\n[bold red]亏损产品:[/bold red]")
+                console.print("\n[bold red]亏损产品:[/bold red]")
                 for i, p in enumerate(sold_analysis["worst_performers"][:10], 1):
                     console.print(
                         f"  [red]{i}. {p['name']}: {p['return_rate']} ({p['holding_days']}天)[/red]"
@@ -856,7 +852,7 @@ class ReportGenerator:
 
         time_analysis = report.get("time_group_analysis", {})
         if time_analysis.get("groups"):
-            console.print(f"\n[bold blue]📅 按投资时间分组分析:[/bold blue]")
+            console.print("\n[bold blue]📅 按投资时间分组分析:[/bold blue]")
 
             time_table = Table(show_header=True, header_style="bold blue", box=None)
             time_table.add_column("分组", style="cyan", no_wrap=True)
@@ -875,12 +871,12 @@ class ReportGenerator:
                 )
             console.print(time_table)
 
-            console.print(f"\n[dim]🎯 时间分组总结:")
+            console.print("\n[dim]🎯 时间分组总结:")
             console.print("[dim]• 短期投资偏好快速获利，但收益可能不够稳定")
             console.print("[dim]• 中期投资平衡了收益和风险，是较好的投资周期")
             console.print("[dim]• 长期投资收益偏低，建议: 优化投资策略[/dim]")
 
-        console.print(f"\n[bold blue]💼 当前持有投资分析[/bold blue]")
+        console.print("\n[bold blue]💼 当前持有投资分析[/bold blue]")
         summary = report["portfolio_summary"]
 
         portfolio_table = Table(show_header=False, box=None)
@@ -898,7 +894,7 @@ class ReportGenerator:
         )
         console.print(portfolio_table)
 
-        console.print(f"\n[bold]投资类型分布:[/bold]")
+        console.print("\n[bold]投资类型分布:[/bold]")
         type_table = Table(show_header=True, header_style="bold cyan", box=None)
         type_table.add_column("类型", style="cyan")
         type_table.add_column("占比", justify="right")
@@ -911,7 +907,7 @@ class ReportGenerator:
 
         special_bonds = report.get("special_bonds", [])
         if special_bonds:
-            console.print(f"\n[bold yellow]📄 特别国债计算明细[/bold yellow]")
+            console.print("\n[bold yellow]📄 特别国债计算明细[/bold yellow]")
             for i, bond in enumerate(special_bonds, 1):
                 console.print(f"  [yellow]{i}. {bond['name']}[/yellow]")
                 console.print(f"     当前持仓: {self._format_money(bond['current_amount'])}元")
@@ -920,7 +916,7 @@ class ReportGenerator:
                 )
                 console.print(f"     年化: {bond['annual_return']} ({bond['investment_days']}天)")
 
-        console.print(f"\n[bold]🎯 风险等级分布[/bold]")
+        console.print("\n[bold]🎯 风险等级分布[/bold]")
         risk_table = Table(show_header=True, header_style="bold magenta", box=None)
         risk_table.add_column("风险等级", style="magenta")
         risk_table.add_column("占比", justify="right")
@@ -933,7 +929,7 @@ class ReportGenerator:
 
         risk_warnings = report.get("risk_warnings", [])
         if risk_warnings:
-            console.print(f"\n[bold red]⚠️  风险提示[/bold red]")
+            console.print("\n[bold red]⚠️  风险提示[/bold red]")
             for warning in risk_warnings:
                 console.print(f"[red]• {warning['message']}[/red]")
                 if warning.get("products"):
@@ -966,7 +962,7 @@ class ReportGenerator:
 
         suggestions = report.get("optimization_suggestions", [])
         if suggestions:
-            console.print(f"\n[bold green]💡 优化建议[/bold green]")
+            console.print("\n[bold green]💡 优化建议[/bold green]")
             for idx, suggestion in enumerate(suggestions, 1):
                 console.print(f"\n[bold cyan]{idx}. {suggestion['title']}:[/bold cyan]")
                 for detail in suggestion["details"]:
@@ -983,7 +979,7 @@ class ReportGenerator:
 
         evaluation = report.get("comprehensive_evaluation", {})
         if evaluation:
-            console.print(f"\n[bold magenta]🎉 综合评价[/bold magenta]")
+            console.print("\n[bold magenta]🎉 综合评价[/bold magenta]")
 
             eval_table = Table(show_header=False, box=None)
             eval_table.add_column("指标", style="bold")
@@ -1019,7 +1015,7 @@ class ReportGenerator:
 
         efficiency = report.get("investment_efficiency", {})
         if efficiency:
-            console.print(f"\n[bold blue]📈 投资效率分析:[/bold blue]")
+            console.print("\n[bold blue]📈 投资效率分析:[/bold blue]")
             console.print(f"• 当前资金增值效率: [cyan]{efficiency['capital_efficiency']}[/cyan]")
             console.print(f"• 年化资金增长率: [cyan]{efficiency['annual_growth_rate']}[/cyan]")
 
@@ -1042,7 +1038,7 @@ class ReportGenerator:
         except:
             return value
 
-    def save_csv_report(self, report: Dict[str, Any], output_path: Path | None) -> Path | None:
+    def save_csv_report(self, report: dict[str, Any], output_path: Path | None) -> Path | None:
         if output_path is None:
             output_path = config.output_path
         output_path.mkdir(parents=True, exist_ok=True)
@@ -1063,7 +1059,7 @@ class ReportGenerator:
         print(f"\n✅ CSV 报告已保存: {file_path}")
         return file_path
 
-    def save_json_report(self, report: Dict[str, Any], output_path: Path | None = None) -> Path:
+    def save_json_report(self, report: dict[str, Any], output_path: Path | None = None) -> Path:
         if output_path is None:
             output_path = config.output_path
         output_path.mkdir(parents=True, exist_ok=True)

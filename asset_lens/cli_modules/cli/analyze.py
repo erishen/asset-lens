@@ -7,9 +7,9 @@ from decimal import Decimal
 from pathlib import Path
 
 import click
+from rich import box
 from rich.console import Console
 from rich.table import Table
-from rich import box
 
 
 def _get_data_dir(data_mode: str) -> Path | None:
@@ -40,18 +40,18 @@ def register_analyze_commands(cli: click.Group) -> None:
     @click.option("--data-path", type=click.Path(exists=True), help="自定义数据路径")
     def analyze(data_mode: str | None, output_format: str, data_path: str | None):
         """分析投资组合并生成报告"""
+        from datetime import datetime
+
         from asset_lens.cli_modules.cli.helpers import (
-            load_products,
             setup_data_mode,
         )
         from asset_lens.config import config
-        from asset_lens.report.analyzer import report_generator
-        from asset_lens.data.csv_parser import CSVParser
-        from asset_lens.data.models import Portfolio
         from asset_lens.core.dca_parser import dca_parser
         from asset_lens.core.irr_calculator import irr_calculator
+        from asset_lens.data.csv_parser import CSVParser
+        from asset_lens.data.models import Portfolio
         from asset_lens.data.sell_record_parser import SellRecordParser
-        from datetime import datetime
+        from asset_lens.report.analyzer import report_generator
 
         setup_data_mode(data_mode)
 
@@ -134,10 +134,10 @@ def register_analyze_commands(cli: click.Group) -> None:
             report_generator.print_console_report(report_data)
 
         if output_format in ["csv", "all"]:
-            csv_file = report_generator.save_csv_report(report_data, config.output_path)
+            report_generator.save_csv_report(report_data, config.output_path)
 
         if output_format in ["json", "all"]:
-            json_file = report_generator.save_json_report(report_data, config.output_path)
+            report_generator.save_json_report(report_data, config.output_path)
 
         print("\n✅ 分析完成!")
 
@@ -145,13 +145,14 @@ def register_analyze_commands(cli: click.Group) -> None:
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     def calculate(data_mode: str | None):
         """计算所有投资产品的收益率（快捷命令）"""
-        from asset_lens.report.calculate_report import calculate_report_generator
+        from datetime import datetime
+
         from asset_lens.config import config
-        from asset_lens.data.csv_parser import CSVParser
-        from asset_lens.data.models import Portfolio
         from asset_lens.core.dca_parser import dca_parser
         from asset_lens.core.irr_calculator import irr_calculator
-        from datetime import datetime
+        from asset_lens.data.csv_parser import CSVParser
+        from asset_lens.data.models import Portfolio
+        from asset_lens.report.calculate_report import calculate_report_generator
 
         if data_mode:
             config.data_mode = data_mode

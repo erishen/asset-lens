@@ -5,15 +5,14 @@ HTML 报告生成模块 - 使用 Jinja2 生成专业投资报告
 
 import base64
 from datetime import datetime
-from decimal import Decimal
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class HTMLReportGenerator:
     """HTML 报告生成器"""
 
-    def __init__(self, output_dir: Optional[Path] = None):
+    def __init__(self, output_dir: Path | None = None):
         """
         初始化 HTML 报告生成器
 
@@ -25,9 +24,9 @@ class HTMLReportGenerator:
 
     def generate_investment_report(
         self,
-        portfolio_data: Dict[str, Any],
-        analysis_result: Optional[Dict[str, Any]] = None,
-        charts: Optional[Dict[str, Path]] = None,
+        portfolio_data: dict[str, Any],
+        analysis_result: dict[str, Any] | None = None,
+        charts: dict[str, Path] | None = None,
         filename: str = "investment_report.html",
     ) -> Path:
         """
@@ -63,9 +62,9 @@ class HTMLReportGenerator:
 
     def _generate_html_content(
         self,
-        portfolio_data: Dict[str, Any],
-        analysis_result: Optional[Dict[str, Any]] = None,
-        chart_images: Optional[Dict[str, str]] = None,
+        portfolio_data: dict[str, Any],
+        analysis_result: dict[str, Any] | None = None,
+        chart_images: dict[str, str] | None = None,
     ) -> str:
         """生成 HTML 内容"""
         total_value = portfolio_data.get("total_value", 0)
@@ -113,24 +112,24 @@ class HTMLReportGenerator:
             analysis_html = f"""
         <section class="analysis-section">
             <h2>五、AI 分析建议</h2>
-            
+
             <div class="analysis-block">
                 <h3>投资摘要</h3>
                 <p>{summary}</p>
             </div>
-            
+
             <div class="analysis-block">
                 <h3>风险评估</h3>
                 <p>{risk_assessment}</p>
             </div>
-            
+
             <div class="analysis-block">
                 <h3>投资建议</h3>
                 <ol>
                     {suggestions_html}
                 </ol>
             </div>
-            
+
             <div class="analysis-block">
                 <h3>风险警告</h3>
                 <ul>
@@ -153,20 +152,20 @@ class HTMLReportGenerator:
             padding: 0;
             box-sizing: border-box;
         }}
-        
+
         body {{
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             line-height: 1.6;
             color: #333;
             background-color: #f5f5f5;
         }}
-        
+
         .container {{
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
         }}
-        
+
         header {{
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -176,17 +175,17 @@ class HTMLReportGenerator:
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }}
-        
+
         header h1 {{
             font-size: 2.5em;
             margin-bottom: 10px;
         }}
-        
+
         header p {{
             font-size: 1.1em;
             opacity: 0.9;
         }}
-        
+
         section {{
             background: white;
             padding: 30px;
@@ -194,90 +193,90 @@ class HTMLReportGenerator:
             border-radius: 10px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }}
-        
+
         h2 {{
             color: #667eea;
             border-bottom: 2px solid #667eea;
             padding-bottom: 10px;
             margin-bottom: 20px;
         }}
-        
+
         h3 {{
             color: #333;
             margin-bottom: 15px;
         }}
-        
+
         .overview-cards {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }}
-        
+
         .card {{
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             padding: 20px;
             border-radius: 10px;
             text-align: center;
         }}
-        
+
         .card h3 {{
             font-size: 0.9em;
             color: #666;
             margin-bottom: 10px;
         }}
-        
+
         .card p {{
             font-size: 1.5em;
             font-weight: bold;
             color: #333;
         }}
-        
+
         .card.profit p {{
             color: #2ecc71;
         }}
-        
+
         .card.loss p {{
             color: #e74c3c;
         }}
-        
+
         table {{
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
         }}
-        
+
         th, td {{
             padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid #ddd;
         }}
-        
+
         th {{
             background-color: #667eea;
             color: white;
             font-weight: 600;
         }}
-        
+
         tr:hover {{
             background-color: #f5f5f5;
         }}
-        
+
         .chart-section {{
             margin-bottom: 30px;
         }}
-        
+
         .chart-image {{
             width: 100%;
             max-width: 800px;
             border-radius: 10px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }}
-        
+
         .analysis-section {{
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
         }}
-        
+
         .analysis-block {{
             background: white;
             padding: 20px;
@@ -285,53 +284,53 @@ class HTMLReportGenerator:
             border-radius: 10px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }}
-        
+
         .analysis-block h3 {{
             color: #667eea;
             margin-bottom: 15px;
         }}
-        
+
         .analysis-block p {{
             line-height: 1.8;
         }}
-        
+
         .analysis-block ol, .analysis-block ul {{
             margin-left: 20px;
         }}
-        
+
         .analysis-block li {{
             margin-bottom: 10px;
             line-height: 1.6;
         }}
-        
+
         .warning {{
             color: #e74c3c;
         }}
-        
+
         footer {{
             text-align: center;
             padding: 20px;
             color: #666;
             font-size: 0.9em;
         }}
-        
+
         @media (max-width: 768px) {{
             .container {{
                 padding: 10px;
             }}
-            
+
             header {{
                 padding: 20px 10px;
             }}
-            
+
             header h1 {{
                 font-size: 1.8em;
             }}
-            
+
             section {{
                 padding: 20px;
             }}
-            
+
             .overview-cards {{
                 grid-template-columns: 1fr;
             }}
@@ -344,10 +343,10 @@ class HTMLReportGenerator:
             <h1>投资组合分析报告</h1>
             <p>生成日期: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
         </header>
-        
+
         <section>
             <h2>一、投资组合概览</h2>
-            
+
             <div class="overview-cards">
                 <div class="card">
                     <h3>总市值</h3>
@@ -367,21 +366,21 @@ class HTMLReportGenerator:
                 </div>
             </div>
         </section>
-        
+
         <section>
             <h2>二、资产配置分析</h2>
             {type_distribution_html}
         </section>
-        
+
         <section>
             <h2>三、风险分布分析</h2>
             {risk_distribution_html}
         </section>
-        
+
         {charts_html}
-        
+
         {analysis_html}
-        
+
         <footer>
             <p>本报告由 asset-lens 自动生成</p>
         </footer>
@@ -394,7 +393,7 @@ class HTMLReportGenerator:
 
     def _generate_distribution_table(
         self,
-        distribution: Dict[str, Any],
+        distribution: dict[str, Any],
         total_value: float,
         label_name: str,
     ) -> str:

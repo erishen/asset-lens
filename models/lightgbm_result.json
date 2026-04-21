@@ -1,0 +1,71 @@
+{
+  "model_type": "lightgbm",
+  "accuracy": 0.6942,
+  "precision": 0.7166,
+  "recall": 0.677,
+  "f1_score": 0.6962,
+  "auc": 0.7702,
+  "cv_scores": [
+    0.6126,
+    0.6199,
+    0.6235,
+    0.6404,
+    0.655
+  ],
+  "feature_importance": [
+    {
+      "feature": "adx",
+      "importance": 2215,
+      "importance_pct": 2.5130474245518495
+    },
+    {
+      "feature": "turnover_rate",
+      "importance": 1974,
+      "importance_pct": 2.2396187882913545
+    },
+    {
+      "feature": "atr_ratio",
+      "importance": 1841,
+      "importance_pct": 2.0887224869525753
+    },
+    {
+      "feature": "return_skew_20",
+      "importance": 1802,
+      "importance_pct": 2.044474699341956
+    },
+    {
+      "feature": "return_kurt_20",
+      "importance": 1795,
+      "importance_pct": 2.0365327887451783
+    },
+    {
+      "feature": "volatility_20d",
+      "importance": 1792,
+      "importance_pct": 2.0331291127751303
+    },
+    {
+      "feature": "minus_di",
+      "importance": 1776,
+      "importance_pct": 2.0149761742682095
+    },
+    {
+      "feature": "price_range_20",
+      "importance": 1737,
+      "importance_pct": 1.97072838665759
+    },
+    {
+      "feature": "macd_signal",
+      "importance": 1708,
+      "importance_pct": 1.9378261856137964
+    },
+    {
+      "feature": "close_ma60_ratio",
+      "importance": 1699,
+      "importance_pct": 1.927615157703653
+    }
+  ],
+  "training_samples": 555481,
+  "test_samples": 138871,
+  "training_time": 173.85,
+  "timestamp": "2026-04-21T12:57:48.311863"
+}

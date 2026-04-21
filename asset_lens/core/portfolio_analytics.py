@@ -302,7 +302,7 @@ class PortfolioAnalytics:
         mean_b = sum(benchmark_returns) / len(benchmark_returns)
 
         covariance = sum(
-            (r - mean_r) * (b - mean_b) for r, b in zip(returns, benchmark_returns)
+            (r - mean_r) * (b - mean_b) for r, b in zip(returns, benchmark_returns, strict=False)
         ) / (len(returns) - 1)
         benchmark_variance = sum((b - mean_b) ** 2 for b in benchmark_returns) / (
             len(benchmark_returns) - 1
@@ -320,7 +320,7 @@ class PortfolioAnalytics:
         if len(returns) != len(benchmark_returns) or len(returns) < 2:
             return 0.0
 
-        differences = [r - b for r, b in zip(returns, benchmark_returns)]
+        differences = [r - b for r, b in zip(returns, benchmark_returns, strict=False)]
         mean_diff = sum(differences) / len(differences)
         variance = sum((d - mean_diff) ** 2 for d in differences) / (len(differences) - 1)
 

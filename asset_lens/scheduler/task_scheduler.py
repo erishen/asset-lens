@@ -16,11 +16,12 @@ import json
 import logging
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -430,8 +431,8 @@ def register_default_tasks():
         return f"更新 {result['success']} 只股票数据"
 
     def risk_check_task():
-        from asset_lens.monitoring.risk_alert import risk_alert_system
         from asset_lens.data.csv_parser import CSVParser
+        from asset_lens.monitoring.risk_alert import risk_alert_system
 
         parser = CSVParser()
         products = parser.load_data()
@@ -454,6 +455,7 @@ def register_default_tasks():
 
     def backup_task():
         import shutil
+
         from asset_lens.config import config
 
         backup_dir = config.cache_path / "backups"

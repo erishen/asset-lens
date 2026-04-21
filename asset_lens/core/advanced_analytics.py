@@ -203,7 +203,7 @@ class AdvancedAnalytics:
             annualized_return = avg_return
             annualized_std = std_dev
 
-        daily_rf = self.risk_free_rate / self.TRADING_DAYS_PER_YEAR
+        self.risk_free_rate / self.TRADING_DAYS_PER_YEAR
 
         if annualized_std > 0:
             excess_return = Decimal(str(annualized_return)) - self.risk_free_rate
@@ -361,7 +361,7 @@ class AdvancedAnalytics:
             str(
                 sum(
                     (float(r1) - float(avg1)) * (float(r2) - float(avg2))
-                    for r1, r2 in zip(returns1, returns2)
+                    for r1, r2 in zip(returns1, returns2, strict=False)
                 )
             )
         ) / Decimal(str(n))
@@ -402,7 +402,7 @@ class AdvancedAnalytics:
             str(
                 sum(
                     (float(pr) - float(avg_portfolio)) * (float(mr) - float(avg_market))
-                    for pr, mr in zip(portfolio_returns, market_returns)
+                    for pr, mr in zip(portfolio_returns, market_returns, strict=False)
                 )
             )
         ) / Decimal(str(n))

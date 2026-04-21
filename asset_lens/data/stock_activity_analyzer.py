@@ -347,13 +347,11 @@ class StockActivityAnalyzer:
 
             # 查找匹配的指数
             index_change = None
-            index_key_found = None
 
             for key in index_info["index_keys"]:
                 for index_name_in_data, idx_data in index_data.items():
                     if key in index_name_in_data or index_name_in_data in key:
                         index_change = idx_data.get("涨跌幅", 0)
-                        index_key_found = index_name_in_data
                         break
                 if index_change is not None:
                     break
@@ -363,7 +361,6 @@ class StockActivityAnalyzer:
                 for index_name_in_data, idx_data in index_data.items():
                     if index_name in index_name_in_data:
                         index_change = idx_data.get("涨跌幅", 0)
-                        index_key_found = index_name_in_data
                         break
 
             if index_change is None:

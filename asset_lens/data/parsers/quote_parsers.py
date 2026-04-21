@@ -83,7 +83,7 @@ class BaostockQuoteParser:
                 return None
 
             date = row[0]
-            code = row[1]
+            row[1]
             name = row[2]
             open_price = float(row[5]) if row[5] else 0
             high = float(row[6]) if row[6] else 0
@@ -130,7 +130,7 @@ class TencentQuoteParser:
             if len(parts) < 50:
                 return None
 
-            code = parts[0].split("=")[0].replace("v_", "")
+            parts[0].split("=")[0].replace("v_", "")
             name = parts[1] if len(parts) > 1 else ""
             current_price = float(parts[3]) if parts[3] else 0
             prev_close = float(parts[4]) if parts[4] else 0

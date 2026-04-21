@@ -49,7 +49,7 @@ def find_product_mapping(name: str, investment_type: InvestmentType) -> ProductM
     Returns:
         产品映射配置
     """
-    name_lower = name.lower()
+    name.lower()
     type_str = investment_type.value if investment_type else ""
 
     # 沪深300增强/指数

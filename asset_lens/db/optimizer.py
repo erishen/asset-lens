@@ -6,9 +6,10 @@ Database Optimizer for asset-lens.
 import logging
 import sqlite3
 import time
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Generator
+from typing import Any
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session

@@ -95,7 +95,6 @@ def register_stock_pool_commands(cli: click.Group) -> None:
                     table.add_column("收益率", justify="right")
                     table.add_column("卖出日期", style="dim")
 
-                    total_profit = 0
                     for stock in sold[:10]:
                         code = stock.get('code', '')
                         name = stock.get('name', '')
@@ -231,8 +230,9 @@ def register_stock_pool_commands(cli: click.Group) -> None:
     def investment_report(data_mode: str | None):
         """生成投资报告"""
         from rich.console import Console
-        from rich.table import Table
         from rich.panel import Panel
+        from rich.table import Table
+
         from asset_lens.cli_modules.cli.helpers import setup_data_mode
         from asset_lens.report.investment_report import investment_report_generator
 

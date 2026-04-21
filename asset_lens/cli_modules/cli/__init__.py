@@ -12,6 +12,7 @@ from .data import register_data_commands
 from .db import db as db_group
 from .ml import ml as ml_group
 from .ml_advanced import register_ml_advanced_commands
+from .ml_train import ml_cli as ml_train_group
 from .monitor import register_monitor_commands
 from .notify import register_notify_commands
 from .predict import register_predict_commands
@@ -48,6 +49,9 @@ register_scheduler_commands(cli)
 
 # 注册 ML 命令组
 cli.add_command(ml_group, name="ml")
+
+# 注册 ML 训练命令组
+cli.add_command(ml_train_group, name="ml-train")
 
 # 注册 DB 命令组
 cli.add_command(db_group, name="db")
