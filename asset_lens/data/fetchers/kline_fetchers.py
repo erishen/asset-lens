@@ -3,6 +3,13 @@ K-line data fetchers for different sources.
 K线数据获取器 - 不同数据源的K线获取方法
 """
 
+import warnings
+
+warnings.filterwarnings("ignore", message="Pandas requires version")
+warnings.filterwarnings("ignore", message=".*unclosed.*socket.*")
+warnings.filterwarnings("ignore", category=ResourceWarning)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
 import logging
 from datetime import datetime, timedelta
 from typing import Any
@@ -131,7 +138,7 @@ class TushareKlineFetcher:
     @property
     def pro(self):
         if self._pro is None and self.token:
-            import tushare as ts
+            import tushare as ts  # pylint: disable=import-error
 
             ts.set_token(self.token)
             self._pro = ts.pro_api()

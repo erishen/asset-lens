@@ -155,7 +155,7 @@ class MultiSourceDataFetcher:
             elif source_name == "tushare":
                 if not getattr(config, "tushare_token", None):
                     return False
-                import tushare as ts
+                import tushare as ts  # pylint: disable=import-error
 
                 ts.set_token(config.tushare_token)
                 pro = ts.pro_api()
@@ -378,7 +378,7 @@ class MultiSourceDataFetcher:
             return None
 
         try:
-            import tushare as ts
+            import tushare as ts  # pylint: disable=import-error
 
             ts.set_token(config.tushare_token)
             pro = ts.pro_api()

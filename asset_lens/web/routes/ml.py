@@ -90,7 +90,7 @@ async def get_ml_signals() -> dict[str, Any]:
         from asset_lens.trading.stock_pool import StockPool
 
         pool = StockPool()
-        stocks = pool.get_all_stocks()
+        stocks = pool.list_stocks()
 
         if not stocks:
             return {
@@ -244,42 +244,41 @@ async def get_signal_history(days: int = 30) -> dict[str, Any]:
         历史信号记录
     """
     try:
-        from asset_lens.db.database import get_db
+        from asset_lens.db.database import db_manager
+        from sqlalchemy import text
 
-        db = get_db()
-        cursor = db.cursor()
+        with db_manager.session_scope() as db:
+            result = db.execute(
+                text("""
+                    SELECT code, name, prediction, confidence, up_prob, down_prob, timestamp
+                    FROM ml_signals
+                    WHERE timestamp >= datetime('now', :days_str)
+                    ORDER BY timestamp DESC
+                    LIMIT 100
+                """),
+                {"days_str": f"-{days} days"}
+            )
 
-        cursor.execute(
-            """
-            SELECT code, name, prediction, confidence, up_prob, down_prob, timestamp
-            FROM ml_signals
-            WHERE timestamp >= datetime('now', ?)
-            ORDER BY timestamp DESC
-            LIMIT 100
-            """,
-            (f"-{days} days",),
-        )
+            rows = result.fetchall()
 
-        rows = cursor.fetchall()
+            history = []
+            for row in rows:
+                history.append({
+                    "code": row[0],
+                    "name": row[1],
+                    "prediction": row[2],
+                    "confidence": row[3],
+                    "up_prob": row[4],
+                    "down_prob": row[5],
+                    "timestamp": row[6],
+                })
 
-        history = []
-        for row in rows:
-            history.append({
-                "code": row[0],
-                "name": row[1],
-                "prediction": row[2],
-                "confidence": row[3],
-                "up_prob": row[4],
-                "down_prob": row[5],
-                "timestamp": row[6],
-            })
-
-        return {
-            "history": history,
-            "total": len(history),
-            "days": days,
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        }
+            return {
+                "history": history,
+                "total": len(history),
+                "days": days,
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            }
 
     except Exception as e:
         logger.error(f"获取历史信号失败: {e}")
