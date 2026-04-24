@@ -447,8 +447,8 @@ class BacktestEngine:
         loss_trades = len(losses)
         win_rate = win_trades / total_trades * 100 if total_trades > 0 else 0
 
-        avg_profit = np.mean(profits) if profits else 0
-        avg_loss = np.mean(losses) if losses else 0
+        avg_profit = float(np.mean(profits)) if profits else 0.0
+        avg_loss = float(np.mean(losses)) if losses else 0.0
 
         total_profit = sum(profits) if profits else 0
         total_loss = abs(sum(losses)) if losses else 0
@@ -518,7 +518,7 @@ class SignalValidator:
         Returns:
             验证结果
         """
-        results = {
+        results: dict[str, Any] = {
             'total_signals': 0,
             'correct_signals': 0,
             'accuracy': 0.0,
@@ -527,6 +527,8 @@ class SignalValidator:
             'avg_hold_days': 0.0,
             'by_confidence': {},
         }
+
+        by_confidence: dict[str, dict[str, Any]] = results['by_confidence']
 
         signal_returns = []
         correct_count = 0
@@ -570,12 +572,12 @@ class SignalValidator:
                 correct_count += 1
 
             conf_bucket = f"{int(up_prob * 10) * 10}-{int(up_prob * 10) * 10 + 10}%"
-            if conf_bucket not in results['by_confidence']:
-                results['by_confidence'][conf_bucket] = {'count': 0, 'correct': 0, 'returns': []}
-            results['by_confidence'][conf_bucket]['count'] += 1
+            if conf_bucket not in by_confidence:
+                by_confidence[conf_bucket] = {'count': 0, 'correct': 0, 'returns': []}
+            by_confidence[conf_bucket]['count'] += 1
             if actual_return > 0:
-                results['by_confidence'][conf_bucket]['correct'] += 1
-            results['by_confidence'][conf_bucket]['returns'].append(actual_return)
+                by_confidence[conf_bucket]['correct'] += 1
+            by_confidence[conf_bucket]['returns'].append(actual_return)
 
         results['total_signals'] = total_signals
         results['correct_signals'] = correct_count
@@ -583,8 +585,8 @@ class SignalValidator:
         results['avg_return'] = np.mean(signal_returns) * 100 if signal_returns else 0
         results['win_rate'] = sum(1 for r in signal_returns if r > 0) / len(signal_returns) * 100 if signal_returns else 0
 
-        for bucket in results['by_confidence']:
-            data = results['by_confidence'][bucket]
+        for bucket in by_confidence:
+            data = by_confidence[bucket]
             data['accuracy'] = data['correct'] / data['count'] * 100 if data['count'] > 0 else 0
             data['avg_return'] = np.mean(data['returns']) * 100 if data['returns'] else 0
 

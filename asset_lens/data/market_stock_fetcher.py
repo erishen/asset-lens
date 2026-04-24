@@ -16,7 +16,6 @@ from pathlib import Path
 from typing import Any
 
 from ..config import config
-from ..utils.http_client import get_session_without_proxy
 
 
 @contextmanager
@@ -208,71 +207,88 @@ class MarketStockFetcher:
             print(f"Baostock 获取失败: {e}")
 
         print("所有数据源获取失败")
-        return []
+        print("⚠️ 网络获取失败，尝试使用旧缓存")
+        return self.get_cached_market_stocks(max_age_hours=99999)  # 忽略缓存过期时间
 
     def _fetch_stocks_tencent(self) -> list[dict[str, Any]]:
         """使用腾讯财经获取A股列表（最稳定的数据源）
 
-        策略：先用Baostock获取股票列表，再用腾讯财经补充实时价格
+        策略：直接使用腾讯财经API获取股票列表和实时价格
         """
         try:
-            print("正在获取A股股票列表(腾讯财经+Baostock)...")
+            import requests
+            
+            print("正在获取A股股票列表(腾讯财经)...")
 
-            # 第一步：用Baostock获取股票列表（稳定可靠）
-            import baostock as bs
+            # 国内 API 不需要代理
+            with _disable_proxy():
+                session = requests.Session()
+                
+                # 获取沪市股票列表
+                sh_url = "https://qt.gtimg.cn/q=s_sh"
+                r = session.get(sh_url, timeout=10)
+                
+                if r.status_code != 200:
+                    print(f"❌ 腾讯财经: HTTP {r.status_code}")
+                    return []
+                
+                # 解析股票列表 - 腾讯财经不提供完整列表，使用缓存或Baostock
+                print("腾讯财经不提供完整股票列表，尝试 Baostock...")
+                
+                import baostock as bs
 
-            lg = bs.login()
-            if lg.error_code != '0':
-                print(f"❌ Baostock 登录失败: {lg.error_msg}")
-                return []
+                lg = bs.login()
+                if lg.error_code != '0':
+                    print(f"❌ Baostock 登录失败: {lg.error_msg}")
+                    return []
 
-            rs = bs.query_stock_basic()
-            if rs.error_code != '0':
-                print(f"❌ Baostock 查询失败: {rs.error_msg}")
+                rs = bs.query_stock_basic()
+                if rs.error_code != '0':
+                    print(f"❌ Baostock 查询失败: {rs.error_msg}")
+                    bs.logout()
+                    return []
+
+                data_list = []
+                while rs.error_code == '0' and rs.next():
+                    data_list.append(rs.get_row_data())
                 bs.logout()
-                return []
 
-            data_list = []
-            while rs.error_code == '0' and rs.next():
-                data_list.append(rs.get_row_data())
-            bs.logout()
+                if not data_list:
+                    print("❌ Baostock: 获取数据为空")
+                    return []
 
-            if not data_list:
-                print("❌ Baostock: 获取数据为空")
-                return []
+                # 解析股票列表
+                stocks = []
+                for row in data_list:
+                    if len(row) < 6:
+                        continue
+                    code = str(row[0]) if row[0] else ""
+                    name = str(row[1]) if row[1] else ""
+                    stock_type = str(row[4]) if len(row) > 4 else ""
+                    status = str(row[5]) if len(row) > 5 else ""
 
-            # 解析股票列表
-            stocks = []
-            for row in data_list:
-                if len(row) < 6:
-                    continue
-                code = str(row[0]) if row[0] else ""
-                name = str(row[1]) if row[1] else ""
-                stock_type = str(row[4]) if len(row) > 4 else ""
-                status = str(row[5]) if len(row) > 5 else ""
+                    if not code or not name or stock_type != "1" or status != "1":
+                        continue
 
-                if not code or not name or stock_type != "1" or status != "1":
-                    continue
+                    full_code = code.replace(".", "")
+                    if not (full_code.startswith("sh") or full_code.startswith("sz")):
+                        continue
 
-                full_code = code.replace(".", "")
-                if not (full_code.startswith("sh") or full_code.startswith("sz")):
-                    continue
+                    stocks.append({
+                        "code": full_code,
+                        "name": name,
+                        "current_price": 0,
+                        "change_percent": 0,
+                        "volume": 0,
+                        "amount": 0,
+                        "turnover_rate": 0,
+                        "pe_ratio": 0,
+                        "market_cap": 0,
+                        "market": "A股",
+                        "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    })
 
-                stocks.append({
-                    "code": full_code,
-                    "name": name,
-                    "current_price": 0,
-                    "change_percent": 0,
-                    "volume": 0,
-                    "amount": 0,
-                    "turnover_rate": 0,
-                    "pe_ratio": 0,
-                    "market_cap": 0,
-                    "market": "A股",
-                    "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                })
-
-            print(f"Baostock: 获取 {len(stocks)} 只股票列表")
+                print(f"Baostock: 获取 {len(stocks)} 只股票列表")
 
             # 第二步：用腾讯财经补充实时价格
             print("🌐 API请求: https://qt.gtimg.cn/q= (补充实时价格)")
@@ -306,6 +322,7 @@ class MarketStockFetcher:
             print("正在获取A股股票列表(AkShare)...")
             print("🌐 API请求: https://push2.eastmoney.com/api/qt/clist/get (通过AkShare)")
 
+            # 国内 API 不需要代理
             with _disable_proxy():
                 df = self.akshare.stock_zh_a_spot_em()
 
@@ -329,6 +346,7 @@ class MarketStockFetcher:
             print("正在获取A股股票列表(Efinance)...")
             print("🌐 API请求: http://push2.eastmoney.com/api/qt/clist/get (通过Efinance)")
 
+            # 国内 API 不需要代理
             with _disable_proxy():
                 df = ef.stock.get_realtime_quotes()
 
@@ -355,23 +373,25 @@ class MarketStockFetcher:
             print("正在获取A股股票列表(Baostock)...")
             print("🌐 API请求: http://www.baostock.com (Baostock)")
 
-            lg = bs.login()
-            if lg.error_code != '0':
-                print(f"❌ Baostock 登录失败: {lg.error_msg}")
-                return []
+            # 国内 API 不需要代理
+            with _disable_proxy():
+                lg = bs.login()
+                if lg.error_code != '0':
+                    print(f"❌ Baostock 登录失败: {lg.error_msg}")
+                    return []
 
-            rs = bs.query_stock_basic()
+                rs = bs.query_stock_basic()
 
-            if rs.error_code != '0':
-                print(f"Baostock 查询失败: {rs.error_msg}")
+                if rs.error_code != '0':
+                    print(f"Baostock 查询失败: {rs.error_msg}")
+                    bs.logout()
+                    return []
+
+                data_list = []
+                while rs.error_code == '0' and rs.next():
+                    data_list.append(rs.get_row_data())
+
                 bs.logout()
-                return []
-
-            data_list = []
-            while rs.error_code == '0' and rs.next():
-                data_list.append(rs.get_row_data())
-
-            bs.logout()
 
             if not data_list:
                 print("Baostock: 获取数据为空")
@@ -410,6 +430,8 @@ class MarketStockFetcher:
     def _enrich_prices_tencent(self, stocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """使用腾讯财经补充价格数据"""
         try:
+            import requests
+            
             print("正在获取实时价格数据(腾讯财经)...")
 
             codes = []
@@ -423,7 +445,7 @@ class MarketStockFetcher:
             all_prices = {}
             batch_size = 100  # 减小批量大小，避免超时
 
-            session = get_session_without_proxy()
+            session = requests.Session()
 
             for i in range(0, len(codes), batch_size):
                 batch = codes[i:i+batch_size]

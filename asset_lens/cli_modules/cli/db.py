@@ -391,7 +391,8 @@ def update_missing(days, limit, delay, source) -> None:
 @click.option("--daily-limit", default=50, help="每日新增股票数量限制")
 @click.option("--update-limit", default=30, help="每日更新股票数量限制")
 @click.option("--delay", default=0.2, help="请求间隔秒数")
-def auto_sync(days, daily_limit, update_limit, delay):
+@click.option("--fast", is_flag=True, help="快速模式：跳过详细检查，直接返回状态")
+def auto_sync(days, daily_limit, update_limit, delay, fast):
     """智能同步股票历史数据（适合 make daily 使用）
 
     自动检测并执行以下操作：
@@ -401,6 +402,7 @@ def auto_sync(days, daily_limit, update_limit, delay):
 
     示例:
         asset-lens db auto-sync              # 智能同步
+        asset-lens db auto-sync --fast       # 快速模式（跳过更新）
         asset-lens db auto-sync --days 250   # 获取250天历史
         asset-lens db auto-sync --daily-limit 100  # 每天新增100只
     """
@@ -422,6 +424,22 @@ def auto_sync(days, daily_limit, update_limit, delay):
         stats = db_manager.get_statistics()
         db_stock_count = stats["stock_count"]
         db_kline_count = stats["kline_count"]
+        latest_date = stats["latest_date"]
+
+        if fast:
+            console.print("\n⚡ 快速模式")
+            console.print(f"   数据库股票数: {db_stock_count}")
+            console.print(f"   数据库K线数: {db_kline_count:,}")
+            console.print(f"   最新日期: {latest_date or '无数据'}")
+            
+            if db_stock_count > 100 and latest_date:
+                latest = datetime.strptime(latest_date, "%Y-%m-%d")
+                days_ago = (datetime.now() - latest).days
+                if days_ago <= 3:
+                    console.print(f"\n[green]✅ 数据较新（{days_ago}天前更新），跳过同步[/green]")
+                    return
+            
+            console.print("\n[cyan]继续执行同步...[/cyan]")
 
         fetcher = MarketStockFetcher()
         cached_stocks = fetcher.get_cached_market_stocks(max_age_hours=48)

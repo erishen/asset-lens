@@ -96,7 +96,7 @@ class StockPredictor:
             if not HAS_LIGHTGBM:
                 raise ImportError("LightGBM 未安装")
 
-            default_params = {
+            default_params: dict[str, Any] = {
                 'n_estimators': 390,
                 'max_depth': 11,
                 'learning_rate': 0.0775,

@@ -333,7 +333,7 @@ class ModelTrainer:
         self.predictor.load_model(path)
         self.feature_engineer.feature_names = self.predictor.feature_names
 
-    def save_training_result(self, result: TrainingResult, path: Path) -> None:
+    def save_training_result(self, result: Any, path: Path) -> None:
         """保存训练结果"""
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)

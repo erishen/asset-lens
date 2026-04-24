@@ -13,6 +13,7 @@ ML 训练和回测命令行工具
 import json
 import logging
 from pathlib import Path
+from typing import Any
 
 import click
 import pandas as pd
@@ -80,7 +81,7 @@ def train(
 
         advanced_trainer.save_results(opt_result, f"{model}_optimization")
 
-        result = advanced_trainer.train_with_cv(X, y, model_type=model, params=opt_result.best_params)
+        result: Any = advanced_trainer.train_with_cv(X, y, model_type=model, params=opt_result.best_params)
     else:
         result = trainer.train_from_database(codes=codes_list, days=days)
 
@@ -89,7 +90,8 @@ def train(
     click.echo(f"   精确率:   {result.precision:.2%}")
     click.echo(f"   召回率:   {result.recall:.2%}")
     click.echo(f"   F1 分数:  {result.f1_score:.2%}")
-    click.echo(f"   AUC:      {result.auc:.4f}")
+    auc_value = getattr(result, 'auc', None) or getattr(result, 'auc_roc', 0)
+    click.echo(f"   AUC:      {auc_value:.4f}")
 
     if hasattr(result, 'cv_scores') and result.cv_scores:
         if hasattr(result, 'cv_mean'):

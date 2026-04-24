@@ -6,6 +6,7 @@ Investment Monitoring System - 实时投资监控系统
 import json
 import logging
 import subprocess
+import sys
 import threading
 import time
 from dataclasses import dataclass, field
@@ -13,7 +14,25 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+logging.raiseExceptions = False
+
 logger = logging.getLogger(__name__)
+
+def _safe_log(level: str, msg: str):
+    """安全日志函数 - 忽略日志流关闭错误"""
+    try:
+        if sys.stderr is None or sys.stderr.closed:
+            return
+        for handler in logger.handlers:
+            if hasattr(handler, 'stream') and (handler.stream is None or (hasattr(handler.stream, 'closed') and handler.stream.closed)):
+                return
+        if not logger.handlers:
+            return
+        log_func = getattr(logger, level, None)
+        if log_func:
+            log_func(msg)
+    except Exception:
+        pass
 
 
 @dataclass
@@ -81,18 +100,12 @@ class InvestmentMonitor:
             else:
                 return {'success': False, 'error': result.stderr}
         except Exception as e:
-            try:
-                logger.error(f"运行命令失败: {command}, {e}")
-            except ValueError:
-                pass
+            _safe_log('error', f"运行命令失败: {command}, {e}")
             return {'success': False, 'error': str(e)}
 
     def monitor_portfolio_performance(self) -> dict[str, Any]:
         """监控投资组合表现"""
-        try:
-            logger.info("监控投资组合表现...")
-        except ValueError:
-            pass
+        _safe_log('info', "监控投资组合表现...")
 
         result = self.run_asset_lens_command('analyze')
 
@@ -111,7 +124,7 @@ class InvestmentMonitor:
 
     def monitor_stock_prices(self, stock_codes: list[str]) -> dict[str, Any]:
         """监控股票价格"""
-        logger.info(f"监控股票价格: {stock_codes}")
+        _safe_log('info', f"监控股票价格: {stock_codes}")
 
         results = {}
         for code in stock_codes:
@@ -134,7 +147,7 @@ class InvestmentMonitor:
 
     def monitor_market_indices(self) -> dict[str, Any]:
         """监控市场指数"""
-        logger.info("监控市场指数...")
+        _safe_log('info', "监控市场指数...")
 
         indices = {
             'sh000300': '沪深300',
@@ -179,16 +192,13 @@ class InvestmentMonitor:
                             )
                             alerts.append(alert)
                 except (ValueError, KeyError) as e:
-                    logger.error(f"解析价格数据失败: {code}, {e}")
+                    _safe_log('error', f"解析价格数据失败: {code}, {e}")
 
         return alerts
 
     def check_concentration_risk(self, portfolio_data: dict[str, Any]) -> Alert | None:
         """检查集中度风险"""
-        try:
-            logger.info("检查集中度风险...")
-        except ValueError:
-            pass
+        _safe_log('info', "检查集中度风险...")
 
         result = self.run_asset_lens_command('stock-pool-status')
 
@@ -208,16 +218,13 @@ class InvestmentMonitor:
                             data={'concentration': concentration}
                         )
             except (ValueError, KeyError) as e:
-                try:
-                    logger.error(f"解析集中度数据失败: {e}")
-                except ValueError:
-                    pass
+                _safe_log('error', f"解析集中度数据失败: {e}")
 
         return None
 
     def generate_daily_report(self) -> str:
         """生成每日监控报告"""
-        logger.info("生成每日监控报告...")
+        _safe_log('info', "生成每日监控报告...")
 
         report_lines = []
         report_lines.append("=" * 60)
@@ -255,7 +262,7 @@ class InvestmentMonitor:
 
     def generate_weekly_report(self) -> str:
         """生成每周分析报告"""
-        logger.info("生成每周分析报告...")
+        _safe_log('info', "生成每周分析报告...")
 
         report_lines = []
         report_lines.append("=" * 60)
@@ -298,7 +305,7 @@ class InvestmentMonitor:
                 with open(alert_file, encoding='utf-8') as f:
                     alerts_data = json.load(f)
             except (json.JSONDecodeError, OSError) as e:
-                logger.warning(f"加载告警历史失败: {e}")
+                _safe_log('warning', f"加载告警历史失败: {e}")
                 alerts_data = []
 
         alerts_data.append({
@@ -314,7 +321,7 @@ class InvestmentMonitor:
 
     def run_continuous_monitoring(self):
         """运行持续监控"""
-        logger.info("启动持续监控...")
+        _safe_log('info', "启动持续监控...")
         self.running = True
 
         def monitor_task():
@@ -325,38 +332,24 @@ class InvestmentMonitor:
                     concentration_alert = self.check_concentration_risk(portfolio)
                     if concentration_alert:
                         self.save_alert(concentration_alert)
-                        try:
-                            logger.warning(f"预警: {concentration_alert.message}")
-                        except ValueError:
-                            # 日志文件已关闭，忽略错误
-                            pass
+                        _safe_log('warning', f"预警: {concentration_alert.message}")
 
                     time.sleep(self.config.check_interval)
 
                 except Exception as e:
-                    try:
-                        logger.error(f"监控任务异常: {e}")
-                    except ValueError:
-                        # 日志文件已关闭，忽略错误
-                        pass
+                    _safe_log('error', f"监控任务异常: {e}")
                     time.sleep(60)
 
         monitor_thread = threading.Thread(target=monitor_task)
         monitor_thread.daemon = True
         monitor_thread.start()
 
-        try:
-            logger.info("持续监控已启动")
-        except ValueError:
-            pass
+        _safe_log('info', "持续监控已启动")
 
     def stop_monitoring(self):
         """停止监控"""
         self.running = False
-        try:
-            logger.info("监控已停止")
-        except ValueError:
-            pass
+        _safe_log('info', "监控已停止")
 
 
 def create_monitor(config: MonitorConfig | None = None) -> InvestmentMonitor:
