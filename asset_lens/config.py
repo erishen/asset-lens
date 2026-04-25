@@ -138,11 +138,11 @@ class Config:
         self.joinquant_password: str | None = self._settings.joinquant_password
 
         self.project_root = Path(__file__).parent.parent
-        self.sample_data_path = Path(self._settings.sample_data_path)
-        self.real_data_path = Path(self._settings.real_data_path)
-        self.output_path = Path(self._settings.output_path)
-        self.cache_path = Path(self._settings.cache_path)
-        self.config_path = Path(self._settings.config_path)
+        self.sample_data_path = self.project_root / self._settings.sample_data_path
+        self.real_data_path = self._resolve_path(self._settings.real_data_path)
+        self.output_path = self.project_root / self._settings.output_path
+        self.cache_path = self.project_root / self._settings.cache_path
+        self.config_path = self.project_root / self._settings.config_path
 
         self.default_usd_rate: float = self._settings.default_usd_rate
         self.default_hkd_rate: float = self._settings.default_hkd_rate
@@ -160,6 +160,13 @@ class Config:
         self._platform_types: dict[str, str] | None = None
         self._investment_types: list[InvestmentTypeConfig] | None = None
         self._risk_levels: dict[str, RiskLevelConfig] | None = None
+
+    def _resolve_path(self, path_str: str) -> Path:
+        """解析路径，支持相对路径和绝对路径"""
+        path = Path(path_str)
+        if path.is_absolute():
+            return path
+        return self.project_root / path
 
     def _load_platform_config(self) -> None:
         """加载平台配置文件"""
