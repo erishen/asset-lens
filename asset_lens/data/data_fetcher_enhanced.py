@@ -86,8 +86,9 @@ class EnhancedDataFetcher:
             age_hours = (datetime.now() - cache_time).total_seconds() / 3600
 
             if age_hours <= max_age_hours:
-                print(f"📦 使用缓存数据: {len(data.get('stocks', []))} 只股票 (缓存时间: {age_hours:.1f}小时前)")
-                return data.get('stocks', [])
+                stocks: list[dict[str, Any]] = data.get('stocks', [])
+                print(f"📦 使用缓存数据: {len(stocks)} 只股票 (缓存时间: {age_hours:.1f}小时前)")
+                return stocks
         except Exception as e:
             print(f"⚠️ 读取缓存失败: {e}")
 
@@ -139,7 +140,7 @@ class EnhancedDataFetcher:
         print("🌐 尝试东方财富...")
         with _disable_proxy():
             url = "https://push2.eastmoney.com/api/qt/clist/get"
-            params = {
+            params: dict[str, str | int] = {
                 'pn': 1, 'pz': 100, 'fs': 'm:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23',
                 'fields': 'f12,f14,f2,f3,f4,f5,f6'
             }
@@ -165,7 +166,7 @@ class EnhancedDataFetcher:
 
         for name, fetcher in sources:
             try:
-                result = fetcher()
+                result: list[dict[str, Any]] | None = fetcher()
                 if result:
                     print(f"✅ {name} 连接成功")
                     return result

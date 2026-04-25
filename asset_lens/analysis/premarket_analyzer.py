@@ -111,7 +111,7 @@ class PreMarketAnalyzer:
 
     def identify_hot_sectors(self) -> list[HotSector]:
         """识别热点板块"""
-        sectors = []
+        sectors: list[HotSector] = []
 
         hot_sector_data = [
             HotSector(name="AI算力", change_percent=3.5, leading_stocks=["寒武纪", "海光信息"], capital_inflow=50.2, reason="政策利好"),
@@ -123,7 +123,7 @@ class PreMarketAnalyzer:
 
     def check_stock_alerts(self, holdings: list[str] | None = None) -> list[StockAlert]:
         """检查持仓个股预警"""
-        alerts = []
+        alerts: list[StockAlert] = []
 
         if not holdings:
             holdings = []
@@ -268,8 +268,8 @@ class PreMarketAnalyzer:
 
         if report.hot_sectors:
             lines.append("🔥 热点板块:")
-            for s in report.hot_sectors[:3]:
-                lines.append(f"  • {s.name}: {s.change_percent:+.1f}% (资金流入 {s.capital_inflow:.1f}亿)")
+            for sector in report.hot_sectors[:3]:
+                lines.append(f"  • {sector.name}: {sector.change_percent:+.1f}% (资金流入 {sector.capital_inflow:.1f}亿)")
             lines.append("")
 
         if report.risk_warnings:
@@ -279,8 +279,8 @@ class PreMarketAnalyzer:
             lines.append("")
 
         lines.append("💡 操作建议:")
-        for s in report.suggestions:
-            lines.append(f"  {s}")
+        for suggestion in report.suggestions:
+            lines.append(f"  {suggestion}")
         lines.append("")
 
         lines.append("=" * 50)

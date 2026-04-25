@@ -374,7 +374,7 @@ class AlertMonitor:
 
         try:
             with open(self.alert_history_file, encoding="utf-8") as f:
-                history = json.load(f)
+                history: list[dict[str, Any]] = json.load(f)
             return history[-limit:]
         except Exception:
             return []
