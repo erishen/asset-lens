@@ -226,8 +226,8 @@ class SignalPusher:
             return []
 
         try:
-            with open(self.signal_history_file, encoding='utf-8') as f:
-                history = json.load(f)
+            with open(self.signal_history_file, encoding="utf-8") as f:
+                history: list[dict[str, Any]] = json.load(f)
             return history[-limit:]
         except Exception:
             return []
