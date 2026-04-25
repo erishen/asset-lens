@@ -18,8 +18,8 @@ VERSION := 1.0.0
 # 直接使用 conda 环境中的 Python（避免 conda run 不传递环境变量的问题）
 CONDA_PYTHON := /opt/anaconda3/envs/asset-lens/bin/python
 
-# Python 警告过滤 - 使用包装脚本过滤所有警告
-PY := bash run.sh
+# Python 命令
+PY := python -m asset_lens
 
 # 默认目标
 .PHONY: all
@@ -897,12 +897,12 @@ db-clean-old-confirm: ## 确认执行清理旧数据
 .PHONY: db-batch-fetch
 db-batch-fetch: ## 批量获取股票历史数据（make db-batch-fetch LIMIT=100 DAYS=250）
 	@echo "📦 批量获取股票历史数据..."
-	$(PY) scripts/batch_fetch_history.py --limit $(or $(LIMIT),0) --days $(or $(DAYS),250)
+	python scripts/batch_fetch_history.py --limit $(or $(LIMIT),0) --days $(or $(DAYS),250)
 
 .PHONY: db-batch-fetch-all
 db-batch-fetch-all: ## 获取所有股票历史数据（耗时较长）
 	@echo "📦 获取所有股票历史数据..."
-	$(PY) scripts/batch_fetch_history.py --days 250
+	python scripts/batch_fetch_history.py --days 250
 
 # ============================================
 # 股票跟踪监控
@@ -1097,17 +1097,17 @@ backup: ## 备份数据文件
 .PHONY: sync-data
 sync-data: ## 同步 ts-demo 真实数据到 asset-lens
 	@echo "🔄 同步 ts-demo 数据..."
-	$(PY) scripts/sync_data.py
+	python scripts/sync_data.py
 
 .PHONY: sync-data-latest
 sync-data-latest: ## 只同步最新的 ts-demo 数据
 	@echo "🔄 同步最新 ts-demo 数据..."
-	$(PY) scripts/sync_data.py --latest
+	python scripts/sync_data.py --latest
 
 .PHONY: sync-data-preview
 sync-data-preview: ## 预览同步内容（不实际执行）
 	@echo "🔄 预览同步内容..."
-	$(PY) scripts/sync_data.py --dry-run
+	python scripts/sync_data.py --dry-run
 
 # ============================================
 # 快捷命令
@@ -1381,7 +1381,7 @@ fund-holding-bond: ## 分析债券类型基金持仓
 .PHONY: fund-list
 fund-list: ## 列出所有投资的基金
 	@echo "📋 列出所有基金..."
-	@$(PY) scripts/fund_holding_analysis.py --list
+	@python scripts/fund_holding_analysis.py --list
 
 .PHONY: fund-detail
 fund-detail: ## 查看单只基金持仓明细（make fund-detail CODE=020220）
@@ -1396,7 +1396,7 @@ ifndef CODE
 	@exit 1
 endif
 	@echo "📊 查看基金持仓明细..."
-	@$(PY) scripts/fund_holding_analysis.py --detail $(CODE)
+	@python scripts/fund_holding_analysis.py --detail $(CODE)
 
 # ============================================
 # 数据库优化
