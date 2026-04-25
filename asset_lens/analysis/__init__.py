@@ -1,6 +1,6 @@
 """
 Analysis Module.
-分析模块 - 提供盘前分析、实时信号推送、异动监控、持仓分析等功能
+分析模块 - 提供盘前分析、实时信号推送、异动监控、持仓分析、公告提醒、复盘总结等功能
 """
 
 from .premarket_analyzer import PreMarketAnalyzer, PreMarketReport, premarket_analyzer
@@ -32,6 +32,25 @@ from .portfolio_analyzer import (
     TrendDirection,
     portfolio_analyzer,
 )
+from .announcement_monitor import (
+    AnnouncementMonitor,
+    AnnouncementType,
+    ImpactLevel,
+    Announcement,
+    AnnouncementAlert,
+    announcement_monitor,
+)
+from .trading_review import (
+    TradingReview,
+    TradeType,
+    TradeResult,
+    TradeRecord,
+    ClosedPosition,
+    PerformanceMetrics,
+    AttributionAnalysis,
+    ReviewReport,
+    trading_review,
+)
 
 __all__ = [
     "PreMarketAnalyzer",
@@ -59,4 +78,19 @@ __all__ = [
     "HealthLevel",
     "TrendDirection",
     "portfolio_analyzer",
+    "AnnouncementMonitor",
+    "AnnouncementType",
+    "ImpactLevel",
+    "Announcement",
+    "AnnouncementAlert",
+    "announcement_monitor",
+    "TradingReview",
+    "TradeType",
+    "TradeResult",
+    "TradeRecord",
+    "ClosedPosition",
+    "PerformanceMetrics",
+    "AttributionAnalysis",
+    "ReviewReport",
+    "trading_review",
 ]
