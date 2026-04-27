@@ -106,7 +106,7 @@ class ReviewReport:
     report_type: str  # daily, weekly, monthly
     performance: PerformanceMetrics
     attribution: AttributionAnalysis
-    trades: list[TradeRecord]
+    trades: list[dict[str, Any]]
     closed_positions: list[ClosedPosition]
     suggestions: list[str]
     lessons_learned: list[str]
@@ -322,7 +322,7 @@ class TradingReview:
             suggestions.append("最大亏损过大，建议加强风险控制")
 
         if attribution.top_losers:
-            loser_sectors = set()
+            loser_sectors: set[str] = set()
             for p in attribution.top_losers:
                 suggestions.append(f"避免在类似 {p.code} 的情况下交易")
 
@@ -478,14 +478,15 @@ class TradingReview:
             return []
         try:
             with open(self.trades_file, encoding="utf-8") as f:
-                return json.load(f)
+                data: list[dict[str, Any]] = json.load(f)
+                return data
         except Exception:
             return []
 
     def _save_closed_position(self, position: ClosedPosition) -> None:
         """保存平仓记录"""
-        positions = self._load_closed_positions()
-        positions.append({
+        positions_data = self._load_closed_positions_data()
+        positions_data.append({
             "code": position.code,
             "name": position.name,
             "buy_price": position.buy_price,
@@ -501,34 +502,38 @@ class TradingReview:
         })
 
         with open(self.closed_positions_file, "w", encoding="utf-8") as f:
-            json.dump(positions, f, ensure_ascii=False, indent=2)
+            json.dump(positions_data, f, ensure_ascii=False, indent=2)
 
     def _load_closed_positions(self) -> list[ClosedPosition]:
         """加载平仓记录"""
+        data = self._load_closed_positions_data()
+        positions: list[ClosedPosition] = []
+        for item in data:
+            positions.append(ClosedPosition(
+                code=item["code"],
+                name=item["name"],
+                buy_price=item["buy_price"],
+                sell_price=item["sell_price"],
+                shares=item["shares"],
+                profit_loss=item["profit_loss"],
+                profit_loss_percent=item["profit_loss_percent"],
+                hold_days=item["hold_days"],
+                buy_date=item["buy_date"],
+                sell_date=item["sell_date"],
+                strategy=item.get("strategy", ""),
+                result=TradeResult(item.get("result", "profit")),
+            ))
+
+        return positions
+
+    def _load_closed_positions_data(self) -> list[dict[str, Any]]:
+        """加载平仓记录原始数据"""
         if not self.closed_positions_file.exists():
             return []
         try:
             with open(self.closed_positions_file, encoding="utf-8") as f:
-                data = json.load(f)
-
-            positions = []
-            for item in data:
-                positions.append(ClosedPosition(
-                    code=item["code"],
-                    name=item["name"],
-                    buy_price=item["buy_price"],
-                    sell_price=item["sell_price"],
-                    shares=item["shares"],
-                    profit_loss=item["profit_loss"],
-                    profit_loss_percent=item["profit_loss_percent"],
-                    hold_days=item["hold_days"],
-                    buy_date=item["buy_date"],
-                    sell_date=item["sell_date"],
-                    strategy=item.get("strategy", ""),
-                    result=TradeResult(item.get("result", "profit")),
-                ))
-
-            return positions
+                data: list[dict[str, Any]] = json.load(f)
+                return data
         except Exception:
             return []
 

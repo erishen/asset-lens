@@ -4,8 +4,9 @@ Stock history data fetcher for asset-lens.
 
 数据源优先级:
 1. Tushare (需要 Token，数据最完整) - https://tushare.pro
-2. Baostock (免费，无需注册，包含换手率) - http://baostock.com
-3. AkShare-腾讯 (免费，无需注册，数据较少)
+2. AkShare-东方财富 (免费，无需注册，稳定可靠，包含换手率)
+3. Baostock (免费，无需注册，包含换手率) - http://baostock.com
+4. AkShare-腾讯 (免费，无需注册，数据较少)
 
 Tushare 注册:
 1. 访问 https://tushare.pro/register
@@ -14,6 +15,7 @@ Tushare 注册:
 """
 
 import json
+import logging
 import os
 import time
 from datetime import datetime, timedelta
@@ -26,12 +28,17 @@ load_dotenv()
 
 from ..config import config
 
+logger = logging.getLogger(__name__)
+
 
 class StockHistoryFetcher:
     """股票历史数据获取器 - 支持 Tushare、Baostock 和 AkShare"""
 
-    BAOSTOCK_MAX_RETRIES = 3
-    BAOSTOCK_RETRY_DELAY = 2
+    BAOSTOCK_MAX_RETRIES = 2
+    BAOSTOCK_RETRY_DELAY = 1
+    BAOSTOCK_TIMEOUT = 5
+    _tushare_hint_shown = False
+    _baostock_hint_shown = False
 
     def __init__(self, cache_path: Path | None = None):
         self.cache_path = cache_path or config.cache_path
@@ -42,6 +49,7 @@ class StockHistoryFetcher:
         self._baostock = None
         self._baostock_logged_in = False
         self._tushare_token = os.environ.get("TUSHARE_TOKEN", "")
+        self._baostock_failed = False
 
     @property
     def tushare(self):
@@ -50,15 +58,18 @@ class StockHistoryFetcher:
             if not self._tushare_token:
                 return None
             try:
+                import tempfile
+                os.environ['HOME'] = tempfile.gettempdir()
                 import tushare as ts
-
                 ts.set_token(self._tushare_token)
                 self._tushare = ts
             except ImportError:
-                print("提示: 安装 Tushare 可获取更完整数据: pip install tushare")
+                if not StockHistoryFetcher._tushare_hint_shown:
+                    logger.info("提示: 安装 Tushare 可获取更完整数据: pip install tushare")
+                    StockHistoryFetcher._tushare_hint_shown = True
                 return None
             except Exception as e:
-                print(f"Tushare 初始化失败: {e}")
+                logger.debug(f"Tushare 初始化失败: {e}")
                 return None
         return self._tushare
 
@@ -85,7 +96,9 @@ class StockHistoryFetcher:
 
                 self._baostock = bs
             except ImportError:
-                print("提示: 安装 Baostock 可获取完整数据: pip install baostock")
+                if not StockHistoryFetcher._baostock_hint_shown:
+                    logger.info("提示: 安装 Baostock 可获取完整数据: pip install baostock")
+                    StockHistoryFetcher._baostock_hint_shown = True
                 return None
         return self._baostock
 
@@ -96,30 +109,45 @@ class StockHistoryFetcher:
         Returns:
             是否登录成功
         """
+        import io
+        import sys
+        from contextlib import redirect_stderr, redirect_stdout
+
         if not self.baostock:
             return False
 
         if self._baostock_logged_in:
             return True
+        
+        if self._baostock_failed:
+            return False
 
         for attempt in range(self.BAOSTOCK_MAX_RETRIES):
             try:
-                lg = self.baostock.login()
+                with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                    lg = self.baostock.login()
+                
                 if lg.error_code == "0":
                     self._baostock_logged_in = True
                     return True
 
-                print(f"Baostock 登录失败 (尝试 {attempt + 1}/{self.BAOSTOCK_MAX_RETRIES}): {lg.error_msg}")
+                logger.debug(f"Baostock 登录失败 (尝试 {attempt + 1}/{self.BAOSTOCK_MAX_RETRIES}): {lg.error_msg}")
 
                 if attempt < self.BAOSTOCK_MAX_RETRIES - 1:
                     time.sleep(self.BAOSTOCK_RETRY_DELAY)
 
             except Exception as e:
-                print(f"Baostock 登录异常 (尝试 {attempt + 1}/{self.BAOSTOCK_MAX_RETRIES}): {e}")
+                error_msg = str(e)
+                if "Broken pipe" in error_msg or "网络" in error_msg:
+                    logger.debug(f"Baostock 网络连接失败 (尝试 {attempt + 1}/{self.BAOSTOCK_MAX_RETRIES})")
+                else:
+                    logger.debug(f"Baostock 登录异常 (尝试 {attempt + 1}/{self.BAOSTOCK_MAX_RETRIES}): {e}")
 
                 if attempt < self.BAOSTOCK_MAX_RETRIES - 1:
                     time.sleep(self.BAOSTOCK_RETRY_DELAY)
 
+        self._baostock_failed = True
+        logger.debug("Baostock 连接失败，将使用备用数据源 AkShare")
         return False
 
     def fetch_history_baostock(self, code: str, days: int = 60) -> dict[str, Any] | None:
@@ -133,6 +161,9 @@ class StockHistoryFetcher:
         Returns:
             历史数据字典
         """
+        import io
+        from contextlib import redirect_stderr, redirect_stdout
+
         if not self.baostock:
             return None
 
@@ -145,14 +176,15 @@ class StockHistoryFetcher:
             if not self._baostock_login_with_retry():
                 return None
 
-            rs = self.baostock.query_history_k_data_plus(
-                bs_code,
-                "date,code,open,high,low,close,volume,amount,turn",
-                start_date=start_date,
-                end_date=end_date,
-                frequency="d",
-                adjustflag="2",
-            )
+            with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                rs = self.baostock.query_history_k_data_plus(
+                    bs_code,
+                    "date,code,open,high,low,close,volume,amount,turn",
+                    start_date=start_date,
+                    end_date=end_date,
+                    frequency="d",
+                    adjustflag="2",
+                )
 
             if rs.error_code != "0":
                 return None
@@ -236,6 +268,7 @@ class StockHistoryFetcher:
             )
 
             if df is None or df.empty:
+                logger.debug(f"Tushare 返回空数据: {code}")
                 return None
 
             history: dict[str, Any] = {
@@ -314,15 +347,17 @@ class StockHistoryFetcher:
                     row_dict: dict[str, Any] = (
                         row.to_dict() if hasattr(row, "to_dict") else dict(row)
                     )
+                    close_price = float(row_dict.get("close", 0))
+                    volume = float(row_dict.get("amount", 0))
                     klines_list.append(
                         {
                             "date": str(row_dict.get("date", "")),
                             "open": float(row_dict.get("open", 0)),
-                            "close": float(row_dict.get("close", 0)),
+                            "close": close_price,
                             "high": float(row_dict.get("high", 0)),
                             "low": float(row_dict.get("low", 0)),
-                            "volume": float(row_dict.get("amount", 0)),
-                            "amount": 0,
+                            "volume": volume,
+                            "amount": volume * close_price,
                             "amplitude": 0,
                             "change_percent": 0,
                             "change_amount": 0,
@@ -349,67 +384,77 @@ class StockHistoryFetcher:
         Returns:
             历史数据字典
         """
-        try:
-            stock_code = code[2:]
+        max_retries = 2
+        for attempt in range(max_retries):
+            try:
+                stock_code = code[2:]
 
-            end_date = datetime.now().strftime("%Y%m%d")
-            start_date = (datetime.now() - timedelta(days=days + 30)).strftime("%Y%m%d")
+                end_date = datetime.now().strftime("%Y%m%d")
+                start_date = (datetime.now() - timedelta(days=days + 30)).strftime("%Y%m%d")
 
-            df = self.akshare.stock_zh_a_hist(
-                symbol=stock_code,
-                period="daily",
-                start_date=start_date,
-                end_date=end_date,
-                adjust="qfq",
-            )
+                df = self.akshare.stock_zh_a_hist(
+                    symbol=stock_code,
+                    period="daily",
+                    start_date=start_date,
+                    end_date=end_date,
+                    adjust="qfq",
+                )
 
-            if df is None or df.empty:
-                return None
+                if df is None or df.empty:
+                    if attempt < max_retries - 1:
+                        time.sleep(0.5)
+                        continue
+                    return None
 
-            history: dict[str, Any] = {
-                "code": code,
-                "name": "",
-                "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "data_source": "AkShare-东方财富",
-                "klines": [],
-            }
+                history: dict[str, Any] = {
+                    "code": code,
+                    "name": "",
+                    "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "data_source": "AkShare-东方财富",
+                    "klines": [],
+                }
 
-            klines_list: list[dict[str, Any]] = history["klines"]
+                klines_list: list[dict[str, Any]] = history["klines"]
 
-            for _, row in df.tail(days).iterrows():
-                try:
-                    row_dict: dict[str, Any] = (
-                        row.to_dict() if hasattr(row, "to_dict") else dict(row)
-                    )
-                    klines_list.append(
-                        {
-                            "date": str(row_dict.get("日期", "")),
-                            "open": float(row_dict.get("开盘", 0)),
-                            "close": float(row_dict.get("收盘", 0)),
-                            "high": float(row_dict.get("最高", 0)),
-                            "low": float(row_dict.get("最低", 0)),
-                            "volume": float(row_dict.get("成交量", 0)),
-                            "amount": float(row_dict.get("成交额", 0)),
-                            "amplitude": float(row_dict.get("振幅", 0)),
-                            "change_percent": float(row_dict.get("涨跌幅", 0)),
-                            "change_amount": float(row_dict.get("涨跌额", 0)),
-                            "turnover_rate": float(row_dict.get("换手率", 0)),
-                        }
-                    )
-                except (ValueError, TypeError, KeyError):
+                for _, row in df.tail(days).iterrows():
+                    try:
+                        row_dict: dict[str, Any] = (
+                            row.to_dict() if hasattr(row, "to_dict") else dict(row)
+                        )
+                        klines_list.append(
+                            {
+                                "date": str(row_dict.get("日期", "")),
+                                "open": float(row_dict.get("开盘", 0)),
+                                "close": float(row_dict.get("收盘", 0)),
+                                "high": float(row_dict.get("最高", 0)),
+                                "low": float(row_dict.get("最低", 0)),
+                                "volume": float(row_dict.get("成交量", 0)),
+                                "amount": float(row_dict.get("成交额", 0)),
+                                "amplitude": float(row_dict.get("振幅", 0)),
+                                "change_percent": float(row_dict.get("涨跌幅", 0)),
+                                "change_amount": float(row_dict.get("涨跌额", 0)),
+                                "turnover_rate": float(row_dict.get("换手率", 0)),
+                            }
+                        )
+                    except (ValueError, TypeError, KeyError):
+                        continue
+
+                return history if history["klines"] else None
+
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    time.sleep(0.5)
                     continue
-
-            return history if history["klines"] else None
-
-        except Exception as e:
-            print(f"AkShare-东方财富 获取 {code} 历史数据失败: {e}")
-            return None
+                logger.debug(f"AkShare-东方财富 获取 {code} 历史数据失败: {e}")
+                return None
+        
+        return None
 
     def fetch_history(self, code: str, days: int = 60) -> dict[str, Any] | None:
         """
         获取股票历史K线数据（自动选择数据源）
 
-        优先级: Tushare > Baostock > AkShare-腾讯
+        优先级: Tushare > AkShare-东方财富 > Baostock > AkShare-腾讯
 
         Args:
             code: 股票代码 (如 sh600519, sz000001)
@@ -427,13 +472,28 @@ class StockHistoryFetcher:
             except Exception:
                 pass
 
-        # 使用 Baostock（免费，包含换手率）
-        history = self.fetch_history_baostock(code, days)
-        if history:
-            return history
+        # 优先使用 AkShare-东方财富（稳定可靠，包含换手率）
+        try:
+            history = self.fetch_history_akshare_daily(code, days)
+            if history:
+                return history
+        except Exception:
+            pass
 
-        # 回退到 AkShare-腾讯（稳定可用）
-        return self.fetch_history_akshare(code, days)
+        # 使用 Baostock（如果 AkShare 失败）
+        if not self._baostock_failed:
+            try:
+                history = self.fetch_history_baostock(code, days)
+                if history:
+                    return history
+            except Exception:
+                pass
+
+        # 最后回退到 AkShare-腾讯
+        try:
+            return self.fetch_history_akshare(code, days)
+        except Exception:
+            return None
 
     def fetch_batch_history(
         self,
@@ -564,9 +624,9 @@ class StockHistoryFetcher:
                 need_fetch_codes.append(code)
 
         if need_fetch_codes:
-            data_source = "Tushare" if self._tushare_token else "AkShare"
+            data_source = "Tushare" if self._tushare_token else "AkShare-东方财富"
             print(f"📡 正在获取 {len(need_fetch_codes)} 只股票的 {days} 日历史数据...")
-            print(f"   数据源: {data_source} (优先) / AkShare-腾讯 (备选)")
+            print(f"   数据源: {data_source} (优先) / Baostock / AkShare-腾讯 (备选)")
             new_histories = self.fetch_batch_history(need_fetch_codes, days, delay=delay)
             cached_histories.update(new_histories)
             self.save_history_cache(cached_histories)
@@ -674,6 +734,29 @@ class StockHistoryFetcher:
             update_time = datetime.strptime(update_time_str, "%Y-%m-%d %H:%M:%S")
             age = datetime.now() - update_time
             age_hours = age.total_seconds() / 3600
+
+            now = datetime.now()
+            weekday = now.weekday()
+            
+            if weekday >= 5:
+                if weekday == 5 and age_hours < 72:
+                    return {
+                        "valid": True,
+                        "reason": "周六使用周五缓存数据",
+                        "total_stocks": len(cache_data.get("data", {})),
+                        "update_time": update_time_str,
+                        "age_hours": age_hours,
+                        "need_update": [],
+                    }
+                elif weekday == 6 and age_hours < 96:
+                    return {
+                        "valid": True,
+                        "reason": "周日使用周五缓存数据",
+                        "total_stocks": len(cache_data.get("data", {})),
+                        "update_time": update_time_str,
+                        "age_hours": age_hours,
+                        "need_update": [],
+                    }
 
             if age_hours > max_age_hours:
                 return {
@@ -786,9 +869,9 @@ class StockHistoryFetcher:
                     )
 
         if need_fetch_codes:
-            data_source = "Tushare" if self._tushare_token else "Baostock"
+            data_source = "Tushare" if self._tushare_token else "AkShare-东方财富"
             print(f"📡 增量更新: 需要获取 {len(need_fetch_codes)} 只股票的历史数据...")
-            print(f"   数据源: {data_source}")
+            print(f"   数据源: {data_source} (优先) / Baostock / AkShare-腾讯 (备选)")
 
             new_histories = self.fetch_batch_history(need_fetch_codes, days, delay=delay)
 

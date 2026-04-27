@@ -650,11 +650,11 @@ class TestGetExchangeRates:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
             
-            # Create exchange rate file
-            rate_file = temp_path / "工作表 2-表格 1.csv"
-            with open(rate_file, "w", encoding="utf-8-sig") as f:
-                f.write("日期,美元汇率,港元汇率\n")
-                f.write("2024/01/15,7.25,0.93\n")
+            # Create summary file (priority source for exchange rates)
+            summary_file = temp_path / "资产汇总-表格 1.csv"
+            with open(summary_file, "w", encoding="utf-8-sig") as f:
+                f.write("日期,微信,中金财富,支付宝,富途,招商,信用卡,港招,交通,浦发,建设,中信,民生,工商,中银,京东白条,抖音月付,多多后付,美团月付,总金额,美元汇率,港元汇率,黄金\n")
+                f.write("2024/01/15,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000,11000,12000,13000,14000,15000,16000,17000,18000,190000,7.25,0.93,500\n")
             
             usd, hkd = CSVParser.get_exchange_rates(temp_path)
             assert usd == 7.25

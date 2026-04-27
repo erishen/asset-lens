@@ -20,6 +20,8 @@ import joblib
 import numpy as np
 import pandas as pd
 
+from .features import FeatureEngineer
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -76,6 +78,8 @@ class PredictionResult:
 class StockPredictor:
     """股票预测器"""
 
+    _missing_features_warned = False
+
     def __init__(
         self,
         model_type: str = "lightgbm",
@@ -86,6 +90,7 @@ class StockPredictor:
         self.scaler: Any = None
         self.feature_names: list[str] = []
         self.model_path = model_path
+        self.feature_engineer = FeatureEngineer()
 
         if model_path and model_path.exists():
             self.load_model(model_path)
@@ -97,16 +102,16 @@ class StockPredictor:
                 raise ImportError("LightGBM 未安装")
 
             default_params: dict[str, Any] = {
-                'n_estimators': 390,
-                'max_depth': 11,
-                'learning_rate': 0.0775,
-                'num_leaves': 227,
-                'min_child_samples': 9,
-                'subsample': 0.97,
-                'colsample_bytree': 0.811,
-                'reg_alpha': 0.00109,
-                'reg_lambda': 0.0018,
-                'min_split_gain': 0.00128,
+                'n_estimators': 100,
+                'max_depth': 5,
+                'learning_rate': 0.05,
+                'num_leaves': 31,
+                'min_child_samples': 20,
+                'subsample': 0.8,
+                'colsample_bytree': 0.8,
+                'reg_alpha': 0.1,
+                'reg_lambda': 0.1,
+                'min_split_gain': 0.01,
                 'random_state': 42,
                 'verbose': -1,
                 'n_jobs': -1,
@@ -124,15 +129,15 @@ class StockPredictor:
 
             if task == "classification":
                 return xgb.XGBClassifier(
-                    n_estimators=306,
-                    max_depth=11,
-                    learning_rate=0.0944,
-                    subsample=0.884,
-                    colsample_bytree=0.703,
-                    reg_alpha=0.0805,
-                    reg_lambda=0.0369,
-                    min_child_weight=8,
-                    gamma=0.0969,
+                    n_estimators=100,
+                    max_depth=5,
+                    learning_rate=0.05,
+                    subsample=0.8,
+                    colsample_bytree=0.8,
+                    reg_alpha=0.1,
+                    reg_lambda=0.1,
+                    min_child_weight=10,
+                    gamma=0.1,
                     random_state=42,
                     eval_metric='logloss',
                     n_jobs=-1,
@@ -365,12 +370,15 @@ class StockPredictor:
         if self.model is None:
             raise ValueError("模型未训练，请先调用 fit() 或 load_model()")
 
-        # 检查缺失的特征并填充默认值
         missing_features = set(self.feature_names) - set(X.columns)
         if missing_features:
-            logger.warning(f"缺失特征: {missing_features}，将使用默认值 0")
-            for feat in missing_features:
-                X[feat] = 0.0
+            if not StockPredictor._missing_features_warned:
+                logger.warning(f"缺失特征: {missing_features}，将使用默认值 0")
+                StockPredictor._missing_features_warned = True
+            missing_df = pd.DataFrame(
+                0.0, index=X.index, columns=list(missing_features)
+            )
+            X = pd.concat([X, missing_df], axis=1)
 
         X = X[self.feature_names].fillna(0)
         X = X.replace([np.inf, -np.inf], 0)
@@ -435,6 +443,77 @@ class StockPredictor:
             expected_return=round(expected_return, 4),
             features=stock_data,
         )
+
+    def predict_single(
+        self,
+        code: str,
+        name: str = "",
+        current_price: float = 0,
+        change_percent: float = 0,
+        turnover_rate: float = 0,
+        market_cap: float = 0,
+        pe_ratio: float = 0,
+        volume: float = 0,
+        amount: float = 0,
+        history_data: list[dict[str, Any]] | None = None,
+        **kwargs: Any,
+    ) -> PredictionResult | None:
+        """
+        简化的单只股票预测接口
+
+        Args:
+            code: 股票代码
+            name: 股票名称
+            current_price: 当前价格
+            change_percent: 涨跌幅
+            turnover_rate: 换手率
+            market_cap: 市值
+            pe_ratio: 市盈率
+            volume: 成交量
+            amount: 成交额
+            history_data: 历史K线数据（用于计算技术指标）
+            **kwargs: 其他特征
+
+        Returns:
+            预测结果，如果模型未加载则返回 None
+        """
+        if self.model is None:
+            return None
+
+        stock_data: dict[str, Any] = {
+            "current_price": current_price,
+            "change_percent": change_percent,
+            "turnover_rate": turnover_rate,
+            "market_cap": market_cap,
+            "pe_ratio": pe_ratio,
+            "volume": volume,
+            "amount": amount,
+            **kwargs,
+        }
+
+        if history_data and len(history_data) >= 30:
+            try:
+                df = pd.DataFrame(history_data)
+                required_cols = ['close', 'high', 'low', 'volume']
+                if all(col in df.columns for col in required_cols):
+                    if 'open' not in df.columns:
+                        df['open'] = df['close'].shift(1).fillna(df['close'])
+                    if 'amount' not in df.columns:
+                        df['amount'] = df['volume'] * df['close']
+                    
+                    df = self.feature_engineer.calculate_all_features(df)
+                    
+                    if not df.empty:
+                        latest = df.iloc[-1]
+                        for feat in self.feature_engineer.feature_names:
+                            if feat in df.columns:
+                                val = latest.get(feat)
+                                if pd.notna(val) and not np.isinf(val):
+                                    stock_data[feat] = float(val)
+            except Exception as e:
+                logger.debug(f"计算特征失败 {code}: {e}")
+
+        return self.predict_stock(stock_data, code, name)
 
     def predict_batch(
         self,

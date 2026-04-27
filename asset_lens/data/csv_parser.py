@@ -60,7 +60,7 @@ class CSVParser:
         """
         从数据文件中读取美元和港元汇率（带缓存）
 
-        优先从投资产品表格中读取，其次从工作表2中读取
+        优先从资产汇总表格中读取（最后一行），其次从投资产品表格中读取
 
         Args:
             data_dir: 数据目录路径
@@ -78,6 +78,58 @@ class CSVParser:
         default_hkd = float(config.default_hkd_rate)
 
         try:
+            summary_files = list(data_dir.glob("资产汇总*.csv"))
+            if summary_files:
+                summary_path = summary_files[0]
+                with open(summary_path, encoding="utf-8-sig") as f:
+                    lines = f.readlines()
+
+                if len(lines) >= 2:
+                    header = lines[0].strip().split(",")
+                    usd_idx = -1
+                    hkd_idx = -1
+
+                    for i, col in enumerate(header):
+                        col_clean = col.replace(" ", "")
+                        if "美元汇率" in col_clean:
+                            usd_idx = i
+                        if "港元汇率" in col_clean:
+                            hkd_idx = i
+
+                    if usd_idx != -1 or hkd_idx != -1:
+                        usd_rate = default_usd
+                        hkd_rate = default_hkd
+
+                        for i in range(len(lines) - 1, 0, -1):
+                            cells = lines[i].strip().split(",")
+                            if len(cells) <= max(usd_idx, hkd_idx):
+                                continue
+
+                            if usd_idx != -1 and usd_rate == default_usd:
+                                try:
+                                    rate = float(cells[usd_idx])
+                                    if 5 < rate < 10:
+                                        usd_rate = rate
+                                except (ValueError, IndexError):
+                                    pass
+
+                            if hkd_idx != -1 and hkd_rate == default_hkd:
+                                try:
+                                    rate = float(cells[hkd_idx])
+                                    if 0.8 < rate < 1.2:
+                                        hkd_rate = rate
+                                except (ValueError, IndexError):
+                                    pass
+
+                            if usd_rate != default_usd and hkd_rate != default_hkd:
+                                break
+
+                        if usd_rate != default_usd or hkd_rate != default_hkd:
+                            rates = (usd_rate, hkd_rate)
+                            exchange_rate_cache.set(cache_key, rates)
+                            logger.info(f"从资产汇总加载汇率: USD={usd_rate}, HKD={hkd_rate}")
+                            return rates
+
             csv_files = list(data_dir.glob("投资产品*.csv"))
             if csv_files:
                 csv_path = csv_files[0]
@@ -127,69 +179,10 @@ class CSVParser:
                         if usd_rate != default_usd or hkd_rate != default_hkd:
                             rates = (usd_rate, hkd_rate)
                             exchange_rate_cache.set(cache_key, rates)
-                            logger.info(f"加载汇率: USD={usd_rate}, HKD={hkd_rate}")
+                            logger.info(f"从投资产品加载汇率: USD={usd_rate}, HKD={hkd_rate}")
                             return rates
 
-            ws2_files = list(data_dir.glob("*工作表 2*.csv"))
-            if not ws2_files:
-                ws2_files = list(data_dir.glob("*工作表*2*.csv"))
-
-            if not ws2_files:
-                return default_usd, default_hkd
-
-            ws2_path = ws2_files[0]
-
-            with open(ws2_path, encoding="utf-8-sig") as f:
-                lines = f.readlines()
-
-            if len(lines) < 2:
-                return default_usd, default_hkd
-
-            header = lines[0].strip().split(",")
-            usd_idx = -1
-            hkd_idx = -1
-
-            for i, col in enumerate(header):
-                col_clean = col.replace(" ", "")
-                if "美元汇率" in col_clean:
-                    usd_idx = i
-                if "港元汇率" in col_clean:
-                    hkd_idx = i
-
-            if usd_idx == -1 and hkd_idx == -1:
-                return default_usd, default_hkd
-
-            usd_rate = default_usd
-            hkd_rate = default_hkd
-
-            for i in range(len(lines) - 1, 0, -1):
-                cells = lines[i].strip().split(",")
-                if len(cells) <= max(usd_idx, hkd_idx):
-                    continue
-
-                if usd_idx != -1 and usd_rate == default_usd:
-                    try:
-                        rate = float(cells[usd_idx])
-                        if 5 < rate < 10:
-                            usd_rate = rate
-                    except (ValueError, IndexError):
-                        pass
-
-                if hkd_idx != -1 and hkd_rate == default_hkd:
-                    try:
-                        rate = float(cells[hkd_idx])
-                        if 0.8 < rate < 1.2:
-                            hkd_rate = rate
-                    except (ValueError, IndexError):
-                        pass
-
-                if usd_rate != default_usd and hkd_rate != default_hkd:
-                    break
-
-            rates = (usd_rate, hkd_rate)
-            exchange_rate_cache.set(cache_key, rates)
-            logger.info(f"加载汇率: USD={usd_rate}, HKD={hkd_rate}")
-            return rates
+            return default_usd, default_hkd
 
         except Exception as e:
             logger.error(f"加载汇率失败: {data_dir}", exc_info=True, extra={"error": str(e)})

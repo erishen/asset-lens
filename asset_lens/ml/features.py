@@ -72,7 +72,8 @@ class FeatureEngineer:
         df = self._add_mfi(df)
 
         self.feature_names = [col for col in df.columns if col not in
-                              ['open', 'high', 'low', 'close', 'volume', 'amount', 'date', 'code']]
+                              ['open', 'high', 'low', 'close', 'volume', 'amount', 'date', 'code',
+                               'amplitude', 'change_amount', 'change_percent', 'turnover_rate']]
 
         return df
 
@@ -168,10 +169,14 @@ class FeatureEngineer:
         df['volume_change'] = df['volume'].pct_change()
         df['volume_price_trend'] = df['volume_change'] * df['pct_change']
 
-        if 'amount' in df.columns:
-            for period in [5, 10, 20]:
-                df[f'amount_ma{period}'] = df['amount'].rolling(window=period).mean()
-                df[f'amount_ratio_{period}'] = df['amount'] / df[f'amount_ma{period}']
+        if 'amount' not in df.columns or df['amount'].isna().all():
+            df['amount'] = df['volume'] * df['close']
+        
+        df['amount'] = df['amount'].fillna(df['volume'] * df['close'])
+        
+        for period in [5, 10, 20]:
+            df[f'amount_ma{period}'] = df['amount'].rolling(window=period).mean()
+            df[f'amount_ratio_{period}'] = df['amount'] / df[f'amount_ma{period}']
 
         return df
 

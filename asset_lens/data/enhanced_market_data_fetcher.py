@@ -798,6 +798,35 @@ class EnhancedMarketDataFetcher:
         if key_indexes is None:
             key_indexes = ["sh000001", "sh000300", "sz399006"]
 
+        from datetime import timedelta
+
+        now = datetime.now()
+        is_weekend = now.weekday() >= 5
+
+        if self.domestic_cache_file.exists():
+            try:
+                with open(self.domestic_cache_file, "r", encoding="utf-8") as f:
+                    cached = json.load(f)
+                
+                cache_time = datetime.strptime(cached.get("更新时间", ""), "%Y-%m-%d %H:%M:%S")
+                cache_age = (now - cache_time).total_seconds()
+                
+                cache_data_valid = cached.get("指数数据") and any(
+                    v.get("最新价", 0) > 0 for v in cached["指数数据"].values()
+                )
+                
+                if cache_data_valid:
+                    if is_weekend:
+                        if cache_age < 72 * 3600:
+                            logger.info("周末使用缓存数据")
+                            return dict(cached)
+                    else:
+                        if cache_age < 300:
+                            logger.info("使用缓存数据（5分钟内有效）")
+                            return dict(cached)
+            except Exception as e:
+                logger.debug(f"读取缓存失败: {e}")
+
         logger.info(f"正在快速获取关键国内指数: {key_indexes}")
 
         indexes = {}

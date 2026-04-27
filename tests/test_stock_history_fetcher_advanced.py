@@ -79,11 +79,12 @@ class TestFetchHistoryBaostock:
 
         fetcher._baostock = mock_bs
         fetcher._baostock_logged_in = False
+        fetcher._baostock_failed = False
 
         result = fetcher.fetch_history_baostock("sh600519", 60)
         assert result is None
-        # 应该尝试了 3 次
-        assert mock_bs.login.call_count == 3
+        # BAOSTOCK_MAX_RETRIES = 2，所以尝试 2 次
+        assert mock_bs.login.call_count == 2
 
     def test_fetch_history_baostock_login_retry_success(self, fetcher):
         """Test fetch_history_baostock with login retry success"""
@@ -341,7 +342,9 @@ class TestFetchHistory:
         """Test fetch_history using baostock"""
         mock_result = {"code": "sh600519", "klines": []}
 
-        with patch.object(fetcher, 'fetch_history_baostock', return_value=mock_result):
+        with patch.object(fetcher, '_tushare_token', None), \
+             patch.object(fetcher, 'fetch_history_akshare_daily', return_value=None), \
+             patch.object(fetcher, 'fetch_history_baostock', return_value=mock_result):
             result = fetcher.fetch_history("sh600519", 60)
             assert result == mock_result
 
@@ -349,28 +352,30 @@ class TestFetchHistory:
         """Test fetch_history using tushare when baostock fails"""
         mock_result = {"code": "sh600519", "klines": []}
 
-        with patch.object(fetcher, 'fetch_history_baostock', return_value=None):
-            with patch.object(fetcher, 'fetch_history_tushare', return_value=mock_result):
-                result = fetcher.fetch_history("sh600519", 60)
-                assert result == mock_result
+        with patch.object(fetcher, '_tushare_token', 'test_token'), \
+             patch.object(fetcher, 'fetch_history_tushare', return_value=mock_result):
+            result = fetcher.fetch_history("sh600519", 60)
+            assert result == mock_result
 
     def test_fetch_history_with_akshare(self, fetcher):
         """Test fetch_history using akshare when others fail"""
         mock_result = {"code": "sh600519", "klines": []}
 
-        with patch.object(fetcher, 'fetch_history_baostock', return_value=None):
-            with patch.object(fetcher, 'fetch_history_tushare', return_value=None):
-                with patch.object(fetcher, 'fetch_history_akshare', return_value=mock_result):
-                    result = fetcher.fetch_history("sh600519", 60)
-                    assert result == mock_result
+        with patch.object(fetcher, '_tushare_token', None), \
+             patch.object(fetcher, 'fetch_history_akshare_daily', return_value=None), \
+             patch.object(fetcher, 'fetch_history_baostock', return_value=None), \
+             patch.object(fetcher, 'fetch_history_akshare', return_value=mock_result):
+            result = fetcher.fetch_history("sh600519", 60)
+            assert result == mock_result
 
     def test_fetch_history_all_fail(self, fetcher):
         """Test fetch_history when all sources fail"""
-        with patch.object(fetcher, 'fetch_history_baostock', return_value=None):
-            with patch.object(fetcher, 'fetch_history_tushare', return_value=None):
-                with patch.object(fetcher, 'fetch_history_akshare', return_value=None):
-                    result = fetcher.fetch_history("sh600519", 60)
-                    assert result is None
+        with patch.object(fetcher, '_tushare_token', None), \
+             patch.object(fetcher, 'fetch_history_akshare_daily', return_value=None), \
+             patch.object(fetcher, 'fetch_history_baostock', return_value=None), \
+             patch.object(fetcher, 'fetch_history_akshare', return_value=None):
+            result = fetcher.fetch_history("sh600519", 60)
+            assert result is None
 
 
 class TestCacheOperations:

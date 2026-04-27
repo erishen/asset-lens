@@ -1,6 +1,6 @@
 """
 Analysis Module.
-分析模块 - 提供盘前分析、实时信号推送、异动监控、持仓分析、公告提醒、复盘总结等功能
+分析模块 - 提供盘前分析、实时信号推送、异动监控、持仓分析、公告提醒、复盘总结、AI问答、黑天鹅预警、调仓建议、ML追踪、模型重训练、交易日志、回测报告等功能
 """
 
 from .premarket_analyzer import PreMarketAnalyzer, PreMarketReport, premarket_analyzer
@@ -51,6 +51,76 @@ from .trading_review import (
     ReviewReport,
     trading_review,
 )
+from .ai_qa import (
+    AIQAEngine,
+    QuestionType,
+    QAContext,
+    QAResponse,
+    KnowledgeEntry,
+    ai_qa_engine,
+)
+from .black_swan import (
+    BlackSwanMonitor,
+    RiskLevel,
+    RiskType,
+    RiskAlert,
+    MarketRiskAssessment,
+    black_swan_monitor,
+)
+from .rebalancer import (
+    PortfolioRebalancer,
+    RebalanceAction,
+    RebalanceReason,
+    RebalanceSuggestion,
+    RebalanceReport,
+    portfolio_rebalancer,
+)
+from .ml_tracker import (
+    MLPredictionTracker,
+    PredictionOutcome,
+    PredictionRecord,
+    ModelPerformance,
+    PredictionAnalysis,
+    ml_prediction_tracker,
+)
+from .model_retrainer import (
+    ModelRetrainer,
+    ModelStatus,
+    ModelVersion,
+    RetrainingConfig,
+    RetrainingResult,
+    model_retrainer,
+)
+from .trade_logger import (
+    EnhancedTradeLogger,
+    TradeAction,
+    TradeSource,
+    TradeResult as LogTradeResult,
+    TradeContext,
+    DecisionBasis,
+    EnhancedTradeLog,
+    TradeStatistics,
+    enhanced_trade_logger,
+)
+from .backtest_reporter import (
+    BacktestReporter,
+    ReportPeriod,
+    StrategyGrade,
+    BacktestMetrics,
+    StrategyComparison,
+    BacktestReport,
+    backtest_reporter,
+)
+from .dashboard import (
+    DashboardGenerator,
+    ChartType,
+    MetricType,
+    ChartData,
+    MetricCard,
+    DashboardSection,
+    PerformanceDashboard,
+    dashboard_generator,
+)
 
 __all__ = [
     "PreMarketAnalyzer",
@@ -93,4 +163,58 @@ __all__ = [
     "AttributionAnalysis",
     "ReviewReport",
     "trading_review",
+    "AIQAEngine",
+    "QuestionType",
+    "QAContext",
+    "QAResponse",
+    "KnowledgeEntry",
+    "ai_qa_engine",
+    "BlackSwanMonitor",
+    "RiskLevel",
+    "RiskType",
+    "RiskAlert",
+    "MarketRiskAssessment",
+    "black_swan_monitor",
+    "PortfolioRebalancer",
+    "RebalanceAction",
+    "RebalanceReason",
+    "RebalanceSuggestion",
+    "RebalanceReport",
+    "portfolio_rebalancer",
+    "MLPredictionTracker",
+    "PredictionOutcome",
+    "PredictionRecord",
+    "ModelPerformance",
+    "PredictionAnalysis",
+    "ml_prediction_tracker",
+    "ModelRetrainer",
+    "ModelStatus",
+    "ModelVersion",
+    "RetrainingConfig",
+    "RetrainingResult",
+    "model_retrainer",
+    "EnhancedTradeLogger",
+    "TradeAction",
+    "TradeSource",
+    "LogTradeResult",
+    "TradeContext",
+    "DecisionBasis",
+    "EnhancedTradeLog",
+    "TradeStatistics",
+    "enhanced_trade_logger",
+    "BacktestReporter",
+    "ReportPeriod",
+    "StrategyGrade",
+    "BacktestMetrics",
+    "StrategyComparison",
+    "BacktestReport",
+    "backtest_reporter",
+    "DashboardGenerator",
+    "ChartType",
+    "MetricType",
+    "ChartData",
+    "MetricCard",
+    "DashboardSection",
+    "PerformanceDashboard",
+    "dashboard_generator",
 ]

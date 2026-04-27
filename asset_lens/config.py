@@ -162,11 +162,23 @@ class Config:
         self._risk_levels: dict[str, RiskLevelConfig] | None = None
 
     def _resolve_path(self, path_str: str) -> Path:
-        """解析路径，支持相对路径和绝对路径"""
+        """解析路径，支持相对路径和绝对路径，自动选择最新数据目录"""
         path = Path(path_str)
         if path.is_absolute():
-            return path
-        return self.project_root / path
+            resolved = path
+        else:
+            resolved = self.project_root / path
+
+        if resolved.exists() and resolved.is_dir():
+            money_dirs = sorted(
+                [d for d in resolved.iterdir() if d.is_dir() and d.name.startswith("money_csv_")],
+                key=lambda x: x.name,
+                reverse=True,
+            )
+            if money_dirs:
+                return money_dirs[0]
+
+        return resolved
 
     def _load_platform_config(self) -> None:
         """加载平台配置文件"""

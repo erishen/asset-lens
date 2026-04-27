@@ -512,3 +512,56 @@ def register_data_commands(cli: click.Group) -> None:
                 click.echo(f"   {err.get('code')}: {err.get('error')}")
 
         click.echo("\n💡 使用 'asset-lens ml-train-db' 训练模型")
+
+    @cli.command("north-flow")
+    @click.option("--days", default=30, type=int, help="查看最近N天的北向资金")
+    def north_flow(days: int):
+        """北向资金分析"""
+        from rich.console import Console
+        from rich.table import Table
+
+        from asset_lens.data.fundamental_fetcher import MoneyFlowFetcher
+
+        console = Console()
+        console.print("\n📈 北向资金分析")
+        console.print("=" * 60)
+
+        try:
+            fetcher = MoneyFlowFetcher()
+            df = fetcher.get_north_money_flow(days=days)
+
+            if df is None or df.empty:
+                console.print("[yellow]⚠️ 无法获取北向资金数据[/yellow]")
+                return
+
+            data_source = df['data_source'].iloc[0] if 'data_source' in df.columns else '历史数据'
+            console.print(f"\n📊 最近 {len(df)} 天北向资金流向 (数据来源: {data_source})")
+
+            table = Table()
+            table.add_column("日期", style="cyan")
+            table.add_column("净流入(亿)", justify="right")
+            table.add_column("趋势", justify="center")
+
+            total_inflow = 0
+            for _, row in df.iterrows():
+                net_inflow = row.get('north_net_inflow', 0)
+                if net_inflow:
+                    total_inflow += net_inflow
+                    trend = "🔴 流出" if net_inflow < 0 else "🟢 流入"
+                    table.add_row(
+                        str(row.get('date', '')),
+                        f"{net_inflow:.2f}",
+                        trend,
+                    )
+
+            console.print(table)
+
+            console.print(f"\n📊 汇总:")
+            console.print(f"   总净流入: {total_inflow:.2f} 亿")
+            if total_inflow > 0:
+                console.print("   [green]整体趋势: 北向资金净流入[/green]")
+            else:
+                console.print("   [red]整体趋势: 北向资金净流出[/red]")
+
+        except Exception as e:
+            console.print(f"[red]❌ 获取北向资金数据失败: {e}[/red]")

@@ -7,6 +7,9 @@ export HTTPS_PROXY := http://127.0.0.1:7890
 export http_proxy := http://127.0.0.1:7890
 export https_proxy := http://127.0.0.1:7890
 
+# Playwright 浏览器路径（解决沙盒环境问题）
+export PLAYWRIGHT_BROWSERS_PATH := $(HOME)/Library/Caches/ms-playwright
+
 # 变量定义
 PYTHON := python
 CONDA_ENV := asset-lens
@@ -18,8 +21,8 @@ VERSION := 1.0.0
 # 直接使用 conda 环境中的 Python（避免 conda run 不传递环境变量的问题）
 CONDA_PYTHON := /opt/anaconda3/envs/asset-lens/bin/python
 
-# Python 命令
-PY := python -m asset_lens
+# Python 命令（使用 conda 环境）
+PY := $(CONDA_PYTHON) -m asset_lens
 
 # 默认目标
 .PHONY: all
@@ -36,7 +39,7 @@ menu: ## 显示交互式菜单
 	@echo "  ╚════════════════════════════════════════════════════════════╝"
 	@echo ""
 	@echo "  🎯 快速开始:"
-	@echo "    make daily            📊 每日分析（更新数据+估算盈亏）"
+	@echo "    make daily            📊 每日分析（11步完整流程）"
 	@echo "    make weekly           📈 生成周报"
 	@echo "    make analyze          📋 分析投资组合"
 	@echo ""
@@ -100,6 +103,7 @@ help: ## 显示帮助信息
 	@echo "    make generate-html-report 生成投资分析报告（HTML）"
 	@echo "    make report           生成投资报告"
 	@echo "    make weekly           生成周度投资报告"
+	@echo "    make monthly          生成月度投资报告"
 	@echo "    make sentiment        分析市场风向"
 	@echo "    make predict-etf      预测 ETF 走势"
 	@echo ""
@@ -108,7 +112,7 @@ help: ## 显示帮助信息
 	@echo "    make pnl-weekly      周度盈亏估算（基于市场指数）"
 	@echo "    make estimate        全产品日收益估算（基于预期年化收益率）"
 	@echo "    make estimate-weekly 全产品周收益估算（基于预期年化收益率）"
-	@echo "    make daily           快速日度分析（更新数据+估算盈亏）"
+	@echo "    make daily           快速日度分析（11步完整流程）"
 	@echo ""
 	@echo "  📈 市场数据:"
 	@echo "    make update-market-data    更新市场指数数据（完整历史数据）"
@@ -346,6 +350,11 @@ report: ## 生成投资报告
 	@echo "📊 生成投资报告..."
 	$(PY) investment-report
 
+.PHONY: daily-report
+daily-report: ## 生成日度报告（快速摘要）
+	@echo "📝 生成日度报告..."
+	$(PY) daily-report
+
 .PHONY: ai-analyze
 ai-analyze: ## AI 分析投资组合（需要配置 API 密钥）
 	@echo "🤖 AI 分析投资组合..."
@@ -389,30 +398,50 @@ update-market-data-fast: ## 快速更新市场指数数据（仅关键指数）
 	@echo "📈 更新市场指数数据（快速模式）..."
 	$(PY) update-market-data --fast
 
+.PHONY: north-flow
+north-flow: ## 北向资金分析
+	@echo "📈 北向资金分析..."
+	$(PY) north-flow
+
 .PHONY: daily
-daily: ## 快速日度分析（更新数据+智能同步股票历史+估算盈亏+自动交易信号+基金持仓分析+基本面数据更新）
+daily: ## 快速日度分析（更新数据+智能同步股票历史+估算盈亏+自动交易+基金持仓分析+基本面数据更新+ML预测+风险检查+日度报告+数据备份+北向资金）
 	@echo ""
 	@echo "============================================================"
 	@echo "🚀 开始日度分析"
 	@echo "============================================================"
 	@echo ""
-	@echo "📌 步骤 1/6: 📈 更新市场指数数据"
+	@echo "📌 步骤 1/11: 📈 更新市场指数数据"
 	@$(MAKE) --no-print-directory update-market-data-fast
 	@echo ""
-	@echo "📌 步骤 2/6: 🔄 智能同步股票历史数据"
+	@echo "📌 步骤 2/11: 🔄 智能同步股票历史数据"
 	@$(MAKE) --no-print-directory db-auto-sync
 	@echo ""
-	@echo "📌 步骤 3/6: 📊 更新基本面数据（资金流向）"
+	@echo "📌 步骤 3/11: 📊 更新基本面数据（资金流向）"
 	@$(MAKE) --no-print-directory fundamental-update
 	@echo ""
-	@echo "📌 步骤 4/6: 💰 估算今日盈亏"
+	@echo "📌 步骤 4/11: 💰 估算今日盈亏"
 	@$(MAKE) --no-print-directory pnl
 	@echo ""
-	@echo "📌 步骤 5/6: 🤖 自动交易信号（模拟）"
-	@$(MAKE) --no-print-directory auto-trade-dry
+	@echo "📌 步骤 5/11: 🤖 自动交易（模拟盘）"
+	@$(MAKE) --no-print-directory auto-trade
 	@echo ""
-	@echo "📌 步骤 6/6: 📊 基金持仓分析"
+	@echo "📌 步骤 6/11: 📊 基金持仓分析"
 	@$(MAKE) --no-print-directory fund-holding
+	@echo ""
+	@echo "📌 步骤 7/11: 🔮 ML 预测分析"
+	@$(MAKE) --no-print-directory ml-predict-pool
+	@echo ""
+	@echo "📌 步骤 8/11: 🔍 风险检查"
+	@$(MAKE) --no-print-directory risk-check
+	@echo ""
+	@echo "📌 步骤 9/11: 📝 日度报告生成"
+	@$(MAKE) --no-print-directory daily-report
+	@echo ""
+	@echo "📌 步骤 10/11: 💾 数据备份"
+	@$(MAKE) --no-print-directory backup
+	@echo ""
+	@echo "📌 步骤 11/11: 📈 北向资金分析"
+	@$(MAKE) --no-print-directory north-flow
 	@echo ""
 	@echo "============================================================"
 	@echo "✅ 日度分析完成！"
@@ -628,14 +657,26 @@ momentum-screen-pool: ## 动量策略选股并添加到股票池
 	$(PY) momentum-screen --add-to-pool
 
 .PHONY: auto-trade
-auto-trade: ## 自动交易 - 根据策略信号自动买入卖出
+auto-trade: ## 自动交易 - 根据策略信号自动买入卖出（启用 ML 预测）
 	@echo "🤖 自动交易系统"
-	$(PY) auto-trade
+	$(PY) auto-trade --use-ml
 
 .PHONY: auto-trade-dry
 auto-trade-dry: ## 自动交易（仅显示信号，不执行）
 	@echo "🤖 自动交易系统（模拟模式）"
 	$(PY) auto-trade --dry-run
+
+.PHONY: ai-qa
+ai-qa: ## AI 投资问答
+	$(PY) ai-qa -i
+
+.PHONY: rebalance
+rebalance: ## 持仓调仓建议
+	$(PY) rebalance
+
+.PHONY: ml-performance
+ml-performance: ## ML 模型表现分析
+	$(PY) ml-performance
 
 .PHONY: auto-trade-ai
 auto-trade-ai: ## 自动交易 + AI 分析辅助决策
@@ -664,6 +705,11 @@ ml-train: ## 训练机器学习模型
 ml-predict: ## 使用模型预测股票（make ml-predict CODE=sh600519）
 	@echo "🔮 预测股票..."
 	$(PY) ml predict --code $(or $(CODE),sh600519)
+
+.PHONY: ml-predict-pool
+ml-predict-pool: ## 预测股票池中所有股票
+	@echo "🔮 预测股票池中所有股票..."
+	$(PY) ml predict-pool
 
 .PHONY: ml-importance
 ml-importance: ## 查看模型特征重要性
@@ -709,6 +755,27 @@ ai-trade-history: ## 查看AI模拟交易历史
 ai-portfolio: ## 查看AI模拟交易投资组合
 	@echo "📊 查看投资组合..."
 	$(PY) ml portfolio
+
+.PHONY: ml-retrain
+ml-retrain: ## ML 模型重训练（保持新鲜度）
+	@echo "🔄 ML 模型重训练..."
+	$(PY) ml-retrain
+
+.PHONY: trade-stats
+trade-stats: ## 交易日志统计
+	$(PY) trade-stats
+
+.PHONY: backtest-report
+backtest-report: ## 策略回测报告
+	$(PY) backtest-report
+
+.PHONY: dashboard
+dashboard: ## 绩效看板（可视化展示）
+	$(PY) dashboard
+
+.PHONY: dashboard-html
+dashboard-html: ## 绩效看板（HTML格式）
+	$(PY) dashboard --export html
 
 .PHONY: ml-sector
 ml-sector: ## ML分析板块轮动情况
@@ -990,6 +1057,86 @@ test-verbose: ## 运行测试（详细输出）
 test-failed: ## 只运行上次失败的测试
 	@echo "🧪 运行上次失败的测试..."
 	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/ --lf
+
+.PHONY: test-e2e
+test-e2e: ## 运行 E2E 测试（需要先启动 web 服务）
+	@echo "🧪 运行 E2E 测试..."
+	@echo "   请确保 web 服务已启动: make web"
+	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/ -v --tb=short
+
+.PHONY: test-e2e-fast
+test-e2e-fast: ## 运行 E2E 测试（快速模式，跳过慢速测试）
+	@echo "⚡ 运行 E2E 测试（快速模式）..."
+	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/ -v --tb=line -m "not slow"
+
+.PHONY: test-e2e-parallel
+test-e2e-parallel: ## 运行 E2E 测试（并行模式，CI 推荐）
+	@echo "🚀 运行 E2E 测试（并行模式）..."
+	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/ -v --tb=line -n auto
+
+.PHONY: test-e2e-optimized
+test-e2e-optimized: ## 运行优化的 E2E 测试（合并后的测试）
+	@echo "⚡ 运行优化的 E2E 测试..."
+	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/test_api_optimized.py tests/e2e/test_dashboard_optimized.py -v --tb=short
+
+.PHONY: test-e2e-slow
+test-e2e-slow: ## 仅运行慢速 E2E 测试
+	@echo "🐌 运行慢速 E2E 测试..."
+	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/ -v --tb=short -m "slow"
+
+.PHONY: test-e2e-ui
+test-e2e-ui: ## 运行 E2E 测试（带 UI 界面）
+	@echo "🧪 运行 E2E 测试（UI 模式）..."
+	@echo "   请确保 web 服务已启动: make web"
+	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/ -v --tb=short --headed
+
+.PHONY: test-e2e-debug
+test-e2e-debug: ## 运行 E2E 测试（调试模式，慢动作）
+	@echo "🧪 运行 E2E 测试（调试模式）..."
+	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/ -v -s --tb=long --headed --slowmo=500
+
+.PHONY: test-e2e-demo
+test-e2e-demo: ## 运行 E2E 演示测试（完整流程演示）
+	@echo "🎬 运行 E2E 演示测试..."
+	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/test_demo.py -v -s --tb=short --headed --slowmo=300
+
+.PHONY: test-e2e-video
+test-e2e-video: ## 运行 E2E 测试（录制视频）
+	@echo "🎥 运行 E2E 测试（录制视频）..."
+	@echo "   视频将保存到 test-results/videos/"
+	@RECORD_VIDEO=1 PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/ -v --tb=short --headed
+
+.PHONY: test-e2e-report
+test-e2e-report: ## 运行 E2E 测试并生成 HTML 报告
+	@echo "📊 运行 E2E 测试并生成报告..."
+	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/ -v --tb=short --html=test-results/e2e-report.html --self-contained-html
+	@echo "📄 报告已生成: test-results/e2e-report.html"
+
+.PHONY: test-e2e-api
+test-e2e-api: ## 运行 E2E API 测试（仅 API 相关测试）
+	@echo "🧪 运行 E2E API 测试..."
+	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/test_api_optimized.py -v --tb=short
+
+.PHONY: test-e2e-dashboard
+test-e2e-dashboard: ## 运行 E2E Dashboard 测试
+	@echo "🧪 运行 E2E Dashboard 测试..."
+	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/test_dashboard_optimized.py -v --tb=short
+
+.PHONY: test-e2e-failed
+test-e2e-failed: ## 运行上次失败的 E2E 测试
+	@echo "🔄 运行上次失败的 E2E 测试..."
+	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/ -v --tb=short --lf
+
+.PHONY: test-e2e-clean
+test-e2e-clean: ## 清理 E2E 测试结果
+	@echo "🧹 清理 E2E 测试结果..."
+	@rm -rf test-results/screenshots test-results/videos test-results/traces test-results/e2e-report.html 2>/dev/null || true
+	@echo "✅ 清理完成"
+
+.PHONY: playwright-install
+playwright-install: ## 安装 Playwright 浏览器
+	@echo "📦 安装 Playwright 浏览器..."
+	/opt/anaconda3/envs/asset-lens/bin/python -m playwright install chromium
 
 .PHONY: test-collect
 test-collect: ## 收集测试用例（诊断用）
@@ -1355,6 +1502,11 @@ weekly: ## 一键生成周报（市场行情+选股+风向分析）
 weekly-full: ## 完整周报（同步数据+AI分析）
 	@echo "📊 生成完整投资周报..."
 	@$(PY) weekly --sync --analyze
+
+.PHONY: monthly
+monthly: ## 一键生成月报（资产配置+表现分析+投资建议）
+	@echo "📅 生成投资月报..."
+	@$(PY) monthly
 
 .PHONY: sentiment
 sentiment: ## 分析市场风向
