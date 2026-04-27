@@ -47,21 +47,26 @@ class TestBackupManager:
 
     def test_create_backup_success(self, backup_manager, tmp_path):
         """测试创建备份 - 成功"""
-        data_dir = tmp_path / "data"
-        data_dir.mkdir()
-        (data_dir / "test.txt").write_text("test data")
+        with patch("asset_lens.data.backup_manager.config") as mock_config:
+            mock_config.project_root = tmp_path
+            mock_config.cache_path = tmp_path / "cache"
+            mock_config.config_path = tmp_path / "config"
 
-        result = backup_manager.create_backup(
-            backup_name="test_backup",
-            include_data=True,
-            include_cache=False,
-            include_config=False,
-        )
+            data_dir = tmp_path / "data"
+            data_dir.mkdir()
+            (data_dir / "test.txt").write_text("test data")
 
-        assert result["success"] is True
-        assert result["backup_name"] == "test_backup"
-        assert result["backup_file"].endswith(".tar.gz")
-        assert os.path.exists(result["backup_file"])
+            result = backup_manager.create_backup(
+                backup_name="test_backup",
+                include_data=True,
+                include_cache=False,
+                include_config=False,
+            )
+
+            assert result["success"] is True
+            assert result["backup_name"] == "test_backup"
+            assert result["backup_file"].endswith(".tar.gz")
+            assert os.path.exists(result["backup_file"])
 
     def test_create_backup_with_all(self, backup_manager, tmp_path):
         """测试创建备份 - 包含所有目录"""
@@ -87,30 +92,35 @@ class TestBackupManager:
 
     def test_restore_backup_success(self, backup_manager, tmp_path):
         """测试恢复备份 - 成功"""
-        data_dir = tmp_path / "data"
-        data_dir.mkdir()
-        (data_dir / "test.txt").write_text("original data")
+        with patch("asset_lens.data.backup_manager.config") as mock_config:
+            mock_config.project_root = tmp_path
+            mock_config.cache_path = tmp_path / "cache"
+            mock_config.config_path = tmp_path / "config"
 
-        backup_result = backup_manager.create_backup(
-            backup_name="test_restore",
-            include_data=True,
-            include_cache=False,
-            include_config=False,
-        )
+            data_dir = tmp_path / "data"
+            data_dir.mkdir()
+            (data_dir / "test.txt").write_text("original data")
 
-        assert backup_result["success"] is True
+            backup_result = backup_manager.create_backup(
+                backup_name="test_restore",
+                include_data=True,
+                include_cache=False,
+                include_config=False,
+            )
 
-        (data_dir / "test.txt").write_text("modified data")
+            assert backup_result["success"] is True
 
-        restore_result = backup_manager.restore_backup(
-            "test_restore",
-            restore_data=True,
-            restore_cache=False,
-            restore_config=False,
-        )
+            (data_dir / "test.txt").write_text("modified data")
 
-        assert restore_result["success"] is True
-        assert "data" in restore_result["restored_directories"]
+            restore_result = backup_manager.restore_backup(
+                "test_restore",
+                restore_data=True,
+                restore_cache=False,
+                restore_config=False,
+            )
+
+            assert restore_result["success"] is True
+            assert "data" in restore_result["restored_directories"]
 
     def test_restore_backup_nonexistent(self, backup_manager):
         """测试恢复备份 - 备份不存在"""
@@ -147,11 +157,9 @@ class TestBackupManager:
 
     def test_delete_backup_success(self, backup_manager, tmp_path):
         """测试删除备份 - 成功"""
-        data_dir = tmp_path / "data"
-        data_dir.mkdir()
-        (data_dir / "test.txt").write_text("test")
-
-        backup_manager.create_backup("test_delete")
+        # 直接创建备份文件，而不是通过 create_backup
+        backup_file = backup_manager.backup_path / "test_delete.tar.gz"
+        backup_file.write_bytes(b"fake backup content")
 
         result = backup_manager.delete_backup("test_delete")
 
@@ -167,21 +175,12 @@ class TestBackupManager:
         """测试清理旧备份"""
         backup_manager.config["max_backup_count"] = 2
 
-        data_dir = tmp_path / "data"
-        data_dir.mkdir()
-        (data_dir / "test.txt").write_text("test")
-
-        # 创建备份但不自动清理（通过临时禁用清理）
-        original_max = backup_manager.config.get("max_backup_count")
-        backup_manager.config["max_backup_count"] = 100  # 临时设置大值避免自动清理
-        
+        # 直接创建空的备份文件，而不是通过 create_backup（太慢）
         for i in range(5):
-            backup_manager.create_backup(f"backup_{i}")
-        
-        # 恢复 max_backup_count
-        backup_manager.config["max_backup_count"] = original_max
+            backup_file = backup_manager.backup_path / f"backup_{i}.tar.gz"
+            backup_file.write_bytes(b"fake backup content")
 
-        # 现在手动清理
+        # 手动清理
         deleted_count = backup_manager._cleanup_old_backups()
 
         assert deleted_count == 3

@@ -2,7 +2,9 @@
 对比分析 CLI 命令
 """
 
+from datetime import datetime, timedelta
 from decimal import Decimal
+from pathlib import Path
 
 import click
 from rich.console import Console
@@ -16,11 +18,10 @@ def register_compare_commands(cli: click.Group) -> None:
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     @click.option("--before", type=str, help="对比前日期 (YYYY-MM-DD)")
     @click.option("--after", type=str, help="对比后日期 (YYYY-MM-DD)")
-    def compare(data_mode: str | None, before: str | None, after: str | None):
+    @click.option("--days", type=int, default=7, help="对比天数（默认7天）")
+    def compare(data_mode: str | None, before: str | None, after: str | None, days: int):
         """投资组合对比分析"""
-        from pathlib import Path
-
-        from asset_lens.cli_modules.cli.helpers import setup_data_mode
+        from asset_lens.cli_modules.cli.helpers import load_products, setup_data_mode
         from asset_lens.core.comparison import ComparisonAnalyzer
         from asset_lens.data.csv_parser import CSVParser
 
@@ -33,34 +34,37 @@ def register_compare_commands(cli: click.Group) -> None:
             data_dir = Path("data")
             real_dir = data_dir / "real"
 
+            data_dirs = []
             if real_dir.exists():
                 data_dirs = sorted([d for d in real_dir.iterdir() if d.is_dir()], key=lambda x: x.name)
+
+            if len(data_dirs) >= 2:
+                before_dir = data_dirs[-2] if not before else next((d for d in data_dirs if before in d.name), data_dirs[-2])
+                after_dir = data_dirs[-1] if not after else next((d for d in data_dirs if after in d.name), data_dirs[-1])
+
+                click.echo(f"📁 对比目录: {before_dir.name} vs {after_dir.name}")
+
+                products_before = CSVParser.load_data_from_dir(before_dir)
+                products_after = CSVParser.load_data_from_dir(after_dir)
             else:
-                data_dirs = sorted([d for d in data_dir.iterdir() if d.is_dir()], key=lambda x: x.name)
+                click.echo(f"📁 对比当前数据与初始投资")
+                
+                products_after = load_products()
+                if not products_after:
+                    click.echo("❌ 无法加载当前投资产品数据", err=True)
+                    return
 
-            if not data_dirs:
-                click.echo("❌ 没有找到数据目录", err=True)
-                return
-
-            if len(data_dirs) < 2:
-                click.echo("❌ 需要至少两个数据目录进行对比", err=True)
-                click.echo(f"💡 当前找到 {len(data_dirs)} 个目录: {[d.name for d in data_dirs]}", err=True)
-                return
-
-            before_dir = data_dirs[-2] if not before else next((d for d in data_dirs if before in d.name), data_dirs[-2])
-            after_dir = data_dirs[-1] if not after else next((d for d in data_dirs if after in d.name), data_dirs[-1])
-
-            click.echo(f"📁 对比目录: {before_dir.name} vs {after_dir.name}")
-
-            products_before = CSVParser.load_data_from_dir(before_dir)
-            products_after = CSVParser.load_data_from_dir(after_dir)
+                products_before = _get_initial_products(products_after)
+                if not products_before:
+                    click.echo(f"❌ 无法获取初始投资数据", err=True)
+                    return
 
             click.echo(f"✅ 加载 {len(products_before)} 个产品（之前）")
             click.echo(f"✅ 加载 {len(products_after)} 个产品（之后）")
 
             analyzer = ComparisonAnalyzer()
             result = analyzer.generate_comparison_report(
-                products_before, products_after, f"{before_dir.name} vs {after_dir.name}"
+                products_before, products_after, f"近{days}天对比"
             )
 
             trend = result["comparison"]["trend"]
@@ -164,57 +168,65 @@ def register_compare_commands(cli: click.Group) -> None:
         except Exception as e:
             click.echo(f"❌ 对比分析失败: {e}", err=True)
 
-    @cli.command()
+    @cli.command("snapshot")
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
-    def analyze_by_time(data_mode: str | None):
-        """按投资时间分组分析"""
+    def create_snapshot(data_mode: str | None):
+        """创建投资组合快照"""
         from asset_lens.cli_modules.cli.helpers import load_products, setup_data_mode
-        from asset_lens.core.time_group import TimeGroupAnalyzer
 
         setup_data_mode(data_mode)
 
-        click.echo("\n📊 按投资时间分组分析")
+        click.echo("\n📸 创建投资组合快照")
         click.echo("=" * 60)
 
         try:
             products = load_products()
-            click.echo(f"✅ 成功加载 {len(products)} 个投资产品")
+            if not products:
+                click.echo("❌ 无法加载投资产品数据", err=True)
+                return
 
-            analyzer = TimeGroupAnalyzer()
-            result = analyzer.analyze_by_holding_period(products)
+            today = datetime.now().strftime("%Y-%m-%d")
+            snapshot_dir = Path("data/real") / today
+            snapshot_dir.mkdir(parents=True, exist_ok=True)
 
-            click.echo("\n📈 总体统计:")
-            click.echo(f"  总产品数: {result['total_products']}")
-            click.echo(f"  总金额: ¥{result['total_amount']:,.2f}")
-            click.echo(f"  总初始投资: ¥{result['total_initial']:,.2f}")
-            click.echo(f"  总收益: ¥{result['total_profit']:,.2f}")
-            click.echo(f"  总收益率: {result['total_return_rate']:.2f}%")
+            import shutil
+            source_file = Path("data/sample_data/投资产品.csv")
+            if source_file.exists():
+                shutil.copy(source_file, snapshot_dir / "投资产品.csv")
 
-            if result["groups"]:
-                console = Console()
-                table = Table(title="\n投资时间分组统计")
-                table.add_column("分组", style="cyan", no_wrap=True)
-                table.add_column("描述", style="green", no_wrap=True)
-                table.add_column("产品数", justify="right")
-                table.add_column("总金额", justify="right", style="yellow")
-                table.add_column("总收益", justify="right")
-                table.add_column("平均收益率", justify="right")
-                table.add_column("平均持有天数", justify="right")
-
-                for group in result["groups"]:
-                    table.add_row(
-                        group["group"],
-                        group["description"],
-                        str(group["count"]),
-                        f"¥{group['total_amount']:,.0f}",
-                        f"¥{group['total_profit']:,.0f}",
-                        f"{group['avg_return_rate']:.2f}%",
-                        f"{group['avg_holding_days']:.0f}天",
-                    )
-
-                console.print(table)
-
-            click.echo("\n✅ 分析完成！")
+            click.echo(f"✅ 快照已创建: {snapshot_dir}")
+            click.echo(f"   包含 {len(products)} 个投资产品")
 
         except Exception as e:
-            click.echo(f"❌ 分析失败: {e}", err=True)
+            click.echo(f"❌ 创建快照失败: {e}", err=True)
+
+
+def _get_historical_products(days: int) -> list:
+    """获取历史投资产品数据"""
+    from datetime import datetime, timedelta
+    from pathlib import Path
+    
+    from asset_lens.data.csv_parser import CSVParser
+
+    history_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+    
+    snapshot_dir = Path("data/real") / history_date
+    if snapshot_dir.exists():
+        return CSVParser.load_data_from_dir(snapshot_dir)
+    
+    return []
+
+
+def _get_initial_products(current_products: list) -> list:
+    """获取初始投资产品数据（基于初始金额）"""
+    from copy import deepcopy
+    
+    initial_products = []
+    for p in current_products:
+        initial_p = deepcopy(p)
+        initial_p.current_amount = p.initial_amount
+        initial_p.return_rate = 0
+        initial_p.profit_amount = 0
+        initial_products.append(initial_p)
+    
+    return initial_products

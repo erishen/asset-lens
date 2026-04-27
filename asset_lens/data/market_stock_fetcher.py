@@ -11,7 +11,7 @@ import json
 import os
 from collections.abc import Generator
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -38,6 +38,26 @@ def _disable_proxy() -> Generator[None, None, None]:
 
 class MarketStockFetcher:
     """市场股票列表获取器 - 使用 AkShare 开源库"""
+
+    INDUSTRY_KEYWORDS: dict[str, list[str]] = {
+        "新能源": ["新能源", "锂电", "光伏", "风电", "储能", "宁德", "比亚迪", "亿纬", "隆基", "通威", "天齐", "赣锋"],
+        "半导体": ["半导体", "芯片", "集成电路", "中芯", "华虹", "北方华创", "韦尔", "兆易", "紫光", "长电", "通富"],
+        "医药": ["医药", "生物", "医疗", "制药", "药明", "恒瑞", "片仔癀", "云南白药", "长春高新", "智飞", "沃森"],
+        "消费": ["消费", "食品", "饮料", "家电", "零售", "茅台", "五粮液", "伊利", "海天", "美的", "格力", "海尔"],
+        "军工": ["军工", "航天", "兵器", "中航", "航发", "沈飞", "成飞", "西飞", "中兵"],
+        "金融": ["银行", "证券", "保险", "招商银行", "平安", "中信", "兴业", "浦发", "民生", "工商", "建设"],
+        "科技": ["科技", "软件", "互联网", "腾讯", "阿里", "百度", "美团", "京东", "小米", "华为"],
+        "地产": ["地产", "房地产", "万科", "保利", "恒大", "碧桂园", "融创"],
+        "汽车": ["汽车", "整车", "比亚迪", "长城", "吉利", "上汽", "广汽", "长安", "一汽"],
+        "有色金属": ["有色", "金属", "铜", "铝", "锌", "紫金", "洛阳钼业", "中国铝业"],
+        "煤炭": ["煤炭", "煤业", "中国神华", "陕西煤业", "兖矿"],
+        "电力": ["电力", "水电", "火电", "风电", "长江电力", "华能", "国电"],
+        "化工": ["化工", "化学", "万华", "恒力", "荣盛", "桐昆"],
+        "通信": ["通信", "5G", "中兴", "烽火", "亨通", "新易盛", "光通信", "光纤"],
+        "白酒": ["白酒", "茅台", "五粮液", "泸州老窖", "洋河", "汾酒", "酒鬼酒"],
+        "银行": ["银行", "招商银行", "平安银行", "兴业银行", "浦发银行", "民生银行"],
+        "电子": ["电子", "精密", "电路", "PCB", "东山精密", "鹏鼎", "深南电路"],
+    }
 
     def __init__(self, cache_path: Path | None = None):
         """
@@ -66,6 +86,37 @@ class MarketStockFetcher:
                     "GitHub: https://github.com/akfamily/akshare"
                 )
         return self._akshare
+
+    def infer_industry(self, name: str, code: str = "") -> str:
+        """
+        根据股票名称和代码推断行业
+
+        Args:
+            name: 股票名称
+            code: 股票代码
+
+        Returns:
+            行业名称
+        """
+        name_lower = name.lower()
+        
+        for industry, keywords in self.INDUSTRY_KEYWORDS.items():
+            for keyword in keywords:
+                if keyword.lower() in name_lower:
+                    return industry
+        
+        if code.startswith("601318") or "平安" in name:
+            return "金融"
+        if code.startswith("601899") or "紫金" in name:
+            return "有色金属"
+        if code.startswith("600519"):
+            return "白酒"
+        if code.startswith("300750"):
+            return "新能源"
+        if code.startswith("300502"):
+            return "通信"
+        
+        return "其他"
 
     def fetch_cn_stock_list(self, page: int = 1, page_size: int = 100) -> list[dict[str, Any]]:
         """
@@ -146,6 +197,7 @@ class MarketStockFetcher:
                         "pe_ratio": pe_ratio,
                         "market_cap": market_cap,
                         "market": market,
+                        "industry": self.infer_industry(name, full_code),
                         "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     }
                 )
@@ -161,10 +213,11 @@ class MarketStockFetcher:
         获取所有A股股票（多数据源备选）
 
         优先级：
-        1. 腾讯财经（最稳定，速度快）
-        2. AkShare（数据全，但东方财富API不稳定）
-        3. Efinance（同上）
-        4. Baostock（稳定但需要补充价格数据）
+        1. Tushare（需要Token，数据最完整）
+        2. 腾讯财经（最稳定，速度快）
+        3. AkShare（数据全，但东方财富API不稳定）
+        4. Efinance（同上）
+        5. Baostock（稳定但需要补充价格数据）
 
         Args:
             max_pages: 最大页数（AkShare一次性获取，此参数忽略）
@@ -174,10 +227,20 @@ class MarketStockFetcher:
         """
         all_stocks = []
 
-        # 优先使用腾讯财经（最稳定）
+        # 优先使用 Tushare（数据最完整）
+        try:
+            all_stocks = self._fetch_stocks_tushare()
+            if all_stocks:
+                self.save_market_stocks(all_stocks)
+                return all_stocks
+        except Exception as e:
+            print(f"Tushare 获取失败: {e}")
+
+        print("Tushare 获取失败，尝试腾讯财经...")
         try:
             all_stocks = self._fetch_stocks_tencent()
             if all_stocks:
+                self.save_market_stocks(all_stocks)
                 return all_stocks
         except Exception as e:
             print(f"腾讯财经获取失败: {e}")
@@ -186,6 +249,7 @@ class MarketStockFetcher:
         try:
             all_stocks = self._fetch_stocks_akshare()
             if all_stocks:
+                self.save_market_stocks(all_stocks)
                 return all_stocks
         except Exception as e:
             print(f"AkShare 获取失败: {e}")
@@ -194,6 +258,7 @@ class MarketStockFetcher:
         try:
             all_stocks = self._fetch_stocks_efinance()
             if all_stocks:
+                self.save_market_stocks(all_stocks)
                 return all_stocks
         except Exception as e:
             print(f"Efinance 获取失败: {e}")
@@ -202,6 +267,7 @@ class MarketStockFetcher:
         try:
             all_stocks = self._fetch_stocks_baostock()
             if all_stocks:
+                self.save_market_stocks(all_stocks)
                 return all_stocks
         except Exception as e:
             print(f"Baostock 获取失败: {e}")
@@ -209,6 +275,79 @@ class MarketStockFetcher:
         print("所有数据源获取失败")
         print("⚠️ 网络获取失败，尝试使用旧缓存")
         return self.get_cached_market_stocks(max_age_hours=99999)  # 忽略缓存过期时间
+
+    def _fetch_stocks_tushare(self) -> list[dict[str, Any]]:
+        """使用 Tushare 获取A股列表（需要Token，数据最完整）"""
+        import os
+        import tempfile
+        
+        try:
+            os.environ['HOME'] = tempfile.gettempdir()
+            import tushare as ts
+            
+            token = os.environ.get('TUSHARE_TOKEN', '')
+            if not token:
+                print("⚠️ Tushare Token 未配置，跳过")
+                return []
+            
+            print("正在获取A股股票列表(Tushare)...")
+            print(f"🌐 API请求: https://tushare.pro (Tushare)")
+            
+            ts.set_token(token)
+            pro = ts.pro_api()
+            
+            df = pro.stock_basic(exchange='', list_status='L', fields='ts_code,symbol,name,area,industry,list_date')
+            
+            if df is None or df.empty:
+                print("❌ Tushare: 获取数据为空")
+                return []
+            
+            stocks = []
+            for _, row in df.iterrows():
+                ts_code = str(row.get('ts_code', ''))
+                symbol = str(row.get('symbol', ''))
+                name = str(row.get('name', ''))
+                industry = str(row.get('industry', ''))
+                
+                if not symbol or not name:
+                    continue
+                
+                # 转换代码格式
+                if ts_code.endswith('.SH'):
+                    full_code = f"sh{symbol}"
+                elif ts_code.endswith('.SZ'):
+                    full_code = f"sz{symbol}"
+                else:
+                    continue
+                
+                stocks.append({
+                    "code": full_code,
+                    "name": name,
+                    "current_price": 0,
+                    "change_percent": 0,
+                    "volume": 0,
+                    "amount": 0,
+                    "turnover_rate": 0,
+                    "pe_ratio": 0,
+                    "market_cap": 0,
+                    "market": "A股",
+                    "industry": industry if industry and industry != 'nan' else self.infer_industry(name, full_code),
+                    "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                })
+            
+            print(f"✅ Tushare: 获取 {len(stocks)} 只股票")
+            
+            # 用腾讯财经补充实时价格
+            stocks = self._enrich_prices_tencent(stocks)
+            
+            return stocks
+            
+        except ImportError:
+            print("⚠️ Tushare 未安装: pip install tushare")
+            return []
+        except Exception as e:
+            print(f"❌ Tushare 获取失败: {e}")
+            return []
 
     def _fetch_stocks_tencent(self) -> list[dict[str, Any]]:
         """使用腾讯财经获取A股列表（最稳定的数据源）
@@ -285,6 +424,7 @@ class MarketStockFetcher:
                         "pe_ratio": 0,
                         "market_cap": 0,
                         "market": "A股",
+                        "industry": self.infer_industry(name, full_code),
                         "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     })
 
@@ -609,6 +749,7 @@ class MarketStockFetcher:
                     "pe_ratio": pe_ratio,
                     "market_cap": market_cap,
                     "market": "A股",
+                    "industry": self.infer_industry(name, full_code),
                     "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 }
             )
@@ -669,6 +810,7 @@ class MarketStockFetcher:
                     "pe_ratio": pe_ratio,
                     "market_cap": market_cap,
                     "market": "A股",
+                    "industry": self.infer_industry(name, full_code),
                     "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 }
             )
@@ -719,6 +861,7 @@ class MarketStockFetcher:
                     "pe_ratio": 0,
                     "market_cap": 0,
                     "market": "A股",
+                    "industry": self.infer_industry(name, full_code),
                     "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 }
             )
@@ -801,6 +944,28 @@ class MarketStockFetcher:
 
                 update_time = datetime.strptime(update_time_str, "%Y-%m-%d %H:%M:%S")
                 age_hours = (datetime.now() - update_time).total_seconds() / 3600
+
+                now = datetime.now()
+                weekday = now.weekday()
+                
+                if weekday >= 5:
+                    trading_end_hour = 15
+                    if weekday == 5:
+                        friday = now - timedelta(days=1)
+                        friday_15pm = friday.replace(hour=15, minute=0, second=0, microsecond=0)
+                        cache_from_friday = update_time >= friday_15pm - timedelta(hours=2)
+                        if cache_from_friday:
+                            if age_hours < 72:
+                                print(f"📅 周六使用周五缓存数据 (缓存时间: {age_hours:.1f}小时)")
+                                return False
+                    elif weekday == 6:
+                        friday = now - timedelta(days=2)
+                        friday_15pm = friday.replace(hour=15, minute=0, second=0, microsecond=0)
+                        cache_from_friday = update_time >= friday_15pm - timedelta(hours=2)
+                        if cache_from_friday:
+                            if age_hours < 96:
+                                print(f"📅 周日使用周五缓存数据 (缓存时间: {age_hours:.1f}小时)")
+                                return False
 
                 if age_hours > max_age_hours:
                     if age_hours < 48:

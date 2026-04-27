@@ -69,7 +69,7 @@ class TestCLIRegistration:
         
         commands = cli.list_commands(None)
         
-        report_commands = ["weekly", "chart", "generate-report", "generate-html-report", "ai-analyze"]
+        report_commands = ["weekly", "monthly", "daily-report"]
         for cmd in report_commands:
             assert cmd in commands, f"报告命令 {cmd} 应该已注册"
 

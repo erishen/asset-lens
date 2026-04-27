@@ -43,8 +43,14 @@ class TestCLICommands:
     def test_weekly_command(self, runner):
         """测试周报命令"""
         from asset_lens.cli import cli
-        result = runner.invoke(cli, ["weekly"])
-        assert result.exit_code in [0, 1, 2]
+        with patch('asset_lens.data.csv_parser.CSVParser.load_data') as mock_load, \
+             patch('asset_lens.cli_modules.cli.report._get_north_flow') as mock_north, \
+             patch('asset_lens.cli_modules.cli.report._get_ml_predictions') as mock_ml:
+            mock_load.return_value = []
+            mock_north.return_value = {"total_flow": 0, "flows": []}
+            mock_ml.return_value = {"bullish": [], "bearish": []}
+            result = runner.invoke(cli, ["weekly"])
+            assert result.exit_code in [0, 1, 2]
 
 
 class TestCLIAnalyzeCommands:

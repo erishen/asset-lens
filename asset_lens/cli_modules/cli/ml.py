@@ -244,6 +244,101 @@ def predict(model: str, code: str):
 
 @ml.command()
 @click.option("--model", default="cache/ml/model.pkl", help="模型路径")
+@click.option("--limit", default=10, type=int, help="预测股票数量限制")
+def predict_pool(model: str, limit: int):
+    """预测股票池中所有股票"""
+    from rich.console import Console
+    from rich.table import Table
+
+    from asset_lens.trading.stock_pool import StockPool
+    from asset_lens.data.stock_history_fetcher import StockHistoryFetcher
+
+    console = Console()
+    console.print("\n🔮 预测股票池中所有股票")
+    console.print("=" * 60)
+
+    try:
+        model_path = Path(model)
+        if not model_path.exists():
+            console.print(f"[yellow]⚠️ 模型不存在: {model_path}[/yellow]")
+            console.print("跳过 ML 预测，请先运行 [cyan]make ml-train-db[/cyan] 训练模型")
+            return
+
+        pool = StockPool()
+        stocks = pool.list_stocks()
+
+        if not stocks:
+            console.print("[yellow]⚠️ 股票池为空，请先添加股票[/yellow]")
+            return
+
+        console.print(f"✅ 股票池中有 {len(stocks)} 只股票")
+
+        from asset_lens.ml.predictor import StockPredictor
+        predictor = StockPredictor(model_path=model_path)
+        
+        fetcher = StockHistoryFetcher()
+
+        predictions = []
+        for stock in stocks[:limit]:
+            code = stock.get('code', '')
+            name = stock.get('name', '')
+            try:
+                history = fetcher.fetch_history(code, days=120)
+                history_data = None
+                if history and history.get('klines'):
+                    history_data = []
+                    for kline in history['klines']:
+                        history_data.append({
+                            'open': float(kline.get('open', 0)),
+                            'high': float(kline.get('high', 0)),
+                            'low': float(kline.get('low', 0)),
+                            'close': float(kline.get('close', 0)),
+                            'volume': float(kline.get('volume', 0)),
+                            'amount': float(kline.get('amount', 0)),
+                        })
+                
+                result = predictor.predict_single(code=code, name=name, history_data=history_data)
+                if result:
+                    predictions.append({
+                        'code': code,
+                        'name': name,
+                        'prediction': result.prediction,
+                        'confidence': result.confidence,
+                        'up_prob': result.up_prob,
+                    })
+            except Exception:
+                pass
+
+        if predictions:
+            table = Table(title="股票池预测结果")
+            table.add_column("代码", style="cyan")
+            table.add_column("名称", style="white")
+            table.add_column("预测", justify="center")
+            table.add_column("置信度", justify="right")
+            table.add_column("上涨概率", justify="right")
+
+            for p in predictions:
+                pred_color = "green" if p['prediction'] == "up" else "red"
+                pred_text = "↑" if p['prediction'] == "up" else "↓"
+                table.add_row(
+                    p['code'],
+                    p['name'],
+                    f"[{pred_color}]{pred_text}[/{pred_color}]",
+                    f"{p['confidence']:.1%}",
+                    f"{p['up_prob']:.1%}",
+                )
+
+            console.print(table)
+            console.print(f"\n✅ 完成 {len(predictions)} 只股票预测")
+        else:
+            console.print("[yellow]⚠️ 无预测结果[/yellow]")
+
+    except Exception as e:
+        console.print(f"[red]❌ 预测失败: {e}[/red]")
+
+
+@ml.command()
+@click.option("--model", default="cache/ml/model.pkl", help="模型路径")
 def importance(model: str):
     """查看模型特征重要性"""
     from rich.console import Console
