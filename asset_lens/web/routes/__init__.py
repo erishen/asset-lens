@@ -3,6 +3,7 @@ Web Routes - API 路由模块
 """
 
 from .backup import router as backup_router
+from .chat import router as chat_router
 from .compare import router as compare_router
 from .market import router as market_router
 from .ml import router as ml_router
@@ -28,4 +29,5 @@ __all__ = [
     "stock_pool_router",
     "report_router",
     "ml_router",
+    "chat_router",
 ]

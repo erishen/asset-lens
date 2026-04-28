@@ -94,6 +94,7 @@ help: ## 显示帮助信息
 	@echo "    make analyze          分析投资组合（使用 .env 中的 DATA_MODE 设置）"
 	@echo "    make calculate        快捷计算收益率"
 	@echo "    make compare          对比不同时期的投资收益变化"
+	@echo "    make annual-return    分析年化收益率（按投资年份分组）"
 	@echo "    make analyze-sold     分析已卖出投资"
 	@echo "    make analyze-by-time  按投资时间分组分析"
 	@echo "    make ai-analyze       AI 分析投资组合（需要配置 API 密钥）"
@@ -339,6 +340,11 @@ estimate-weekly: ## 全产品周收益估算（基于预期年化收益率）
 analyze-sold: ## 分析已卖出投资
 	@echo "📈 分析已卖出投资..."
 	$(PY) analyze-sold
+
+.PHONY: annual-return
+annual-return: ## 分析年化收益率（按投资年份分组）
+	@echo "📊 分析年化收益率..."
+	$(PY) annual-return
 
 .PHONY: analyze-by-time
 analyze-by-time: ## 按投资时间分组分析
