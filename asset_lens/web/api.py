@@ -32,7 +32,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8080").split(",")
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173,http://localhost:3002,http://localhost:8080").split(",")
 CORS_METHODS = os.getenv("CORS_METHODS", "GET,POST,PUT,DELETE,OPTIONS").split(",")
 CORS_HEADERS = os.getenv("CORS_HEADERS", "Content-Type,Authorization,Accept").split(",")
 
@@ -47,6 +47,7 @@ app.add_middleware(
 from .dashboard_enhanced import router as dashboard_router
 from .routes import (
     backup_router,
+    chat_router,
     compare_router,
     market_router,
     ml_router,
@@ -73,6 +74,7 @@ app.include_router(stock_pool_router)
 app.include_router(report_router)
 app.include_router(dashboard_router)
 app.include_router(ml_router)
+app.include_router(chat_router)
 
 
 @app.get("/")
