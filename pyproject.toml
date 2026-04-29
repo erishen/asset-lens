@@ -59,6 +59,12 @@ dependencies = [
     "pydantic-settings>=2.14.0",
     "tenacity>=9.1.4",
     "litellm>=1.83.0",
+    "langchain>=1.2.15",
+    "langchain-community>=0.4.1",
+    "langchain-ollama>=1.1.0",
+    "langchain-openai>=1.2.1",
+    "qdrant-client<1.10",
+    "python-magic>=0.4.27",
 ]
 
 [project.optional-dependencies]
