@@ -422,8 +422,8 @@ async def _query_rag(query: str, k: int = 5) -> list[dict[str, Any]]:
         except ImportError:
             return []
 
-        qdrant_path = os.getenv("QDRANT_PATH", str(Path.home() / ".qdrant" / "invest_knowledge"))
-        collection = os.getenv("QDRANT_COLLECTION", "invest_docs")
+        qdrant_path = os.getenv("QDRANT_PATH", str(rag_path / "qdrant_storage"))
+        collection = os.getenv("QDRANT_COLLECTION", "langchain_documents")
 
         rag_system = RAGSystem(
             vector_store_type="qdrant",
@@ -449,7 +449,7 @@ async def _query_rag(query: str, k: int = 5) -> list[dict[str, Any]]:
         return results
 
     except Exception as e:
-        logger.debug(f"RAG query failed: {e}")
+        logger.warning(f"RAG query failed: {e}")
         return []
 
 
