@@ -7,17 +7,43 @@ import logging
 from datetime import date, datetime
 from decimal import Decimal
 from functools import lru_cache
+from typing import Optional
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
 try:
     from numpy import irr as numpy_irr  # type: ignore
-
+    from numpy_financial import xirr as numpy_xirr  # type: ignore
     HAS_NUMPY = True
+    HAS_NUMPY_FINANCIAL = True
 except ImportError:
     HAS_NUMPY = False
+    HAS_NUMPY_FINANCIAL = False
 
 from ..data.models import Transaction
+
+
+@dataclass
+class YearlyIRRResult:
+    """年度 IRR 结果"""
+    year: int
+    irr: Optional[float]
+    total_investment: float
+    total_return: float
+    cashflow_count: int
+    start_date: date
+    end_date: date
+
+
+@dataclass
+class IRRComparisonResult:
+    """IRR 对比结果"""
+    years: list[YearlyIRRResult]
+    average_irr: Optional[float]
+    best_year: Optional[int]
+    worst_year: Optional[int]
+    trend: str  # "上升", "下降", "稳定"
 
 
 def _hash_cashflows_with_days(cashflows: list[dict]) -> tuple:
@@ -386,6 +412,277 @@ class IRRCalculator:
             复利年化收益率（百分比）
         """
         return self.calculate_simple_annual_return(initial_amount, current_amount, days)
+
+    @staticmethod
+    def calculate_irr_bisection(
+        cashflows: list[float],
+        tol: float = 1e-10,
+        max_iter: int = 1000,
+    ) -> float | None:
+        """
+        使用二分法计算 IRR（更高精度）
+
+        Args:
+            cashflows: 现金流列表
+            tol: 容忍误差
+            max_iter: 最大迭代次数
+
+        Returns:
+            IRR 值（百分比）
+        """
+        if len(cashflows) < 2:
+            return None
+
+        has_positive = any(c > 0 for c in cashflows)
+        has_negative = any(c < 0 for c in cashflows)
+        if not (has_positive and has_negative):
+            return None
+
+        def npv(rate: float) -> float:
+            total = 0.0
+            for i, cf in enumerate(cashflows):
+                total += cf / ((1 + rate) ** i)
+            return total
+
+        low, high = -0.99, 10.0
+
+        if npv(low) * npv(high) > 0:
+            return None
+
+        for _ in range(max_iter):
+            mid = (low + high) / 2
+            npv_mid = npv(mid)
+
+            if abs(npv_mid) < tol:
+                return mid * 100
+
+            if npv(low) * npv_mid < 0:
+                high = mid
+            else:
+                low = mid
+
+        return ((low + high) / 2) * 100
+
+    @staticmethod
+    def calculate_xirr(
+        cashflows: list[tuple[date, float]],
+        guess: float = 0.1,
+        tol: float = 1e-10,
+        max_iter: int = 1000,
+    ) -> float | None:
+        """
+        计算 XIRR（不规则现金流内部收益率）
+
+        Args:
+            cashflows: 现金流列表，格式为 [(日期, 金额), ...]
+            guess: 初始猜测值
+            tol: 容忍误差
+            max_iter: 最大迭代次数
+
+        Returns:
+            年化 IRR 值（百分比）
+        """
+        if len(cashflows) < 2:
+            return None
+
+        if HAS_NUMPY_FINANCIAL:
+            try:
+                dates = [cf[0] for cf in cashflows]
+                amounts = [cf[1] for cf in cashflows]
+                result = numpy_xirr(amounts, dates)
+                return result * 100 if result is not None else None
+            except Exception:
+                pass
+
+        sorted_cfs = sorted(cashflows, key=lambda x: x[0])
+        base_date = sorted_cfs[0][0]
+
+        def days_between(d1: date, d2: date) -> int:
+            return (d2 - d1).days
+
+        def xnpv(rate: float) -> float:
+            total = 0.0
+            for d, amount in sorted_cfs:
+                days = days_between(base_date, d)
+                total += amount / ((1 + rate) ** (days / 365.0))
+            return total
+
+        def xnpv_derivative(rate: float) -> float:
+            total = 0.0
+            for d, amount in sorted_cfs:
+                days = days_between(base_date, d)
+                years = days / 365.0
+                total -= amount * years / ((1 + rate) ** (years + 1))
+            return total
+
+        rate = guess
+        for _ in range(max_iter):
+            npv = xnpv(rate)
+            if abs(npv) < tol:
+                return rate * 100
+
+            dnpv = xnpv_derivative(rate)
+            if abs(dnpv) < 1e-15:
+                break
+
+            new_rate = rate - npv / dnpv
+            if new_rate <= -1:
+                new_rate = -0.99
+            elif new_rate > 10:
+                new_rate = 10.0
+
+            if abs(new_rate - rate) < tol:
+                return new_rate * 100
+
+            rate = new_rate
+
+        return rate * 100 if -1 < rate < 10 else None
+
+    def calculate_irr_high_precision(
+        self,
+        cashflows: list[float],
+    ) -> float | None:
+        """
+        高精度 IRR 计算（尝试多种算法）
+
+        Args:
+            cashflows: 现金流列表
+
+        Returns:
+            IRR 值（百分比）
+        """
+        results = []
+
+        if self.use_numpy:
+            irr_numpy = self.calculate_irr_numpy(cashflows)
+            if irr_numpy is not None:
+                results.append(irr_numpy)
+
+        irr_bisection = self.calculate_irr_bisection(cashflows)
+        if irr_bisection is not None:
+            results.append(irr_bisection)
+
+        irr_newton = self.calculate_irr_newton(cashflows)
+        if irr_newton is not None:
+            results.append(irr_newton)
+
+        if not results:
+            return None
+
+        if len(results) == 1:
+            return results[0]
+
+        filtered = [r for r in results if -100 < r < 1000]
+        if not filtered:
+            return results[0]
+
+        return sum(filtered) / len(filtered)
+
+    def calculate_yearly_irr(
+        self,
+        transactions: list[Transaction],
+        current_value: Decimal,
+        reference_date: datetime,
+    ) -> IRRComparisonResult:
+        """
+        计算年度 IRR 对比分析
+
+        Args:
+            transactions: 交易记录列表
+            current_value: 当前价值
+            reference_date: 参考日期
+
+        Returns:
+            IRR 对比结果
+        """
+        if not transactions:
+            return IRRComparisonResult(
+                years=[],
+                average_irr=None,
+                best_year=None,
+                worst_year=None,
+                trend="稳定",
+            )
+
+        yearly_data: dict[int, list[tuple[date, float]]] = {}
+
+        for t in transactions:
+            tx_date = t.transaction_date
+            if isinstance(tx_date, datetime):
+                tx_date = tx_date.date()
+
+            year = tx_date.year
+            if year not in yearly_data:
+                yearly_data[year] = []
+
+            amount = float(t.amount)
+            if t.action.lower() in ["buy", "买入"]:
+                amount = -amount
+            yearly_data[year].append((tx_date, amount))
+
+        years_results: list[YearlyIRRResult] = []
+
+        for year in sorted(yearly_data.keys()):
+            cfs = yearly_data[year]
+            if len(cfs) < 2:
+                continue
+
+            irr = self.calculate_xirr(cfs)
+
+            total_investment = sum(-a for _, a in cfs if a < 0)
+            total_return = sum(a for _, a in cfs if a > 0)
+
+            dates = [d for d, _ in cfs]
+
+            years_results.append(YearlyIRRResult(
+                year=year,
+                irr=irr,
+                total_investment=total_investment,
+                total_return=total_return,
+                cashflow_count=len(cfs),
+                start_date=min(dates),
+                end_date=max(dates),
+            ))
+
+        if not years_results:
+            return IRRComparisonResult(
+                years=[],
+                average_irr=None,
+                best_year=None,
+                worst_year=None,
+                trend="稳定",
+            )
+
+        valid_irrs = [y.irr for y in years_results if y.irr is not None]
+        average_irr = sum(valid_irrs) / len(valid_irrs) if valid_irrs else None
+
+        best_year = None
+        worst_year = None
+        if valid_irrs:
+            best_idx = max(range(len(years_results)), key=lambda i: years_results[i].irr or float("-inf"))
+            worst_idx = min(range(len(years_results)), key=lambda i: years_results[i].irr or float("inf"))
+            best_year = years_results[best_idx].year
+            worst_year = years_results[worst_idx].year
+
+        trend = "稳定"
+        if len(valid_irrs) >= 2:
+            first_half = valid_irrs[:len(valid_irrs)//2]
+            second_half = valid_irrs[len(valid_irrs)//2:]
+            avg_first = sum(first_half) / len(first_half)
+            avg_second = sum(second_half) / len(second_half)
+
+            if avg_second > avg_first * 1.1:
+                trend = "上升"
+            elif avg_second < avg_first * 0.9:
+                trend = "下降"
+
+        return IRRComparisonResult(
+            years=years_results,
+            average_irr=average_irr,
+            best_year=best_year,
+            worst_year=worst_year,
+            trend=trend,
+        )
 
 
 # 全局 IRR 计算器实例
