@@ -8,6 +8,7 @@ from typing import Any
 import click
 from rich.console import Console
 from rich.table import Table
+from rich.panel import Panel
 
 console = Console()
 
@@ -46,6 +47,75 @@ def stats():
             source_table.add_row(source, f"{count:,}")
 
         console.print(source_table)
+
+
+@db.command()
+@click.option("--target", default=95.0, help="目标覆盖率 (默认 95%)")
+@click.option("--enhance", is_flag=True, help="自动提升覆盖率")
+def coverage(target: float, enhance: bool):
+    """检查数据覆盖率
+
+    示例:
+        asset-lens db coverage              # 检查覆盖率
+        asset-lens db coverage --enhance    # 自动提升覆盖率
+        asset-lens db coverage --target 98  # 设置目标覆盖率
+    """
+    from asset_lens.data.data_coverage_analyzer import (
+        data_coverage_analyzer,
+        data_coverage_enhancer,
+    )
+
+    console.print(Panel.fit("📊 数据覆盖率分析", style="bold blue"))
+
+    if enhance:
+        console.print(f"\n[yellow]正在提升覆盖率到 {target}%...[/yellow]")
+        result = data_coverage_enhancer.enhance(target)
+
+        if result["before"]:
+            console.print(f"\n提升前覆盖率: [red]{result['before']['coverage']:.1f}%[/red]")
+        if result["after"]:
+            console.print(f"提升后覆盖率: [green]{result['after']['coverage']:.1f}%[/green]")
+
+        if result["actions"]:
+            console.print("\n[bold]执行的动作:[/bold]")
+            for action in result["actions"]:
+                console.print(f"  • {action}")
+
+        if result["improvements"]:
+            console.print("\n[bold]改进结果:[/bold]")
+            for imp in result["improvements"]:
+                console.print(f"  ✅ {imp}")
+    else:
+        result = data_coverage_analyzer.analyze()
+
+        coverage_color = "green" if result.overall_coverage >= target else "red"
+        console.print(f"\n整体覆盖率: [{coverage_color}]{result.overall_coverage:.1f}%[/{coverage_color}]")
+        console.print(f"缺失数据点: {result.missing_data_points:,}")
+        console.print(f"总数据点: {result.total_data_points:,}")
+
+        table = Table(title="分类覆盖率")
+        table.add_column("类别", style="cyan")
+        table.add_column("预期", style="blue")
+        table.add_column("实际", style="green")
+        table.add_column("覆盖率", style="yellow")
+        table.add_column("状态", style="bold")
+
+        for category, report in result.categories.items():
+            status = "✅" if report.coverage_rate >= target else "❌"
+            table.add_row(
+                category,
+                str(report.total_expected),
+                str(report.total_actual),
+                f"{report.coverage_rate:.1f}%",
+                status,
+            )
+
+        console.print(table)
+
+        if result.recommendations:
+            console.print("\n[bold yellow]建议:[/bold yellow]")
+            for rec in result.recommendations:
+                console.print(f"  • {rec}")
 
 
 @db.command()
