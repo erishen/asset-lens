@@ -83,12 +83,19 @@ async def chat_qa(request: ChatRequest):
         if request.fast_mode:
             response_text = _generate_fallback_answer(request.message, rag_results)
         else:
-            # AI 模式：调用 Ollama（较慢）
-            system_prompt = """你是投资顾问。简洁回答投资问题，不超过200字。
-要点：
-- 给出具体建议
-- 提醒风险
-- 不要废话"""
+            system_prompt = """你是一位专业的投资顾问，具有丰富的金融市场经验。
+
+回答要求：
+1. 简洁专业，不超过200字
+2. 给出具体可操作的建议
+3. 必须提醒相关风险
+4. 避免模糊和空泛的回答
+5. 如有知识库参考内容，优先基于知识库回答
+
+回答格式：
+- 先给出核心观点
+- 再列出2-3个要点
+- 最后提醒风险"""
 
             user_message = request.message
             if rag_context:
@@ -143,18 +150,15 @@ async def chat_qa(request: ChatRequest):
             if not response_text:
                 response_text = _generate_fallback_answer(request.message, rag_results)
 
-        suggestions = [
-            "如何控制投资风险？",
-            "当前市场趋势如何？",
-            "如何分散投资？",
-        ]
+        suggestions = _generate_suggestions(request.message)
+        related_questions = _generate_related_questions(request.message)
 
         return ChatResponse(
             response=response_text,
             sources=["RAG"] if rag_results else [],
             confidence=0.85 if rag_results else 0.7,
             suggestions=suggestions,
-            related_questions=["什么时候应该止损？", "如何选择投资标的？"],
+            related_questions=related_questions,
         )
 
     except Exception as e:
@@ -162,20 +166,100 @@ async def chat_qa(request: ChatRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def _generate_suggestions(question: str) -> list[str]:
+    """根据问题生成建议问题"""
+    question_lower = question.lower()
+    
+    if "风险" in question_lower:
+        return [
+            "如何设置止损点？",
+            "如何分散投资风险？",
+            "什么是仓位管理？",
+        ]
+    elif "止损" in question_lower:
+        return [
+            "止损后如何重新入场？",
+            "如何避免频繁止损？",
+            "止损比例设置多少合适？",
+        ]
+    elif "趋势" in question_lower or "市场" in question_lower:
+        return [
+            "如何判断市场顶部和底部？",
+            "当前市场适合入场吗？",
+            "如何利用均线判断趋势？",
+        ]
+    elif "仓位" in question_lower or "配置" in question_lower:
+        return [
+            "如何动态调整仓位？",
+            "不同市场环境如何配置？",
+            "仓位和止损如何配合？",
+        ]
+    elif "止盈" in question_lower:
+        return [
+            "止盈后如何再入场？",
+            "如何设置移动止盈？",
+            "止盈和止损如何平衡？",
+        ]
+    else:
+        return [
+            "如何控制投资风险？",
+            "当前市场趋势如何？",
+            "如何制定投资计划？",
+        ]
+
+
+def _generate_related_questions(question: str) -> list[str]:
+    """生成相关问题"""
+    question_lower = question.lower()
+    
+    if "风险" in question_lower:
+        return ["什么是系统性风险？", "如何应对黑天鹅事件？"]
+    elif "止损" in question_lower:
+        return ["止损后心态如何调整？", "如何避免止损后踏空？"]
+    elif "趋势" in question_lower:
+        return ["趋势反转信号有哪些？", "如何确认趋势形成？"]
+    elif "仓位" in question_lower:
+        return ["满仓有什么风险？", "空仓策略何时使用？"]
+    else:
+        return ["什么时候应该止损？", "如何选择投资标的？"]
+
+
 def _generate_fallback_answer(question: str, rag_results: list) -> str:
     """生成后备答案"""
     if rag_results:
-        return f"根据知识库内容：\n\n{rag_results[0].get('content', '')[:300]}\n\n建议进一步咨询专业投资顾问。"
+        sources = set()
+        contents = []
+        for r in rag_results[:3]:
+            content = r.get("content", "")[:400]
+            source = r.get("source", "") or r.get("category", "")
+            if source:
+                sources.add(source)
+            if content and content not in contents:
+                contents.append(content)
+        
+        answer = "📚 **根据知识库检索结果：**\n\n"
+        for i, content in enumerate(contents[:2], 1):
+            answer += f"{content}\n\n"
+        
+        if sources:
+            answer += f"📖 **参考来源：** {', '.join(list(sources)[:3])}\n\n"
+        
+        answer += "💡 如需更详细分析，可切换到 AI 模式获取深度解读。"
+        return answer
 
     question_lower = question.lower()
     if "风险" in question_lower:
-        return "投资风险管理的关键原则：\n\n1. **分散投资**：不要把所有资金投入单一标的\n2. **设置止损**：每笔交易设置明确的止损点\n3. **控制仓位**：单笔投资不超过总资金的 10-20%\n4. **保持现金**：预留 20-30% 现金应对机会\n\n投资有风险，入市需谨慎。"
+        return "⚠️ **投资风险管理的关键原则：**\n\n1. **分散投资**：不要把所有资金投入单一标的\n2. **设置止损**：每笔交易设置明确的止损点\n3. **控制仓位**：单笔投资不超过总资金的 10-20%\n4. **保持现金**：预留 20-30% 现金应对机会\n\n📌 **风险提示：** 投资有风险，入市需谨慎。"
     elif "趋势" in question_lower or "市场" in question_lower:
-        return "判断市场趋势的方法：\n\n1. **技术面**：关注均线系统、成交量变化\n2. **基本面**：关注宏观经济、政策变化\n3. **情绪面**：关注市场情绪指标\n\n建议综合多个维度判断，避免单一指标决策。"
+        return "📈 **判断市场趋势的方法：**\n\n1. **技术面**：关注均线系统、成交量变化\n2. **基本面**：关注宏观经济、政策变化\n3. **情绪面**：关注市场情绪指标\n\n📌 **建议：** 综合多个维度判断，避免单一指标决策。"
     elif "止损" in question_lower:
-        return "止损策略建议：\n\n1. **固定比例止损**：设置 5-10% 的止损线\n2. **技术止损**：跌破支撑位或均线时止损\n3. **时间止损**：持仓超过一定时间无突破则止损\n\n止损是保护本金的重要手段，建议严格执行。"
+        return "🛡️ **止损策略建议：**\n\n1. **固定比例止损**：设置 5-10% 的止损线\n2. **技术止损**：跌破支撑位或均线时止损\n3. **时间止损**：持仓超过一定时间无突破则止损\n\n📌 **重要：** 止损是保护本金的重要手段，建议严格执行。"
+    elif "仓位" in question_lower or "配置" in question_lower:
+        return "💰 **仓位管理建议：**\n\n1. **金字塔建仓**：越跌越买，分批建仓\n2. **倒金字塔减仓**：越涨越卖，分批止盈\n3. **动态平衡**：定期调整各品种仓位比例\n\n📌 **原则：** 永不满仓，保持灵活。"
+    elif "止盈" in question_lower:
+        return "🎯 **止盈策略建议：**\n\n1. **目标止盈**：达到预期收益即卖出\n2. **移动止盈**：随价格上涨上移止盈点\n3. **分批止盈**：分多次卖出锁定利润\n\n📌 **提醒：** 会买的是徒弟，会卖的是师傅。"
     else:
-        return f"关于「{question}」这个问题，建议：\n\n1. 结合自身风险承受能力\n2. 做好充分的研究和分析\n3. 制定明确的投资计划\n4. 严格执行纪律\n\n如需更具体的建议，请提供更多背景信息。"
+        return f"💡 **关于「{question}」的建议：**\n\n1. 结合自身风险承受能力\n2. 做好充分的研究和分析\n3. 制定明确的投资计划\n4. 严格执行纪律\n\n📌 如需更具体的建议，请提供更多背景信息或切换到 AI 模式。"
 
 
 @router.get("/portfolio")
