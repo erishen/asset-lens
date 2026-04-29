@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     joinquant_password: str | None = Field(default=None, description="JoinQuant 密码")
 
     sample_data_path: str = Field(default="data/sample_data", description="示例数据路径")
-    real_data_path: str = Field(default="data/real", description="真实数据路径")
+    real_data_path: str = Field(default="../ts-demo/data", description="真实数据路径")
     output_path: str = Field(default="output", description="输出路径")
     cache_path: str = Field(default="cache", description="缓存路径")
     config_path: str = Field(default="config", description="配置路径")
