@@ -40,8 +40,18 @@ def train(model_type: str, prediction_days: int, output: str):
         stocks_data = fetcher.get_cached_market_stocks()
 
         if not stocks_data:
-            console.print("[red]❌ 无缓存数据，请先运行 make update-market-data-fast[/red]")
-            return
+            console.print("[yellow]⚠️ 无缓存数据，正在自动获取市场股票数据...[/yellow]")
+            try:
+                stocks_data = fetcher.fetch_all_cn_stocks(max_pages=3)
+                if stocks_data:
+                    fetcher.save_market_stocks(stocks_data)
+                    console.print(f"[green]✅ 已获取 {len(stocks_data)} 只股票数据[/green]")
+                else:
+                    console.print("[red]❌ 获取市场数据失败[/red]")
+                    return
+            except Exception as e:
+                console.print(f"[red]❌ 获取市场数据失败: {e}[/red]")
+                return
 
         console.print(f"✅ 加载 {len(stocks_data)} 只股票数据")
 
@@ -141,7 +151,8 @@ def train(model_type: str, prediction_days: int, output: str):
 @ml.command()
 @click.option("--model", default="cache/ml/model.pkl", help="模型路径")
 @click.option("--code", help="股票代码")
-def predict(model: str, code: str):
+@click.option("--auto-train", is_flag=True, default=True, help="模型不存在时自动训练")
+def predict(model: str, code: str, auto_train: bool):
     """使用模型预测股票"""
     import numpy as np
     import pandas as pd
@@ -158,9 +169,68 @@ def predict(model: str, code: str):
     try:
         model_path = Path(model)
         if not model_path.exists():
-            console.print(f"[red]❌ 模型不存在: {model_path}[/red]")
-            console.print("请先运行 [cyan]make ml-train[/cyan] 训练模型")
-            return
+            if auto_train:
+                console.print("[yellow]⚠️ 模型不存在，正在自动训练...[/yellow]")
+                console.print("=" * 60)
+
+                from asset_lens.ml.trainer import ModelTrainer
+
+                trainer = ModelTrainer(model_type="lightgbm")
+                train_success = False
+
+                try:
+                    console.print("📊 从数据库加载训练数据...")
+                    result = trainer.train_from_database(days=250)
+                    trainer.save_model(model_path)
+                    console.print(f"✅ 模型已保存: {model_path}")
+
+                    result_path = model_path.with_suffix(".json")
+                    trainer.save_training_result(result, result_path)
+
+                    console.print(f"   准确率: {result.accuracy:.2%}")
+                    console.print(f"   AUC: {result.auc:.2%}")
+                    console.print("=" * 60)
+                    console.print("")
+                    train_success = True
+                except ValueError as e:
+                    console.print(f"[yellow]⚠️ 数据不足: {e}[/yellow]")
+                    console.print("🔄 正在自动同步股票历史数据...")
+                    console.print("=" * 60)
+
+                    from asset_lens.db.database import db_manager
+                    sync_result = db_manager.auto_sync_history(fast=True, days=180, daily_limit=50)
+
+                    if sync_result.get("synced", 0) > 0:
+                        console.print(f"✅ 已同步 {sync_result['synced']} 只股票数据")
+                        console.print("🔄 重新训练模型...")
+
+                        try:
+                            result = trainer.train_from_database(days=250)
+                            trainer.save_model(model_path)
+                            console.print(f"✅ 模型已保存: {model_path}")
+
+                            result_path = model_path.with_suffix(".json")
+                            trainer.save_training_result(result, result_path)
+
+                            console.print(f"   准确率: {result.accuracy:.2%}")
+                            console.print(f"   AUC: {result.auc:.2%}")
+                            console.print("=" * 60)
+                            console.print("")
+                            train_success = True
+                        except Exception as e2:
+                            console.print(f"[red]❌ 训练失败: {e2}[/red]")
+                    else:
+                        console.print("[red]❌ 数据同步失败，请检查数据库连接[/red]")
+                except Exception as e:
+                    console.print(f"[red]❌ 自动训练失败: {e}[/red]")
+                    return
+
+                if not train_success:
+                    return
+            else:
+                console.print(f"[red]❌ 模型不存在: {model_path}[/red]")
+                console.print("请先运行 [cyan]make ml-train[/cyan] 训练模型")
+                return
 
         predictor = StockPredictor(model_path=model_path)
         console.print(f"✅ 加载模型: {model_path}")
@@ -216,7 +286,7 @@ def predict(model: str, code: str):
 
         latest_features = feature_df.iloc[-1][feature_engineer.feature_names].to_dict()
 
-        result = predictor.predict_stock(
+        pred_result = predictor.predict_stock(
             stock_data=latest_features,
             code=code,
             name=stock_info.get("name", ""),
@@ -227,14 +297,14 @@ def predict(model: str, code: str):
         pred_table.add_column("指标", style="cyan")
         pred_table.add_column("值", justify="right")
 
-        pred_color = "green" if result.prediction == "up" else "red"
-        pred_table.add_row("股票代码", result.code)
-        pred_table.add_row("股票名称", result.name)
-        pred_table.add_row("预测方向", f"[{pred_color}]{result.prediction}[/{pred_color}]")
-        pred_table.add_row("上涨概率", f"{result.up_prob:.2%}")
-        pred_table.add_row("下跌概率", f"{result.down_prob:.2%}")
-        pred_table.add_row("置信度", f"{result.confidence:.2%}")
-        pred_table.add_row("预期收益", f"{result.expected_return:.2%}")
+        pred_color = "green" if pred_result.prediction == "up" else "red"
+        pred_table.add_row("股票代码", pred_result.code)
+        pred_table.add_row("股票名称", pred_result.name)
+        pred_table.add_row("预测方向", f"[{pred_color}]{pred_result.prediction}[/{pred_color}]")
+        pred_table.add_row("上涨概率", f"{pred_result.up_prob:.2%}")
+        pred_table.add_row("下跌概率", f"{pred_result.down_prob:.2%}")
+        pred_table.add_row("置信度", f"{pred_result.confidence:.2%}")
+        pred_table.add_row("预期收益", f"{pred_result.expected_return:.2%}")
 
         console.print(pred_table)
 
@@ -248,7 +318,8 @@ def predict(model: str, code: str):
 @ml.command()
 @click.option("--model", default="cache/ml/model.pkl", help="模型路径")
 @click.option("--limit", default=10, type=int, help="预测股票数量限制")
-def predict_pool(model: str, limit: int):
+@click.option("--auto-train", is_flag=True, default=True, help="模型不存在时自动训练")
+def predict_pool(model: str, limit: int, auto_train: bool):
     """预测股票池中所有股票"""
     from rich.console import Console
     from rich.table import Table
@@ -263,9 +334,68 @@ def predict_pool(model: str, limit: int):
     try:
         model_path = Path(model)
         if not model_path.exists():
-            console.print(f"[yellow]⚠️ 模型不存在: {model_path}[/yellow]")
-            console.print("跳过 ML 预测，请先运行 [cyan]make ml-train-db[/cyan] 训练模型")
-            return
+            if auto_train:
+                console.print("[yellow]⚠️ 模型不存在，正在自动训练...[/yellow]")
+                console.print("=" * 60)
+
+                from asset_lens.ml.trainer import ModelTrainer
+
+                trainer = ModelTrainer(model_type="lightgbm")
+                train_success = False
+
+                try:
+                    console.print("📊 从数据库加载训练数据...")
+                    result = trainer.train_from_database(days=250)
+                    trainer.save_model(model_path)
+                    console.print(f"✅ 模型已保存: {model_path}")
+
+                    result_path = model_path.with_suffix(".json")
+                    trainer.save_training_result(result, result_path)
+
+                    console.print(f"   准确率: {result.accuracy:.2%}")
+                    console.print(f"   AUC: {result.auc:.2%}")
+                    console.print("=" * 60)
+                    console.print("")
+                    train_success = True
+                except ValueError as e:
+                    console.print(f"[yellow]⚠️ 数据不足: {e}[/yellow]")
+                    console.print("🔄 正在自动同步股票历史数据...")
+                    console.print("=" * 60)
+
+                    from asset_lens.db.database import db_manager
+                    sync_result = db_manager.auto_sync_history(fast=True, days=180, daily_limit=50)
+
+                    if sync_result.get("synced", 0) > 0:
+                        console.print(f"✅ 已同步 {sync_result['synced']} 只股票数据")
+                        console.print("🔄 重新训练模型...")
+
+                        try:
+                            result = trainer.train_from_database(days=250)
+                            trainer.save_model(model_path)
+                            console.print(f"✅ 模型已保存: {model_path}")
+
+                            result_path = model_path.with_suffix(".json")
+                            trainer.save_training_result(result, result_path)
+
+                            console.print(f"   准确率: {result.accuracy:.2%}")
+                            console.print(f"   AUC: {result.auc:.2%}")
+                            console.print("=" * 60)
+                            console.print("")
+                            train_success = True
+                        except Exception as e2:
+                            console.print(f"[red]❌ 训练失败: {e2}[/red]")
+                    else:
+                        console.print("[red]❌ 数据同步失败，请检查数据库连接[/red]")
+                except Exception as e:
+                    console.print(f"[red]❌ 自动训练失败: {e}[/red]")
+                    return
+
+                if not train_success:
+                    return
+            else:
+                console.print(f"[yellow]⚠️ 模型不存在: {model_path}[/yellow]")
+                console.print("跳过 ML 预测，请先运行 [cyan]make ml-train-db[/cyan] 训练模型")
+                return
 
         pool = StockPool()
         stocks = pool.list_stocks()
@@ -303,15 +433,15 @@ def predict_pool(model: str, limit: int):
                             }
                         )
 
-                result = predictor.predict_single(code=code, name=name, history_data=history_data)
-                if result:
+                pred_result = predictor.predict_single(code=code, name=name, history_data=history_data)
+                if pred_result:
                     predictions.append(
                         {
                             "code": code,
                             "name": name,
-                            "prediction": result.prediction,
-                            "confidence": result.confidence,
-                            "up_prob": result.up_prob,
+                            "prediction": pred_result.prediction,
+                            "confidence": pred_result.confidence,
+                            "up_prob": pred_result.up_prob,
                         }
                     )
             except Exception:
@@ -496,8 +626,25 @@ def train_db(model_type: str, days: int, output: str):
         console.print("\n✅ 训练完成！")
 
     except ValueError as e:
-        console.print(f"[red]❌ {e}[/red]")
-        console.print("[yellow]请先运行 'asset-lens db fetch' 获取历史数据[/yellow]")
+        console.print(f"[yellow]⚠️ {e}[/yellow]")
+        console.print("🔄 正在自动同步股票历史数据...")
+
+        from asset_lens.db.database import db_manager
+        sync_result = db_manager.auto_sync_history(fast=True, days=180, daily_limit=50)
+
+        if sync_result.get("synced", 0) > 0:
+            console.print(f"✅ 已同步 {sync_result['synced']} 只股票数据")
+            console.print("🔄 重新训练模型...")
+            try:
+                result = trainer.train_from_database(days=days)
+                output_path = Path(output)
+                trainer.save_model(output_path)
+                console.print(f"✅ 模型已保存: {output_path}")
+                console.print("\n✅ 训练完成！")
+            except Exception as retry_error:
+                console.print(f"[red]❌ 重试训练失败: {retry_error}[/red]")
+        else:
+            console.print("[red]❌ 同步数据失败，请检查网络连接[/red]")
     except Exception as e:
         console.print(f"[red]❌ 训练失败: {e}[/red]")
         import traceback

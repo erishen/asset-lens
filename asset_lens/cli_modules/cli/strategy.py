@@ -340,7 +340,21 @@ def register_strategy_commands(cli: click.Group) -> None:
                         history_fetcher = StockHistoryFetcher()
                         click.echo(f"✅ ML 模型已加载: {model_path}")
                     else:
-                        click.echo("⚠️ ML 模型不存在，请先运行 make ml-train")
+                        click.echo("⚠️ ML 模型不存在，正在自动训练...")
+                        try:
+                            from click.testing import CliRunner
+
+                            from asset_lens.cli_modules.cli.ml import train as train_cmd
+                            runner = CliRunner()
+                            result = runner.invoke(train_cmd, [])
+                            if result.exit_code == 0 and model_path.exists():
+                                ml_predictor = StockPredictor(model_path=model_path)
+                                history_fetcher = StockHistoryFetcher()
+                                click.echo("✅ ML 模型自动训练完成")
+                            else:
+                                click.echo("⚠️ ML 模型自动训练失败，跳过 ML 预测")
+                        except Exception as train_error:
+                            click.echo(f"⚠️ ML 模型自动训练失败: {train_error}")
                 except Exception as e:
                     click.echo(f"⚠️ ML 预测器加载失败: {e}")
                     ml_predictor = None
@@ -353,9 +367,9 @@ def register_strategy_commands(cli: click.Group) -> None:
             try:
                 from asset_lens.data.enhanced_market_data_fetcher import enhanced_market_data_fetcher
 
-                result = enhanced_market_data_fetcher.fetch_all_domestic_indexes()
-                if result and "指数数据" in result:
-                    for name, data in result["指数数据"].items():
+                market_result = enhanced_market_data_fetcher.fetch_all_domestic_indexes()
+                if market_result and "指数数据" in market_result:
+                    for name, data in market_result["指数数据"].items():
                         if "上证" in name:
                             change = data.get("涨跌幅", 0)
                             if isinstance(change, str):
@@ -617,8 +631,18 @@ def register_strategy_commands(cli: click.Group) -> None:
 
             stocks_data = market_stock_fetcher.get_cached_market_stocks()
             if not stocks_data:
-                click.echo("⚠️ 无股票数据缓存，请先运行 make momentum-screen-pool")
-                return
+                click.echo("⚠️ 无股票数据缓存，正在自动获取...")
+                try:
+                    stocks_data = market_stock_fetcher.fetch_all_cn_stocks(max_pages=3)
+                    if stocks_data:
+                        market_stock_fetcher.save_market_stocks(stocks_data)
+                        click.echo(f"✅ 已获取 {len(stocks_data)} 只股票数据")
+                    else:
+                        click.echo("❌ 获取市场数据失败")
+                        return
+                except Exception as fetch_error:
+                    click.echo(f"❌ 获取市场数据失败: {fetch_error}")
+                    return
 
             holding_codes = {s["code"] for s in holding_stocks}
 
@@ -1041,8 +1065,18 @@ def _auto_screen_and_add_to_pool(pool, strategy_name: str, max_stocks: int = 50)
 
         stocks_data = market_stock_fetcher.get_cached_market_stocks()
         if not stocks_data:
-            click.echo("  ⚠️ 无股票数据缓存，请先运行 make momentum-screen-pool")
-            return 0
+            click.echo("  ⚠️ 无股票数据缓存，正在自动获取...")
+            try:
+                stocks_data = market_stock_fetcher.fetch_all_cn_stocks(max_pages=3)
+                if stocks_data:
+                    market_stock_fetcher.save_market_stocks(stocks_data)
+                    click.echo(f"  ✅ 已获取 {len(stocks_data)} 只股票数据")
+                else:
+                    click.echo("  ❌ 获取市场数据失败")
+                    return 0
+            except Exception as fetch_error:
+                click.echo(f"  ❌ 获取市场数据失败: {fetch_error}")
+                return 0
 
         engine = StrategyEngine()
         result = engine.screen_stocks(stocks=stocks_data, strategy_name=strategy_name, min_score=60.0)

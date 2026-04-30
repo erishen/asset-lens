@@ -381,7 +381,8 @@ def register_analyze_commands(cli: click.Group) -> None:
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     def analyze_sold(data_mode: str | None):
         """分析已卖出产品"""
-        from asset_lens.cli_modules.cli.helpers import load_products, setup_data_mode
+        from asset_lens.cli_modules.cli.helpers import setup_data_mode
+        from asset_lens.data.sell_record_parser import SellRecordParser
 
         setup_data_mode(data_mode)
 
@@ -389,35 +390,47 @@ def register_analyze_commands(cli: click.Group) -> None:
         click.echo("=" * 60)
 
         try:
-            products = load_products()
-            sold_products = [p for p in products if p.status and p.status.value == "sold"]
+            sell_records = SellRecordParser.load_sell_records()
 
-            if not sold_products:
+            if not sell_records:
                 click.echo("没有已卖出的产品")
                 return
 
-            click.echo(f"✅ 找到 {len(sold_products)} 个已卖出产品")
+            click.echo(f"✅ 找到 {len(sell_records)} 个已卖出产品")
 
             console = Console()
             table = Table(title="\n已卖出产品明细")
             table.add_column("产品名称", style="cyan")
-            table.add_column("类型", style="green")
-            table.add_column("卖出金额", justify="right")
+            table.add_column("风险等级", style="green")
+            table.add_column("初始金额", justify="right")
             table.add_column("收益", justify="right")
             table.add_column("收益率", justify="right")
 
-            for p in sold_products:
-                profit = float(p.current_amount or 0) - float(p.initial_amount or 0)
-                return_rate = (profit / float(p.initial_amount or 1) * 100) if p.initial_amount else 0
+            total_initial = Decimal("0")
+            total_profit = Decimal("0")
+
+            for record in sell_records:
+                initial = float(record.initial_amount or 0)
+                profit = float(record.profit_amount or 0)
+                return_rate = float(record.return_rate or 0)
+                total_initial += Decimal(str(initial))
+                total_profit += Decimal(str(profit))
+
                 table.add_row(
-                    p.name,
-                    p.investment_type.value if p.investment_type else "未知",
-                    f"¥{float(p.current_amount or 0):,.0f}",
+                    record.name,
+                    record.risk_level.value if record.risk_level else "未知",
+                    f"¥{initial:,.0f}",
                     f"¥{profit:,.0f}",
                     f"{return_rate:.2f}%",
                 )
 
             console.print(table)
+
+            total_return_rate = (float(total_profit) / float(total_initial) * 100) if total_initial > 0 else 0
+            click.echo("\n📊 汇总:")
+            click.echo(f"   总投入: ¥{float(total_initial):,.0f}")
+            click.echo(f"   总收益: ¥{float(total_profit):,.0f}")
+            click.echo(f"   总收益率: {total_return_rate:.2f}%")
 
             click.echo("\n✅ 分析完成！")
 
@@ -459,16 +472,20 @@ def register_analyze_commands(cli: click.Group) -> None:
                     pass
 
             # 1. 持有中产品收益
+            from asset_lens.cli_modules.cli.report import (
+                _get_cny_amount,
+                _get_initial_cny_amount,
+                _get_profit_cny_amount,
+            )
+
             holding_initial = Decimal("0")
             holding_current = Decimal("0")
+            holding_profit = Decimal("0")
 
             for p in products:
-                if p.initial_amount:
-                    holding_initial += p.initial_amount
-                if p.current_amount:
-                    holding_current += p.current_amount
-
-            holding_profit = holding_current - holding_initial
+                holding_current += Decimal(str(_get_cny_amount(p)))
+                holding_initial += Decimal(str(_get_initial_cny_amount(p)))
+                holding_profit += Decimal(str(_get_profit_cny_amount(p)))
 
             # 2. 已卖出产品收益
             sold_initial = Decimal("0")
@@ -904,16 +921,20 @@ def register_analyze_commands(cli: click.Group) -> None:
                 click.echo(f"      (实际记录 {actual_months} 个月 + 推算 {estimated_months} 个月)")
             click.echo(f"   净收入: ¥{float(total_salary_income - total_consumption):,.0f}")
 
+            from asset_lens.cli_modules.cli.report import (
+                _get_cny_amount,
+                _get_initial_cny_amount,
+                _get_profit_cny_amount,
+            )
+
             holding_initial = Decimal("0")
             holding_current = Decimal("0")
+            holding_profit = Decimal("0")
 
             for p in products:
-                if p.initial_amount:
-                    holding_initial += p.initial_amount
-                if p.current_amount:
-                    holding_current += p.current_amount
-
-            holding_profit = holding_current - holding_initial
+                holding_current += Decimal(str(_get_cny_amount(p)))
+                holding_initial += Decimal(str(_get_initial_cny_amount(p)))
+                holding_profit += Decimal(str(_get_profit_cny_amount(p)))
 
             sold_initial = Decimal("0")
             sold_profit = Decimal("0")

@@ -96,6 +96,7 @@ help: ## 显示帮助信息
 	@echo "    make compare          对比不同时期的投资收益变化"
 	@echo "    make annual-return    分析年化收益率（按投资年份分组）"
 	@echo "    make analyze-sold     分析已卖出投资"
+	@echo "    make personal-irr     计算综合个人财务IRR"
 	@echo "    make analyze-by-time  按投资时间分组分析"
 	@echo "    make ai-analyze       AI 分析投资组合（需要配置 API 密钥）"
 	@echo "    make portfolio-metrics 计算投资组合专业指标（夏普比率、最大回撤等）"
@@ -345,6 +346,11 @@ analyze-sold: ## 分析已卖出投资
 annual-return: ## 分析年化收益率（按投资年份分组）
 	@echo "📊 分析年化收益率..."
 	$(PY) annual-return
+
+.PHONY: personal-irr
+personal-irr: ## 计算综合个人财务IRR
+	@echo "📊 计算综合个人财务IRR..."
+	$(PY) personal-irr
 
 .PHONY: analyze-by-time
 analyze-by-time: ## 按投资时间分组分析
