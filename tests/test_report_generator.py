@@ -2,17 +2,13 @@
 Tests for investment_report.py
 """
 
-import json
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from asset_lens.report.investment_report import (
-    InvestmentReportGenerator,
-    ReportConfig,
-)
+from asset_lens.report.investment_report import InvestmentReportGenerator, ReportConfig
 
 
 class TestReportConfig:
@@ -49,7 +45,7 @@ class TestInvestmentReportGenerator:
     @pytest.fixture
     def generator(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.report.investment_report.config') as mock_config:
+        with patch("asset_lens.report.investment_report.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             generator = InvestmentReportGenerator()
             yield generator
@@ -69,9 +65,7 @@ class TestInvestmentReportGenerator:
             "recent_monsters": [{"code": "sh600519"}],
         }
 
-        result = generator._generate_strategy_recommendations(
-            "test_strategy", pool_status, tracking_report
-        )
+        result = generator._generate_strategy_recommendations("test_strategy", pool_status, tracking_report)
 
         assert isinstance(result, list)
 
@@ -88,9 +82,7 @@ class TestInvestmentReportGenerator:
         pool_status = {"win_rate": 0.3, "holding_count": 5}
         tracking_report = {"recent_monsters": []}
 
-        result = generator._generate_strategy_recommendations(
-            "test", pool_status, tracking_report
-        )
+        result = generator._generate_strategy_recommendations("test", pool_status, tracking_report)
         assert len(result) > 0
         assert any("胜率" in r.get("message", "") for r in result)
 
@@ -99,9 +91,7 @@ class TestInvestmentReportGenerator:
         pool_status = {"win_rate": 0.6, "holding_count": 0}
         tracking_report = {"recent_monsters": []}
 
-        result = generator._generate_strategy_recommendations(
-            "test", pool_status, tracking_report
-        )
+        result = generator._generate_strategy_recommendations("test", pool_status, tracking_report)
         assert any("无持仓" in r.get("message", "") for r in result)
 
     def test_generate_strategy_recommendations_monster_signals(self, generator):
@@ -109,9 +99,7 @@ class TestInvestmentReportGenerator:
         pool_status = {"win_rate": 0.6, "holding_count": 5}
         tracking_report = {"recent_monsters": [{"code": "sh600519"}]}
 
-        result = generator._generate_strategy_recommendations(
-            "test", pool_status, tracking_report
-        )
+        result = generator._generate_strategy_recommendations("test", pool_status, tracking_report)
         assert any("妖股信号" in r.get("message", "") for r in result)
 
     def test_analyze_pool_risk_empty(self, generator):
@@ -282,7 +270,13 @@ class TestInvestmentReportGenerator:
             "generate_time": "2024-01-01 12:00:00",
             "report_file": "/tmp/test.json",
             "comparison": [
-                {"name": "strategy1", "total_stocks": 10, "win_rate": 0.6, "total_profit_rate": 0.1, "risk_level": "low"},
+                {
+                    "name": "strategy1",
+                    "total_stocks": 10,
+                    "win_rate": 0.6,
+                    "total_profit_rate": 0.1,
+                    "risk_level": "low",
+                },
             ],
         }
 
@@ -332,9 +326,9 @@ class TestInvestmentReportGenerator:
             "recent_monsters": [],
         }
 
-        with patch('asset_lens.strategy.engine.strategy_engine') as mock_engine:
-            with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool:
-                with patch('asset_lens.data.stock_tracker.StockTracker') as mock_tracker:
+        with patch("asset_lens.strategy.engine.strategy_engine") as mock_engine:
+            with patch("asset_lens.trading.stock_pool.StockPool") as mock_pool:
+                with patch("asset_lens.data.stock_tracker.StockTracker") as mock_tracker:
                     mock_engine.get_strategy.return_value = mock_strategy
                     mock_pool.return_value = mock_pool_instance
                     mock_tracker.return_value = mock_tracker_instance
@@ -367,8 +361,8 @@ class TestInvestmentReportGenerator:
             "worst_performers": [],
         }
 
-        with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool:
-            with patch('asset_lens.data.stock_tracker.StockTracker') as mock_tracker:
+        with patch("asset_lens.trading.stock_pool.StockPool") as mock_pool:
+            with patch("asset_lens.data.stock_tracker.StockTracker") as mock_tracker:
                 mock_pool.return_value = mock_pool_instance
                 mock_tracker.return_value = mock_tracker_instance
 
@@ -392,8 +386,8 @@ class TestInvestmentReportGenerator:
             "total_profit_rate": 0.1,
         }
 
-        with patch('asset_lens.strategy.engine.strategy_engine') as mock_engine:
-            with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool:
+        with patch("asset_lens.strategy.engine.strategy_engine") as mock_engine:
+            with patch("asset_lens.trading.stock_pool.StockPool") as mock_pool:
                 mock_engine.get_strategy.return_value = mock_strategy
                 mock_pool.return_value = mock_pool_instance
 
@@ -417,8 +411,8 @@ class TestInvestmentReportGenerator:
         mock_environment.risk_level = "low"
         mock_environment.sentiment = "positive"
 
-        with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool:
-            with patch('asset_lens.data.market_environment.market_environment_analyzer') as mock_analyzer:
+        with patch("asset_lens.trading.stock_pool.StockPool") as mock_pool:
+            with patch("asset_lens.data.market_environment.market_environment_analyzer") as mock_analyzer:
                 mock_pool.return_value = mock_pool_instance
                 mock_analyzer.analyze_environment.return_value = mock_environment
 
@@ -442,8 +436,8 @@ class TestInvestmentReportGenerator:
         mock_environment.risk_level = "high"
         mock_environment.sentiment = "negative"
 
-        with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool:
-            with patch('asset_lens.data.market_environment.market_environment_analyzer') as mock_analyzer:
+        with patch("asset_lens.trading.stock_pool.StockPool") as mock_pool:
+            with patch("asset_lens.data.market_environment.market_environment_analyzer") as mock_analyzer:
                 mock_pool.return_value = mock_pool_instance
                 mock_analyzer.analyze_environment.return_value = mock_environment
 
@@ -522,8 +516,8 @@ class TestInvestmentReportGenerator:
             "total_profit_rate": 0.1,
         }
 
-        with patch('asset_lens.strategy.engine.strategy_engine') as mock_engine:
-            with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool:
+        with patch("asset_lens.strategy.engine.strategy_engine") as mock_engine:
+            with patch("asset_lens.trading.stock_pool.StockPool") as mock_pool:
                 mock_engine.get_strategy.return_value = mock_strategy
                 mock_pool.return_value = mock_pool_instance
 
@@ -532,7 +526,7 @@ class TestInvestmentReportGenerator:
 
     def test_generate_comparison_report_strategy_not_found(self, generator):
         """测试生成对比报告 - 策略不存在"""
-        with patch('asset_lens.strategy.engine.strategy_engine') as mock_engine:
+        with patch("asset_lens.strategy.engine.strategy_engine") as mock_engine:
             mock_engine.get_strategy.return_value = None
 
             result = generator.generate_comparison_report(["nonexistent"])
@@ -555,8 +549,8 @@ class TestInvestmentReportGenerator:
         mock_environment.risk_level = "medium"
         mock_environment.sentiment = "neutral"
 
-        with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool:
-            with patch('asset_lens.data.market_environment.market_environment_analyzer') as mock_analyzer:
+        with patch("asset_lens.trading.stock_pool.StockPool") as mock_pool:
+            with patch("asset_lens.data.market_environment.market_environment_analyzer") as mock_analyzer:
                 mock_pool.return_value = mock_pool_instance
                 mock_analyzer.analyze_environment.return_value = mock_environment
 
@@ -569,8 +563,20 @@ class TestInvestmentReportGenerator:
             "report_type": "comparison_report",
             "generate_time": "2024-01-01 12:00:00",
             "comparison": [
-                {"name": "strategy1", "total_stocks": 10, "win_rate": 0.6, "total_profit_rate": 0.1, "risk_level": "low"},
-                {"name": "strategy2", "total_stocks": 8, "win_rate": 0.5, "total_profit_rate": -0.05, "risk_level": "medium"},
+                {
+                    "name": "strategy1",
+                    "total_stocks": 10,
+                    "win_rate": 0.6,
+                    "total_profit_rate": 0.1,
+                    "risk_level": "low",
+                },
+                {
+                    "name": "strategy2",
+                    "total_stocks": 8,
+                    "win_rate": 0.5,
+                    "total_profit_rate": -0.05,
+                    "risk_level": "medium",
+                },
             ],
             "recommendations": [{"message": "建议1"}],
         }

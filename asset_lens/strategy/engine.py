@@ -294,26 +294,26 @@ class StrategyEngine:
             "strategy": strategy_name,
         }
 
-    def _get_field_value(self, stock: dict[str, Any], field: str) -> Any:
+    def _get_field_value(self, stock: dict[str, Any], field_name: str) -> Any:
         """获取股票字段值"""
-        if field in stock:
-            return stock[field]
+        if field_name in stock:
+            return stock[field_name]
 
-        if field == "volume_ratio":
+        if field_name == "volume_ratio":
             avg_volume = stock.get("avg_volume_60d", 0)
             volume = stock.get("volume", 0)
             return (volume / avg_volume) if avg_volume > 0 else 0
 
-        if field == "ma_trend":
+        if field_name == "ma_trend":
             return stock.get("ma_trend", False)
 
-        if field == "change_percent_5d":
+        if field_name == "change_percent_5d":
             return stock.get("change_percent_5d", 0)
 
-        if field == "amplitude_20d":
+        if field_name == "amplitude_20d":
             return stock.get("amplitude_20d", 0)
 
-        if field == "profit_rate":
+        if field_name == "profit_rate":
             return stock.get("profit_rate", 0)
 
         return 0
@@ -539,9 +539,7 @@ class StrategyEngine:
 
         for stop_loss in param_ranges.get("stop_loss", [original_params["stop_loss"]]):
             for take_profit in param_ranges.get("take_profit", [original_params["take_profit"]]):
-                for holding_period in param_ranges.get(
-                    "holding_period_max", [original_params["holding_period_max"]]
-                ):
+                for holding_period in param_ranges.get("holding_period_max", [original_params["holding_period_max"]]):
                     strategy.stop_loss = stop_loss
                     strategy.take_profit = take_profit
                     strategy.holding_period_max = holding_period
@@ -601,9 +599,7 @@ class StrategyEngine:
             ),
             "all_results": sorted(
                 results,
-                key=lambda x: float(x["metric_value"])
-                if isinstance(x["metric_value"], (int, float))
-                else 0.0,
+                key=lambda x: float(x["metric_value"]) if isinstance(x["metric_value"], (int, float)) else 0.0,
                 reverse=True,
             )[:10],
         }
@@ -654,16 +650,10 @@ class StrategyEngine:
             combined_buy_conditions.extend(strategy.buy_conditions)
             combined_sell_conditions.extend(strategy.sell_conditions)
 
-        avg_position_size = sum(s.position_size for s in strategies_to_combine) / len(
-            strategies_to_combine
-        )
-        avg_max_positions = int(
-            sum(s.max_positions for s in strategies_to_combine) / len(strategies_to_combine)
-        )
+        avg_position_size = sum(s.position_size for s in strategies_to_combine) / len(strategies_to_combine)
+        avg_max_positions = int(sum(s.max_positions for s in strategies_to_combine) / len(strategies_to_combine))
         avg_stop_loss = sum(s.stop_loss for s in strategies_to_combine) / len(strategies_to_combine)
-        avg_take_profit = sum(s.take_profit for s in strategies_to_combine) / len(
-            strategies_to_combine
-        )
+        avg_take_profit = sum(s.take_profit for s in strategies_to_combine) / len(strategies_to_combine)
 
         strategy = self.create_custom_strategy(
             name=combined_name,
@@ -715,7 +705,7 @@ class StrategyEngine:
 
     def _get_portfolio_recommendation(self, combined_score: float, best_strategy: str | None) -> str:
         """获取组合建议"""
-        return self.portfolio_evaluator._get_portfolio_recommendation(combined_score, best_strategy)
+        return self.portfolio_evaluator._get_portfolio_recommendation(combined_score, best_strategy)  # pylint: disable=protected-access
 
     def screen_with_portfolio(
         self,

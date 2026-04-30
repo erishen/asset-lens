@@ -341,7 +341,7 @@ class HTMLReportGenerator:
     <div class="container">
         <header>
             <h1>投资组合分析报告</h1>
-            <p>生成日期: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+            <p>生成日期: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
         </header>
 
         <section>

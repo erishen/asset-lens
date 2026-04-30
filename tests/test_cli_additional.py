@@ -3,9 +3,10 @@ Tests for CLI Commands - Additional Coverage.
 CLI 命令测试 - 额外覆盖率
 """
 
+from unittest.mock import patch
+
 import pytest
 from click.testing import CliRunner
-from unittest.mock import patch
 
 
 class TestCLICommandsAdditional:
@@ -15,6 +16,7 @@ class TestCLICommandsAdditional:
     def runner(self):
         """创建 CLI 测试运行器"""
         from asset_lens.cli import cli
+
         runner = CliRunner()
         return runner, cli
 
@@ -33,9 +35,11 @@ class TestCLICommandsAdditional:
     def test_weekly_command(self, runner):
         """测试周报命令"""
         runner, cli = runner
-        with patch('asset_lens.data.csv_parser.CSVParser.load_data') as mock_load, \
-             patch('asset_lens.cli_modules.cli.report._get_north_flow') as mock_north, \
-             patch('asset_lens.cli_modules.cli.report._get_ml_predictions') as mock_ml:
+        with (
+            patch("asset_lens.data.csv_parser.CSVParser.load_data") as mock_load,
+            patch("asset_lens.cli_modules.cli.report._get_north_flow") as mock_north,
+            patch("asset_lens.cli_modules.cli.report._get_ml_predictions") as mock_ml,
+        ):
             mock_load.return_value = []
             mock_north.return_value = {"total_flow": 0, "flows": []}
             mock_ml.return_value = {"bullish": [], "bearish": []}
@@ -56,6 +60,7 @@ class TestCLIStockCommands:
     def runner(self):
         """创建 CLI 测试运行器"""
         from asset_lens.cli import cli
+
         runner = CliRunner()
         return runner, cli
 
@@ -97,6 +102,7 @@ class TestCLIStrategyCommands:
     def runner(self):
         """创建 CLI 测试运行器"""
         from asset_lens.cli import cli
+
         runner = CliRunner()
         return runner, cli
 
@@ -138,6 +144,7 @@ class TestCLITaskCommands:
     def runner(self):
         """创建 CLI 测试运行器"""
         from asset_lens.cli import cli
+
         runner = CliRunner()
         return runner, cli
 

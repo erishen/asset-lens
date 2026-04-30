@@ -2,14 +2,10 @@
 Tests for time group analysis.
 """
 
-import pytest
 from datetime import date, timedelta
 from decimal import Decimal
 
-from asset_lens.core.time_group import (
-    TimeGroupStats,
-    TimeGroupAnalyzer,
-)
+from asset_lens.core.time_group import TimeGroupAnalyzer, TimeGroupStats
 from asset_lens.data.models import InvestmentProduct, InvestmentType, RiskLevel
 
 
@@ -73,7 +69,7 @@ class TestTimeGroupAnalyzer:
             start_date=today - timedelta(days=30),
         )
         result = self.analyzer.analyze_by_holding_period([product])
-        
+
         assert len(result["groups"]) == 1
         assert result["groups"][0].group_name == "短期投资"
 
@@ -89,7 +85,7 @@ class TestTimeGroupAnalyzer:
             start_date=today - timedelta(days=180),
         )
         result = self.analyzer.analyze_by_holding_period([product])
-        
+
         assert len(result["groups"]) == 1
         assert result["groups"][0].group_name == "中期投资"
 
@@ -105,7 +101,7 @@ class TestTimeGroupAnalyzer:
             start_date=today - timedelta(days=400),
         )
         result = self.analyzer.analyze_by_holding_period([product])
-        
+
         assert len(result["groups"]) == 1
         assert result["groups"][0].group_name == "长期投资"
 
@@ -120,7 +116,7 @@ class TestTimeGroupAnalyzer:
             start_date=None,
         )
         result = self.analyzer.analyze_by_holding_period([product])
-        
+
         assert len(result["groups"]) == 1
         assert result["groups"][0].group_name == "未知期限"
 
@@ -147,7 +143,7 @@ class TestTimeGroupAnalyzer:
             ),
         ]
         result = self.analyzer.analyze_by_holding_period(products)
-        
+
         assert len(result["groups"]) == 2
         assert result["total_products"] == 2
 
@@ -162,11 +158,11 @@ class TestTimeGroupAnalyzer:
             start_date=today - timedelta(days=30),
         )
         result = self.analyzer.analyze_by_holding_period([product])
-        
+
         assert len(result["groups"]) == 0
 
     def test_analyze_by_start_year(self):
-        today = date.today()
+        date.today()
         products = [
             InvestmentProduct(
                 investment_type=InvestmentType.INDEX_FUND,
@@ -188,7 +184,7 @@ class TestTimeGroupAnalyzer:
             ),
         ]
         result = self.analyzer.analyze_by_start_year(products)
-        
+
         assert "year_groups" in result
         assert len(result["year_groups"]) == 2
 
@@ -203,7 +199,7 @@ class TestTimeGroupAnalyzer:
             start_date=None,
         )
         result = self.analyzer.analyze_by_start_year([product])
-        
+
         assert "year_groups" in result
         assert len(result["year_groups"]) == 1
         assert result["year_groups"][0].group_name == "未知年份"
@@ -224,7 +220,7 @@ class TestTimeGroupAnalyzer:
             short_term_days=30,
             mid_term_days=90,
         )
-        
+
         assert len(result["groups"]) == 1
         assert result["groups"][0].group_name == "中期投资"
 
@@ -251,7 +247,7 @@ class TestTimeGroupAnalyzer:
             ),
         ]
         result = self.analyzer.analyze_by_holding_period(products)
-        
+
         assert result["total_amount"] == Decimal("30000")
         assert result["total_initial"] == Decimal("27000")
         assert result["total_profit"] == Decimal("3000")

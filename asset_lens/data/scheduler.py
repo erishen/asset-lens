@@ -267,16 +267,12 @@ class TaskScheduler:
                     name = stock.get("name", "")
                     price = stock.get("current_price", 0)
                     score = stock.get("strategy_score", 0)
-                    if pool.add_stock(
-                        code, name, price, "watching", f"策略得分: {score:.1f}", strategy_score=score
-                    ):
+                    if pool.add_stock(code, name, price, "watching", f"策略得分: {score:.1f}", strategy_score=score):
                         added += 1
 
                 details_dict["added_to_pool"] = added
                 result["status"] = "completed"
-                self._log_task(
-                    "momentum_screen", "success", f"筛选出 {len(results_list)} 只，添加 {added} 只到股票池"
-                )
+                self._log_task("momentum_screen", "success", f"筛选出 {len(results_list)} 只，添加 {added} 只到股票池")
             else:
                 result["status"] = "failed"
                 result["error"] = "没有市场数据"
@@ -352,9 +348,7 @@ class TaskScheduler:
                     target = target + timedelta(days=1)
 
                 wait_seconds = (target - now).total_seconds()
-                print(
-                    f"   下次执行时间: {target.strftime('%Y-%m-%d %H:%M:%S')} ({int(wait_seconds // 3600)}小时后)"
-                )
+                print(f"   下次执行时间: {target.strftime('%Y-%m-%d %H:%M:%S')} ({int(wait_seconds // 3600)}小时后)")
 
                 time.sleep(min(wait_seconds, 3600))
 

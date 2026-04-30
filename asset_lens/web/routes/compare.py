@@ -60,7 +60,7 @@ async def create_snapshot():
 
         positions = [
             {
-                "code": getattr(p, 'code', ''),
+                "code": getattr(p, "code", ""),
                 "name": p.name,
                 "amount": float(p.current_amount or 0),
                 "profit": float(p.profit_amount or 0),

@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CacheEntry:
     """缓存条目"""
+
     key: str
     data: dict[str, Any]
     timestamp: datetime
@@ -225,10 +226,7 @@ class AICacheManager:
         count = 0
 
         # 清理内存缓存
-        expired_keys = [
-            key for key, entry in self._memory_cache.items()
-            if entry.is_expired()
-        ]
+        expired_keys = [key for key, entry in self._memory_cache.items() if entry.is_expired()]
         for key in expired_keys:
             del self._memory_cache[key]
             count += 1

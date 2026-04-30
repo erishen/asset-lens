@@ -9,11 +9,7 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 from enum import Enum
 
-from ..core.holidays import (
-    calculate_fund_trading_days,
-    calculate_working_days,
-    get_last_fund_trading_day,
-)
+from ..core.holidays import calculate_fund_trading_days, calculate_working_days, get_last_fund_trading_day
 
 logger = logging.getLogger(__name__)
 
@@ -230,9 +226,7 @@ def parse_period_record(
     return transactions
 
 
-def parse_transactions(
-    transaction_string: str, suffix: int, is_qdii: bool = False
-) -> ParsedTransactions:
+def parse_transactions(transaction_string: str, suffix: int, is_qdii: bool = False) -> ParsedTransactions:
     """
     解析交易记录字符串
 
@@ -329,9 +323,7 @@ def calculate_net_invest_from_transactions(
     parsed = parse_transactions(transaction_string, suffix, is_qdii)
 
     # 检查是否有智能定投（totalAmount = 0 的情况）
-    has_smart_investment = any(
-        tx.investment_type == InvestmentType.SMART for tx in parsed.transactions
-    )
+    has_smart_investment = any(tx.investment_type == InvestmentType.SMART for tx in parsed.transactions)
 
     # 智能定投使用 CSV 初始金额
     if has_smart_investment and initial_amount:

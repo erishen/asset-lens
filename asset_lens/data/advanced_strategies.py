@@ -20,6 +20,7 @@ from typing import Any
 @dataclass
 class ScreeningResult:
     """筛选结果"""
+
     code: str
     name: str
     score: float
@@ -59,11 +60,7 @@ class AdvancedStrategies:
         current_volume = volumes[-1]
         volume_ratio = current_volume / avg_volume if avg_volume > 0 else 0
 
-        passed = (
-            current_price > ma and
-            momentum > min_momentum and
-            volume_ratio > 1.5
-        )
+        passed = current_price > ma and momentum > min_momentum and volume_ratio > 1.5
 
         return {
             "passed": passed,
@@ -129,10 +126,7 @@ class AdvancedStrategies:
         current_volume = volumes[-1]
         volume_ratio = current_volume / avg_volume if avg_volume > 0 else 0
 
-        passed = (
-            current_price > period_high and
-            volume_ratio > volume_threshold
-        )
+        passed = current_price > period_high and volume_ratio > volume_threshold
 
         return {
             "passed": passed,
@@ -174,7 +168,7 @@ class AdvancedStrategies:
         if dividend_yield is not None:
             if dividend_yield > min_dividend:
                 scores.append(dividend_yield / min_dividend - 1)
-                reasons.append(f"股息率={dividend_yield*100:.1f}% > {min_dividend*100:.0f}%")
+                reasons.append(f"股息率={dividend_yield * 100:.1f}% > {min_dividend * 100:.0f}%")
 
         passed = len(scores) >= 2
         score = sum(scores) / len(scores) if scores else 0
@@ -205,12 +199,12 @@ class AdvancedStrategies:
         if revenue_growth is not None:
             if revenue_growth > min_revenue_growth:
                 scores.append(revenue_growth / min_revenue_growth)
-                reasons.append(f"营收增长={revenue_growth*100:.1f}%")
+                reasons.append(f"营收增长={revenue_growth * 100:.1f}%")
 
         if profit_growth is not None:
             if profit_growth > min_profit_growth:
                 scores.append(profit_growth / min_profit_growth)
-                reasons.append(f"利润增长={profit_growth*100:.1f}%")
+                reasons.append(f"利润增长={profit_growth * 100:.1f}%")
 
         passed = len(scores) >= 1
         score = sum(scores) / len(scores) if scores else 0
@@ -244,12 +238,12 @@ class AdvancedStrategies:
         if roe is not None and roe > 0:
             if roe > min_roe:
                 scores.append(roe / min_roe)
-                reasons.append(f"ROE={roe*100:.1f}%")
+                reasons.append(f"ROE={roe * 100:.1f}%")
 
         if debt_ratio is not None:
             if debt_ratio < max_debt:
                 scores.append(1 - debt_ratio / max_debt)
-                reasons.append(f"负债率={debt_ratio*100:.1f}%")
+                reasons.append(f"负债率={debt_ratio * 100:.1f}%")
 
         if current_ratio is not None:
             if current_ratio > min_current:

@@ -39,16 +39,20 @@ def register_compare_commands(cli: click.Group) -> None:
                 data_dirs = sorted([d for d in real_dir.iterdir() if d.is_dir()], key=lambda x: x.name)
 
             if len(data_dirs) >= 2:
-                before_dir = data_dirs[-2] if not before else next((d for d in data_dirs if before in d.name), data_dirs[-2])
-                after_dir = data_dirs[-1] if not after else next((d for d in data_dirs if after in d.name), data_dirs[-1])
+                before_dir = (
+                    data_dirs[-2] if not before else next((d for d in data_dirs if before in d.name), data_dirs[-2])
+                )
+                after_dir = (
+                    data_dirs[-1] if not after else next((d for d in data_dirs if after in d.name), data_dirs[-1])
+                )
 
                 click.echo(f"📁 对比目录: {before_dir.name} vs {after_dir.name}")
 
                 products_before = CSVParser.load_data_from_dir(before_dir)
                 products_after = CSVParser.load_data_from_dir(after_dir)
             else:
-                click.echo(f"📁 对比当前数据与初始投资")
-                
+                click.echo("📁 对比当前数据与初始投资")
+
                 products_after = load_products()
                 if not products_after:
                     click.echo("❌ 无法加载当前投资产品数据", err=True)
@@ -56,16 +60,14 @@ def register_compare_commands(cli: click.Group) -> None:
 
                 products_before = _get_initial_products(products_after)
                 if not products_before:
-                    click.echo(f"❌ 无法获取初始投资数据", err=True)
+                    click.echo("❌ 无法获取初始投资数据", err=True)
                     return
 
             click.echo(f"✅ 加载 {len(products_before)} 个产品（之前）")
             click.echo(f"✅ 加载 {len(products_after)} 个产品（之后）")
 
             analyzer = ComparisonAnalyzer()
-            result = analyzer.generate_comparison_report(
-                products_before, products_after, f"近{days}天对比"
-            )
+            result = analyzer.generate_comparison_report(products_before, products_after, f"近{days}天对比")
 
             trend = result["comparison"]["trend"]
             click.echo("\n💰 总体变化:")
@@ -78,31 +80,27 @@ def register_compare_commands(cli: click.Group) -> None:
             click.echo("-" * 60)
 
             type_groups = {
-                '权益': ['基金', '定投基金', 'ETF', '美股（美元）', '个人养老金', '券商理财'],
-                '理财': ['理财'],
-                '债券': ['债券'],
-                '货币': ['货币', '现金', '现金（港元）'],
-                '高端理财': ['高端理财'],
-                '美元基金': ['美元基金（美元）'],
-                '特别国债': ['特别国债'],
-                '黄金': ['黄金'],
-                '公募固收': ['公募固收'],
+                "权益": ["基金", "定投基金", "ETF", "美股（美元）", "个人养老金", "券商理财"],
+                "理财": ["理财"],
+                "债券": ["债券"],
+                "货币": ["货币", "现金", "现金（港元）"],
+                "高端理财": ["高端理财"],
+                "美元基金": ["美元基金（美元）"],
+                "特别国债": ["特别国债"],
+                "黄金": ["黄金"],
+                "公募固收": ["公募固收"],
             }
 
             type_stats: dict[str, dict[str, Decimal | int]] = {}
             for group_name, types in type_groups.items():
-                type_stats[group_name] = {
-                    'before': Decimal('0'),
-                    'after': Decimal('0'),
-                    'count': 0
-                }
+                type_stats[group_name] = {"before": Decimal("0"), "after": Decimal("0"), "count": 0}
 
             for detail in result["comparison"]["details"]:
                 for group_name, types in type_groups.items():
                     if detail.type in types:
-                        type_stats[group_name]['before'] += detail.amount_before
-                        type_stats[group_name]['after'] += detail.amount_after
-                        type_stats[group_name]['count'] += 1
+                        type_stats[group_name]["before"] += detail.amount_before
+                        type_stats[group_name]["after"] += detail.amount_after
+                        type_stats[group_name]["count"] += 1
                         break
 
             type_table = Table(title="资产类型变化", show_lines=False)
@@ -112,16 +110,20 @@ def register_compare_commands(cli: click.Group) -> None:
             type_table.add_column("变化", justify="right")
             type_table.add_column("变化率", justify="right")
 
-            sorted_stats = sorted(type_stats.items(), key=lambda x: abs(Decimal(str(x[1]['after'])) - Decimal(str(x[1]['before']))), reverse=True)
+            sorted_stats = sorted(
+                type_stats.items(),
+                key=lambda x: abs(Decimal(str(x[1]["after"])) - Decimal(str(x[1]["before"]))),
+                reverse=True,
+            )
 
             console = Console()
 
             for group_name, stats in sorted_stats:
-                before_val = Decimal(str(stats['before']))
-                after_val = Decimal(str(stats['after']))
+                before_val = Decimal(str(stats["before"]))
+                after_val = Decimal(str(stats["after"]))
                 if before_val > 0 or after_val > 0:
                     change = after_val - before_val
-                    change_rate = (change / before_val * 100) if before_val > 0 else Decimal('0')
+                    change_rate = (change / before_val * 100) if before_val > 0 else Decimal("0")
                     change_str = f"¥{change:,.0f}"
                     if change < 0:
                         change_str = f"[red]¥{change:,.0f}[/red]"
@@ -190,6 +192,7 @@ def register_compare_commands(cli: click.Group) -> None:
             snapshot_dir.mkdir(parents=True, exist_ok=True)
 
             import shutil
+
             source_file = Path("data/sample_data/投资产品.csv")
             if source_file.exists():
                 shutil.copy(source_file, snapshot_dir / "投资产品.csv")
@@ -203,24 +206,24 @@ def register_compare_commands(cli: click.Group) -> None:
 
 def _get_historical_products(days: int) -> list:
     """获取历史投资产品数据"""
-    from datetime import datetime, timedelta
+    from datetime import datetime
     from pathlib import Path
-    
+
     from asset_lens.data.csv_parser import CSVParser
 
     history_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
-    
+
     snapshot_dir = Path("data/real") / history_date
     if snapshot_dir.exists():
         return CSVParser.load_data_from_dir(snapshot_dir)
-    
+
     return []
 
 
 def _get_initial_products(current_products: list) -> list:
     """获取初始投资产品数据（基于初始金额）"""
     from copy import deepcopy
-    
+
     initial_products = []
     for p in current_products:
         initial_p = deepcopy(p)
@@ -228,5 +231,5 @@ def _get_initial_products(current_products: list) -> list:
         initial_p.return_rate = 0
         initial_p.profit_amount = 0
         initial_products.append(initial_p)
-    
+
     return initial_products

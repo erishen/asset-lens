@@ -12,15 +12,16 @@ Enhanced Trading Log Module.
 import json
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from typing import Any
-from enum import Enum
 
 from ..config import config
 
 
 class TradeAction(Enum):
     """交易动作"""
+
     BUY = "buy"
     SELL = "sell"
     HOLD = "hold"
@@ -29,6 +30,7 @@ class TradeAction(Enum):
 
 class TradeSource(Enum):
     """交易来源"""
+
     MANUAL = "manual"
     AUTO = "auto"
     SIGNAL = "signal"
@@ -38,6 +40,7 @@ class TradeSource(Enum):
 
 class TradeResult(Enum):
     """交易结果"""
+
     SUCCESS = "success"
     FAILED = "failed"
     PENDING = "pending"
@@ -47,6 +50,7 @@ class TradeResult(Enum):
 @dataclass
 class TradeContext:
     """交易上下文"""
+
     market_trend: str
     market_change: float
     sentiment: str
@@ -68,6 +72,7 @@ class TradeContext:
 @dataclass
 class DecisionBasis:
     """决策依据"""
+
     strategy_name: str
     strategy_score: float
     ml_prediction: float | None
@@ -93,6 +98,7 @@ class DecisionBasis:
 @dataclass
 class EnhancedTradeLog:
     """增强交易日志"""
+
     id: str
     code: str
     name: str
@@ -132,6 +138,7 @@ class EnhancedTradeLog:
 @dataclass
 class TradeStatistics:
     """交易统计"""
+
     total_trades: int
     buy_count: int
     sell_count: int
@@ -290,6 +297,7 @@ class EnhancedTradeLogger:
 
         cutoff = datetime.now()
         from datetime import timedelta
+
         cutoff = cutoff - timedelta(days=days)
         cutoff_str = cutoff.strftime("%Y-%m-%d")
 

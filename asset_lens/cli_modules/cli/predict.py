@@ -33,7 +33,7 @@ def register_predict_commands(cli: click.Group) -> None:
                     click.echo(f"  置信度: {result.confidence:.1f}%")
                     click.echo(f"  趋势: {result.trend}")
 
-                    if hasattr(result, 'related_stocks') and result.related_stocks:
+                    if hasattr(result, "related_stocks") and result.related_stocks:
                         console = Console()
                         table = Table(title="相关股票")
                         table.add_column("代码", style="cyan")

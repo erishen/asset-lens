@@ -2,14 +2,7 @@
 Tests for portfolio analytics module.
 """
 
-import pytest
-
-from asset_lens.core.portfolio_analytics import (
-    PortfolioAnalytics,
-    PortfolioMetrics,
-    RiskMetrics,
-    portfolio_analytics,
-)
+from asset_lens.core.portfolio_analytics import PortfolioAnalytics, PortfolioMetrics, RiskMetrics, portfolio_analytics
 
 
 class TestPortfolioMetrics:
@@ -28,7 +21,7 @@ class TestPortfolioMetrics:
             calmar_ratio=1.0,
             sortino_ratio=0.7,
         )
-        
+
         assert metrics.total_return == 10.0
         assert metrics.annualized_return == 5.0
         assert metrics.volatility == 15.0
@@ -47,7 +40,7 @@ class TestRiskMetrics:
             tracking_error=5.0,
             information_ratio=0.3,
         )
-        
+
         assert metrics.value_at_risk_95 == 2.0
         assert metrics.beta == 1.2
 
@@ -59,7 +52,7 @@ class TestPortfolioAnalytics:
         """Test initialization"""
         analytics = PortfolioAnalytics()
         assert analytics.risk_free_rate == 0.02
-        
+
         analytics2 = PortfolioAnalytics(risk_free_rate=0.03)
         assert analytics2.risk_free_rate == 0.03
 
@@ -67,7 +60,7 @@ class TestPortfolioAnalytics:
         """Test calculating metrics with empty returns"""
         analytics = PortfolioAnalytics()
         metrics = analytics.calculate_metrics([])
-        
+
         assert metrics.total_return == 0.0
         assert metrics.annualized_return == 0.0
 
@@ -76,7 +69,7 @@ class TestPortfolioAnalytics:
         analytics = PortfolioAnalytics()
         returns = [0.01, 0.02, 0.015, 0.005, 0.01]
         metrics = analytics.calculate_metrics(returns)
-        
+
         assert metrics.total_return > 0
         assert metrics.win_rate == 100.0
 
@@ -85,7 +78,7 @@ class TestPortfolioAnalytics:
         analytics = PortfolioAnalytics()
         returns = [0.01, -0.02, 0.015, -0.005, 0.01]
         metrics = analytics.calculate_metrics(returns)
-        
+
         assert metrics.win_rate == 60.0
         assert metrics.profit_loss_ratio > 0
 
@@ -93,7 +86,7 @@ class TestPortfolioAnalytics:
         """Test calculating total return"""
         analytics = PortfolioAnalytics()
         returns = [0.1, 0.1, 0.1]
-        
+
         total = analytics._calculate_total_return(returns)
         assert abs(total - 33.1) < 0.1
 
@@ -101,7 +94,7 @@ class TestPortfolioAnalytics:
         """Test calculating volatility"""
         analytics = PortfolioAnalytics()
         returns = [0.01, 0.02, 0.01, 0.02, 0.01]
-        
+
         vol = analytics._calculate_volatility(returns)
         assert vol > 0
 
@@ -109,7 +102,7 @@ class TestPortfolioAnalytics:
         """Test calculating max drawdown"""
         analytics = PortfolioAnalytics()
         returns = [0.1, -0.05, -0.05, 0.1]
-        
+
         dd = analytics._calculate_max_drawdown(returns)
         assert dd > 0
 
@@ -117,7 +110,7 @@ class TestPortfolioAnalytics:
         """Test calculating win rate"""
         analytics = PortfolioAnalytics()
         returns = [0.01, 0.02, -0.01, 0.01, -0.02]
-        
+
         win_rate = analytics._calculate_win_rate(returns)
         assert win_rate == 60.0
 
@@ -125,7 +118,7 @@ class TestPortfolioAnalytics:
         """Test calculating profit loss ratio"""
         analytics = PortfolioAnalytics()
         returns = [0.02, 0.04, -0.01, -0.02]
-        
+
         ratio = analytics._calculate_profit_loss_ratio(returns)
         assert ratio == 2.0
 
@@ -133,7 +126,7 @@ class TestPortfolioAnalytics:
         """Test calculating risk metrics with empty returns"""
         analytics = PortfolioAnalytics()
         metrics = analytics.calculate_risk_metrics([])
-        
+
         assert metrics.value_at_risk_95 == 0.0
         assert metrics.beta == 1.0
 
@@ -141,7 +134,7 @@ class TestPortfolioAnalytics:
         """Test calculating VaR"""
         analytics = PortfolioAnalytics()
         returns = [-0.05, -0.03, -0.02, -0.01, 0.0, 0.01, 0.02, 0.03, 0.04, 0.05]
-        
+
         var_95 = analytics._calculate_var(returns, 0.95)
         assert var_95 > 0
 
@@ -150,7 +143,7 @@ class TestPortfolioAnalytics:
         analytics = PortfolioAnalytics()
         returns = [0.01, 0.02, -0.01, 0.02]
         benchmark = [0.01, 0.015, -0.005, 0.015]
-        
+
         beta = analytics._calculate_beta(returns, benchmark)
         assert beta > 0
 
@@ -158,9 +151,9 @@ class TestPortfolioAnalytics:
         """Test generating report"""
         analytics = PortfolioAnalytics()
         returns = [0.01, 0.02, -0.01, 0.015, 0.005]
-        
+
         report = analytics.generate_report(returns)
-        
+
         assert "performance" in report
         assert "risk" in report
         assert "evaluation" in report
@@ -168,7 +161,7 @@ class TestPortfolioAnalytics:
     def test_generate_evaluation(self):
         """Test generating evaluation"""
         analytics = PortfolioAnalytics()
-        
+
         metrics = PortfolioMetrics(
             total_return=15.0,
             annualized_return=12.0,
@@ -180,7 +173,7 @@ class TestPortfolioAnalytics:
             calmar_ratio=2.4,
             sortino_ratio=2.0,
         )
-        
+
         risk_metrics = RiskMetrics(
             value_at_risk_95=2.0,
             value_at_risk_99=3.0,
@@ -189,7 +182,7 @@ class TestPortfolioAnalytics:
             tracking_error=0.0,
             information_ratio=0.0,
         )
-        
+
         evaluation = analytics._generate_evaluation(metrics, risk_metrics)
         assert "收益率优秀" in evaluation
         assert "波动率低" in evaluation

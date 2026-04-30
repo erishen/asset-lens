@@ -7,12 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from asset_lens.data.models import (
-    InvestmentProduct,
-    InvestmentType,
-    Portfolio,
-    RiskLevel,
-)
+from asset_lens.data.models import InvestmentProduct, InvestmentType, Portfolio, RiskLevel
 from asset_lens.report.calculate_report import CalculateReportGenerator
 
 
@@ -22,7 +17,7 @@ class TestCalculateReportGenerator:
     @pytest.fixture
     def generator(self):
         """创建测试实例"""
-        with patch('asset_lens.report.calculate_report.config') as mock_config:
+        with patch("asset_lens.report.calculate_report.config") as mock_config:
             mock_config.default_usd_rate = Decimal("7.2")
             mock_config.default_hkd_rate = Decimal("0.92")
             generator = CalculateReportGenerator()

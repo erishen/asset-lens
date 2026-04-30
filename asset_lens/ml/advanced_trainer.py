@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 try:
     import optuna
     from optuna.samplers import TPESampler
+
     HAS_OPTUNA = True
     optuna.logging.set_verbosity(optuna.logging.WARNING)
 except ImportError:
@@ -32,6 +33,7 @@ except ImportError:
 
 try:
     import shap
+
     HAS_SHAP = True
 except ImportError:
     HAS_SHAP = False
@@ -40,18 +42,21 @@ try:
     from sklearn.feature_selection import SelectKBest, f_classif, mutual_info_classif
     from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score
     from sklearn.model_selection import TimeSeriesSplit, cross_val_score
+
     HAS_SKLEARN = True
 except ImportError:
     HAS_SKLEARN = False
 
 try:
     import lightgbm as lgb
+
     HAS_LIGHTGBM = True
 except ImportError:
     HAS_LIGHTGBM = False
 
 try:
     import xgboost as xgb
+
     HAS_XGBOOST = True
 except ImportError:
     HAS_XGBOOST = False
@@ -60,6 +65,7 @@ except ImportError:
 @dataclass
 class TrainingResult:
     """训练结果"""
+
     model_type: str
     accuracy: float
     precision: float
@@ -79,28 +85,29 @@ class TrainingResult:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            'model_type': self.model_type,
-            'accuracy': self.accuracy,
-            'precision': self.precision,
-            'recall': self.recall,
-            'f1_score': self.f1_score,
-            'auc_roc': self.auc_roc,
-            'cv_scores': self.cv_scores,
-            'cv_mean': self.cv_mean,
-            'cv_std': self.cv_std,
-            'feature_importance': self.feature_importance,
-            'shap_values': self.shap_values,
-            'best_params': self.best_params,
-            'training_time': self.training_time,
-            'n_features': self.n_features,
-            'n_samples': self.n_samples,
-            'timestamp': self.timestamp,
+            "model_type": self.model_type,
+            "accuracy": self.accuracy,
+            "precision": self.precision,
+            "recall": self.recall,
+            "f1_score": self.f1_score,
+            "auc_roc": self.auc_roc,
+            "cv_scores": self.cv_scores,
+            "cv_mean": self.cv_mean,
+            "cv_std": self.cv_std,
+            "feature_importance": self.feature_importance,
+            "shap_values": self.shap_values,
+            "best_params": self.best_params,
+            "training_time": self.training_time,
+            "n_features": self.n_features,
+            "n_samples": self.n_samples,
+            "timestamp": self.timestamp,
         }
 
 
 @dataclass
 class OptimizationResult:
     """优化结果"""
+
     best_params: dict[str, Any]
     best_value: float
     n_trials: int
@@ -111,13 +118,13 @@ class OptimizationResult:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            'best_params': self.best_params,
-            'best_value': self.best_value,
-            'n_trials': self.n_trials,
-            'study_name': self.study_name,
-            'optimization_time': self.optimization_time,
-            'param_importance': self.param_importance,
-            'trials_history': self.trials_history[:10],
+            "best_params": self.best_params,
+            "best_value": self.best_value,
+            "n_trials": self.n_trials,
+            "study_name": self.study_name,
+            "optimization_time": self.optimization_time,
+            "param_importance": self.param_importance,
+            "trials_history": self.trials_history[:10],
         }
 
 
@@ -198,6 +205,7 @@ class AdvancedMLTrainer:
             raise ImportError("Optuna 未安装，使用 pip install optuna 安装")
 
         import time
+
         start_time = time.time()
 
         X = X.fillna(0).replace([np.inf, -np.inf], 0)
@@ -205,36 +213,36 @@ class AdvancedMLTrainer:
         def objective(trial: optuna.Trial) -> float:
             if model_type == "lightgbm" and HAS_LIGHTGBM:
                 params: dict[str, Any] = {
-                    'n_estimators': trial.suggest_int('n_estimators', 100, 500),
-                    'max_depth': trial.suggest_int('max_depth', 3, 12),
-                    'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.2, log=True),
-                    'num_leaves': trial.suggest_int('num_leaves', 20, 300),
-                    'min_child_samples': trial.suggest_int('min_child_samples', 5, 50),
-                    'subsample': trial.suggest_float('subsample', 0.6, 1.0),
-                    'colsample_bytree': trial.suggest_float('colsample_bytree', 0.6, 1.0),
-                    'reg_alpha': trial.suggest_float('reg_alpha', 1e-4, 1.0, log=True),
-                    'reg_lambda': trial.suggest_float('reg_lambda', 1e-4, 1.0, log=True),
-                    'min_split_gain': trial.suggest_float('min_split_gain', 0, 0.1),
-                    'random_state': 42,
-                    'verbose': -1,
-                    'n_jobs': -1,
+                    "n_estimators": trial.suggest_int("n_estimators", 100, 500),
+                    "max_depth": trial.suggest_int("max_depth", 3, 12),
+                    "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.2, log=True),
+                    "num_leaves": trial.suggest_int("num_leaves", 20, 300),
+                    "min_child_samples": trial.suggest_int("min_child_samples", 5, 50),
+                    "subsample": trial.suggest_float("subsample", 0.6, 1.0),
+                    "colsample_bytree": trial.suggest_float("colsample_bytree", 0.6, 1.0),
+                    "reg_alpha": trial.suggest_float("reg_alpha", 1e-4, 1.0, log=True),
+                    "reg_lambda": trial.suggest_float("reg_lambda", 1e-4, 1.0, log=True),
+                    "min_split_gain": trial.suggest_float("min_split_gain", 0, 0.1),
+                    "random_state": 42,
+                    "verbose": -1,
+                    "n_jobs": -1,
                 }
                 model = lgb.LGBMClassifier(**params)
 
             elif model_type == "xgboost" and HAS_XGBOOST:
                 params_xgb: dict[str, Any] = {
-                    'n_estimators': trial.suggest_int('n_estimators', 100, 500),
-                    'max_depth': trial.suggest_int('max_depth', 3, 12),
-                    'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.2, log=True),
-                    'subsample': trial.suggest_float('subsample', 0.6, 1.0),
-                    'colsample_bytree': trial.suggest_float('colsample_bytree', 0.6, 1.0),
-                    'reg_alpha': trial.suggest_float('reg_alpha', 1e-4, 1.0, log=True),
-                    'reg_lambda': trial.suggest_float('reg_lambda', 1e-4, 1.0, log=True),
-                    'min_child_weight': trial.suggest_int('min_child_weight', 1, 10),
-                    'gamma': trial.suggest_float('gamma', 0, 0.5),
-                    'random_state': 42,
-                    'eval_metric': 'logloss',
-                    'n_jobs': -1,
+                    "n_estimators": trial.suggest_int("n_estimators", 100, 500),
+                    "max_depth": trial.suggest_int("max_depth", 3, 12),
+                    "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.2, log=True),
+                    "subsample": trial.suggest_float("subsample", 0.6, 1.0),
+                    "colsample_bytree": trial.suggest_float("colsample_bytree", 0.6, 1.0),
+                    "reg_alpha": trial.suggest_float("reg_alpha", 1e-4, 1.0, log=True),
+                    "reg_lambda": trial.suggest_float("reg_lambda", 1e-4, 1.0, log=True),
+                    "min_child_weight": trial.suggest_int("min_child_weight", 1, 10),
+                    "gamma": trial.suggest_float("gamma", 0, 0.5),
+                    "random_state": 42,
+                    "eval_metric": "logloss",
+                    "n_jobs": -1,
                 }
                 model = xgb.XGBClassifier(**params_xgb)
 
@@ -242,12 +250,12 @@ class AdvancedMLTrainer:
                 raise ValueError(f"不支持的模型类型: {model_type}")
 
             tscv = TimeSeriesSplit(n_splits=cv_splits)
-            scores = cross_val_score(model, X, y, cv=tscv, scoring='roc_auc', n_jobs=-1)
+            scores = cross_val_score(model, X, y, cv=tscv, scoring="roc_auc", n_jobs=-1)
 
             return float(scores.mean())
 
         study = optuna.create_study(
-            direction='maximize',
+            direction="maximize",
             sampler=TPESampler(seed=42),
             study_name=f"{model_type}_optimization",
         )
@@ -265,9 +273,9 @@ class AdvancedMLTrainer:
 
         trials_history = [
             {
-                'trial': t.number,
-                'value': t.value,
-                'params': t.params,
+                "trial": t.number,
+                "value": t.value,
+                "params": t.params,
             }
             for t in study.trials
             if t.value is not None
@@ -307,6 +315,7 @@ class AdvancedMLTrainer:
             训练结果
         """
         import time
+
         start_time = time.time()
 
         if not HAS_SKLEARN:
@@ -315,27 +324,31 @@ class AdvancedMLTrainer:
         X = X.fillna(0).replace([np.inf, -np.inf], 0)
 
         default_params: dict[str, Any] = {
-            'random_state': 42,
-            'n_jobs': -1,
+            "random_state": 42,
+            "n_jobs": -1,
         }
 
         if model_type == "lightgbm" and HAS_LIGHTGBM:
-            default_params.update({
-                'n_estimators': 300,
-                'max_depth': 8,
-                'learning_rate': 0.05,
-                'num_leaves': 127,
-                'verbose': -1,
-            })
+            default_params.update(
+                {
+                    "n_estimators": 300,
+                    "max_depth": 8,
+                    "learning_rate": 0.05,
+                    "num_leaves": 127,
+                    "verbose": -1,
+                }
+            )
             model = lgb.LGBMClassifier(**{**default_params, **(params or {})})
 
         elif model_type == "xgboost" and HAS_XGBOOST:
-            default_params.update({
-                'n_estimators': 300,
-                'max_depth': 8,
-                'learning_rate': 0.05,
-                'eval_metric': 'logloss',
-            })
+            default_params.update(
+                {
+                    "n_estimators": 300,
+                    "max_depth": 8,
+                    "learning_rate": 0.05,
+                    "eval_metric": "logloss",
+                }
+            )
             model = xgb.XGBClassifier(**{**default_params, **(params or {})})
 
         else:
@@ -375,7 +388,7 @@ class AdvancedMLTrainer:
         training_time = time.time() - start_time
 
         feature_importance: dict[str, float] = {}
-        if hasattr(model, 'feature_importances_'):
+        if hasattr(model, "feature_importances_"):
             for name, importance in zip(X.columns, model.feature_importances_, strict=False):
                 feature_importance[name] = float(importance)
 
@@ -410,7 +423,7 @@ class AdvancedMLTrainer:
             return {}
 
         try:
-            if hasattr(model, 'predict_proba'):
+            if hasattr(model, "predict_proba"):
                 explainer = shap.TreeExplainer(model)
             else:
                 explainer = shap.Explainer(model, X)
@@ -466,10 +479,11 @@ class AdvancedMLTrainer:
             训练结果
         """
         import time
+
         start_time = time.time()
 
         if models is None:
-            models = ['lightgbm', 'xgboost']
+            models = ["lightgbm", "xgboost"]
 
         if weights is None:
             weights = [1.0] * len(models)
@@ -484,7 +498,7 @@ class AdvancedMLTrainer:
             trained_models.append(self._best_model)
             feature_importances.append(result.feature_importance)
 
-        self._best_model = {'models': trained_models, 'weights': weights, 'types': models}
+        self._best_model = {"models": trained_models, "weights": weights, "types": models}
 
         avg_feature_importance: dict[str, float] = {}
         all_features: set[str] = set()
@@ -498,7 +512,7 @@ class AdvancedMLTrainer:
         training_time = time.time() - start_time
 
         return TrainingResult(
-            model_type='ensemble',
+            model_type="ensemble",
             accuracy=0.0,
             precision=0.0,
             recall=0.0,
@@ -508,7 +522,7 @@ class AdvancedMLTrainer:
             cv_mean=0.0,
             cv_std=0.0,
             feature_importance=avg_feature_importance,
-            best_params={'models': models, 'weights': weights},
+            best_params={"models": models, "weights": weights},
             training_time=training_time,
             n_features=X.shape[1],
             n_samples=len(X),
@@ -517,7 +531,7 @@ class AdvancedMLTrainer:
     def save_results(self, result: TrainingResult | OptimizationResult, filename: str) -> None:
         """保存结果"""
         path = self.output_dir / f"{filename}.json"
-        with open(path, 'w', encoding='utf-8') as f:
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(result.to_dict(), f, ensure_ascii=False, indent=2)
         logger.info(f"结果已保存: {path}")
 

@@ -27,18 +27,12 @@ class CalculateReportGenerator:
         products_with_return.sort(key=lambda p: p.annual_return or Decimal("0"), reverse=True)
 
         top_performers = products_with_return[:10]
-        negative_performers = [
-            p for p in products_with_return if p.annual_return and p.annual_return < Decimal("0")
-        ]
+        negative_performers = [p for p in products_with_return if p.annual_return and p.annual_return < Decimal("0")]
         low_positive_performers = [
-            p
-            for p in products_with_return
-            if p.annual_return and Decimal("0") <= p.annual_return < Decimal("2")
+            p for p in products_with_return if p.annual_return and Decimal("0") <= p.annual_return < Decimal("2")
         ]
 
-        positive_products = [
-            p for p in products_with_return if p.annual_return and p.annual_return > Decimal("0")
-        ]
+        positive_products = [p for p in products_with_return if p.annual_return and p.annual_return > Decimal("0")]
         avg_positive_return = Decimal("0")
         if positive_products:
             total = sum(p.annual_return for p in positive_products if p.annual_return)
@@ -51,17 +45,14 @@ class CalculateReportGenerator:
         all_products_with_amount = [
             p
             for p in portfolio.products
-            if p.investment_type != InvestmentType.OTHER
-            and p.current_amount
-            and p.current_amount > Decimal("0")
+            if p.investment_type != InvestmentType.OTHER and p.current_amount and p.current_amount > Decimal("0")
         ]
         # 总投资金额不包含利息（与 ts-demo 保持一致）
         total_investment = sum(
             (p.current_amount or Decimal("0")) * (p.usd_rate or usd_rate)
             if p.investment_type in [InvestmentType.US_STOCK, InvestmentType.USD_FUND]
             else (p.current_amount or Decimal("0")) * (p.hkd_rate or hkd_rate)
-            if p.investment_type
-            in [InvestmentType.HK_STOCK, InvestmentType.HK_CASH, InvestmentType.HK_DIVIDEND_FUND]
+            if p.investment_type in [InvestmentType.HK_STOCK, InvestmentType.HK_CASH, InvestmentType.HK_DIVIDEND_FUND]
             else p.current_amount or Decimal("0")
             for p in all_products_with_amount
         )
@@ -70,9 +61,7 @@ class CalculateReportGenerator:
         total_value = sum(p.get_converted_amount(usd_rate, hkd_rate) for p in products_with_return)
 
         # 无收益率数据的投资金额（包含利息，用于显示）
-        no_return_value = sum(
-            p.get_converted_amount(usd_rate, hkd_rate) for p in products_without_return
-        )
+        no_return_value = sum(p.get_converted_amount(usd_rate, hkd_rate) for p in products_without_return)
 
         return {
             "total_products": len(portfolio.products),
@@ -90,18 +79,12 @@ class CalculateReportGenerator:
         }
 
     def _get_products_with_return(self, portfolio: Portfolio) -> list[InvestmentProduct]:
-        return [
-            p
-            for p in portfolio.products
-            if p.annual_return is not None and p.start_date is not None
-        ]
+        return [p for p in portfolio.products if p.annual_return is not None and p.start_date is not None]
 
     def _get_products_without_return(self, portfolio: Portfolio) -> list[InvestmentProduct]:
         return [p for p in portfolio.products if p.annual_return is None or p.start_date is None]
 
-    def _get_type_distribution(
-        self, products: list[InvestmentProduct]
-    ) -> dict[str, dict[str, Any]]:
+    def _get_type_distribution(self, products: list[InvestmentProduct]) -> dict[str, dict[str, Any]]:
         usd_rate = Decimal(str(config.default_usd_rate))
         hkd_rate = Decimal(str(config.default_hkd_rate))
         type_stats: dict[str, dict[str, Any]] = {}
@@ -117,9 +100,7 @@ class CalculateReportGenerator:
 
             type_stats[type_name]["count"] += 1
             if product.current_amount:
-                type_stats[type_name]["total_value"] += product.get_converted_amount(
-                    usd_rate, hkd_rate
-                )
+                type_stats[type_name]["total_value"] += product.get_converted_amount(usd_rate, hkd_rate)
 
         total_value = Decimal(str(sum(s["total_value"] for s in type_stats.values())))
 
@@ -440,12 +421,12 @@ class CalculateReportGenerator:
         diff = float(total_inv) - float(total_val)
 
         summary_lines = [
-            f"📊 总投资金额：{float(total_inv)/10000:.2f}万元 ({float(total_inv):,.0f}元)",
-            f"💰 有效投资总额：{float(total_val)/10000:.2f}万元 ({float(total_val):,.0f}元)",
+            f"📊 总投资金额：{float(total_inv) / 10000:.2f}万元 ({float(total_inv):,.0f}元)",
+            f"💰 有效投资总额：{float(total_val) / 10000:.2f}万元 ({float(total_val):,.0f}元)",
         ]
 
         if abs(diff) > 100:
-            summary_lines.append(f"📋 差异说明：{abs(diff)/10000:.2f}万元为无收益率数据的记录（如无开始日期等）")
+            summary_lines.append(f"📋 差异说明：{abs(diff) / 10000:.2f}万元为无收益率数据的记录（如无开始日期等）")
 
         summary = Panel(
             "\n".join(summary_lines),
@@ -472,9 +453,7 @@ class CalculateReportGenerator:
             pct_valid = float(stats["percentage"])
             pct_total = float(stats["total_value"]) / float(total_inv) * 100 if total_inv > 0 else 0
             count = stats["count"]
-            type_table.add_row(
-                type_name, f"{amount_wan:.2f}", f"{pct_valid:.2f}", f"{pct_total:.2f}", str(count)
-            )
+            type_table.add_row(type_name, f"{amount_wan:.2f}", f"{pct_valid:.2f}", f"{pct_total:.2f}", str(count))
 
         self.console.print(type_table)
 
@@ -492,9 +471,7 @@ class CalculateReportGenerator:
         total_inv = report["total_investment"]
         report["no_return_value"]
 
-        sorted_no_return = sorted(
-            no_return_dist.items(), key=lambda x: x[1]["total_value"], reverse=True
-        )
+        sorted_no_return = sorted(no_return_dist.items(), key=lambda x: x[1]["total_value"], reverse=True)
 
         for type_name, stats in sorted_no_return:
             amount_wan = float(stats["total_value"]) / 10000

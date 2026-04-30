@@ -156,9 +156,7 @@ class AdvancedAnalytics:
 
         peak_date = dates[peak_for_max] if dates and peak_for_max < len(dates) else None
         trough_date = dates[trough_idx] if dates and trough_idx < len(dates) else None
-        recovery_date = (
-            dates[recovery_idx] if dates and recovery_idx and recovery_idx < len(dates) else None
-        )
+        recovery_date = dates[recovery_idx] if dates and recovery_idx and recovery_idx < len(dates) else None
 
         if trough_date and recovery_date:
             drawdown_duration = (recovery_date - trough_date).days
@@ -191,9 +189,7 @@ class AdvancedAnalytics:
 
         avg_return = sum(returns) / len(returns)
 
-        variance = Decimal(
-            str(sum((float(r) - float(avg_return)) ** 2 for r in returns))
-        ) / Decimal(str(len(returns)))
+        variance = Decimal(str(sum((float(r) - float(avg_return)) ** 2 for r in returns))) / Decimal(str(len(returns)))
         std_dev = Decimal(str(float(variance) ** 0.5)) if variance > 0 else Decimal("0")
 
         if annualized:
@@ -231,9 +227,7 @@ class AdvancedAnalytics:
             )
 
         avg_return = sum(returns) / len(returns)
-        variance = Decimal(
-            str(sum((float(r) - float(avg_return)) ** 2 for r in returns))
-        ) / Decimal(str(len(returns)))
+        variance = Decimal(str(sum((float(r) - float(avg_return)) ** 2 for r in returns))) / Decimal(str(len(returns)))
         daily_vol = Decimal(str(float(variance) ** 0.5)) if variance > 0 else Decimal("0")
 
         weekly_vol = daily_vol * Decimal(str(5**0.5))
@@ -384,11 +378,7 @@ class AdvancedAnalytics:
         portfolio_returns: list[Decimal],
         market_returns: list[Decimal],
     ) -> Decimal:
-        if (
-            not portfolio_returns
-            or not market_returns
-            or len(portfolio_returns) != len(market_returns)
-        ):
+        if not portfolio_returns or not market_returns or len(portfolio_returns) != len(market_returns):
             return Decimal("0")
 
         n = len(portfolio_returns)
@@ -407,9 +397,7 @@ class AdvancedAnalytics:
             )
         ) / Decimal(str(n))
 
-        var_market = Decimal(
-            str(sum((float(r) - float(avg_market)) ** 2 for r in market_returns))
-        ) / Decimal(str(n))
+        var_market = Decimal(str(sum((float(r) - float(avg_market)) ** 2 for r in market_returns))) / Decimal(str(n))
 
         if var_market > 0:
             beta = cov / var_market
@@ -424,9 +412,7 @@ class AdvancedAnalytics:
         market_return: Decimal,
         beta: Decimal,
     ) -> Decimal:
-        alpha = portfolio_return - (
-            self.risk_free_rate + beta * (market_return - self.risk_free_rate)
-        )
+        alpha = portfolio_return - (self.risk_free_rate + beta * (market_return - self.risk_free_rate))
         return alpha
 
 

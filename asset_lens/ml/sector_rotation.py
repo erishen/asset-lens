@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SectorInfo:
     """板块信息"""
+
     name: str
     code: str
     change_percent: float
@@ -29,6 +30,7 @@ class SectorInfo:
 @dataclass
 class SectorRotationResult:
     """板块轮动分析结果"""
+
     market_condition: str
     strong_sectors: list[SectorInfo]
     weak_sectors: list[SectorInfo]
@@ -81,47 +83,45 @@ class SectorRotationAnalyzer:
 
         sector_stats = self._calculate_sector_stats(stocks)
 
-        sorted_sectors = sorted(
-            sector_stats.items(),
-            key=lambda x: x[1]["strength_score"],
-            reverse=True
-        )
+        sorted_sectors = sorted(sector_stats.items(), key=lambda x: x[1]["strength_score"], reverse=True)
 
         strong_sectors = []
         weak_sectors = []
 
         for sector_name, stats in sorted_sectors[:5]:
-            strong_sectors.append(SectorInfo(
-                name=sector_name,
-                code=stats.get("code", ""),
-                change_percent=stats.get("avg_change", 0),
-                volume_ratio=stats.get("volume_ratio", 1.0),
-                turnover_rate=stats.get("avg_turnover", 0),
-                strength_score=stats.get("strength_score", 0),
-                trend="强势" if stats.get("avg_change", 0) > 0 else "弱势",
-                recommendation=self._get_sector_recommendation(sector_name, stats, "strong"),
-            ))
+            strong_sectors.append(
+                SectorInfo(
+                    name=sector_name,
+                    code=stats.get("code", ""),
+                    change_percent=stats.get("avg_change", 0),
+                    volume_ratio=stats.get("volume_ratio", 1.0),
+                    turnover_rate=stats.get("avg_turnover", 0),
+                    strength_score=stats.get("strength_score", 0),
+                    trend="强势" if stats.get("avg_change", 0) > 0 else "弱势",
+                    recommendation=self._get_sector_recommendation(sector_name, stats, "strong"),
+                )
+            )
 
         for sector_name, stats in sorted_sectors[-5:]:
-            weak_sectors.append(SectorInfo(
-                name=sector_name,
-                code=stats.get("code", ""),
-                change_percent=stats.get("avg_change", 0),
-                volume_ratio=stats.get("volume_ratio", 1.0),
-                turnover_rate=stats.get("avg_turnover", 0),
-                strength_score=stats.get("strength_score", 0),
-                trend="弱势",
-                recommendation=self._get_sector_recommendation(sector_name, stats, "weak"),
-            ))
+            weak_sectors.append(
+                SectorInfo(
+                    name=sector_name,
+                    code=stats.get("code", ""),
+                    change_percent=stats.get("avg_change", 0),
+                    volume_ratio=stats.get("volume_ratio", 1.0),
+                    turnover_rate=stats.get("avg_turnover", 0),
+                    strength_score=stats.get("strength_score", 0),
+                    trend="弱势",
+                    recommendation=self._get_sector_recommendation(sector_name, stats, "weak"),
+                )
+            )
 
         market_condition = self._determine_market_condition(stocks)
 
         recommended_sectors = [s.name for s in strong_sectors[:3]]
         avoid_sectors = [s.name for s in weak_sectors[-3:]]
 
-        rotation_signal = self._generate_rotation_signal(
-            strong_sectors, weak_sectors, market_condition
-        )
+        rotation_signal = self._generate_rotation_signal(strong_sectors, weak_sectors, market_condition)
 
         return SectorRotationResult(
             market_condition=market_condition,
@@ -181,11 +181,7 @@ class SectorRotationAnalyzer:
                 stats["avg_change"] = stats["total_change"] / stats["count"]
                 stats["avg_turnover"] = stats["total_turnover"] / stats["count"]
                 stats["up_ratio"] = stats["up_count"] / stats["count"]
-                stats["strength_score"] = (
-                    stats["avg_change"] * 10 +
-                    stats["up_ratio"] * 20 +
-                    stats["avg_turnover"] * 2
-                )
+                stats["strength_score"] = stats["avg_change"] * 10 + stats["up_ratio"] * 20 + stats["avg_turnover"] * 2
 
         return sector_stats
 
@@ -205,9 +201,7 @@ class SectorRotationAnalyzer:
         else:
             return "sideways"
 
-    def _get_sector_recommendation(
-        self, sector_name: str, stats: dict, strength: str
-    ) -> str:
+    def _get_sector_recommendation(self, sector_name: str, stats: dict, strength: str) -> str:
         """获取板块建议"""
         avg_change = stats.get("avg_change", 0)
         stats.get("up_ratio", 0)
@@ -335,14 +329,16 @@ class SectorRotationAnalyzer:
             else:
                 status = "➖ 中性板块"
 
-            recommendations.append({
-                "sector": sector,
-                "funds": fund_list,
-                "count": len(fund_list),
-                "status": status,
-                "is_recommended": is_recommended,
-                "is_avoid": is_avoid,
-            })
+            recommendations.append(
+                {
+                    "sector": sector,
+                    "funds": fund_list,
+                    "count": len(fund_list),
+                    "status": status,
+                    "is_recommended": is_recommended,
+                    "is_avoid": is_avoid,
+                }
+            )
 
         return {
             "market_condition": result.market_condition,

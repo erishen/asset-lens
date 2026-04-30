@@ -3,16 +3,11 @@ Tests for report/analyzer.py
 """
 
 from decimal import Decimal
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
-from asset_lens.data.models import (
-    InvestmentProduct,
-    InvestmentType,
-    Portfolio,
-    RiskLevel,
-)
+from asset_lens.data.models import InvestmentProduct, InvestmentType, Portfolio, RiskLevel
 from asset_lens.report.analyzer import ReportGenerator
 
 
@@ -22,7 +17,7 @@ class TestReportGenerator:
     @pytest.fixture
     def generator(self):
         """创建测试实例"""
-        with patch('asset_lens.report.analyzer.config') as mock_config:
+        with patch("asset_lens.report.analyzer.config") as mock_config:
             mock_config.report_language = "zh"
             mock_config.data_mode = "test"
             mock_config.default_usd_rate = Decimal("7.2")
@@ -89,9 +84,7 @@ class TestReportGenerator:
 
     def test_get_low_return_products(self, generator, sample_portfolio):
         """测试获取低收益产品"""
-        result = generator.get_low_return_products(
-            sample_portfolio, threshold=Decimal("0")
-        )
+        result = generator.get_low_return_products(sample_portfolio, threshold=Decimal("0"))
 
         assert len(result) >= 1
 

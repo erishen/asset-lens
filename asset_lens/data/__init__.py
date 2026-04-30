@@ -11,15 +11,7 @@ Data module for asset-lens.
 from .chart_generator import ChartGenerator, chart_generator
 from .investment_system import InvestmentSystem, investment_system
 from .market_environment import MarketEnvironmentAnalyzer, market_environment_analyzer
-from .models import (
-    Currency,
-    InvestmentProduct,
-    InvestmentType,
-    Platform,
-    Portfolio,
-    RiskLevel,
-    Transaction,
-)
+from .models import Currency, InvestmentProduct, InvestmentType, Platform, Portfolio, RiskLevel, Transaction
 from .personal_data_integrator import PersonalDataIntegrator, personal_data_integrator
 from .scheduler import TaskScheduler, task_scheduler
 from .stock_tracker import StockTracker, stock_tracker

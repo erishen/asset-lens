@@ -2,12 +2,11 @@
 Tests for IRR calculator.
 """
 
-import pytest
-from datetime import datetime, date, timedelta
+from datetime import date, datetime
 from decimal import Decimal
 
 from asset_lens.core.irr_calculator import IRRCalculator, irr_calculator
-from asset_lens.data.models import Transaction, Currency
+from asset_lens.data.models import Transaction
 
 
 class TestIRRCalculator:
@@ -79,41 +78,29 @@ class TestIRRCalculator:
         assert 14 < irr < 16
 
     def test_calculate_simple_annual_return(self):
-        result = self.calculator.calculate_simple_annual_return(
-            Decimal("1000"), Decimal("1200"), 365
-        )
+        result = self.calculator.calculate_simple_annual_return(Decimal("1000"), Decimal("1200"), 365)
         assert result is not None
         assert 19 < result < 21
 
     def test_calculate_simple_annual_return_half_year(self):
-        result = self.calculator.calculate_simple_annual_return(
-            Decimal("1000"), Decimal("1100"), 182
-        )
+        result = self.calculator.calculate_simple_annual_return(Decimal("1000"), Decimal("1100"), 182)
         assert result is not None
         assert 18 < result < 22
 
     def test_calculate_simple_annual_return_zero_days(self):
-        result = self.calculator.calculate_simple_annual_return(
-            Decimal("1000"), Decimal("1200"), 0
-        )
+        result = self.calculator.calculate_simple_annual_return(Decimal("1000"), Decimal("1200"), 0)
         assert result == Decimal("20")
 
     def test_calculate_simple_annual_return_zero_initial(self):
-        result = self.calculator.calculate_simple_annual_return(
-            Decimal("0"), Decimal("1200"), 365
-        )
+        result = self.calculator.calculate_simple_annual_return(Decimal("0"), Decimal("1200"), 365)
         assert result is None
 
     def test_calculate_simple_annual_return_negative_initial(self):
-        result = self.calculator.calculate_simple_annual_return(
-            Decimal("-1000"), Decimal("1200"), 365
-        )
+        result = self.calculator.calculate_simple_annual_return(Decimal("-1000"), Decimal("1200"), 365)
         assert result is None
 
     def test_calculate_compound_return(self):
-        result = self.calculator.calculate_compound_return(
-            Decimal("1000"), Decimal("1200"), 365
-        )
+        result = self.calculator.calculate_compound_return(Decimal("1000"), Decimal("1200"), 365)
         assert result is not None
         assert 19 < result < 21
 

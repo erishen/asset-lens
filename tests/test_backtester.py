@@ -133,7 +133,7 @@ class TestBacktester:
     @pytest.fixture
     def backtester(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.strategy.backtester.config') as mock_config:
+        with patch("asset_lens.strategy.backtester.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             backtester = Backtester()
             yield backtester
@@ -144,7 +144,7 @@ class TestBacktester:
 
     def test_run_backtest_no_strategy(self, backtester):
         """测试运行回测 - 策略不存在"""
-        with patch('asset_lens.strategy.engine.strategy_engine') as mock_engine:
+        with patch("asset_lens.strategy.engine.strategy_engine") as mock_engine:
             mock_engine.get_strategy.return_value = None
 
             with pytest.raises(ValueError):
@@ -152,7 +152,7 @@ class TestBacktester:
 
     def test_run_backtest_no_data(self, backtester):
         """测试运行回测 - 没有数据"""
-        with patch('asset_lens.strategy.engine.strategy_engine') as mock_engine:
+        with patch("asset_lens.strategy.engine.strategy_engine") as mock_engine:
             mock_strategy = MagicMock()
             mock_strategy.name = "test_strategy"
             mock_engine.get_strategy.return_value = mock_strategy
@@ -162,14 +162,12 @@ class TestBacktester:
 
     def test_run_backtest_no_date_range(self, backtester):
         """测试运行回测 - 日期范围无数据"""
-        with patch('asset_lens.strategy.engine.strategy_engine') as mock_engine:
+        with patch("asset_lens.strategy.engine.strategy_engine") as mock_engine:
             mock_strategy = MagicMock()
             mock_strategy.name = "test_strategy"
             mock_engine.get_strategy.return_value = mock_strategy
 
-            historical_data = {
-                "sh600519": [{"date": "2024-01-01", "close": 1800}]
-            }
+            historical_data = {"sh600519": [{"date": "2024-01-01", "close": 1800}]}
 
             with pytest.raises(ValueError):
                 backtester.run_backtest("test_strategy", historical_data, start_date="2025-01-01")
@@ -239,7 +237,7 @@ class TestBacktester:
 
     def test_compare_strategies(self, backtester):
         """测试比较多个策略"""
-        with patch('asset_lens.strategy.engine.strategy_engine') as mock_engine:
+        with patch("asset_lens.strategy.engine.strategy_engine") as mock_engine:
             mock_strategy = MagicMock()
             mock_strategy.name = "test_strategy"
             mock_strategy.stop_loss = -0.1
@@ -262,7 +260,7 @@ class TestBacktester:
 
     def test_compare_strategies_with_failure(self, backtester):
         """测试比较多个策略 - 部分失败"""
-        with patch('asset_lens.strategy.engine.strategy_engine') as mock_engine:
+        with patch("asset_lens.strategy.engine.strategy_engine") as mock_engine:
             mock_engine.get_strategy.return_value = None
 
             historical_data = {
@@ -276,7 +274,7 @@ class TestBacktester:
 
     def test_get_best_strategy(self, backtester):
         """测试获取最佳策略"""
-        with patch('asset_lens.strategy.engine.strategy_engine') as mock_engine:
+        with patch("asset_lens.strategy.engine.strategy_engine") as mock_engine:
             mock_strategy = MagicMock()
             mock_strategy.name = "test_strategy"
             mock_strategy.stop_loss = -0.1
@@ -294,14 +292,12 @@ class TestBacktester:
                 ]
             }
 
-            best_name, best_result = backtester.get_best_strategy(
-                ["test_strategy"], historical_data
-            )
+            best_name, best_result = backtester.get_best_strategy(["test_strategy"], historical_data)
             assert best_name == "test_strategy"
 
     def test_get_best_strategy_all_fail(self, backtester):
         """测试获取最佳策略 - 全部失败"""
-        with patch('asset_lens.strategy.engine.strategy_engine') as mock_engine:
+        with patch("asset_lens.strategy.engine.strategy_engine") as mock_engine:
             mock_engine.get_strategy.return_value = None
 
             historical_data = {
@@ -315,7 +311,7 @@ class TestBacktester:
 
     def test_run_backtest_with_buy_signal(self, backtester):
         """测试运行回测 - 有买入信号"""
-        with patch('asset_lens.strategy.engine.strategy_engine') as mock_engine:
+        with patch("asset_lens.strategy.engine.strategy_engine") as mock_engine:
             mock_strategy = MagicMock()
             mock_strategy.name = "test_strategy"
             mock_strategy.stop_loss = -0.1
@@ -339,7 +335,7 @@ class TestBacktester:
 
     def test_run_backtest_with_stop_loss(self, backtester):
         """测试运行回测 - 触发止损"""
-        with patch('asset_lens.strategy.engine.strategy_engine') as mock_engine:
+        with patch("asset_lens.strategy.engine.strategy_engine") as mock_engine:
             mock_strategy = MagicMock()
             mock_strategy.name = "test_strategy"
             mock_strategy.stop_loss = -0.01
@@ -362,7 +358,7 @@ class TestBacktester:
 
     def test_run_backtest_with_take_profit(self, backtester):
         """测试运行回测 - 触发止盈"""
-        with patch('asset_lens.strategy.engine.strategy_engine') as mock_engine:
+        with patch("asset_lens.strategy.engine.strategy_engine") as mock_engine:
             mock_strategy = MagicMock()
             mock_strategy.name = "test_strategy"
             mock_strategy.stop_loss = -0.1
@@ -385,7 +381,7 @@ class TestBacktester:
 
     def test_run_backtest_with_holding_period(self, backtester):
         """测试运行回测 - 触发持有期限制"""
-        with patch('asset_lens.strategy.engine.strategy_engine') as mock_engine:
+        with patch("asset_lens.strategy.engine.strategy_engine") as mock_engine:
             mock_strategy = MagicMock()
             mock_strategy.name = "test_strategy"
             mock_strategy.stop_loss = -0.1

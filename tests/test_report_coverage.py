@@ -3,10 +3,10 @@ Tests for PDF Report.
 PDF 报告测试
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
 import tempfile
 from pathlib import Path
+
+import pytest
 
 
 class TestPDFReport:
@@ -15,6 +15,7 @@ class TestPDFReport:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.report.pdf_report import PDFReportGenerator
+
         assert PDFReportGenerator is not None
 
     @pytest.fixture
@@ -26,6 +27,7 @@ class TestPDFReport:
     def test_init(self, temp_output_path):
         """测试初始化"""
         from asset_lens.report.pdf_report import PDFReportGenerator
+
         generator = PDFReportGenerator(temp_output_path)
         assert generator is not None
 
@@ -36,11 +38,13 @@ class TestReportCharts:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.report.charts import ChartGenerator
+
         assert ChartGenerator is not None
 
     def test_init(self):
         """测试初始化"""
         from asset_lens.report.charts import ChartGenerator
+
         generator = ChartGenerator()
         assert generator is not None
 
@@ -51,11 +55,13 @@ class TestReportAnalyzer:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.report.analyzer import ReportGenerator
+
         assert ReportGenerator is not None
 
     def test_init(self):
         """测试初始化"""
         from asset_lens.report.analyzer import ReportGenerator
+
         analyzer = ReportGenerator()
         assert analyzer is not None
 
@@ -66,6 +72,7 @@ class TestCalculateReport:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.report import calculate_report
+
         assert calculate_report is not None
 
 
@@ -75,6 +82,7 @@ class TestHTMLReport:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.report.html_report import HTMLReportGenerator
+
         assert HTMLReportGenerator is not None
 
     @pytest.fixture
@@ -86,5 +94,6 @@ class TestHTMLReport:
     def test_init(self, temp_output_path):
         """测试初始化"""
         from asset_lens.report.html_report import HTMLReportGenerator
+
         generator = HTMLReportGenerator(temp_output_path)
         assert generator is not None

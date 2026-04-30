@@ -66,7 +66,6 @@ async def chat_qa(request: ChatRequest):
     """
     try:
         from pathlib import Path
-        import sys
 
         rag_results = []
         if request.use_rag:
@@ -101,7 +100,7 @@ async def chat_qa(request: ChatRequest):
             if rag_context:
                 user_message = f"{request.message}\n{rag_context}"
 
-            llm_path = Path(__file__).parent.parent.parent.parent.parent / "langchain-llm-toolkit"
+            Path(__file__).parent.parent.parent.parent.parent / "langchain-llm-toolkit"
             response_text = None
 
             try:
@@ -154,7 +153,7 @@ async def chat_qa(request: ChatRequest):
         related_questions = _generate_related_questions(request.message)
 
         return ChatResponse(
-            response=response_text,
+            response=response_text or "",
             sources=["RAG"] if rag_results else [],
             confidence=0.85 if rag_results else 0.7,
             suggestions=suggestions,
@@ -169,7 +168,7 @@ async def chat_qa(request: ChatRequest):
 def _generate_suggestions(question: str) -> list[str]:
     """根据问题生成建议问题"""
     question_lower = question.lower()
-    
+
     if "风险" in question_lower:
         return [
             "如何设置止损点？",
@@ -211,7 +210,7 @@ def _generate_suggestions(question: str) -> list[str]:
 def _generate_related_questions(question: str) -> list[str]:
     """生成相关问题"""
     question_lower = question.lower()
-    
+
     if "风险" in question_lower:
         return ["什么是系统性风险？", "如何应对黑天鹅事件？"]
     elif "止损" in question_lower:
@@ -236,14 +235,14 @@ def _generate_fallback_answer(question: str, rag_results: list) -> str:
                 sources.add(source)
             if content and content not in contents:
                 contents.append(content)
-        
+
         answer = "📚 **根据知识库检索结果：**\n\n"
         for i, content in enumerate(contents[:2], 1):
             answer += f"{content}\n\n"
-        
+
         if sources:
             answer += f"📖 **参考来源：** {', '.join(list(sources)[:3])}\n\n"
-        
+
         answer += "💡 如需更详细分析，可切换到 AI 模式获取深度解读。"
         return answer
 
@@ -271,6 +270,7 @@ async def get_portfolio_analysis():
     """
     try:
         from pathlib import Path
+
         from asset_lens.core.ai_analyzer import ai_analyzer
         from asset_lens.data.csv_parser import CSVParser
 
@@ -308,7 +308,7 @@ async def get_portfolio_analysis():
         total_profit = total_value - total_cost
         profit_rate = (total_profit / total_cost * 100) if total_cost > 0 else 0
 
-        portfolio_data = {
+        portfolio_data: dict[str, Any] = {
             "total_value": total_value,
             "total_profit": total_profit,
             "overall_return_rate": round(profit_rate, 2),
@@ -320,7 +320,13 @@ async def get_portfolio_analysis():
                     "name": p.name,
                     "current_amount": float(p.current_amount or 0),
                     "profit_amount": float(p.current_amount or 0) - float(p.initial_amount or 0),
-                    "return_rate": ((float(p.current_amount or 0) - float(p.initial_amount or 0)) / float(p.initial_amount or 1) * 100) if p.initial_amount else 0,
+                    "return_rate": (
+                        (float(p.current_amount or 0) - float(p.initial_amount or 0))
+                        / float(p.initial_amount or 1)
+                        * 100
+                    )
+                    if p.initial_amount
+                    else 0,
                 }
                 for p in products[:20]
             ],
@@ -358,11 +364,11 @@ async def get_signals(request: SignalsRequest):
     整合 stock-analyzer 信号扫描
     """
     try:
-        from pathlib import Path
         import sys
+        from pathlib import Path
 
         stock_analyzer_path = Path(__file__).parent.parent.parent.parent.parent / "stock-analyzer"
-        
+
         if not stock_analyzer_path.exists():
             return {"success": False, "error": "stock-analyzer 目录不存在", "signals": []}
 
@@ -396,16 +402,18 @@ async def get_signals(request: SignalsRequest):
 
         signals = []
         for s in result.top_signals[: request.limit]:
-            signals.append({
-                "code": s.code,
-                "name": s.name or s.code,
-                "signal_type": s.signal_type.value,
-                "strength": s.strength.value,
-                "score": s.score,
-                "price": s.price,
-                "change_percent": s.change_percent,
-                "date": s.date,
-            })
+            signals.append(
+                {
+                    "code": s.code,
+                    "name": s.name or s.code,
+                    "signal_type": s.signal_type.value,
+                    "strength": s.strength.value,
+                    "score": s.score,
+                    "price": s.price,
+                    "change_percent": s.change_percent,
+                    "date": s.date,
+                }
+            )
 
         return {
             "success": True,
@@ -428,11 +436,11 @@ async def get_market_timing():
     整合 stock-analyzer 大盘择时
     """
     try:
-        from pathlib import Path
         import sys
+        from pathlib import Path
 
         stock_analyzer_path = Path(__file__).parent.parent.parent.parent.parent / "stock-analyzer"
-        
+
         if not stock_analyzer_path.exists():
             return {"success": False, "error": "stock-analyzer 目录不存在"}
 
@@ -490,9 +498,9 @@ async def query_rag(request: RAGRequest):
 async def _query_rag(query: str, k: int = 5) -> list[dict[str, Any]]:
     """查询 RAG 知识库"""
     try:
-        from pathlib import Path
         import os
         import sys
+        from pathlib import Path
 
         rag_path = Path(__file__).parent.parent.parent.parent.parent / "langchain-llm-toolkit"
         if not rag_path.exists():
@@ -523,12 +531,14 @@ async def _query_rag(query: str, k: int = 5) -> list[dict[str, Any]]:
 
         results = []
         for doc in documents:
-            results.append({
-                "content": doc.page_content,
-                "title": doc.metadata.get("title", ""),
-                "source": doc.metadata.get("source", ""),
-                "category": doc.metadata.get("category", ""),
-            })
+            results.append(
+                {
+                    "content": doc.page_content,
+                    "title": doc.metadata.get("title", ""),
+                    "source": doc.metadata.get("source", ""),
+                    "category": doc.metadata.get("category", ""),
+                }
+            )
 
         return results
 
@@ -545,8 +555,8 @@ async def get_config():
     整合 lobster 配置
     """
     try:
-        from pathlib import Path
         import json
+        from pathlib import Path
 
         config_files = {
             "asset_lens": Path(__file__).parent.parent.parent.parent / "config" / "asset_lens.yaml",

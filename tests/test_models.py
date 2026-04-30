@@ -5,14 +5,12 @@ Tests for models.py
 from datetime import date
 from decimal import Decimal
 
-import pytest
-
 from asset_lens.data.models import (
     Currency,
     InvestmentProduct,
     InvestmentType,
-    Portfolio,
     Platform,
+    Portfolio,
     RiskLevel,
     Transaction,
 )

@@ -26,6 +26,7 @@ from typing import Any
 
 class RebalanceFrequency(Enum):
     """再平衡频率"""
+
     DAILY = "daily"
     WEEKLY = "weekly"
     BIWEEKLY = "biweekly"
@@ -35,6 +36,7 @@ class RebalanceFrequency(Enum):
 
 class StopLossType(Enum):
     """止损类型"""
+
     FIXED = "fixed"
     TRAILING = "trailing"
     ATR_BASED = "atr_based"
@@ -43,6 +45,7 @@ class StopLossType(Enum):
 @dataclass
 class SimulationConfig:
     """模拟配置"""
+
     initial_capital: float = 1000000.0
     max_positions: int = 10
     max_position_weight: float = 0.15
@@ -61,6 +64,7 @@ class SimulationConfig:
 @dataclass
 class SimulatedPosition:
     """模拟持仓"""
+
     code: str
     name: str
     entry_date: str
@@ -122,6 +126,7 @@ class SimulatedPosition:
 @dataclass
 class SimulatedTrade:
     """模拟交易记录"""
+
     date: str
     code: str
     name: str
@@ -139,6 +144,7 @@ class SimulatedTrade:
 @dataclass
 class SimulationResult:
     """模拟结果"""
+
     start_date: str
     end_date: str
     initial_capital: float
@@ -203,8 +209,7 @@ class StrategySimulator:
         base_weight = score / total_score
         weighted = base_weight * self.config.max_position_weight * 2
 
-        return max(self.config.min_position_weight,
-                   min(weighted, self.config.max_position_weight))
+        return max(self.config.min_position_weight, min(weighted, self.config.max_position_weight))
 
     def execute_buy(
         self,
@@ -234,7 +239,9 @@ class StrategySimulator:
         total_cost = amount + commission + slippage
 
         if total_cost > self.cash:
-            shares = int((self.cash / (1 + self.config.commission_rate + self.config.slippage_rate)) / price / 100) * 100
+            shares = (
+                int((self.cash / (1 + self.config.commission_rate + self.config.slippage_rate)) / price / 100) * 100
+            )
             if shares < 100:
                 return None
             amount = shares * price
@@ -375,10 +382,7 @@ class StrategySimulator:
 
     def get_total_value(self, prices: dict[str, float]) -> float:
         """获取总资产"""
-        positions_value = sum(
-            prices.get(code, pos.current_price) * pos.shares
-            for code, pos in self.positions.items()
-        )
+        positions_value = sum(prices.get(code, pos.current_price) * pos.shares for code, pos in self.positions.items())
         return self.cash + positions_value
 
     def run_simulation(
@@ -436,7 +440,7 @@ class StrategySimulator:
                     selected = selection_func(stock_pool_data, date_str)
                 else:
                     selected = sorted(stock_pool_data, key=lambda x: x.get("score", 0), reverse=True)
-                    selected = selected[:self.config.max_positions]
+                    selected = selected[: self.config.max_positions]
 
                 for code in list(self.positions.keys()):
                     if code not in [s.get("code") for s in selected]:
@@ -448,9 +452,7 @@ class StrategySimulator:
                 for stock in selected:
                     code = stock.get("code", "")
                     if code not in self.positions and code in prices:
-                        weight = self.calculate_position_weight(
-                            stock.get("score", 0), total_score
-                        )
+                        weight = self.calculate_position_weight(stock.get("score", 0), total_score)
                         self.execute_buy(
                             code=code,
                             name=stock.get("name", ""),
@@ -463,13 +465,15 @@ class StrategySimulator:
                 self.last_rebalance_date = date_str
 
             total_value = self.get_total_value(prices)
-            self.daily_values.append({
-                "date": date_str,
-                "total_value": total_value,
-                "cash": self.cash,
-                "positions_value": total_value - self.cash,
-                "positions_count": len(self.positions),
-            })
+            self.daily_values.append(
+                {
+                    "date": date_str,
+                    "total_value": total_value,
+                    "cash": self.cash,
+                    "positions_value": total_value - self.cash,
+                    "positions_count": len(self.positions),
+                }
+            )
 
             current += timedelta(days=1)
 
@@ -518,7 +522,7 @@ class StrategySimulator:
 
         returns = []
         for i in range(1, len(self.daily_values)):
-            prev = self.daily_values[i-1]["total_value"]
+            prev = self.daily_values[i - 1]["total_value"]
             curr = self.daily_values[i]["total_value"]
             if prev > 0:
                 returns.append((curr - prev) / prev)
@@ -527,9 +531,9 @@ class StrategySimulator:
         if returns:
             avg_return = sum(returns) / len(returns)
             variance = sum((r - avg_return) ** 2 for r in returns) / len(returns)
-            std_return = variance ** 0.5
+            std_return = variance**0.5
             if std_return > 0:
-                sharpe_ratio = avg_return / std_return * (252 ** 0.5)
+                sharpe_ratio = avg_return / std_return * (252**0.5)
 
         benchmark_return = 0.0
         excess_return = total_return

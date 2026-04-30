@@ -24,7 +24,7 @@ class TestStockHistoryFetcher:
     @pytest.fixture
     def fetcher(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.data.stock_history_fetcher.config') as mock_config:
+        with patch("asset_lens.data.stock_history_fetcher.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             fetcher = StockHistoryFetcher()
             yield fetcher
@@ -41,12 +41,7 @@ class TestStockHistoryFetcher:
 
     def test_save_history_cache(self, fetcher):
         """测试保存历史数据"""
-        history_data = {
-            "sh600519": {
-                "name": "贵州茅台",
-                "data": [{"date": "2024-01-01", "close": 1800.0}]
-            }
-        }
+        history_data = {"sh600519": {"name": "贵州茅台", "data": [{"date": "2024-01-01", "close": 1800.0}]}}
 
         fetcher.save_history_cache(history_data)
 

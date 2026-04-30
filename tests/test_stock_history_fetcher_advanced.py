@@ -3,7 +3,6 @@ Additional tests for stock_history_fetcher.py
 """
 
 import json
-import os
 import tempfile
 from datetime import datetime
 from pathlib import Path
@@ -27,7 +26,7 @@ class TestStockHistoryFetcherProperties:
     @pytest.fixture
     def fetcher(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.data.stock_history_fetcher.config') as mock_config:
+        with patch("asset_lens.data.stock_history_fetcher.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             fetcher = StockHistoryFetcher()
             yield fetcher
@@ -41,8 +40,8 @@ class TestStockHistoryFetcherProperties:
     def test_baostock_property_import_error(self, fetcher):
         """Test baostock property with import error"""
         fetcher._baostock = None
-        
-        with patch('builtins.__import__', side_effect=ImportError("No module")):
+
+        with patch("builtins.__import__", side_effect=ImportError("No module")):
             result = fetcher.baostock
             assert result is None
 
@@ -59,7 +58,7 @@ class TestFetchHistoryBaostock:
     @pytest.fixture
     def fetcher(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.data.stock_history_fetcher.config') as mock_config:
+        with patch("asset_lens.data.stock_history_fetcher.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             fetcher = StockHistoryFetcher()
             yield fetcher
@@ -67,8 +66,8 @@ class TestFetchHistoryBaostock:
     def test_fetch_history_baostock_no_module(self, fetcher):
         """Test fetch_history_baostock without baostock module"""
         fetcher._baostock = None
-        
-        with patch.object(type(fetcher), 'baostock', property(lambda self: None)):
+
+        with patch.object(type(fetcher), "baostock", property(lambda self: None)):
             result = fetcher.fetch_history_baostock("sh600519", 60)
             assert result is None
 
@@ -124,7 +123,7 @@ class TestFetchHistoryBaostock:
         """Test fetch_history_baostock success"""
         mock_bs = MagicMock()
         mock_bs.login.return_value = MagicMock(error_code="0")
-        
+
         mock_rs = MagicMock()
         mock_rs.error_code = "0"
         mock_rs.next.side_effect = [True, True, False]
@@ -148,7 +147,7 @@ class TestFetchHistoryBaostock:
         """Test fetch_history_baostock with empty data"""
         mock_bs = MagicMock()
         mock_bs.login.return_value = MagicMock(error_code="0")
-        
+
         mock_rs = MagicMock()
         mock_rs.error_code = "0"
         mock_rs.next.return_value = False
@@ -174,7 +173,7 @@ class TestFetchHistoryBaostock:
     def test_fetch_history_baostock_already_logged_in(self, fetcher):
         """Test fetch_history_baostock already logged in"""
         mock_bs = MagicMock()
-        
+
         mock_rs = MagicMock()
         mock_rs.error_code = "0"
         mock_rs.next.return_value = False
@@ -183,7 +182,7 @@ class TestFetchHistoryBaostock:
         fetcher._baostock = mock_bs
         fetcher._baostock_logged_in = True
 
-        result = fetcher.fetch_history_baostock("sh600519", 60)
+        fetcher.fetch_history_baostock("sh600519", 60)
         mock_bs.login.assert_not_called()
 
 
@@ -199,14 +198,14 @@ class TestFetchHistoryTushare:
     @pytest.fixture
     def fetcher(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.data.stock_history_fetcher.config') as mock_config:
+        with patch("asset_lens.data.stock_history_fetcher.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             fetcher = StockHistoryFetcher()
             yield fetcher
 
     def test_fetch_history_tushare_no_module(self, fetcher):
         """Test fetch_history_tushare without tushare module"""
-        with patch.object(type(fetcher), 'tushare', property(lambda self: None)):
+        with patch.object(type(fetcher), "tushare", property(lambda self: None)):
             result = fetcher.fetch_history_tushare("sh600519", 60)
             assert result is None
 
@@ -214,15 +213,17 @@ class TestFetchHistoryTushare:
         """Test fetch_history_tushare success"""
         mock_ts = MagicMock()
         mock_pro = MagicMock()
-        mock_df = pd.DataFrame({
-            'trade_date': ['20240101', '20240102'],
-            'open': [1800, 1820],
-            'high': [1850, 1870],
-            'low': [1790, 1810],
-            'close': [1820, 1850],
-            'vol': [1000000, 1200000],
-            'amount': [1800000000, 1900000000],
-        })
+        mock_df = pd.DataFrame(
+            {
+                "trade_date": ["20240101", "20240102"],
+                "open": [1800, 1820],
+                "high": [1850, 1870],
+                "low": [1790, 1810],
+                "close": [1820, 1850],
+                "vol": [1000000, 1200000],
+                "amount": [1800000000, 1900000000],
+            }
+        )
         mock_pro.daily.return_value = mock_df
         mock_ts.pro_api.return_value = mock_pro
 
@@ -273,7 +274,7 @@ class TestFetchHistoryAkshare:
     @pytest.fixture
     def fetcher(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.data.stock_history_fetcher.config') as mock_config:
+        with patch("asset_lens.data.stock_history_fetcher.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             fetcher = StockHistoryFetcher()
             yield fetcher
@@ -281,14 +282,16 @@ class TestFetchHistoryAkshare:
     def test_fetch_history_akshare_success(self, fetcher):
         """Test fetch_history_akshare success"""
         mock_ak = MagicMock()
-        mock_df = pd.DataFrame({
-            'date': ['2024-01-01', '2024-01-02'],
-            'open': [1800, 1820],
-            'high': [1850, 1870],
-            'low': [1790, 1810],
-            'close': [1820, 1850],
-            'amount': [1000000, 1200000],
-        })
+        mock_df = pd.DataFrame(
+            {
+                "date": ["2024-01-01", "2024-01-02"],
+                "open": [1800, 1820],
+                "high": [1850, 1870],
+                "low": [1790, 1810],
+                "close": [1820, 1850],
+                "amount": [1000000, 1200000],
+            }
+        )
         mock_ak.stock_zh_a_hist_tx.return_value = mock_df
 
         fetcher._akshare = mock_ak
@@ -333,7 +336,7 @@ class TestFetchHistory:
     @pytest.fixture
     def fetcher(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.data.stock_history_fetcher.config') as mock_config:
+        with patch("asset_lens.data.stock_history_fetcher.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             fetcher = StockHistoryFetcher()
             yield fetcher
@@ -342,9 +345,11 @@ class TestFetchHistory:
         """Test fetch_history using baostock"""
         mock_result = {"code": "sh600519", "klines": []}
 
-        with patch.object(fetcher, '_tushare_token', None), \
-             patch.object(fetcher, 'fetch_history_akshare_daily', return_value=None), \
-             patch.object(fetcher, 'fetch_history_baostock', return_value=mock_result):
+        with (
+            patch.object(fetcher, "_tushare_token", None),
+            patch.object(fetcher, "fetch_history_akshare_daily", return_value=None),
+            patch.object(fetcher, "fetch_history_baostock", return_value=mock_result),
+        ):
             result = fetcher.fetch_history("sh600519", 60)
             assert result == mock_result
 
@@ -352,8 +357,10 @@ class TestFetchHistory:
         """Test fetch_history using tushare when baostock fails"""
         mock_result = {"code": "sh600519", "klines": []}
 
-        with patch.object(fetcher, '_tushare_token', 'test_token'), \
-             patch.object(fetcher, 'fetch_history_tushare', return_value=mock_result):
+        with (
+            patch.object(fetcher, "_tushare_token", "test_token"),
+            patch.object(fetcher, "fetch_history_tushare", return_value=mock_result),
+        ):
             result = fetcher.fetch_history("sh600519", 60)
             assert result == mock_result
 
@@ -361,19 +368,23 @@ class TestFetchHistory:
         """Test fetch_history using akshare when others fail"""
         mock_result = {"code": "sh600519", "klines": []}
 
-        with patch.object(fetcher, '_tushare_token', None), \
-             patch.object(fetcher, 'fetch_history_akshare_daily', return_value=None), \
-             patch.object(fetcher, 'fetch_history_baostock', return_value=None), \
-             patch.object(fetcher, 'fetch_history_akshare', return_value=mock_result):
+        with (
+            patch.object(fetcher, "_tushare_token", None),
+            patch.object(fetcher, "fetch_history_akshare_daily", return_value=None),
+            patch.object(fetcher, "fetch_history_baostock", return_value=None),
+            patch.object(fetcher, "fetch_history_akshare", return_value=mock_result),
+        ):
             result = fetcher.fetch_history("sh600519", 60)
             assert result == mock_result
 
     def test_fetch_history_all_fail(self, fetcher):
         """Test fetch_history when all sources fail"""
-        with patch.object(fetcher, '_tushare_token', None), \
-             patch.object(fetcher, 'fetch_history_akshare_daily', return_value=None), \
-             patch.object(fetcher, 'fetch_history_baostock', return_value=None), \
-             patch.object(fetcher, 'fetch_history_akshare', return_value=None):
+        with (
+            patch.object(fetcher, "_tushare_token", None),
+            patch.object(fetcher, "fetch_history_akshare_daily", return_value=None),
+            patch.object(fetcher, "fetch_history_baostock", return_value=None),
+            patch.object(fetcher, "fetch_history_akshare", return_value=None),
+        ):
             result = fetcher.fetch_history("sh600519", 60)
             assert result is None
 
@@ -390,17 +401,14 @@ class TestCacheOperations:
     @pytest.fixture
     def fetcher(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.data.stock_history_fetcher.config') as mock_config:
+        with patch("asset_lens.data.stock_history_fetcher.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             fetcher = StockHistoryFetcher()
             yield fetcher
 
     def test_load_history_cache_valid_file(self, fetcher):
         """Test loading valid cache file"""
-        cache_data = {
-            "update_time": "2024-01-01 12:00:00",
-            "data": {"sh600519": {"name": "贵州茅台", "klines": []}}
-        }
+        cache_data = {"update_time": "2024-01-01 12:00:00", "data": {"sh600519": {"name": "贵州茅台", "klines": []}}}
         with open(fetcher.history_cache_file, "w", encoding="utf-8") as f:
             json.dump(cache_data, f)
 
@@ -417,7 +425,7 @@ class TestCacheOperations:
                     "name": "贵州茅台",
                     "klines": klines,
                 }
-            }
+            },
         }
         with open(fetcher.history_cache_file, "w", encoding="utf-8") as f:
             json.dump(cache_data, f)
@@ -434,7 +442,7 @@ class TestCacheOperations:
                     "name": "贵州茅台",
                     "klines": [{"date": "2020-01-01", "close": 1800}],
                 }
-            }
+            },
         }
         with open(fetcher.history_cache_file, "w", encoding="utf-8") as f:
             json.dump(cache_data, f)
@@ -449,7 +457,7 @@ class TestCacheOperations:
             "data": {
                 "sh600519": {"name": "贵州茅台", "klines": [{"date": "2024-01-01"}]},
                 "sz000001": {"name": "平安银行", "klines": [{"date": "2024-01-01"}]},
-            }
+            },
         }
         with open(fetcher.history_cache_file, "w", encoding="utf-8") as f:
             json.dump(cache_data, f)
@@ -477,7 +485,7 @@ class TestBaostockLogout:
     @pytest.fixture
     def fetcher(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.data.stock_history_fetcher.config') as mock_config:
+        with patch("asset_lens.data.stock_history_fetcher.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             fetcher = StockHistoryFetcher()
             yield fetcher
@@ -516,7 +524,7 @@ class TestCalculateAvgMetrics:
     @pytest.fixture
     def fetcher(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.data.stock_history_fetcher.config') as mock_config:
+        with patch("asset_lens.data.stock_history_fetcher.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             fetcher = StockHistoryFetcher()
             yield fetcher
@@ -554,7 +562,7 @@ class TestFetchBatchHistory:
     @pytest.fixture
     def fetcher(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.data.stock_history_fetcher.config') as mock_config:
+        with patch("asset_lens.data.stock_history_fetcher.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             fetcher = StockHistoryFetcher()
             yield fetcher
@@ -563,8 +571,8 @@ class TestFetchBatchHistory:
         """Test fetch_batch_history"""
         mock_result = {"code": "sh600519", "klines": []}
 
-        with patch.object(fetcher, 'fetch_history', return_value=mock_result):
-            with patch.object(fetcher, 'baostock_logout'):
+        with patch.object(fetcher, "fetch_history", return_value=mock_result):
+            with patch.object(fetcher, "baostock_logout"):
                 result = fetcher.fetch_batch_history(["sh600519"], 60, delay=0)
 
                 assert "sh600519" in result
@@ -582,7 +590,7 @@ class TestGetStockRealtimeQuote:
     @pytest.fixture
     def fetcher(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.data.stock_history_fetcher.config') as mock_config:
+        with patch("asset_lens.data.stock_history_fetcher.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             fetcher = StockHistoryFetcher()
             yield fetcher
@@ -590,24 +598,26 @@ class TestGetStockRealtimeQuote:
     def test_get_stock_realtime_quote_success(self, fetcher):
         """Test get_stock_realtime_quote success"""
         mock_ak = MagicMock()
-        mock_df = pd.DataFrame({
-            "代码": ["600519"],
-            "名称": ["贵州茅台"],
-            "最新价": [1800],
-            "涨跌幅": [2.5],
-            "涨跌额": [45],
-            "成交量": [1000000],
-            "成交额": [1800000000],
-            "振幅": [3.0],
-            "最高": [1850],
-            "最低": [1790],
-            "今开": [1805],
-            "昨收": [1755],
-            "换手率": [0.5],
-            "市盈率-动态": [30],
-            "市净率": [10],
-            "总市值": [2000000000000],
-        })
+        mock_df = pd.DataFrame(
+            {
+                "代码": ["600519"],
+                "名称": ["贵州茅台"],
+                "最新价": [1800],
+                "涨跌幅": [2.5],
+                "涨跌额": [45],
+                "成交量": [1000000],
+                "成交额": [1800000000],
+                "振幅": [3.0],
+                "最高": [1850],
+                "最低": [1790],
+                "今开": [1805],
+                "昨收": [1755],
+                "换手率": [0.5],
+                "市盈率-动态": [30],
+                "市净率": [10],
+                "总市值": [2000000000000],
+            }
+        )
         mock_ak.stock_zh_a_spot_em.return_value = mock_df
 
         fetcher._akshare = mock_ak
@@ -621,10 +631,12 @@ class TestGetStockRealtimeQuote:
     def test_get_stock_realtime_quote_not_found(self, fetcher):
         """Test get_stock_realtime_quote not found"""
         mock_ak = MagicMock()
-        mock_df = pd.DataFrame({
-            "代码": ["000001"],
-            "名称": ["平安银行"],
-        })
+        mock_df = pd.DataFrame(
+            {
+                "代码": ["000001"],
+                "名称": ["平安银行"],
+            }
+        )
         mock_ak.stock_zh_a_spot_em.return_value = mock_df
 
         fetcher._akshare = mock_ak
@@ -655,7 +667,7 @@ class TestGetStocksWithHistory:
     @pytest.fixture
     def fetcher(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.data.stock_history_fetcher.config') as mock_config:
+        with patch("asset_lens.data.stock_history_fetcher.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             fetcher = StockHistoryFetcher()
             yield fetcher
@@ -670,7 +682,7 @@ class TestGetStocksWithHistory:
                     "klines": [{"turnover_rate": 0.5, "amount": 1000000, "volume": 1000}],
                     "data_source": "AkShare",
                 }
-            }
+            },
         }
         with open(fetcher.history_cache_file, "w", encoding="utf-8") as f:
             json.dump(cache_data, f)
@@ -688,8 +700,8 @@ class TestGetStocksWithHistory:
             "data_source": "AkShare",
         }
 
-        with patch.object(fetcher, 'fetch_history', return_value=mock_history):
-            with patch.object(fetcher, 'baostock_logout'):
+        with patch.object(fetcher, "fetch_history", return_value=mock_history):
+            with patch.object(fetcher, "baostock_logout"):
                 stocks = [{"code": "sh600519", "name": "贵州茅台"}]
                 result = fetcher.get_stocks_with_history(stocks, use_cache=False, delay=0)
 

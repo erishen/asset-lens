@@ -44,9 +44,7 @@ class ProductParser:
     }
 
     @classmethod
-    def parse_row(
-        cls, row: dict[str, str], reference_date: date | None = None
-    ) -> InvestmentProduct | None:
+    def parse_row(cls, row: dict[str, str], reference_date: date | None = None) -> InvestmentProduct | None:
         """解析单行数据为投资产品"""
         if not row:
             return None

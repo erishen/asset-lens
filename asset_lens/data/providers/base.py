@@ -56,7 +56,7 @@ class BaseProvider(ABC, DataProvider):
     @abstractmethod
     def _check_availability(self) -> bool:
         """检查数据源是否可用（子类实现）"""
-        ...
+        raise NotImplementedError
 
     @abstractmethod
     def fetch(
@@ -66,7 +66,7 @@ class BaseProvider(ABC, DataProvider):
         **kwargs,
     ) -> dict[str, Any] | None:
         """获取数据（子类实现）"""
-        ...
+        raise NotImplementedError
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(name={self._name}, priority={self._priority})"

@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ChartConfig:
     """图表配置"""
+
     title: str
     chart_type: str = "bar"
     width: int = 800
@@ -332,11 +333,13 @@ class ChartGenerator:
 
         for label, value in data.items():
             percentage = (value / total * 100) if total > 0 else 0
-            chart_data.append({
-                "name": label,
-                "value": value,
-                "percentage": round(percentage, 2),
-            })
+            chart_data.append(
+                {
+                    "name": label,
+                    "value": value,
+                    "percentage": round(percentage, 2),
+                }
+            )
 
         return {
             "chart_type": "pie",
@@ -364,19 +367,18 @@ class ChartGenerator:
         Returns:
             图表配置数据
         """
-        default_colors = [
-            "#4CAF50" if v >= 0 else "#F44336"
-            for v in values
-        ]
+        default_colors = ["#4CAF50" if v >= 0 else "#F44336" for v in values]
 
         return {
             "chart_type": "bar",
             "title": title,
             "labels": labels,
-            "datasets": [{
-                "data": values,
-                "backgroundColor": colors or default_colors,
-            }],
+            "datasets": [
+                {
+                    "data": values,
+                    "backgroundColor": colors or default_colors,
+                }
+            ],
         }
 
     def generate_line_chart_data(

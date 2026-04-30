@@ -13,35 +13,38 @@ Black Swan Alert Module.
 import json
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from typing import Any
-from enum import Enum
 
 from ..config import config
 
 
 class RiskLevel(Enum):
     """风险等级"""
-    LOW = "low"                    # 低风险
-    MEDIUM = "medium"              # 中等风险
-    HIGH = "high"                  # 高风险
-    CRITICAL = "critical"          # 极高风险
+
+    LOW = "low"  # 低风险
+    MEDIUM = "medium"  # 中等风险
+    HIGH = "high"  # 高风险
+    CRITICAL = "critical"  # 极高风险
 
 
 class RiskType(Enum):
     """风险类型"""
-    MARKET_CRASH = "market_crash"           # 市场暴跌
-    POLICY_CHANGE = "policy_change"         # 政策变化
-    INDUSTRY_RISK = "industry_risk"         # 行业风险
-    COMPANY_RISK = "company_risk"           # 公司风险
-    LIQUIDITY_RISK = "liquidity_risk"       # 流动性风险
-    EXTERNAL_SHOCK = "external_shock"       # 外部冲击
-    SYSTEMIC_RISK = "systemic_risk"         # 系统性风险
+
+    MARKET_CRASH = "market_crash"  # 市场暴跌
+    POLICY_CHANGE = "policy_change"  # 政策变化
+    INDUSTRY_RISK = "industry_risk"  # 行业风险
+    COMPANY_RISK = "company_risk"  # 公司风险
+    LIQUIDITY_RISK = "liquidity_risk"  # 流动性风险
+    EXTERNAL_SHOCK = "external_shock"  # 外部冲击
+    SYSTEMIC_RISK = "systemic_risk"  # 系统性风险
 
 
 @dataclass
 class RiskAlert:
     """风险预警"""
+
     risk_type: RiskType
     risk_level: RiskLevel
     title: str
@@ -65,6 +68,7 @@ class RiskAlert:
 @dataclass
 class MarketRiskAssessment:
     """市场风险评估"""
+
     overall_risk_level: RiskLevel
     market_trend: str
     volatility_level: float
@@ -95,52 +99,60 @@ class BlackSwanMonitor:
         if market_data:
             index_change = market_data.get("index_change", 0)
             volatility = market_data.get("volatility", 0)
-            sentiment = market_data.get("sentiment", "中性")
+            market_data.get("sentiment", "中性")
 
             if index_change < self.PANIC_SELLING_THRESHOLD:
-                alerts.append(RiskAlert(
-                    risk_type=RiskType.MARKET_CRASH,
-                    risk_level=RiskLevel.CRITICAL,
-                    title="市场恐慌性下跌",
-                    description=f"大盘跌幅 {index_change:.2f}%，可能触发恐慌性抛售",
-                    impact_stocks=["ALL"],
-                    suggested_action="立即降低仓位，持有现金观望",
-                ))
+                alerts.append(
+                    RiskAlert(
+                        risk_type=RiskType.MARKET_CRASH,
+                        risk_level=RiskLevel.CRITICAL,
+                        title="市场恐慌性下跌",
+                        description=f"大盘跌幅 {index_change:.2f}%，可能触发恐慌性抛售",
+                        impact_stocks=["ALL"],
+                        suggested_action="立即降低仓位，持有现金观望",
+                    )
+                )
                 recommendations.append("🚨 建议立即减仓 50% 以上")
                 recommendations.append("🚨 设置更严格的止损线")
 
             elif index_change < self.MARKET_CRASH_THRESHOLD:
-                alerts.append(RiskAlert(
-                    risk_type=RiskType.MARKET_CRASH,
-                    risk_level=RiskLevel.HIGH,
-                    title="市场大幅下跌",
-                    description=f"大盘跌幅 {index_change:.2f}%，市场风险上升",
-                    impact_stocks=["ALL"],
-                    suggested_action="谨慎操作，控制仓位",
-                ))
+                alerts.append(
+                    RiskAlert(
+                        risk_type=RiskType.MARKET_CRASH,
+                        risk_level=RiskLevel.HIGH,
+                        title="市场大幅下跌",
+                        description=f"大盘跌幅 {index_change:.2f}%，市场风险上升",
+                        impact_stocks=["ALL"],
+                        suggested_action="谨慎操作，控制仓位",
+                    )
+                )
                 recommendations.append("⚠️ 建议降低仓位至 30% 以下")
                 recommendations.append("⚠️ 避免追高买入")
 
             if volatility > self.HIGH_VOLATILITY_THRESHOLD:
-                alerts.append(RiskAlert(
-                    risk_type=RiskType.SYSTEMIC_RISK,
-                    risk_level=RiskLevel.HIGH,
-                    title="市场波动剧烈",
-                    description=f"市场波动率 {volatility:.2f}%，不确定性增加",
-                    impact_stocks=["ALL"],
-                    suggested_action="减少交易频率，等待市场稳定",
-                ))
+                alerts.append(
+                    RiskAlert(
+                        risk_type=RiskType.SYSTEMIC_RISK,
+                        risk_level=RiskLevel.HIGH,
+                        title="市场波动剧烈",
+                        description=f"市场波动率 {volatility:.2f}%，不确定性增加",
+                        impact_stocks=["ALL"],
+                        suggested_action="减少交易频率，等待市场稳定",
+                    )
+                )
                 recommendations.append("⚠️ 建议减少交易频率")
 
         if not alerts:
-            alerts.append(RiskAlert(
-                risk_type=RiskType.SYSTEMIC_RISK,
-                risk_level=RiskLevel.LOW,
-                title="市场风险较低",
-                description="当前市场环境相对稳定",
-                impact_stocks=[],
-                suggested_action="正常执行交易策略",
-            ))
+            alerts.append(
+                RiskAlert(
+                    risk_type=RiskType.SYSTEMIC_RISK,
+                    risk_level=RiskLevel.LOW,
+                    title="市场风险较低",
+                    description="当前市场环境相对稳定",
+                    impact_stocks=[],
+                    suggested_action="正常执行交易策略",
+                )
+            )
             recommendations.append("✅ 可正常执行交易策略")
 
         overall_level = self._calculate_overall_risk(alerts)
@@ -170,36 +182,42 @@ class BlackSwanMonitor:
         high_concentration = self._check_concentration(holdings, total_value)
 
         if len(losing_positions) > len(holdings) * 0.5:
-            alerts.append(RiskAlert(
-                risk_type=RiskType.COMPANY_RISK,
-                risk_level=RiskLevel.HIGH,
-                title="持仓大面积亏损",
-                description=f"{len(losing_positions)} 只股票亏损超过 5%",
-                impact_stocks=[h["code"] for h in losing_positions],
-                suggested_action="检查持仓，考虑止损",
-            ))
+            alerts.append(
+                RiskAlert(
+                    risk_type=RiskType.COMPANY_RISK,
+                    risk_level=RiskLevel.HIGH,
+                    title="持仓大面积亏损",
+                    description=f"{len(losing_positions)} 只股票亏损超过 5%",
+                    impact_stocks=[h["code"] for h in losing_positions],
+                    suggested_action="检查持仓，考虑止损",
+                )
+            )
 
         if high_concentration:
-            alerts.append(RiskAlert(
-                risk_type=RiskType.SYSTEMIC_RISK,
-                risk_level=RiskLevel.MEDIUM,
-                title="持仓集中度过高",
-                description=f"单一行业/股票占比过高",
-                impact_stocks=high_concentration,
-                suggested_action="分散持仓，降低集中度",
-            ))
+            alerts.append(
+                RiskAlert(
+                    risk_type=RiskType.SYSTEMIC_RISK,
+                    risk_level=RiskLevel.MEDIUM,
+                    title="持仓集中度过高",
+                    description="单一行业/股票占比过高",
+                    impact_stocks=high_concentration,
+                    suggested_action="分散持仓，降低集中度",
+                )
+            )
 
         for holding in holdings:
             profit_rate = holding.get("profit_rate", 0)
             if profit_rate < -15:
-                alerts.append(RiskAlert(
-                    risk_type=RiskType.COMPANY_RISK,
-                    risk_level=RiskLevel.CRITICAL,
-                    title=f"{holding.get('name', holding['code'])} 严重亏损",
-                    description=f"亏损 {abs(profit_rate):.2f}%",
-                    impact_stocks=[holding["code"]],
-                    suggested_action="立即止损",
-                ))
+                alerts.append(
+                    RiskAlert(
+                        risk_type=RiskType.COMPANY_RISK,
+                        risk_level=RiskLevel.CRITICAL,
+                        title=f"{holding.get('name', holding['code'])} 严重亏损",
+                        description=f"亏损 {abs(profit_rate):.2f}%",
+                        impact_stocks=[holding["code"]],
+                        suggested_action="立即止损",
+                    )
+                )
 
         return alerts
 
@@ -214,19 +232,18 @@ class BlackSwanMonitor:
         for industry, data in industry_data.items():
             industry_change = data.get("change", 0)
             if industry_change < -5:
-                industry_stocks = [
-                    h["code"] for h in holdings
-                    if h.get("industry") == industry
-                ]
+                industry_stocks = [h["code"] for h in holdings if h.get("industry") == industry]
                 if industry_stocks:
-                    alerts.append(RiskAlert(
-                        risk_type=RiskType.INDUSTRY_RISK,
-                        risk_level=RiskLevel.HIGH,
-                        title=f"{industry} 行业风险",
-                        description=f"行业跌幅 {industry_change:.2f}%",
-                        impact_stocks=industry_stocks,
-                        suggested_action=f"考虑减持 {industry} 相关股票",
-                    ))
+                    alerts.append(
+                        RiskAlert(
+                            risk_type=RiskType.INDUSTRY_RISK,
+                            risk_level=RiskLevel.HIGH,
+                            title=f"{industry} 行业风险",
+                            description=f"行业跌幅 {industry_change:.2f}%",
+                            impact_stocks=industry_stocks,
+                            suggested_action=f"考虑减持 {industry} 相关股票",
+                        )
+                    )
 
         return alerts
 
@@ -238,14 +255,16 @@ class BlackSwanMonitor:
             severity = event.get("severity", "low")
             risk_level = RiskLevel.HIGH if severity == "high" else RiskLevel.MEDIUM
 
-            alerts.append(RiskAlert(
-                risk_type=RiskType.EXTERNAL_SHOCK,
-                risk_level=risk_level,
-                title=event.get("title", "外部风险事件"),
-                description=event.get("description", ""),
-                impact_stocks=event.get("impact_stocks", []),
-                suggested_action=event.get("suggested_action", "密切关注事态发展"),
-            ))
+            alerts.append(
+                RiskAlert(
+                    risk_type=RiskType.EXTERNAL_SHOCK,
+                    risk_level=risk_level,
+                    title=event.get("title", "外部风险事件"),
+                    description=event.get("description", ""),
+                    impact_stocks=event.get("impact_stocks", []),
+                    suggested_action=event.get("suggested_action", "密切关注事态发展"),
+                )
+            )
 
         return alerts
 

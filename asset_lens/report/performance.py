@@ -35,12 +35,8 @@ class PerformanceAnalyzer:
             product_count += 1
 
         avg_days = total_days / product_count if product_count > 0 else 0
-        overall_return = (
-            (total_profit / total_amount * 100) if total_amount > 0 else Decimal("0")
-        )
-        annualized_return = (
-            overall_return * Decimal("365") / Decimal(str(avg_days)) if avg_days > 0 else Decimal("0")
-        )
+        overall_return = (total_profit / total_amount * 100) if total_amount > 0 else Decimal("0")
+        annualized_return = overall_return * Decimal("365") / Decimal(str(avg_days)) if avg_days > 0 else Decimal("0")
 
         return {
             "total_amount": str(total_amount),
@@ -51,9 +47,7 @@ class PerformanceAnalyzer:
             "product_count": product_count,
         }
 
-    def generate_optimization_suggestions(
-        self, portfolio: Portfolio
-    ) -> list[dict[str, Any]]:
+    def generate_optimization_suggestions(self, portfolio: Portfolio) -> list[dict[str, Any]]:
         """生成优化建议
 
         Args:
@@ -68,9 +62,7 @@ class PerformanceAnalyzer:
         for product in portfolio.products:
             type_name = product.investment_type.value
             amount = product.current_amount or Decimal("0")
-            type_distribution[type_name] = (
-                type_distribution.get(type_name, Decimal("0")) + amount
-            )
+            type_distribution[type_name] = type_distribution.get(type_name, Decimal("0")) + amount
 
         total_amount = sum(type_distribution.values())
 
@@ -88,9 +80,7 @@ class PerformanceAnalyzer:
                     )
 
         low_return_products = [
-            p
-            for p in portfolio.products
-            if p.annual_return is not None and p.annual_return < Decimal("2")
+            p for p in portfolio.products if p.annual_return is not None and p.annual_return < Decimal("2")
         ]
 
         if low_return_products:
@@ -116,12 +106,8 @@ class PerformanceAnalyzer:
         """
         advice = []
 
-        total_amount = sum(
-            p.current_amount or Decimal("0") for p in portfolio.products
-        )
-        total_profit = sum(
-            p.profit_amount or Decimal("0") for p in portfolio.products
-        )
+        total_amount = sum(p.current_amount or Decimal("0") for p in portfolio.products)
+        total_profit = sum(p.profit_amount or Decimal("0") for p in portfolio.products)
 
         if total_amount > 0:
             return_rate = total_profit / total_amount * 100
@@ -135,11 +121,7 @@ class PerformanceAnalyzer:
             else:
                 advice.append("投资组合表现不佳，建议重新评估投资策略")
 
-        risk_count = sum(
-            1
-            for p in portfolio.products
-            if p.risk_level == RiskLevel.HIGH
-        )
+        risk_count = sum(1 for p in portfolio.products if p.risk_level == RiskLevel.HIGH)
         if risk_count > len(portfolio.products) * 0.5:
             advice.append("高风险产品占比较高，建议适当降低风险敞口")
 

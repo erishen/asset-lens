@@ -182,6 +182,6 @@ class TaskProgress:
         """打印任务摘要"""
         total = len(self.tasks)
         completed = len(self.completed)
-        print(f"\n{'='*50}")
+        print(f"\n{'=' * 50}")
         print(f"任务完成: {completed}/{total}")
-        print(f"{'='*50}")
+        print(f"{'=' * 50}")

@@ -3,9 +3,10 @@ Tests for CLI commands.
 CLI 命令测试
 """
 
+from unittest.mock import patch
+
 import pytest
 from click.testing import CliRunner
-from unittest.mock import patch, MagicMock
 
 
 class TestCLICommands:
@@ -19,33 +20,40 @@ class TestCLICommands:
     def test_version_command(self, runner):
         """测试版本命令"""
         from asset_lens.cli import cli
+
         result = runner.invoke(cli, ["--version"])
         assert result.exit_code == 0 or "version" in result.output.lower() or "1.0" in result.output
 
     def test_show_config_command(self, runner):
         """测试显示配置命令"""
         from asset_lens.cli import cli
+
         result = runner.invoke(cli, ["show-config"])
         assert result.exit_code in [0, 1, 2]
 
     def test_strategy_command(self, runner):
         """测试策略命令"""
         from asset_lens.cli import cli
+
         result = runner.invoke(cli, ["strategy", "--help"])
         assert result.exit_code in [0, 1, 2]
 
     def test_sentiment_command(self, runner):
         """测试风向分析命令"""
         from asset_lens.cli import cli
+
         result = runner.invoke(cli, ["monitor-status"])
         assert result.exit_code in [0, 1, 2]
 
     def test_weekly_command(self, runner):
         """测试周报命令"""
         from asset_lens.cli import cli
-        with patch('asset_lens.data.csv_parser.CSVParser.load_data') as mock_load, \
-             patch('asset_lens.cli_modules.cli.report._get_north_flow') as mock_north, \
-             patch('asset_lens.cli_modules.cli.report._get_ml_predictions') as mock_ml:
+
+        with (
+            patch("asset_lens.data.csv_parser.CSVParser.load_data") as mock_load,
+            patch("asset_lens.cli_modules.cli.report._get_north_flow") as mock_north,
+            patch("asset_lens.cli_modules.cli.report._get_ml_predictions") as mock_ml,
+        ):
             mock_load.return_value = []
             mock_north.return_value = {"total_flow": 0, "flows": []}
             mock_ml.return_value = {"bullish": [], "bearish": []}
@@ -64,12 +72,14 @@ class TestCLIAnalyzeCommands:
     def test_analyze_command(self, runner):
         """测试分析命令"""
         from asset_lens.cli import cli
+
         result = runner.invoke(cli, ["analyze", "--help"])
         assert result.exit_code in [0, 1, 2]
 
     def test_calculate_command(self, runner):
         """测试计算命令"""
         from asset_lens.cli import cli
+
         result = runner.invoke(cli, ["calculate", "--help"])
         assert result.exit_code in [0, 1, 2]
 
@@ -85,11 +95,13 @@ class TestCLIStockCommands:
     def test_stock_pool_command(self, runner):
         """测试股票池命令"""
         from asset_lens.cli import cli
+
         result = runner.invoke(cli, ["stock-pool", "--help"])
         assert result.exit_code in [0, 1, 2]
 
     def test_stock_pool_status_command(self, runner):
         """测试股票池状态命令"""
         from asset_lens.cli import cli
+
         result = runner.invoke(cli, ["stock-pool", "--action", "list"])
         assert result.exit_code in [0, 1, 2]

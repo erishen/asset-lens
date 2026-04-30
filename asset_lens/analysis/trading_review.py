@@ -13,15 +13,16 @@ Trading Review Module.
 import json
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from enum import Enum
 from pathlib import Path
 from typing import Any
-from enum import Enum
 
 from ..config import config
 
 
 class TradeType(Enum):
     """交易类型"""
+
     BUY = "buy"
     SELL = "sell"
     DIVIDEND = "dividend"
@@ -30,6 +31,7 @@ class TradeType(Enum):
 
 class TradeResult(Enum):
     """交易结果"""
+
     PROFIT = "profit"
     LOSS = "loss"
     BREAK_EVEN = "break_even"
@@ -38,6 +40,7 @@ class TradeResult(Enum):
 @dataclass
 class TradeRecord:
     """交易记录"""
+
     code: str
     name: str
     trade_type: TradeType
@@ -54,6 +57,7 @@ class TradeRecord:
 @dataclass
 class ClosedPosition:
     """已平仓记录"""
+
     code: str
     name: str
     buy_price: float
@@ -71,6 +75,7 @@ class ClosedPosition:
 @dataclass
 class PerformanceMetrics:
     """绩效指标"""
+
     total_trades: int
     winning_trades: int
     losing_trades: int
@@ -91,6 +96,7 @@ class PerformanceMetrics:
 @dataclass
 class AttributionAnalysis:
     """归因分析"""
+
     sector_contribution: dict[str, float]
     strategy_contribution: dict[str, float]
     time_contribution: dict[str, float]
@@ -101,6 +107,7 @@ class AttributionAnalysis:
 @dataclass
 class ReviewReport:
     """复盘报告"""
+
     period_start: str
     period_end: str
     report_type: str  # daily, weekly, monthly
@@ -173,8 +180,8 @@ class TradingReview:
         sell_dt = datetime.strptime(sell_date, "%Y-%m-%d")
         hold_days = (sell_dt - buy_dt).days
 
-        result = TradeResult.PROFIT if profit_loss > 0 else (
-            TradeResult.LOSS if profit_loss < 0 else TradeResult.BREAK_EVEN
+        result = (
+            TradeResult.PROFIT if profit_loss > 0 else (TradeResult.LOSS if profit_loss < 0 else TradeResult.BREAK_EVEN)
         )
 
         position = ClosedPosition(
@@ -235,7 +242,7 @@ class TradingReview:
         avg_profit = total_profit / len(winning) if winning else 0.0
         avg_loss = total_loss / len(losing) if losing else 0.0
 
-        profit_factor = total_profit / total_loss if total_loss > 0 else float('inf') if total_profit > 0 else 0.0
+        profit_factor = total_profit / total_loss if total_loss > 0 else float("inf") if total_profit > 0 else 0.0
 
         avg_hold = sum(p.hold_days for p in filtered) / len(filtered) if filtered else 0.0
 
@@ -322,7 +329,6 @@ class TradingReview:
             suggestions.append("最大亏损过大，建议加强风险控制")
 
         if attribution.top_losers:
-            loser_sectors: set[str] = set()
             for p in attribution.top_losers:
                 suggestions.append(f"避免在类似 {p.code} 的情况下交易")
 
@@ -340,11 +346,15 @@ class TradingReview:
 
         big_winners = [p for p in positions if p.profit_loss_percent > 20]
         if big_winners:
-            lessons.append(f"大盈利案例: {big_winners[0].code} 盈利 {big_winners[0].profit_loss_percent:.1f}%，持仓 {big_winners[0].hold_days} 天")
+            lessons.append(
+                f"大盈利案例: {big_winners[0].code} 盈利 {big_winners[0].profit_loss_percent:.1f}%，持仓 {big_winners[0].hold_days} 天"
+            )
 
         big_losers = [p for p in positions if p.profit_loss_percent < -10]
         if big_losers:
-            lessons.append(f"大亏损教训: {big_losers[0].code} 亏损 {abs(big_losers[0].profit_loss_percent):.1f}%，需加强止损")
+            lessons.append(
+                f"大亏损教训: {big_losers[0].code} 亏损 {abs(big_losers[0].profit_loss_percent):.1f}%，需加强止损"
+            )
 
         quick_trades = [p for p in positions if p.hold_days <= 3 and p.result == TradeResult.LOSS]
         if len(quick_trades) > len(positions) * 0.3:
@@ -456,18 +466,20 @@ class TradingReview:
     def _save_trade(self, record: TradeRecord) -> None:
         """保存交易记录"""
         trades = self._load_trades()
-        trades.append({
-            "code": record.code,
-            "name": record.name,
-            "type": record.trade_type.value,
-            "shares": record.shares,
-            "price": record.price,
-            "amount": record.amount,
-            "commission": record.commission,
-            "timestamp": record.timestamp,
-            "reason": record.reason,
-            "strategy": record.strategy,
-        })
+        trades.append(
+            {
+                "code": record.code,
+                "name": record.name,
+                "type": record.trade_type.value,
+                "shares": record.shares,
+                "price": record.price,
+                "amount": record.amount,
+                "commission": record.commission,
+                "timestamp": record.timestamp,
+                "reason": record.reason,
+                "strategy": record.strategy,
+            }
+        )
 
         with open(self.trades_file, "w", encoding="utf-8") as f:
             json.dump(trades, f, ensure_ascii=False, indent=2)
@@ -486,20 +498,22 @@ class TradingReview:
     def _save_closed_position(self, position: ClosedPosition) -> None:
         """保存平仓记录"""
         positions_data = self._load_closed_positions_data()
-        positions_data.append({
-            "code": position.code,
-            "name": position.name,
-            "buy_price": position.buy_price,
-            "sell_price": position.sell_price,
-            "shares": position.shares,
-            "profit_loss": position.profit_loss,
-            "profit_loss_percent": position.profit_loss_percent,
-            "hold_days": position.hold_days,
-            "buy_date": position.buy_date,
-            "sell_date": position.sell_date,
-            "strategy": position.strategy,
-            "result": position.result.value,
-        })
+        positions_data.append(
+            {
+                "code": position.code,
+                "name": position.name,
+                "buy_price": position.buy_price,
+                "sell_price": position.sell_price,
+                "shares": position.shares,
+                "profit_loss": position.profit_loss,
+                "profit_loss_percent": position.profit_loss_percent,
+                "hold_days": position.hold_days,
+                "buy_date": position.buy_date,
+                "sell_date": position.sell_date,
+                "strategy": position.strategy,
+                "result": position.result.value,
+            }
+        )
 
         with open(self.closed_positions_file, "w", encoding="utf-8") as f:
             json.dump(positions_data, f, ensure_ascii=False, indent=2)
@@ -509,20 +523,22 @@ class TradingReview:
         data = self._load_closed_positions_data()
         positions: list[ClosedPosition] = []
         for item in data:
-            positions.append(ClosedPosition(
-                code=item["code"],
-                name=item["name"],
-                buy_price=item["buy_price"],
-                sell_price=item["sell_price"],
-                shares=item["shares"],
-                profit_loss=item["profit_loss"],
-                profit_loss_percent=item["profit_loss_percent"],
-                hold_days=item["hold_days"],
-                buy_date=item["buy_date"],
-                sell_date=item["sell_date"],
-                strategy=item.get("strategy", ""),
-                result=TradeResult(item.get("result", "profit")),
-            ))
+            positions.append(
+                ClosedPosition(
+                    code=item["code"],
+                    name=item["name"],
+                    buy_price=item["buy_price"],
+                    sell_price=item["sell_price"],
+                    shares=item["shares"],
+                    profit_loss=item["profit_loss"],
+                    profit_loss_percent=item["profit_loss_percent"],
+                    hold_days=item["hold_days"],
+                    buy_date=item["buy_date"],
+                    sell_date=item["sell_date"],
+                    strategy=item.get("strategy", ""),
+                    result=TradeResult(item.get("result", "profit")),
+                )
+            )
 
         return positions
 
@@ -547,17 +563,19 @@ class TradingReview:
             except Exception:
                 reports = []
 
-        reports.append({
-            "period_start": report.period_start,
-            "period_end": report.period_end,
-            "type": report.report_type,
-            "performance": {
-                "total_trades": report.performance.total_trades,
-                "win_rate": report.performance.win_rate,
-                "net_profit": report.performance.net_profit,
-            },
-            "timestamp": report.timestamp,
-        })
+        reports.append(
+            {
+                "period_start": report.period_start,
+                "period_end": report.period_end,
+                "type": report.report_type,
+                "performance": {
+                    "total_trades": report.performance.total_trades,
+                    "win_rate": report.performance.win_rate,
+                    "net_profit": report.performance.net_profit,
+                },
+                "timestamp": report.timestamp,
+            }
+        )
 
         if len(reports) > 100:
             reports = reports[-100:]

@@ -2,19 +2,15 @@
 Tests for realtime PnL estimation.
 """
 
-import pytest
 import json
-from datetime import date
 from decimal import Decimal
-from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from asset_lens.core.realtime_pnl import (
     ProductMapping,
-    find_product_mapping,
-    adjust_by_risk_level,
     RealtimePnlEstimator,
-    DEFAULT_PRODUCT_MAPPING,
+    adjust_by_risk_level,
+    find_product_mapping,
 )
 from asset_lens.data.models import InvestmentProduct, InvestmentType, RiskLevel
 
@@ -200,12 +196,14 @@ class TestRealtimePnlEstimator:
     def test_read_index_moves_from_cache(self, mock_open, mock_exists):
         mock_exists.return_value = True
         mock_file = MagicMock()
-        mock_file.read.return_value = json.dumps({
-            "指数数据": {
-                "上证指数": {"涨跌幅": 0.5},
-                "沪深300": {"涨跌幅": 0.3},
+        mock_file.read.return_value = json.dumps(
+            {
+                "指数数据": {
+                    "上证指数": {"涨跌幅": 0.5},
+                    "沪深300": {"涨跌幅": 0.3},
+                }
             }
-        })
+        )
         mock_file.__enter__ = MagicMock(return_value=mock_file)
         mock_file.__exit__ = MagicMock(return_value=False)
         mock_open.return_value = mock_file
@@ -233,7 +231,7 @@ class TestRealtimePnlEstimator:
                 current_amount=Decimal("5000"),
             ),
         ]
-        
+
         with patch.object(
             self.estimator,
             "read_index_moves_from_cache",

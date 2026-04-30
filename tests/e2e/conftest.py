@@ -16,8 +16,7 @@ from pathlib import Path
 
 import pytest
 import requests
-from playwright.sync_api import Page, BrowserContext, Browser
-
+from playwright.sync_api import BrowserContext, Page
 
 BASE_URL = os.getenv("E2E_BASE_URL", "http://localhost:8000")
 SCREENSHOT_DIR = Path("test-results/screenshots")
@@ -63,9 +62,9 @@ def setup_page(page: Page, request: pytest.FixtureRequest) -> Page:
     """页面设置 - 性能优化超时时间"""
     page.set_default_timeout(10000)
     page.set_default_navigation_timeout(20000)
-    
+
     yield page
-    
+
     if hasattr(request.node, "rep_call") and request.node.rep_call.failed:
         _save_failure_artifacts(page, request)
 
@@ -82,18 +81,18 @@ def _save_failure_artifacts(page: Page, request: pytest.FixtureRequest) -> None:
     """保存失败时的截图和 HTML"""
     test_name = request.node.name.replace("[", "_").replace("]", "_")
     timestamp = time.strftime("%Y%m%d_%H%M%S")
-    
+
     SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
-    
+
     screenshot_path = SCREENSHOT_DIR / f"{test_name}_{timestamp}.png"
     html_path = SCREENSHOT_DIR / f"{test_name}_{timestamp}.html"
-    
+
     try:
         page.screenshot(path=str(screenshot_path))
         print(f"\n📸 截图已保存: {screenshot_path}")
     except Exception as e:
         print(f"\n⚠️ 截图失败: {e}")
-    
+
     try:
         html_content = page.content()
         html_path.write_text(html_content, encoding="utf-8")
@@ -132,34 +131,32 @@ def shared_page(shared_context: BrowserContext) -> Page:
 
 class APITester:
     """API 测试辅助类"""
-    
+
     def __init__(self, page: Page, base_url: str):
         self.page = page
         self.base_url = base_url
-    
+
     def get(self, endpoint: str, expected_status: list = None) -> dict:
         """发送 GET 请求并验证响应"""
         url = f"{self.base_url}{endpoint}"
         response = self.page.request.get(url)
-        
+
         if expected_status:
-            assert response.status in expected_status, \
-                f"期望状态码 {expected_status}，实际 {response.status}"
-        
+            assert response.status in expected_status, f"期望状态码 {expected_status}，实际 {response.status}"
+
         try:
             return {"status": response.status, "data": response.json()}
         except Exception:
             return {"status": response.status, "data": None}
-    
+
     def post(self, endpoint: str, data: dict = None, expected_status: list = None) -> dict:
         """发送 POST 请求并验证响应"""
         url = f"{self.base_url}{endpoint}"
         response = self.page.request.post(url, data=data)
-        
+
         if expected_status:
-            assert response.status in expected_status, \
-                f"期望状态码 {expected_status}，实际 {response.status}"
-        
+            assert response.status in expected_status, f"期望状态码 {expected_status}，实际 {response.status}"
+
         try:
             return {"status": response.status, "data": response.json()}
         except Exception:
@@ -174,34 +171,34 @@ def api_tester(page: Page, base_url: str) -> APITester:
 
 class PageHelper:
     """页面操作辅助类"""
-    
+
     def __init__(self, page: Page):
         self.page = page
-    
+
     def goto_fast(self, url: str) -> None:
         """快速导航 - 只等待 DOM 加载"""
         self.page.goto(url, wait_until="domcontentloaded")
-    
+
     def goto_and_wait(self, url: str, timeout: int = 10000) -> None:
         """导航到页面并等待加载完成"""
         self.page.goto(url, timeout=timeout)
         self.page.wait_for_load_state("domcontentloaded")
-    
+
     def wait_for_text(self, text: str, timeout: int = 5000) -> None:
         """等待文本出现"""
         self.page.wait_for_selector(f"text={text}", timeout=timeout)
-    
+
     def click_and_wait(self, selector: str, timeout: int = 5000) -> None:
         """点击元素并等待响应"""
         self.page.click(selector, timeout=timeout)
         self.page.wait_for_load_state("domcontentloaded")
-    
+
     def fill_and_submit(self, selector: str, value: str, submit_selector: str = None) -> None:
         """填充表单并提交"""
         self.page.fill(selector, value)
         if submit_selector:
             self.page.click(submit_selector)
-    
+
     def take_screenshot(self, name: str) -> str:
         """截图"""
         screenshot_dir = Path("test-results/screenshots")

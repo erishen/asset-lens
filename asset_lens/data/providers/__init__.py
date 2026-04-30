@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
 
 class ProviderType(Enum):
     """数据源类型"""
+
     AKSHARE = "akshare"
     EASTMONEY = "eastmoney"
     TUSHARE = "tushare"
@@ -23,6 +24,7 @@ class ProviderType(Enum):
 
 class DataType(Enum):
     """数据类型"""
+
     STOCK_CN = "stock_cn"
     STOCK_HK = "stock_hk"
     STOCK_US = "stock_us"
@@ -52,25 +54,26 @@ class DataProvider(Protocol):
     @property
     def priority(self) -> int:
         """优先级（数字越小优先级越高）"""
-        ...
+        raise NotImplementedError
 
     @property
     def supported_data_types(self) -> list[DataType]:
         """支持的数据类型列表"""
-        ...
+        raise NotImplementedError
 
     def is_available(self) -> bool:
         """检查数据源是否可用"""
-        ...
+        raise NotImplementedError
 
     def fetch(self, data_type: DataType, symbol: str, **kwargs) -> dict[str, Any] | None:
         """获取数据"""
-        ...
+        raise NotImplementedError
 
 
 @dataclass
 class ProviderInfo:
     """数据源信息"""
+
     provider: DataProvider
     data_type: DataType
     priority: int
@@ -86,6 +89,7 @@ class ProviderInfo:
 @dataclass
 class ProviderHealth:
     """数据源健康状态"""
+
     name: str
     provider_type: str
     is_available: bool
@@ -196,8 +200,7 @@ class ProviderRegistry:
 
         for data_type in self._providers:
             self._providers[data_type] = [
-                info for info in self._providers[data_type]
-                if info.provider.name != provider_name
+                info for info in self._providers[data_type] if info.provider.name != provider_name
             ]
 
         return True
@@ -260,10 +263,7 @@ class ProviderRegistry:
         if data_type not in self._providers:
             return []
 
-        return [
-            info.provider for info in self._providers[data_type]
-            if info.provider.is_available()
-        ]
+        return [info.provider for info in self._providers[data_type] if info.provider.is_available()]
 
     def fetch(
         self,
@@ -288,7 +288,7 @@ class ProviderRegistry:
         Returns:
             数据字典
         """
-        from .cache import provider_cache
+        from .cache import provider_cache as _provider_cache
 
         providers = self._providers.get(data_type, [])
 
@@ -299,7 +299,7 @@ class ProviderRegistry:
             provider_name = info.provider.name
 
             if use_cache:
-                cached = provider_cache.get(data_type.value, provider_name, symbol, **kwargs)
+                cached = _provider_cache.get(data_type.value, provider_name, symbol, **kwargs)
                 if cached is not None:
                     result: dict[str, Any] | None = cached
                     return result
@@ -338,9 +338,7 @@ class ProviderRegistry:
         result: dict[str, list[str]] = {}
 
         for data_type, providers in self._providers.items():
-            result[data_type.value] = [
-                info.provider.name for info in providers
-            ]
+            result[data_type.value] = [info.provider.name for info in providers]
 
         return result
 
@@ -354,10 +352,7 @@ class ProviderRegistry:
         result: dict[str, dict[str, bool]] = {}
 
         for data_type, providers in self._providers.items():
-            result[data_type.value] = {
-                info.provider.name: info.provider.is_available()
-                for info in providers
-            }
+            result[data_type.value] = {info.provider.name: info.provider.is_available() for info in providers}
 
         return result
 
@@ -374,7 +369,7 @@ class ProviderRegistry:
         result: dict[str, ProviderHealth] = {}
 
         provider_infos: dict[str, list[ProviderInfo]] = {}
-        for data_type, providers in self._providers.items():
+        for _, providers in self._providers.items():
             for info in providers:
                 name = info.provider.name
                 if name not in provider_infos:

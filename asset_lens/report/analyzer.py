@@ -17,10 +17,7 @@ from rich.table import Table
 from ..config import config
 from ..core.sold_investment import SoldInvestmentAnalyzer
 from ..core.time_group import TimeGroupAnalyzer
-from ..data.models import (
-    Portfolio,
-    SellRecord,
-)
+from ..data.models import Portfolio, SellRecord
 
 
 class ReportGenerator:
@@ -52,9 +49,7 @@ class ReportGenerator:
             "exchange_rates": self.get_exchange_rates(),
             "portfolio_summary": self.generate_portfolio_summary(portfolio),
             "top_performers": self.get_top_performers(portfolio, top_n=10),
-            "low_returns": self.get_low_return_products(
-                portfolio, threshold=config.min_return_threshold
-            ),
+            "low_returns": self.get_low_return_products(portfolio, threshold=config.min_return_threshold),
             "short_term_observation": self.get_short_term_observation_products(portfolio),
             "high_return_reference": self.get_high_return_reference_products(portfolio),
             "type_distribution": self.get_type_distribution(portfolio),
@@ -65,9 +60,7 @@ class ReportGenerator:
             "risk_warnings": self.generate_risk_warnings(portfolio),
             "optimization_suggestions": self.generate_optimization_suggestions(portfolio),
             "investment_advice": self.generate_investment_advice(portfolio),
-            "comprehensive_evaluation": self.generate_comprehensive_evaluation(
-                portfolio, sell_records
-            ),
+            "comprehensive_evaluation": self.generate_comprehensive_evaluation(portfolio, sell_records),
             "investment_efficiency": self.generate_investment_efficiency(portfolio),
         }
 
@@ -82,7 +75,9 @@ class ReportGenerator:
         from ..data.csv_parser import CSVParser
 
         data_dir = config.get_latest_data_dir()
-        usd_rate, hkd_rate = CSVParser.get_exchange_rates(data_dir) if data_dir else (config.default_usd_rate, config.default_hkd_rate)
+        usd_rate, hkd_rate = (
+            CSVParser.get_exchange_rates(data_dir) if data_dir else (config.default_usd_rate, config.default_hkd_rate)
+        )
 
         return {
             "usd_rate": str(usd_rate),
@@ -104,9 +99,7 @@ class ReportGenerator:
             "total_value": str(portfolio.total_value),
             "total_initial": str(portfolio.total_initial),
             "total_profit": str(portfolio.total_profit),
-            "overall_return_rate": f"{portfolio.overall_return_rate:.2f}%"
-            if portfolio.overall_return_rate
-            else "N/A",
+            "overall_return_rate": f"{portfolio.overall_return_rate:.2f}%" if portfolio.overall_return_rate else "N/A",
             "positive_avg_return": self._calculate_positive_avg_return(portfolio),
         }
 
@@ -119,14 +112,12 @@ class ReportGenerator:
         Returns:
             平均收益率字符串
         """
-        positive_products = [
-            p for p in portfolio.products if p.annual_return and p.annual_return > Decimal("0")
-        ]
+        positive_products = [p for p in portfolio.products if p.annual_return and p.annual_return > Decimal("0")]
         if not positive_products:
             return "N/A"
-        avg_return = Decimal(
-            str(sum(p.annual_return for p in positive_products if p.annual_return))
-        ) / Decimal(str(len(positive_products)))
+        avg_return = Decimal(str(sum(p.annual_return for p in positive_products if p.annual_return))) / Decimal(
+            str(len(positive_products))
+        )
         return f"{avg_return:.2f}%"
 
     def get_top_performers(self, portfolio: Portfolio, top_n: int = 10) -> list[dict[str, Any]]:
@@ -140,14 +131,10 @@ class ReportGenerator:
             按收益率排序的产品列表
         """
         products_with_return = [
-            p
-            for p in portfolio.products
-            if p.annual_return is not None or p.return_rate is not None
+            p for p in portfolio.products if p.annual_return is not None or p.return_rate is not None
         ]
 
-        products_with_return.sort(
-            key=lambda p: p.annual_return or p.return_rate or Decimal("0"), reverse=True
-        )
+        products_with_return.sort(key=lambda p: p.annual_return or p.return_rate or Decimal("0"), reverse=True)
 
         top_products = products_with_return[:top_n]
 
@@ -166,9 +153,7 @@ class ReportGenerator:
             for i, p in enumerate(top_products)
         ]
 
-    def get_low_return_products(
-        self, portfolio: Portfolio, threshold: float = 2.0
-    ) -> list[dict[str, Any]]:
+    def get_low_return_products(self, portfolio: Portfolio, threshold: float = 2.0) -> list[dict[str, Any]]:
         """获取低收益产品列表
 
         Args:
@@ -179,9 +164,7 @@ class ReportGenerator:
             低收益产品列表
         """
         low_return_products = [
-            p
-            for p in portfolio.products
-            if p.annual_return is not None and p.annual_return < Decimal(str(threshold))
+            p for p in portfolio.products if p.annual_return is not None and p.annual_return < Decimal(str(threshold))
         ]
 
         low_return_products.sort(key=lambda p: p.annual_return or Decimal("0"), reverse=True)
@@ -212,10 +195,7 @@ class ReportGenerator:
         short_term_products = [
             p
             for p in portfolio.products
-            if p.investment_days
-            and p.investment_days < 90
-            and p.annual_return
-            and p.annual_return < Decimal("3")
+            if p.investment_days and p.investment_days < 90 and p.annual_return and p.annual_return < Decimal("3")
         ]
 
         return [
@@ -240,9 +220,7 @@ class ReportGenerator:
         Returns:
             年化收益率超过10%的产品列表
         """
-        high_return_products = [
-            p for p in portfolio.products if p.annual_return and p.annual_return > Decimal("10")
-        ]
+        high_return_products = [p for p in portfolio.products if p.annual_return and p.annual_return > Decimal("10")]
 
         high_return_products.sort(key=lambda p: p.annual_return or Decimal("0"), reverse=True)
 
@@ -305,9 +283,7 @@ class ReportGenerator:
                     "total_amount": str(group.total_amount),
                     "total_initial": str(group.total_initial),
                     "total_profit": str(group.total_profit),
-                    "avg_return_rate": f"{group.avg_return_rate:.2f}%"
-                    if group.avg_return_rate
-                    else "-",
+                    "avg_return_rate": f"{group.avg_return_rate:.2f}%" if group.avg_return_rate else "-",
                     "avg_holding_days": group.avg_holding_days,
                     "products": group.products[:5],
                 }
@@ -321,9 +297,7 @@ class ReportGenerator:
             "total_profit": str(result.get("total_profit", Decimal("0"))),
         }
 
-    def generate_sold_analysis(
-        self, sell_records: list[SellRecord] | None = None
-    ) -> dict[str, Any] | None:
+    def generate_sold_analysis(self, sell_records: list[SellRecord] | None = None) -> dict[str, Any] | None:
         if not sell_records:
             return None
 
@@ -369,21 +343,11 @@ class ReportGenerator:
                 special_bonds.append(
                     {
                         "name": product.name,
-                        "current_amount": str(product.current_amount)
-                        if product.current_amount
-                        else "-",
-                        "initial_amount": str(product.initial_amount)
-                        if product.initial_amount
-                        else "-",
-                        "profit_amount": str(product.profit_amount)
-                        if product.profit_amount
-                        else "-",
-                        "return_rate": f"{product.return_rate:.2f}%"
-                        if product.return_rate
-                        else "-",
-                        "annual_return": f"{product.annual_return:.2f}%"
-                        if product.annual_return
-                        else "-",
+                        "current_amount": str(product.current_amount) if product.current_amount else "-",
+                        "initial_amount": str(product.initial_amount) if product.initial_amount else "-",
+                        "profit_amount": str(product.profit_amount) if product.profit_amount else "-",
+                        "return_rate": f"{product.return_rate:.2f}%" if product.return_rate else "-",
+                        "annual_return": f"{product.annual_return:.2f}%" if product.annual_return else "-",
                         "investment_days": product.investment_days or "-",
                     }
                 )
@@ -404,9 +368,7 @@ class ReportGenerator:
                 }
             )
 
-        loss_products = [
-            p for p in portfolio.products if p.profit_amount and p.profit_amount < Decimal("0")
-        ]
+        loss_products = [p for p in portfolio.products if p.profit_amount and p.profit_amount < Decimal("0")]
         if loss_products:
             loss_products.sort(key=lambda p: p.profit_amount or Decimal("0"))
             warnings.append(
@@ -428,9 +390,7 @@ class ReportGenerator:
         risk_dist = portfolio.get_risk_distribution()
         high_risk_stats = risk_dist.get("高", {})
         if high_risk_stats and portfolio.total_value > Decimal("0"):
-            high_risk_ratio = (
-                high_risk_stats.get("total_value", Decimal("0")) / portfolio.total_value
-            )
+            high_risk_ratio = high_risk_stats.get("total_value", Decimal("0")) / portfolio.total_value
             if high_risk_ratio > Decimal("0.5"):
                 warnings.append(
                     {
@@ -458,9 +418,7 @@ class ReportGenerator:
                         {
                             "name": p.name,
                             "days": p.investment_days,
-                            "return": f"{p.annual_return:.2f}%"
-                            if p.annual_return is not None
-                            else "-",
+                            "return": f"{p.annual_return:.2f}%" if p.annual_return is not None else "-",
                         }
                         for p in long_term_low_return[:3]
                     ],
@@ -487,8 +445,8 @@ class ReportGenerator:
                     "type": "asset_allocation",
                     "title": "🎯 资产配置优化（适应低利率环境）",
                     "details": [
-                        f"• 可转移的低效资金: {transferable_amount/10000:.1f}万元",
-                        f"• 理论增加年收益: {potential_gain/10000:.1f}万元",
+                        f"• 可转移的低效资金: {transferable_amount / 10000:.1f}万元",
+                        f"• 理论增加年收益: {potential_gain / 10000:.1f}万元",
                         "• 建议配置目标：",
                         "  - 理财产品: 25-30% (保留流动性)",
                         "  - 股票基金: 15-20% (提升收益潜力)",
@@ -713,10 +671,7 @@ class ReportGenerator:
         products_with_days = [p for p in portfolio.products if p.investment_days]
         if products_with_days:
             avg_investment_days = Decimal(
-                str(
-                    sum(p.investment_days or 0 for p in products_with_days)
-                    / len(products_with_days)
-                )
+                str(sum(p.investment_days or 0 for p in products_with_days) / len(products_with_days))
             )
 
         # 时间加权年化收益率（使用复利公式，与 ts-demo 一致）
@@ -724,8 +679,7 @@ class ReportGenerator:
             avg_investment_years = avg_investment_days / Decimal("360")
             if avg_investment_years > Decimal("0"):
                 time_weighted_return = (
-                    (Decimal("1") + overall_return_rate / Decimal("100"))
-                    ** (Decimal("1") / avg_investment_years)
+                    (Decimal("1") + overall_return_rate / Decimal("100")) ** (Decimal("1") / avg_investment_years)
                     - Decimal("1")
                 ) * Decimal("100")
             else:
@@ -777,25 +731,18 @@ class ReportGenerator:
         products_with_days = [p for p in portfolio.products if p.investment_days]
         if products_with_days:
             avg_investment_days = Decimal(
-                str(
-                    sum(p.investment_days or 0 for p in products_with_days)
-                    / len(products_with_days)
-                )
+                str(sum(p.investment_days or 0 for p in products_with_days) / len(products_with_days))
             )
 
         if avg_investment_days > Decimal("0") and portfolio.overall_return_rate:
-            annual_growth_rate = portfolio.overall_return_rate * (
-                Decimal("365") / avg_investment_days
-            )
+            annual_growth_rate = portfolio.overall_return_rate * (Decimal("365") / avg_investment_days)
         else:
             annual_growth_rate = Decimal("0")
 
         return {
             "capital_efficiency": f"{capital_efficiency:.1f}%",
             "annual_growth_rate": f"{annual_growth_rate:.2f}%",
-            "avg_investment_years": float(avg_investment_days / Decimal("365"))
-            if avg_investment_days
-            else 0,
+            "avg_investment_years": float(avg_investment_days / Decimal("365")) if avg_investment_days else 0,
         }
 
     def print_console_report(self, report: dict[str, Any]) -> None:
@@ -823,9 +770,7 @@ class ReportGenerator:
             sold_table.add_column("指标", style="bold", no_wrap=True)
             sold_table.add_column("值", style="cyan", no_wrap=True)
             sold_table.add_row("总投入", f"{self._format_money(sold_analysis['total_initial'])}元")
-            sold_table.add_row(
-                "已实现收益", f"[green]+{self._format_money(sold_analysis['total_profit'])}元[/green]"
-            )
+            sold_table.add_row("已实现收益", f"[green]+{self._format_money(sold_analysis['total_profit'])}元[/green]")
             sold_table.add_row("实现收益率", f"[green]{sold_analysis['total_return_rate']}[/green]")
             sold_table.add_row("平均年化收益率", f"[yellow]{sold_analysis['avg_return_rate']}[/yellow]")
             console.print(sold_table)
@@ -839,16 +784,12 @@ class ReportGenerator:
             if sold_analysis.get("top_performers"):
                 console.print("\n[bold green]表现最好的已卖出产品:[/bold green]")
                 for i, p in enumerate(sold_analysis["top_performers"][:3], 1):
-                    console.print(
-                        f"  [green]{i}. {p['name']}: {p['return_rate']} ({p['holding_days']}天)[/green]"
-                    )
+                    console.print(f"  [green]{i}. {p['name']}: {p['return_rate']} ({p['holding_days']}天)[/green]")
 
             if sold_analysis.get("worst_performers"):
                 console.print("\n[bold red]亏损产品:[/bold red]")
                 for i, p in enumerate(sold_analysis["worst_performers"][:10], 1):
-                    console.print(
-                        f"  [red]{i}. {p['name']}: {p['return_rate']} ({p['holding_days']}天)[/red]"
-                    )
+                    console.print(f"  [red]{i}. {p['name']}: {p['return_rate']} ({p['holding_days']}天)[/red]")
 
         time_analysis = report.get("time_group_analysis", {})
         if time_analysis.get("groups"):
@@ -884,9 +825,7 @@ class ReportGenerator:
         portfolio_table.add_column("值", style="cyan")
         portfolio_table.add_row("当前总资产", f"{self._format_money(summary['total_value'])}元")
         portfolio_table.add_row("总投入资金", f"{self._format_money(summary['total_initial'])}元")
-        portfolio_table.add_row(
-            "未实现收益", f"[green]+{self._format_money(summary['total_profit'])}元[/green]"
-        )
+        portfolio_table.add_row("未实现收益", f"[green]+{self._format_money(summary['total_profit'])}元[/green]")
         portfolio_table.add_row("整体收益率", f"[green]{summary['overall_return_rate']}[/green]")
         portfolio_table.add_row("有效投资收益率", f"[green]{summary['overall_return_rate']}[/green]")
         portfolio_table.add_row(
@@ -900,9 +839,7 @@ class ReportGenerator:
         type_table.add_column("占比", justify="right")
         type_table.add_column("金额", justify="right")
         for type_name, stats in report["type_distribution"].items():
-            type_table.add_row(
-                type_name, stats["percentage"], f"{self._format_money(stats['total_value'])}元"
-            )
+            type_table.add_row(type_name, stats["percentage"], f"{self._format_money(stats['total_value'])}元")
         console.print(type_table)
 
         special_bonds = report.get("special_bonds", [])
@@ -911,9 +848,7 @@ class ReportGenerator:
             for i, bond in enumerate(special_bonds, 1):
                 console.print(f"  [yellow]{i}. {bond['name']}[/yellow]")
                 console.print(f"     当前持仓: {self._format_money(bond['current_amount'])}元")
-                console.print(
-                    f"     未实现收益: [green]{self._format_money(bond['profit_amount'])}元[/green]"
-                )
+                console.print(f"     未实现收益: [green]{self._format_money(bond['profit_amount'])}元[/green]")
                 console.print(f"     年化: {bond['annual_return']} ({bond['investment_days']}天)")
 
         console.print("\n[bold]🎯 风险等级分布[/bold]")
@@ -922,9 +857,7 @@ class ReportGenerator:
         risk_table.add_column("占比", justify="right")
         risk_table.add_column("金额", justify="right")
         for risk_name, stats in report["risk_distribution"].items():
-            risk_table.add_row(
-                risk_name, stats["percentage"], f"{self._format_money(stats['total_value'])}元"
-            )
+            risk_table.add_row(risk_name, stats["percentage"], f"{self._format_money(stats['total_value'])}元")
         console.print(risk_table)
 
         risk_warnings = report.get("risk_warnings", [])
@@ -943,9 +876,7 @@ class ReportGenerator:
                             elif "loss" in p:
                                 loss = p.get("loss", "-")
                                 return_rate = p.get("return_rate", "-")
-                                console.print(
-                                    f"  [red]- {name}: 亏损 {loss}元, 收益率 {return_rate}[/red]"
-                                )
+                                console.print(f"  [red]- {name}: 亏损 {loss}元, 收益率 {return_rate}[/red]")
                             elif "return" in p:
                                 ret = p.get("return", "-")
                                 days = p.get("days", "-")
@@ -984,19 +915,11 @@ class ReportGenerator:
             eval_table = Table(show_header=False, box=None)
             eval_table.add_column("指标", style="bold")
             eval_table.add_column("值", style="cyan")
-            eval_table.add_row(
-                "总当前金额", f"{self._format_money(evaluation['total_current_amount'])}元"
-            )
+            eval_table.add_row("总当前金额", f"{self._format_money(evaluation['total_current_amount'])}元")
             eval_table.add_row("总投入本金", f"{self._format_money(evaluation['total_investment'])}元")
-            eval_table.add_row(
-                "已实现收益", f"[green]+{self._format_money(evaluation['realized_profit'])}元[/green]"
-            )
-            eval_table.add_row(
-                "未实现收益", f"[green]+{self._format_money(evaluation['unrealized_profit'])}元[/green]"
-            )
-            eval_table.add_row(
-                "整体收益率", f"[green]+{evaluation['overall_return_rate']}[/green] (累计总收益率)"
-            )
+            eval_table.add_row("已实现收益", f"[green]+{self._format_money(evaluation['realized_profit'])}元[/green]")
+            eval_table.add_row("未实现收益", f"[green]+{self._format_money(evaluation['unrealized_profit'])}元[/green]")
+            eval_table.add_row("整体收益率", f"[green]+{evaluation['overall_return_rate']}[/green] (累计总收益率)")
             eval_table.add_row(
                 "加权年化收益率", f"[green]+{evaluation['weighted_annual_return']}[/green] (按投资金额加权)"
             )
@@ -1024,7 +947,7 @@ class ReportGenerator:
     def _format_money_value(self, value: str) -> str:
         try:
             amount = float(value)
-            return f"{amount/10000:.2f}万"
+            return f"{amount / 10000:.2f}万"
         except:
             return value
 
@@ -1032,7 +955,7 @@ class ReportGenerator:
         try:
             amount = float(value)
             if amount >= 10000:
-                return f"{amount/10000:.2f}万"
+                return f"{amount / 10000:.2f}万"
             else:
                 return f"{amount:,.0f}"
         except:

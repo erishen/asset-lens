@@ -3,11 +3,12 @@ Tests for Stock Screener.
 股票筛选器测试
 """
 
-import pytest
 import json
-from unittest.mock import patch, MagicMock
-from pathlib import Path
 import tempfile
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
 
 
 class TestScreenerConfig:
@@ -16,9 +17,9 @@ class TestScreenerConfig:
     def test_fundamental_config_defaults(self):
         """测试基本面配置默认值"""
         from asset_lens.strategy.screener import FundamentalConfig
-        
+
         config = FundamentalConfig()
-        
+
         assert config.pe_max == 30.0
         assert config.pe_min == 0.0
         assert config.pb_max == 5.0
@@ -30,9 +31,9 @@ class TestScreenerConfig:
     def test_technical_config_defaults(self):
         """测试技术面配置默认值"""
         from asset_lens.strategy.screener import TechnicalConfig
-        
+
         config = TechnicalConfig()
-        
+
         assert config.ma_trend is True
         assert config.macd_golden_cross is False
         assert config.rsi_oversold is False
@@ -44,9 +45,9 @@ class TestScreenerConfig:
     def test_scoring_weights_defaults(self):
         """测试评分权重默认值"""
         from asset_lens.strategy.screener import ScoringWeights
-        
+
         weights = ScoringWeights()
-        
+
         assert weights.fundamental == 0.4
         assert weights.technical == 0.3
         assert weights.capital_flow == 0.2
@@ -55,9 +56,9 @@ class TestScreenerConfig:
     def test_screener_config_defaults(self):
         """测试筛选器配置默认值"""
         from asset_lens.strategy.screener import ScreenerConfig
-        
+
         config = ScreenerConfig()
-        
+
         assert config.max_results == 20
         assert config.min_score == 60.0
 
@@ -74,16 +75,18 @@ class TestStockScreener:
     @pytest.fixture
     def screener(self, temp_cache_path):
         """创建筛选器实例"""
-        with patch('asset_lens.strategy.screener.config') as mock_config:
+        with patch("asset_lens.strategy.screener.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             mock_config.project_root = temp_cache_path
             from asset_lens.strategy.screener import StockScreener
+
             screener = StockScreener()
             yield screener
 
     def test_module_import(self):
         """测试模块导入"""
-        from asset_lens.strategy.screener import StockScreener, stock_screener
+        from asset_lens.strategy.screener import StockScreener
+
         assert StockScreener is not None
 
     def test_screener_init(self, screener):
@@ -101,21 +104,21 @@ class TestStockScreener:
         """测试加载配置 - 有配置文件"""
         config_path = temp_cache_path / "config" / "stock_screener.json"
         config_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         config_data = {
             "max_results": 30,
             "min_score": 70.0,
             "fundamental": {"pe_max": 25.0},
             "technical": {"ma_trend": False},
-            "scoring_weights": {"fundamental": 0.5}
+            "scoring_weights": {"fundamental": 0.5},
         }
-        
+
         with open(config_path, "w", encoding="utf-8") as f:
             json.dump(config_data, f)
-        
+
         screener.config_path = config_path
         config = screener._load_config()
-        
+
         assert config.max_results == 30
         assert config.min_score == 70.0
 
@@ -130,13 +133,13 @@ class TestStockScreener:
         market_data = {
             "data": [
                 {"code": "sh600519", "name": "贵州茅台", "pe_ratio": 30},
-                {"code": "sz000001", "name": "平安银行", "pe_ratio": 8}
+                {"code": "sz000001", "name": "平安银行", "pe_ratio": 8},
             ]
         }
-        
+
         with open(market_file, "w", encoding="utf-8") as f:
             json.dump(market_data, f)
-        
+
         stocks = screener._load_market_stocks()
         assert len(stocks) == 2
 
@@ -148,9 +151,9 @@ class TestStockScreener:
             {"code": "sh601318", "name": "中国平安", "pe_ratio": 50, "market_cap": 500},
             {"code": "sh600000", "name": "ST某某", "pe_ratio": 10, "market_cap": 50},
         ]
-        
+
         results = screener.filter_by_fundamental(stocks)
-        
+
         assert len(results) <= len(stocks)
         for r in results:
             assert "fundamental_pass" in r
@@ -162,49 +165,34 @@ class TestStockScreener:
             {"code": "sh600000", "name": "ST某某", "pe_ratio": 10, "market_cap": 50},
             {"code": "sh600001", "name": "退市股票", "pe_ratio": 10, "market_cap": 50},
         ]
-        
+
         results = screener.filter_by_fundamental(stocks)
-        
+
         assert len(results) == 0
 
     def test_calculate_fundamental_score(self, screener):
         """测试计算基本面得分"""
-        stock = {
-            "pe_ratio": 12,
-            "market_cap": 100,
-            "turnover_rate": 5,
-            "change_percent": 2
-        }
-        
+        stock = {"pe_ratio": 12, "market_cap": 100, "turnover_rate": 5, "change_percent": 2}
+
         score = screener._calculate_fundamental_score(stock)
-        
+
         assert isinstance(score, (int, float))
         assert 0 <= score <= 100
 
     def test_calculate_fundamental_score_high_pe(self, screener):
         """测试计算基本面得分 - 高PE"""
-        stock = {
-            "pe_ratio": 50,
-            "market_cap": 100,
-            "turnover_rate": 5,
-            "change_percent": 2
-        }
-        
+        stock = {"pe_ratio": 50, "market_cap": 100, "turnover_rate": 5, "change_percent": 2}
+
         score = screener._calculate_fundamental_score(stock)
-        
+
         assert score < 80
 
     def test_calculate_fundamental_score_negative_change(self, screener):
         """测试计算基本面得分 - 负涨幅"""
-        stock = {
-            "pe_ratio": 15,
-            "market_cap": 100,
-            "turnover_rate": 5,
-            "change_percent": -8
-        }
-        
+        stock = {"pe_ratio": 15, "market_cap": 100, "turnover_rate": 5, "change_percent": -8}
+
         score = screener._calculate_fundamental_score(stock)
-        
+
         assert "change_percent" in str(score) or score < 100
 
     def test_filter_by_technical(self, screener):
@@ -212,18 +200,11 @@ class TestStockScreener:
         stocks = [
             {"code": "sh600519", "name": "贵州茅台"},
         ]
-        
-        histories = {
-            "sh600519": {
-                "klines": [
-                    {"close": 1800 + i, "volume": 100000 + i * 1000}
-                    for i in range(60)
-                ]
-            }
-        }
-        
+
+        histories = {"sh600519": {"klines": [{"close": 1800 + i, "volume": 100000 + i * 1000} for i in range(60)]}}
+
         results = screener.filter_by_technical(stocks, histories)
-        
+
         assert isinstance(results, list)
 
     def test_filter_by_technical_no_history(self, screener):
@@ -231,50 +212,39 @@ class TestStockScreener:
         stocks = [
             {"code": "sh600519", "name": "贵州茅台"},
         ]
-        
+
         results = screener.filter_by_technical(stocks, {})
-        
+
         assert len(results) == 0
 
     def test_calculate_technical_score(self, screener):
         """测试计算技术面得分"""
         stock = {"change_percent": 3}
-        klines = [
-            {"close": 100 + i, "volume": 100000 + i * 1000}
-            for i in range(20)
-        ]
-        
+        klines = [{"close": 100 + i, "volume": 100000 + i * 1000} for i in range(20)]
+
         score = screener._calculate_technical_score(stock, klines)
-        
+
         assert isinstance(score, float)
         assert 0 <= score <= 100
 
     def test_check_technical_conditions(self, screener):
         """测试检查技术面条件"""
         from asset_lens.strategy.screener import TechnicalConfig
-        
+
         stock = {"change_percent": 3}
-        klines = [
-            {"close": 100 + i * 0.5, "volume": 100000 + i * 1000}
-            for i in range(60)
-        ]
+        klines = [{"close": 100 + i * 0.5, "volume": 100000 + i * 1000} for i in range(60)]
         cfg = TechnicalConfig()
-        
+
         result = screener._check_technical_conditions(stock, klines, cfg)
-        
+
         assert isinstance(result, bool)
 
     def test_calculate_comprehensive_score(self, screener):
         """测试计算综合评分"""
-        stock = {
-            "fundamental_score": 70,
-            "technical_score": 80,
-            "turnover_rate": 5,
-            "name": "贵州茅台"
-        }
-        
+        stock = {"fundamental_score": 70, "technical_score": 80, "turnover_rate": 5, "name": "贵州茅台"}
+
         result = screener.calculate_comprehensive_score(stock)
-        
+
         assert "total_score" in result
         assert "fundamental_score" in result
         assert "technical_score" in result
@@ -283,39 +253,49 @@ class TestStockScreener:
 
     def test_calculate_comprehensive_score_hot_industry(self, screener):
         """测试计算综合评分 - 热门行业"""
-        stock = {
-            "fundamental_score": 70,
-            "technical_score": 80,
-            "turnover_rate": 5,
-            "name": "某某科技"
-        }
-        
+        stock = {"fundamental_score": 70, "technical_score": 80, "turnover_rate": 5, "name": "某某科技"}
+
         result = screener.calculate_comprehensive_score(stock)
-        
+
         assert result["industry_score"] == 70
 
     def test_screen_empty_stocks(self, screener):
         """测试筛选 - 空股票列表"""
         results = screener.screen([])
-        
+
         assert results == []
 
     def test_screen_fundamental_only(self, screener):
         """测试筛选 - 仅基本面"""
         stocks = [
-            {"code": "sh600519", "name": "贵州茅台", "pe_ratio": 15, "market_cap": 200, "turnover_rate": 3, "change_percent": 2},
+            {
+                "code": "sh600519",
+                "name": "贵州茅台",
+                "pe_ratio": 15,
+                "market_cap": 200,
+                "turnover_rate": 3,
+                "change_percent": 2,
+            },
         ]
-        
+
         results = screener.screen(stocks, filter_type="fundamental")
-        
+
         assert isinstance(results, list)
 
     def test_screen_with_custom_strategy(self, screener):
         """测试自定义策略筛选"""
         stocks = [
-            {"code": "sh600519", "name": "贵州茅台", "pe_ratio": 15, "market_cap": 200, "turnover_rate": 3, "change_percent": 2, "current_price": 50},
+            {
+                "code": "sh600519",
+                "name": "贵州茅台",
+                "pe_ratio": 15,
+                "market_cap": 200,
+                "turnover_rate": 3,
+                "change_percent": 2,
+                "current_price": 50,
+            },
         ]
-        
+
         strategy = {
             "pe_max": 20,
             "market_cap_min": 50,
@@ -327,23 +307,31 @@ class TestStockScreener:
             "price_min": 10,
             "price_max": 100,
             "min_match_rate": 0.5,
-            "max_results": 10
+            "max_results": 10,
         }
-        
+
         results = screener.screen_with_custom_strategy(stocks, strategy)
-        
+
         assert isinstance(results, list)
 
     def test_screen_with_custom_strategy_exclude_st(self, screener):
         """测试自定义策略筛选 - 排除ST"""
         stocks = [
-            {"code": "sh600000", "name": "ST某某", "pe_ratio": 10, "market_cap": 50, "turnover_rate": 3, "change_percent": 0, "current_price": 20},
+            {
+                "code": "sh600000",
+                "name": "ST某某",
+                "pe_ratio": 10,
+                "market_cap": 50,
+                "turnover_rate": 3,
+                "change_percent": 0,
+                "current_price": 20,
+            },
         ]
-        
+
         strategy = {"pe_max": 30}
-        
+
         results = screener.screen_with_custom_strategy(stocks, strategy)
-        
+
         assert len(results) == 0
 
 
@@ -357,10 +345,10 @@ class TestScreenerFilters:
             {"code": "sz000001", "price": 15.0},
             {"code": "sh601318", "price": 50.0},
         ]
-        
+
         min_price = 10.0
         max_price = 100.0
-        
+
         filtered = [s for s in stocks if min_price <= s["price"] <= max_price]
         assert len(filtered) == 2
 
@@ -371,9 +359,9 @@ class TestScreenerFilters:
             {"code": "sz000001", "volume": 5000000},
             {"code": "sh601318", "volume": 3000000},
         ]
-        
+
         min_volume = 2000000
-        
+
         filtered = [s for s in stocks if s["volume"] >= min_volume]
         assert len(filtered) == 2
 
@@ -384,9 +372,9 @@ class TestScreenerFilters:
             {"code": "sz000001", "pe_ratio": 8.0},
             {"code": "sh601318", "pe_ratio": 15.0},
         ]
-        
+
         max_pe = 20.0
-        
+
         filtered = [s for s in stocks if s["pe_ratio"] <= max_pe]
         assert len(filtered) == 2
 
@@ -401,7 +389,7 @@ class TestScreenerSorting:
             {"code": "sz000001", "price": 15.0},
             {"code": "sh601318", "price": 50.0},
         ]
-        
+
         sorted_stocks = sorted(stocks, key=lambda x: x["price"], reverse=True)
         assert sorted_stocks[0]["code"] == "sh600519"
 
@@ -412,7 +400,7 @@ class TestScreenerSorting:
             {"code": "sz000001", "volume": 5000000},
             {"code": "sh601318", "volume": 3000000},
         ]
-        
+
         sorted_stocks = sorted(stocks, key=lambda x: x["volume"], reverse=True)
         assert sorted_stocks[0]["code"] == "sz000001"
 
@@ -423,6 +411,6 @@ class TestScreenerSorting:
             {"code": "sz000001", "change_percent": -0.5},
             {"code": "sh601318", "change_percent": 3.0},
         ]
-        
+
         sorted_stocks = sorted(stocks, key=lambda x: x["change_percent"], reverse=True)
         assert sorted_stocks[0]["code"] == "sh601318"

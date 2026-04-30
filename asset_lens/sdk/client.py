@@ -36,31 +36,24 @@ class AssetLensClient:
         """
         try:
             import subprocess
-            result = subprocess.run(
-                ['python', '-m', 'asset_lens', 'fetch-stock', code],
-                capture_output=True,
-                text=True
-            )
+
+            result = subprocess.run(["python", "-m", "asset_lens", "fetch-stock", code], capture_output=True, text=True)
 
             if result.returncode == 0:
                 return {
-                    'success': True,
-                    'data': result.stdout,
-                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    "success": True,
+                    "data": result.stdout,
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 }
             else:
                 return {
-                    'success': False,
-                    'error': result.stderr,
-                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    "success": False,
+                    "error": result.stderr,
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 }
         except Exception as e:
             logger.error(f"获取股票行情失败: {code}, {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }
+            return {"success": False, "error": str(e), "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
     def get_fund_nav(self, code: str) -> dict[str, Any]:
         """
@@ -74,31 +67,24 @@ class AssetLensClient:
         """
         try:
             import subprocess
-            result = subprocess.run(
-                ['python', '-m', 'asset_lens', 'fetch-fund', code],
-                capture_output=True,
-                text=True
-            )
+
+            result = subprocess.run(["python", "-m", "asset_lens", "fetch-fund", code], capture_output=True, text=True)
 
             if result.returncode == 0:
                 return {
-                    'success': True,
-                    'data': result.stdout,
-                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    "success": True,
+                    "data": result.stdout,
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 }
             else:
                 return {
-                    'success': False,
-                    'error': result.stderr,
-                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    "success": False,
+                    "error": result.stderr,
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 }
         except Exception as e:
             logger.error(f"获取基金净值失败: {code}, {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }
+            return {"success": False, "error": str(e), "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
     def analyze_portfolio(self) -> dict[str, Any]:
         """
@@ -109,31 +95,24 @@ class AssetLensClient:
         """
         try:
             import subprocess
-            result = subprocess.run(
-                ['python', '-m', 'asset_lens', 'analyze'],
-                capture_output=True,
-                text=True
-            )
+
+            result = subprocess.run(["python", "-m", "asset_lens", "analyze"], capture_output=True, text=True)
 
             if result.returncode == 0:
                 return {
-                    'success': True,
-                    'data': result.stdout,
-                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    "success": True,
+                    "data": result.stdout,
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 }
             else:
                 return {
-                    'success': False,
-                    'error': result.stderr,
-                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    "success": False,
+                    "error": result.stderr,
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 }
         except Exception as e:
             logger.error(f"分析投资组合失败: {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }
+            return {"success": False, "error": str(e), "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
     def screen_stocks(self, strategy: str = "momentum", limit: int = 10) -> dict[str, Any]:
         """
@@ -148,31 +127,26 @@ class AssetLensClient:
         """
         try:
             import subprocess
+
             result = subprocess.run(
-                ['python', '-m', 'asset_lens', 'strategy-screen', 'NAME', strategy],
-                capture_output=True,
-                text=True
+                ["python", "-m", "asset_lens", "strategy-screen", "NAME", strategy], capture_output=True, text=True
             )
 
             if result.returncode == 0:
                 return {
-                    'success': True,
-                    'data': result.stdout,
-                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    "success": True,
+                    "data": result.stdout,
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 }
             else:
                 return {
-                    'success': False,
-                    'error': result.stderr,
-                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    "success": False,
+                    "error": result.stderr,
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 }
         except Exception as e:
             logger.error(f"股票筛选失败: {strategy}, {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }
+            return {"success": False, "error": str(e), "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
     def get_market_indices(self) -> dict[str, Any]:
         """
@@ -182,31 +156,18 @@ class AssetLensClient:
             市场指数数据
         """
         try:
-            indices = {
-                'sh000300': '沪深300',
-                'sh000016': '上证50',
-                'sz399006': '创业板指',
-                'sh000688': '科创50'
-            }
+            indices = {"sh000300": "沪深300", "sh000016": "上证50", "sz399006": "创业板指", "sh000688": "科创50"}
 
             results = {}
             for code, name in indices.items():
                 result = self.get_stock_quote(code)
-                if result['success']:
+                if result["success"]:
                     results[name] = result
 
-            return {
-                'success': True,
-                'data': results,
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }
+            return {"success": True, "data": results, "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
         except Exception as e:
             logger.error(f"获取市场指数失败: {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }
+            return {"success": False, "error": str(e), "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
     def calculate_risk_metrics(self, returns: list[float]) -> dict[str, Any]:
         """
@@ -224,22 +185,18 @@ class AssetLensClient:
             metrics = risk_service.calculate_metrics(returns)
 
             return {
-                'success': True,
-                'data': {
-                    'volatility': metrics.volatility,
-                    'max_drawdown': metrics.max_drawdown,
-                    'sharpe_ratio': metrics.sharpe_ratio,
-                    'var_95': metrics.var_95
+                "success": True,
+                "data": {
+                    "volatility": metrics.volatility,
+                    "max_drawdown": metrics.max_drawdown,
+                    "sharpe_ratio": metrics.sharpe_ratio,
+                    "var_95": metrics.var_95,
                 },
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }
         except Exception as e:
             logger.error(f"计算风险指标失败: {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }
+            return {"success": False, "error": str(e), "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
     def generate_report(self, report_type: str = "daily") -> dict[str, Any]:
         """
@@ -263,18 +220,10 @@ class AssetLensClient:
             else:
                 report = monitor.generate_daily_report()
 
-            return {
-                'success': True,
-                'data': report,
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }
+            return {"success": True, "data": report, "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
         except Exception as e:
             logger.error(f"生成报告失败: {report_type}, {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }
+            return {"success": False, "error": str(e), "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
     def add_to_stock_pool(self, code: str, name: str, price: float) -> dict[str, Any]:
         """
@@ -290,31 +239,28 @@ class AssetLensClient:
         """
         try:
             import subprocess
+
             result = subprocess.run(
-                ['asset-lens', 'stock-pool', 'add', '--code', code, '--name', name, '--price', str(price)],
+                ["asset-lens", "stock-pool", "add", "--code", code, "--name", name, "--price", str(price)],
                 capture_output=True,
-                text=True
+                text=True,
             )
 
             if result.returncode == 0:
                 return {
-                    'success': True,
-                    'message': f"股票 {code} 已添加到股票池",
-                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    "success": True,
+                    "message": f"股票 {code} 已添加到股票池",
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 }
             else:
                 return {
-                    'success': False,
-                    'error': result.stderr,
-                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    "success": False,
+                    "error": result.stderr,
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 }
         except Exception as e:
             logger.error(f"添加股票到股票池失败: {code}, {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }
+            return {"success": False, "error": str(e), "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
     def get_stock_pool_status(self) -> dict[str, Any]:
         """
@@ -325,31 +271,24 @@ class AssetLensClient:
         """
         try:
             import subprocess
-            result = subprocess.run(
-                ['python', '-m', 'asset_lens', 'stock-pool-status'],
-                capture_output=True,
-                text=True
-            )
+
+            result = subprocess.run(["python", "-m", "asset_lens", "stock-pool-status"], capture_output=True, text=True)
 
             if result.returncode == 0:
                 return {
-                    'success': True,
-                    'data': result.stdout,
-                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    "success": True,
+                    "data": result.stdout,
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 }
             else:
                 return {
-                    'success': False,
-                    'error': result.stderr,
-                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    "success": False,
+                    "error": result.stderr,
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 }
         except Exception as e:
             logger.error(f"获取股票池状态失败: {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }
+            return {"success": False, "error": str(e), "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
 
 def create_client(config_path: Path | None = None) -> AssetLensClient:

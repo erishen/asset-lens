@@ -14,33 +14,36 @@ from typing import Any
 
 class CacheLevel(Enum):
     """缓存级别"""
-    HOT = "hot"      # 热缓存 - 内存，TTL 5分钟
-    WARM = "warm"    # 温缓存 - 文件，TTL 1小时
-    COLD = "cold"    # 冷缓存 - 文件，TTL 1天
+
+    HOT = "hot"  # 热缓存 - 内存，TTL 5分钟
+    WARM = "warm"  # 温缓存 - 文件，TTL 1小时
+    COLD = "cold"  # 冷缓存 - 文件，TTL 1天
 
 
 @dataclass
 class CacheConfig:
     """缓存配置"""
-    ttl: int                    # 缓存时间（秒）
-    backend: str                # 存储后端: memory, file
-    max_size: int = 1000        # 最大缓存条目数（仅内存缓存）
+
+    ttl: int  # 缓存时间（秒）
+    backend: str  # 存储后端: memory, file
+    max_size: int = 1000  # 最大缓存条目数（仅内存缓存）
 
 
 DEFAULT_CACHE_CONFIG: dict[str, CacheConfig] = {
-    "stock_quote": CacheConfig(ttl=300, backend="memory", max_size=500),      # 5分钟
-    "stock_history": CacheConfig(ttl=3600, backend="file"),                    # 1小时
-    "fund_nav": CacheConfig(ttl=3600, backend="file"),                         # 1小时
-    "fund_history": CacheConfig(ttl=86400, backend="file"),                    # 1天
-    "index_quote": CacheConfig(ttl=300, backend="memory", max_size=100),       # 5分钟
-    "macro_data": CacheConfig(ttl=86400, backend="file"),                      # 1天
-    "crypto_quote": CacheConfig(ttl=60, backend="memory", max_size=200),       # 1分钟
+    "stock_quote": CacheConfig(ttl=300, backend="memory", max_size=500),  # 5分钟
+    "stock_history": CacheConfig(ttl=3600, backend="file"),  # 1小时
+    "fund_nav": CacheConfig(ttl=3600, backend="file"),  # 1小时
+    "fund_history": CacheConfig(ttl=86400, backend="file"),  # 1天
+    "index_quote": CacheConfig(ttl=300, backend="memory", max_size=100),  # 5分钟
+    "macro_data": CacheConfig(ttl=86400, backend="file"),  # 1天
+    "crypto_quote": CacheConfig(ttl=60, backend="memory", max_size=200),  # 1分钟
 }
 
 
 @dataclass
 class CacheEntry:
     """缓存条目"""
+
     key: str
     value: Any
     created_at: float

@@ -218,15 +218,15 @@ class NotificationManager:
         content = f"""
 风险预警
 
-类型: {alert_data.get('type', 'Unknown')}
-等级: {alert_data.get('level', 'Unknown')}
-时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+类型: {alert_data.get("type", "Unknown")}
+等级: {alert_data.get("level", "Unknown")}
+时间: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
 详情:
-{alert_data.get('message', '')}
+{alert_data.get("message", "")}
 
 建议:
-{alert_data.get('recommendation', '')}
+{alert_data.get("recommendation", "")}
 """
 
         return self.send_notification(subject, content)
@@ -238,13 +238,13 @@ class NotificationManager:
         content = f"""
 交易信号
 
-股票: {signal_data.get('name', '')} ({signal_data.get('code', '')})
-信号类型: {signal_data.get('signal_type', '')}
-价格: {signal_data.get('price', 0):.2f}
-时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+股票: {signal_data.get("name", "")} ({signal_data.get("code", "")})
+信号类型: {signal_data.get("signal_type", "")}
+价格: {signal_data.get("price", 0):.2f}
+时间: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
 原因:
-{signal_data.get('reason', '')}
+{signal_data.get("reason", "")}
 """
 
         return self.send_notification(subject, content)
@@ -265,8 +265,7 @@ class NotificationManager:
 
         for position in data.get("positions", [])[:10]:
             lines.append(
-                f"  {position.get('name', '')} ({position.get('code', '')}): "
-                f"{position.get('profit_rate', 0):.2%}"
+                f"  {position.get('name', '')} ({position.get('code', '')}): {position.get('profit_rate', 0):.2%}"
             )
 
         return "\n".join(lines)
@@ -292,21 +291,21 @@ class NotificationManager:
 <body>
     <div class="header">
         <h1>📊 每日投资报告</h1>
-        <p>日期: {datetime.now().strftime('%Y-%m-%d')}</p>
+        <p>日期: {datetime.now().strftime("%Y-%m-%d")}</p>
     </div>
     <div class="content">
         <h2>概览</h2>
         <div class="metric">
             <strong>总资产</strong><br>
-            ¥{data.get('total_assets', 0):,.2f}
+            ¥{data.get("total_assets", 0):,.2f}
         </div>
         <div class="metric">
             <strong>总收益</strong><br>
-            ¥{data.get('total_profit', 0):,.2f}
+            ¥{data.get("total_profit", 0):,.2f}
         </div>
         <div class="metric">
             <strong>收益率</strong><br>
-            {data.get('total_return', 0):.2%}
+            {data.get("total_return", 0):.2%}
         </div>
         <h2>持仓</h2>
         <table>
@@ -322,8 +321,8 @@ class NotificationManager:
             rate_class = "positive" if profit_rate >= 0 else "negative"
             html += f"""
             <tr>
-                <td>{position.get('name', '')}</td>
-                <td>{position.get('code', '')}</td>
+                <td>{position.get("name", "")}</td>
+                <td>{position.get("code", "")}</td>
                 <td class="{rate_class}">{profit_rate:.2%}</td>
             </tr>
 """

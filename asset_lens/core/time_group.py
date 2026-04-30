@@ -135,9 +135,7 @@ class TimeGroupAnalyzer:
             if group_data["products"]:
                 avg_return_rate = Decimal("0")
                 if group_data["total_initial"] > 0:
-                    avg_return_rate = (
-                        group_data["total_profit"] / group_data["total_initial"] * Decimal("100")
-                    )
+                    avg_return_rate = group_data["total_profit"] / group_data["total_initial"] * Decimal("100")
 
                 avg_holding_days = group_data["total_days"] / len(group_data["products"])
 
@@ -213,24 +211,16 @@ class TimeGroupAnalyzer:
             year_groups[year]["total_amount"] += product.current_amount
             year_groups[year]["total_initial"] += product.initial_amount or Decimal("0")
             year_groups[year]["total_profit"] += product.profit_amount or Decimal("0")
-            year_groups[year]["total_days"] += (
-                (date.today() - product.start_date).days if product.start_date else 0
-            )
+            year_groups[year]["total_days"] += (date.today() - product.start_date).days if product.start_date else 0
 
         # 计算平均收益率
         result_groups = []
         for year, group_data in year_groups.items():
             avg_return_rate = Decimal("0")
             if group_data["total_initial"] > 0:
-                avg_return_rate = (
-                    group_data["total_profit"] / group_data["total_initial"] * Decimal("100")
-                )
+                avg_return_rate = group_data["total_profit"] / group_data["total_initial"] * Decimal("100")
 
-            avg_holding_days = (
-                group_data["total_days"] / len(group_data["products"])
-                if group_data["products"]
-                else 0
-            )
+            avg_holding_days = group_data["total_days"] / len(group_data["products"]) if group_data["products"] else 0
 
             stats = TimeGroupStats(
                 group_name=group_data["year_name"],

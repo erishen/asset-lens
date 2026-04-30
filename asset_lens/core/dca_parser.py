@@ -8,12 +8,7 @@ from decimal import Decimal
 from enum import Enum
 
 from ..data.models import Currency, InvestmentType, Transaction
-from .holidays import (
-    calculate_fund_trading_days,
-    calculate_working_days,
-    get_last_fund_trading_day,
-    parse_stop_periods,
-)
+from .holidays import calculate_fund_trading_days, calculate_working_days, get_last_fund_trading_day, parse_stop_periods
 
 
 class DCAInvestmentType(str, Enum):

@@ -16,6 +16,7 @@ try:
     from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
     from rich.syntax import Syntax
     from rich.table import Table
+
     RICH_AVAILABLE = True
     del rprint  # Remove unused import
 except ImportError:
@@ -23,12 +24,14 @@ except ImportError:
 
 try:
     from tqdm import tqdm
+
     TQDM_AVAILABLE = True
 except ImportError:
     TQDM_AVAILABLE = False
 
 try:
     import click
+
     CLICK_AVAILABLE = True
 except ImportError:
     CLICK_AVAILABLE = False
@@ -36,6 +39,7 @@ except ImportError:
 
 class Color(Enum):
     """颜色枚举"""
+
     RED = "red"
     GREEN = "green"
     YELLOW = "yellow"
@@ -49,6 +53,7 @@ class Color(Enum):
 @dataclass
 class ProgressBarConfig:
     """进度条配置"""
+
     description: str = "Processing"
     total: int = 100
     unit: str = "items"
@@ -172,7 +177,7 @@ class EnhancedCLI:
                 TextColumn("[progress.description]{task.description}"),
                 BarColumn(),
                 TaskProgressColumn(),
-                console=self.console
+                console=self.console,
             ) as progress:
                 task = progress.add_task(description, total=total)
                 for item in iterable:
@@ -191,7 +196,7 @@ class EnhancedCLI:
             return click.confirm(message, default=default)
         else:
             response = input(f"{message} (y/n): ").lower()
-            return response == 'y' if response else default
+            return response == "y" if response else default
 
     def prompt(self, message: str, default: str | None = None) -> str:
         """提示输入"""
@@ -211,7 +216,8 @@ class EnhancedCLI:
             click.clear()
         else:
             import os
-            os.system('clear' if os.name == 'posix' else 'cls')
+
+            os.system("clear" if os.name == "posix" else "cls")
 
 
 class RichProgressBar:
@@ -229,7 +235,7 @@ class RichProgressBar:
             TextColumn("[progress.description]{task.description}"),
             BarColumn(),
             TaskProgressColumn(),
-            console=self.console
+            console=self.console,
         )
         self.progress.__enter__()
         self.task = self.progress.add_task(self.config.description, total=self.config.total)

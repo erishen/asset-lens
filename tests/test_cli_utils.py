@@ -3,9 +3,7 @@ Tests for CLI Utilities.
 CLI 工具函数测试
 """
 
-import pytest
-from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 
 class TestCLIUtils:
@@ -14,18 +12,11 @@ class TestCLIUtils:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.utils.cli_utils import (
-            handle_errors,
             format_currency,
             format_percent,
-            format_change,
-            print_section_header,
-            print_success,
-            print_error,
-            print_warning,
-            print_info,
-            calculate_profit_metrics,
-            safe_divide,
+            handle_errors,
         )
+
         assert handle_errors is not None
         assert format_currency is not None
         assert format_percent is not None

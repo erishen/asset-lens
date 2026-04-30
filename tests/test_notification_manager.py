@@ -3,9 +3,9 @@ Tests for Notification Manager.
 通知管理器测试
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from datetime import datetime
-from unittest.mock import patch, MagicMock
 
 
 class TestNotificationManager:
@@ -14,13 +14,15 @@ class TestNotificationManager:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.data.notification_manager import NotificationManager
+
         assert NotificationManager is not None
 
     @pytest.fixture
     def manager(self):
         """创建管理器实例"""
         from asset_lens.data.notification_manager import NotificationManager
-        with patch('asset_lens.data.notification_manager.config') as mock_config:
+
+        with patch("asset_lens.data.notification_manager.config") as mock_config:
             mock_config.cache_path = MagicMock()
             return NotificationManager()
 
@@ -30,7 +32,7 @@ class TestNotificationManager:
 
     def test_notify_method(self, manager):
         """测试通知方法"""
-        assert hasattr(manager, 'send_notification') or hasattr(manager, 'notify_daily_report')
+        assert hasattr(manager, "send_notification") or hasattr(manager, "notify_daily_report")
 
 
 class TestNotificationTypes:
@@ -46,7 +48,7 @@ class TestNotificationTypes:
             "target_price": 1800.0,
             "message": "价格突破目标价",
         }
-        
+
         assert alert["type"] == "price_alert"
         assert alert["current_price"] > alert["target_price"]
 
@@ -59,7 +61,7 @@ class TestNotificationTypes:
             "current_price": 1600.0,
             "stop_loss_rate": 0.1,
         }
-        
+
         loss_rate = (alert["buy_price"] - alert["current_price"]) / alert["buy_price"]
         assert loss_rate >= alert["stop_loss_rate"]
 
@@ -72,7 +74,7 @@ class TestNotificationTypes:
             "current_price": 2200.0,
             "take_profit_rate": 0.2,
         }
-        
+
         profit_rate = (alert["current_price"] - alert["buy_price"]) / alert["buy_price"]
         assert profit_rate >= alert["take_profit_rate"]
 
@@ -89,7 +91,7 @@ class TestNotificationChannels:
     def test_log_channel(self):
         """测试日志通知"""
         from asset_lens.utils.logger import logger
-        
+
         # 日志记录
         logger.info("测试日志通知")
         assert logger is not None
@@ -106,7 +108,7 @@ class TestNotificationFormatting:
             "price": 1850.0,
             "change": 2.5,
         }
-        
+
         message = f"【价格提醒】{data['name']}({data['code']}) 当前价格: {data['price']}, 涨跌幅: {data['change']}%"
         assert "贵州茅台" in message
         assert "1850" in message
@@ -118,7 +120,9 @@ class TestNotificationFormatting:
             "total_profit": 5000.0,
             "profit_rate": 5.0,
         }
-        
-        message = f"【投资组合】总资产: {data['total_value']}, 收益: {data['total_profit']}, 收益率: {data['profit_rate']}%"
+
+        message = (
+            f"【投资组合】总资产: {data['total_value']}, 收益: {data['total_profit']}, 收益率: {data['profit_rate']}%"
+        )
         assert "100000" in message
         assert "5.0%" in message

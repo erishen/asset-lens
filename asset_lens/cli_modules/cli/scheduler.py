@@ -53,10 +53,9 @@ def status():
 
     is_running = task_scheduler.is_running()
 
-    console.print(Panel.fit(
-        "[bold cyan]调度器状态[/bold cyan]",
-        subtitle=f"{'🟢 运行中' if is_running else '🔴 已停止'}"
-    ))
+    console.print(
+        Panel.fit("[bold cyan]调度器状态[/bold cyan]", subtitle=f"{'🟢 运行中' if is_running else '🔴 已停止'}")
+    )
 
     tasks = task_scheduler.get_all_tasks()
 

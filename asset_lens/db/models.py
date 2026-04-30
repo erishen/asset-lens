@@ -8,17 +8,7 @@ Database models for asset-lens.
 import warnings
 from datetime import datetime
 
-from sqlalchemy import (
-    Boolean,
-    Column,
-    DateTime,
-    Float,
-    Index,
-    Integer,
-    String,
-    Text,
-    create_engine,
-)
+from sqlalchemy import Boolean, Column, DateTime, Float, Index, Integer, String, Text, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="sqlalchemy")

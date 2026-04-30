@@ -47,10 +47,7 @@ class ConnectionManager:
 
     def check_timeout(self, timeout_seconds: float = 300) -> list[WebSocket]:
         now = datetime.now().timestamp()
-        return [
-            ws for ws, last_ping in self._last_ping.items()
-            if now - last_ping > timeout_seconds
-        ]
+        return [ws for ws, last_ping in self._last_ping.items() if now - last_ping > timeout_seconds]
 
     @property
     def connection_count(self) -> int:
@@ -73,6 +70,7 @@ async def handle_market_websocket(websocket: WebSocket):
     heartbeat_task = None
 
     try:
+
         async def heartbeat():
             while True:
                 await asyncio.sleep(30)
@@ -92,11 +90,13 @@ async def handle_market_websocket(websocket: WebSocket):
 
                 if action == "subscribe":
                     codes = message.get("codes", [])
-                    await websocket.send_json({
-                        "type": "subscribed",
-                        "codes": codes,
-                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": "subscribed",
+                            "codes": codes,
+                            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        }
+                    )
 
                 elif action == "pong":
                     manager.update_ping(websocket)
@@ -106,20 +106,24 @@ async def handle_market_websocket(websocket: WebSocket):
 
                 elif action == "get_market_indexes":
                     indexes = await _get_market_indexes_async()
-                    await websocket.send_json({
-                        "type": "market_indexes",
-                        "data": indexes,
-                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": "market_indexes",
+                            "data": indexes,
+                            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        }
+                    )
 
                 elif action == "get_stock_quotes":
                     codes = message.get("codes", [])
                     quotes = await _get_stock_quotes_async(codes)
-                    await websocket.send_json({
-                        "type": "stock_quotes",
-                        "data": quotes,
-                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": "stock_quotes",
+                            "data": quotes,
+                            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        }
+                    )
 
             except json.JSONDecodeError:
                 await websocket.send_json({"type": "error", "message": "Invalid JSON"})
@@ -176,13 +180,15 @@ async def _get_market_indexes_async():
                                     change = current_price - prev_close
                                     change_percent = (change / prev_close * 100) if prev_close > 0 else 0
 
-                                    indexes.append({
-                                        "code": code,
-                                        "name": name,
-                                        "price": current_price,
-                                        "change": change,
-                                        "changePercent": change_percent,
-                                    })
+                                    indexes.append(
+                                        {
+                                            "code": code,
+                                            "name": name,
+                                            "price": current_price,
+                                            "change": change,
+                                            "changePercent": change_percent,
+                                        }
+                                    )
                                 except (ValueError, ZeroDivisionError) as e:
                                     logger.debug(f"Failed to parse index {code}: {e}")
             except asyncio.TimeoutError:
@@ -224,16 +230,20 @@ async def _get_stock_quotes_async(codes: list[str]):
                                 try:
                                     current_price = float(parts[3]) if parts[3] else 0
                                     prev_close = float(parts[2]) if parts[2] else 0
-                                    change_percent = ((current_price - prev_close) / prev_close * 100) if prev_close > 0 else 0
+                                    change_percent = (
+                                        ((current_price - prev_close) / prev_close * 100) if prev_close > 0 else 0
+                                    )
 
-                                    quotes.append({
-                                        "code": code,
-                                        "name": parts[0],
-                                        "current_price": current_price,
-                                        "change_percent": change_percent,
-                                        "volume": float(parts[8]) if parts[8] else 0,
-                                        "amount": float(parts[9]) if parts[9] else 0,
-                                    })
+                                    quotes.append(
+                                        {
+                                            "code": code,
+                                            "name": parts[0],
+                                            "current_price": current_price,
+                                            "change_percent": change_percent,
+                                            "volume": float(parts[8]) if parts[8] else 0,
+                                            "amount": float(parts[9]) if parts[9] else 0,
+                                        }
+                                    )
                                 except (ValueError, ZeroDivisionError) as e:
                                     logger.debug(f"Failed to parse quote {code}: {e}")
             except asyncio.TimeoutError:

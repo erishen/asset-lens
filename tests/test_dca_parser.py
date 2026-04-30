@@ -2,11 +2,10 @@
 Tests for DCA parser module.
 """
 
-import pytest
-from datetime import datetime, timedelta
+from datetime import datetime
 from decimal import Decimal
 
-from asset_lens.core.dca_parser import DCAParser, DCAInvestmentType
+from asset_lens.core.dca_parser import DCAInvestmentType, DCAParser
 from asset_lens.data.models import Currency
 
 
@@ -151,18 +150,14 @@ class TestDCAParserParseTransactionRecord:
     def test_parse_simple_record(self):
         """Test parsing simple transaction record"""
         ref_date = datetime(2024, 6, 30)
-        transactions = DCAParser.parse_transaction_record(
-            "2024/01/01-2024/01/31:buy:100",
-            reference_date=ref_date
-        )
+        transactions = DCAParser.parse_transaction_record("2024/01/01-2024/01/31:buy:100", reference_date=ref_date)
         assert len(transactions) > 0
 
     def test_parse_multiple_records(self):
         """Test parsing multiple transaction records"""
         ref_date = datetime(2024, 12, 31)
         transactions = DCAParser.parse_transaction_record(
-            "2024/01/01-2024/01/31:buy:100;2024/02/01-2024/02/28:buy:200",
-            reference_date=ref_date
+            "2024/01/01-2024/01/31:buy:100;2024/02/01-2024/02/28:buy:200", reference_date=ref_date
         )
         assert len(transactions) > 0
 
@@ -174,10 +169,7 @@ class TestDCAParserParseTransactionRecord:
     def test_parse_record_with_now(self):
         """Test parsing record with 'now'"""
         ref_date = datetime(2024, 12, 31)
-        transactions = DCAParser.parse_transaction_record(
-            "2024/01/01-now:buy:100",
-            reference_date=ref_date
-        )
+        transactions = DCAParser.parse_transaction_record("2024/01/01-now:buy:100", reference_date=ref_date)
         assert len(transactions) > 0
 
     def test_parse_record_invalid_format(self):
@@ -198,7 +190,7 @@ class TestDCAParserGenerateTransactions:
         """Test generating transactions"""
         start_date = datetime(2024, 1, 1)
         end_date = datetime(2024, 1, 31)
-        
+
         transactions = DCAParser.generate_dca_transactions(
             start_date=start_date,
             end_date=end_date,
@@ -206,7 +198,7 @@ class TestDCAParserGenerateTransactions:
             amount=Decimal("1000"),
             currency=Currency.CNY,
         )
-        
+
         assert len(transactions) > 0
         # All transactions should be buy
         for t in transactions:
@@ -216,7 +208,7 @@ class TestDCAParserGenerateTransactions:
         """Test generating transactions with zero days"""
         start_date = datetime(2024, 1, 1)
         end_date = datetime(2024, 1, 1)  # Same day
-        
+
         transactions = DCAParser.generate_dca_transactions(
             start_date=start_date,
             end_date=end_date,
@@ -224,14 +216,14 @@ class TestDCAParserGenerateTransactions:
             amount=Decimal("1000"),
             currency=Currency.CNY,
         )
-        
+
         assert len(transactions) == 0
 
     def test_generate_transactions_end_before_start(self):
         """Test generating transactions with end before start"""
         start_date = datetime(2024, 1, 31)
         end_date = datetime(2024, 1, 1)
-        
+
         transactions = DCAParser.generate_dca_transactions(
             start_date=start_date,
             end_date=end_date,
@@ -239,7 +231,7 @@ class TestDCAParserGenerateTransactions:
             amount=Decimal("1000"),
             currency=Currency.CNY,
         )
-        
+
         assert len(transactions) == 0
 
 

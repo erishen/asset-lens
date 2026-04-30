@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class AnalysisResult:
     """分析结果"""
+
     metric: str
     value: float
     unit: str
@@ -50,10 +51,7 @@ class TechnicalAnalysis:
 
     @staticmethod
     def calculate_macd(
-        prices: pd.Series,
-        fast: int = 12,
-        slow: int = 26,
-        signal: int = 9
+        prices: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9
     ) -> tuple[pd.Series, pd.Series, pd.Series]:
         """计算 MACD"""
         ema_fast = prices.ewm(span=fast, adjust=False).mean()
@@ -67,9 +65,7 @@ class TechnicalAnalysis:
 
     @staticmethod
     def calculate_bollinger_bands(
-        prices: pd.Series,
-        window: int = 20,
-        num_std: int = 2
+        prices: pd.Series, window: int = 20, num_std: int = 2
     ) -> tuple[pd.Series, pd.Series, pd.Series]:
         """计算布林带"""
         sma = prices.rolling(window=window).mean()
@@ -81,12 +77,7 @@ class TechnicalAnalysis:
         return upper_band, sma, lower_band
 
     @staticmethod
-    def calculate_atr(
-        high: pd.Series,
-        low: pd.Series,
-        close: pd.Series,
-        window: int = 14
-    ) -> pd.Series:
+    def calculate_atr(high: pd.Series, low: pd.Series, close: pd.Series, window: int = 14) -> pd.Series:
         """计算平均真实波幅"""
         high_low = high - low
         high_close = np.abs(high - close.shift())
@@ -107,9 +98,9 @@ class TechnicalAnalysis:
         Returns:
             分析结果
         """
-        close = prices['close']
-        high = prices['high']
-        low = prices['low']
+        close = prices["close"]
+        high = prices["high"]
+        low = prices["low"]
 
         # 计算各种指标
         sma_20 = self.calculate_sma(close, 20)
@@ -133,7 +124,7 @@ class TechnicalAnalysis:
             "bollinger_upper": upper.iloc[-1] if not upper.empty else None,
             "bollinger_middle": middle.iloc[-1] if not middle.empty else None,
             "bollinger_lower": lower.iloc[-1] if not lower.empty else None,
-            "atr": atr.iloc[-1] if not atr.empty else None
+            "atr": atr.iloc[-1] if not atr.empty else None,
         }
 
 
@@ -149,11 +140,7 @@ class RiskAnalysis:
         """
         self.risk_free_rate = risk_free_rate
 
-    def calculate_var(
-        self,
-        returns: pd.Series,
-        confidence: float = 0.95
-    ) -> float:
+    def calculate_var(self, returns: pd.Series, confidence: float = 0.95) -> float:
         """
         计算风险价值
 
@@ -166,11 +153,7 @@ class RiskAnalysis:
         """
         return float(np.percentile(returns, (1 - confidence) * 100))
 
-    def calculate_cvar(
-        self,
-        returns: pd.Series,
-        confidence: float = 0.95
-    ) -> float:
+    def calculate_cvar(self, returns: pd.Series, confidence: float = 0.95) -> float:
         """
         计算条件风险价值
 
@@ -198,11 +181,7 @@ class RiskAnalysis:
         drawdown = (prices - peak) / peak
         return float(drawdown.min())
 
-    def calculate_sharpe_ratio(
-        self,
-        returns: pd.Series,
-        periods: int = 252
-    ) -> float:
+    def calculate_sharpe_ratio(self, returns: pd.Series, periods: int = 252) -> float:
         """
         计算夏普比率
 
@@ -216,11 +195,7 @@ class RiskAnalysis:
         excess_returns = returns - self.risk_free_rate / periods
         return float(np.sqrt(periods) * excess_returns.mean() / excess_returns.std())
 
-    def calculate_sortino_ratio(
-        self,
-        returns: pd.Series,
-        periods: int = 252
-    ) -> float:
+    def calculate_sortino_ratio(self, returns: pd.Series, periods: int = 252) -> float:
         """
         计算索提诺比率
 
@@ -237,11 +212,7 @@ class RiskAnalysis:
 
         return float(np.sqrt(periods) * excess_returns.mean() / downside_std)
 
-    def calculate_calmar_ratio(
-        self,
-        returns: pd.Series,
-        periods: int = 252
-    ) -> float:
+    def calculate_calmar_ratio(self, returns: pd.Series, periods: int = 252) -> float:
         """
         计算卡尔马比率
 
@@ -258,11 +229,7 @@ class RiskAnalysis:
 
         return float(annual_return / max_dd) if max_dd > 0 else 0.0
 
-    def full_risk_analysis(
-        self,
-        returns: pd.Series,
-        prices: pd.Series | None = None
-    ) -> dict[str, float]:
+    def full_risk_analysis(self, returns: pd.Series, prices: pd.Series | None = None) -> dict[str, float]:
         """
         完整风险分析
 
@@ -283,7 +250,7 @@ class RiskAnalysis:
             "calmar_ratio": self.calculate_calmar_ratio(returns),
             "volatility": returns.std() * np.sqrt(252),
             "skewness": returns.skew(),
-            "kurtosis": returns.kurtosis()
+            "kurtosis": returns.kurtosis(),
         }
 
         if prices is not None:
@@ -299,11 +266,7 @@ class PortfolioAnalysis:
         self.technical = TechnicalAnalysis()
         self.risk = RiskAnalysis()
 
-    def analyze_portfolio(
-        self,
-        holdings: dict[str, float],
-        prices: pd.DataFrame
-    ) -> dict[str, Any]:
+    def analyze_portfolio(self, holdings: dict[str, float], prices: pd.DataFrame) -> dict[str, Any]:
         """
         分析投资组合
 
@@ -315,34 +278,25 @@ class PortfolioAnalysis:
             分析结果
         """
         # 计算投资组合价值
-        portfolio_value = sum(
-            holdings.get(code, 0) * prices['close'].iloc[-1]
-            for code in holdings
-        )
+        portfolio_value = sum(holdings.get(code, 0) * prices["close"].iloc[-1] for code in holdings)
 
         # 计算持仓权重
-        weights = {
-            code: (holdings.get(code, 0) * prices['close'].iloc[-1]) / portfolio_value
-            for code in holdings
-        }
+        weights = {code: (holdings.get(code, 0) * prices["close"].iloc[-1]) / portfolio_value for code in holdings}
 
         # 计算收益率
-        returns = prices['close'].pct_change()
+        returns = prices["close"].pct_change()
 
         # 计算风险指标
-        risk_metrics = self.risk.full_risk_analysis(returns, prices['close'])
+        risk_metrics = self.risk.full_risk_analysis(returns, prices["close"])
 
         return {
             "portfolio_value": portfolio_value,
             "weights": weights,
             "risk_metrics": risk_metrics,
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
 
-    def calculate_correlation_matrix(
-        self,
-        returns: pd.DataFrame
-    ) -> pd.DataFrame:
+    def calculate_correlation_matrix(self, returns: pd.DataFrame) -> pd.DataFrame:
         """
         计算相关性矩阵
 
@@ -354,11 +308,7 @@ class PortfolioAnalysis:
         """
         return returns.corr()
 
-    def calculate_beta(
-        self,
-        stock_returns: pd.Series,
-        market_returns: pd.Series
-    ) -> float:
+    def calculate_beta(self, stock_returns: pd.Series, market_returns: pd.Series) -> float:
         """
         计算贝塔系数
 
@@ -375,10 +325,7 @@ class PortfolioAnalysis:
         return float(covariance / market_variance) if market_variance > 0 else 0.0
 
     def calculate_alpha(
-        self,
-        stock_returns: pd.Series,
-        market_returns: pd.Series,
-        risk_free_rate: float = 0.03
+        self, stock_returns: pd.Series, market_returns: pd.Series, risk_free_rate: float = 0.03
     ) -> float:
         """
         计算阿尔法
@@ -398,11 +345,7 @@ class PortfolioAnalysis:
 
         return float(actual_return - expected_return)
 
-    def calculate_tracking_error(
-        self,
-        portfolio_returns: pd.Series,
-        benchmark_returns: pd.Series
-    ) -> float:
+    def calculate_tracking_error(self, portfolio_returns: pd.Series, benchmark_returns: pd.Series) -> float:
         """
         计算跟踪误差
 
@@ -415,11 +358,7 @@ class PortfolioAnalysis:
         """
         return float((portfolio_returns - benchmark_returns).std() * np.sqrt(252))
 
-    def calculate_information_ratio(
-        self,
-        portfolio_returns: pd.Series,
-        benchmark_returns: pd.Series
-    ) -> float:
+    def calculate_information_ratio(self, portfolio_returns: pd.Series, benchmark_returns: pd.Series) -> float:
         """
         计算信息比率
 

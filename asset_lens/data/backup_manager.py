@@ -232,12 +232,8 @@ class BackupManager:
                         "file": str(backup_file),
                         "size": stat.st_size,
                         "size_mb": stat.st_size / (1024 * 1024),
-                        "created_at": datetime.fromtimestamp(stat.st_ctime).strftime(
-                            "%Y-%m-%d %H:%M:%S"
-                        ),
-                        "modified_at": datetime.fromtimestamp(stat.st_mtime).strftime(
-                            "%Y-%m-%d %H:%M:%S"
-                        ),
+                        "created_at": datetime.fromtimestamp(stat.st_ctime).strftime("%Y-%m-%d %H:%M:%S"),
+                        "modified_at": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
                     }
                 )
             except Exception:

@@ -111,14 +111,16 @@ class StrategyPortfolioEvaluator:
             evaluation = self.evaluate_strategy_portfolio(stock, strategy_weights)
 
             if evaluation["combined_score"] >= min_combined_score:
-                results.append({
-                    "code": stock.get("code", ""),
-                    "name": stock.get("name", ""),
-                    "combined_score": evaluation["combined_score"],
-                    "best_strategy": evaluation["best_strategy"],
-                    "recommendation": evaluation["recommendation"],
-                    "strategy_details": evaluation["strategies"],
-                })
+                results.append(
+                    {
+                        "code": stock.get("code", ""),
+                        "name": stock.get("name", ""),
+                        "combined_score": evaluation["combined_score"],
+                        "best_strategy": evaluation["best_strategy"],
+                        "recommendation": evaluation["recommendation"],
+                        "strategy_details": evaluation["strategies"],
+                    }
+                )
 
         results.sort(key=lambda x: x["combined_score"], reverse=True)
         return results

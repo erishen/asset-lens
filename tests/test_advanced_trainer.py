@@ -3,11 +3,11 @@ Tests for Advanced ML Trainer.
 高级机器学习训练器测试
 """
 
-import pytest
-import pandas as pd
-import numpy as np
-from pathlib import Path
 import tempfile
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
 
 
 class TestTrainingResult:
@@ -16,6 +16,7 @@ class TestTrainingResult:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.ml.advanced_trainer import TrainingResult
+
         assert TrainingResult is not None
 
     def test_training_result_creation(self):
@@ -100,6 +101,7 @@ class TestAdvancedMLTrainer:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.ml.advanced_trainer import AdvancedMLTrainer
+
         assert AdvancedMLTrainer is not None
 
     def test_trainer_init(self):
@@ -214,8 +216,7 @@ class TestFeatureImportance:
 
             np.random.seed(42)
             X = pd.DataFrame(
-                np.random.randn(100, 5),
-                columns=["feature_1", "feature_2", "feature_3", "feature_4", "feature_5"]
+                np.random.randn(100, 5), columns=["feature_1", "feature_2", "feature_3", "feature_4", "feature_5"]
             )
             y = pd.Series(np.random.randint(0, 2, 100))
 

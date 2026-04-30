@@ -9,17 +9,7 @@ Tests for Strategy Evaluator - 策略评估器测试
 - 可用性判定
 """
 
-import pytest
-from datetime import datetime, timedelta
-from decimal import Decimal
-from typing import Dict, List, Any
-
-from asset_lens.trading.strategy_evaluator import (
-    StrategyEvaluator,
-    FactorContribution,
-    StrategyUsability,
-    MarketStyle,
-)
+from asset_lens.trading.strategy_evaluator import FactorContribution, MarketStyle, StrategyEvaluator, StrategyUsability
 
 
 class TestStrategyEvaluator:
@@ -28,7 +18,7 @@ class TestStrategyEvaluator:
     def test_empty_result_evaluation(self):
         """测试空结果评估"""
         evaluator = StrategyEvaluator()
-        
+
         empty_result = {
             "total_return": 0.0,
             "max_drawdown": 0.0,
@@ -37,15 +27,15 @@ class TestStrategyEvaluator:
             "trades": [],
             "daily_values": [],
         }
-        
+
         evaluation = evaluator.evaluate("test_strategy", empty_result)
-        
+
         assert evaluation is not None
 
     def test_positive_return_evaluation(self):
         """测试正收益评估"""
         evaluator = StrategyEvaluator()
-        
+
         result = {
             "total_return": 20.0,
             "annual_return": 25.0,
@@ -63,15 +53,15 @@ class TestStrategyEvaluator:
                 {"date": "2024-01-03", "total_value": 1200000},
             ],
         }
-        
+
         evaluation = evaluator.evaluate("momentum_strategy", result)
-        
+
         assert evaluation is not None
 
     def test_negative_return_evaluation(self):
         """测试负收益评估"""
         evaluator = StrategyEvaluator()
-        
+
         result = {
             "total_return": -15.0,
             "annual_return": -20.0,
@@ -89,15 +79,15 @@ class TestStrategyEvaluator:
                 {"date": "2024-01-03", "total_value": 850000},
             ],
         }
-        
+
         evaluation = evaluator.evaluate("test_strategy", result)
-        
+
         assert evaluation is not None
 
     def test_high_drawdown_evaluation(self):
         """测试高回撤评估"""
         evaluator = StrategyEvaluator()
-        
+
         result = {
             "total_return": 10.0,
             "annual_return": 15.0,
@@ -107,15 +97,15 @@ class TestStrategyEvaluator:
             "trades": [],
             "daily_values": [],
         }
-        
+
         evaluation = evaluator.evaluate("test_strategy", result)
-        
+
         assert evaluation is not None
 
     def test_low_sharpe_ratio_evaluation(self):
         """测试低夏普比率评估"""
         evaluator = StrategyEvaluator()
-        
+
         result = {
             "total_return": 5.0,
             "annual_return": 8.0,
@@ -125,15 +115,15 @@ class TestStrategyEvaluator:
             "trades": [],
             "daily_values": [],
         }
-        
+
         evaluation = evaluator.evaluate("test_strategy", result)
-        
+
         assert evaluation is not None
 
     def test_excellent_strategy_evaluation(self):
         """测试优秀策略评估"""
         evaluator = StrategyEvaluator()
-        
+
         result = {
             "total_return": 30.0,
             "annual_return": 40.0,
@@ -153,9 +143,9 @@ class TestStrategyEvaluator:
                 {"date": "2024-01-03", "total_value": 1300000},
             ],
         }
-        
+
         evaluation = evaluator.evaluate("excellent_strategy", result)
-        
+
         assert evaluation is not None
 
 
@@ -174,7 +164,7 @@ class TestFactorContribution:
             correlation=0.8,
             importance_rank=1,
         )
-        
+
         assert contribution.factor_name == "PE合理"
         assert contribution.total_profit == 5000.0
         assert contribution.contribution_pct == 25.0
@@ -191,9 +181,9 @@ class TestFactorContribution:
             correlation=0.6,
             importance_rank=2,
         )
-        
+
         result = contribution.to_dict()
-        
+
         assert "factor_name" in result
         assert "category" in result
         assert "total_profit" in result

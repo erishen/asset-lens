@@ -2,20 +2,18 @@
 Tests for Multi-Source Data Fetcher
 """
 
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
-from asset_lens.data.multi_source_fetcher import (
-    MultiSourceDataFetcher,
-    DataSourceStatus,
-    DataSourceConfig,
-)
+
+from asset_lens.data.multi_source_fetcher import DataSourceConfig, DataSourceStatus, MultiSourceDataFetcher
 
 
 @pytest.fixture
 def fetcher():
     """创建多数据源获取器实例 - Mock 网络请求"""
-    with patch.object(MultiSourceDataFetcher, '_initialize_sources'):
-        with patch.object(MultiSourceDataFetcher, '_check_source_health', return_value=True):
+    with patch.object(MultiSourceDataFetcher, "_initialize_sources"):
+        with patch.object(MultiSourceDataFetcher, "_check_source_health", return_value=True):
             return MultiSourceDataFetcher()
 
 
@@ -78,7 +76,7 @@ class TestMultiSourceDataFetcher:
 
     def test_fetch_quote_akshare_success(self, fetcher):
         """测试使用 AkShare 获取行情 - 成功"""
-        with patch.object(fetcher, '_fetch_quote_akshare') as mock_method:
+        with patch.object(fetcher, "_fetch_quote_akshare") as mock_method:
             mock_method.return_value = {
                 "code": "sh600519",
                 "name": "贵州茅台",
@@ -96,7 +94,7 @@ class TestMultiSourceDataFetcher:
 
     def test_fetch_quote_akshare_not_found(self, fetcher):
         """测试使用 AkShare 获取行情 - 未找到"""
-        with patch.object(fetcher, '_fetch_quote_akshare') as mock_method:
+        with patch.object(fetcher, "_fetch_quote_akshare") as mock_method:
             mock_method.return_value = None
 
             quote = fetcher._fetch_quote_akshare("sh600519")
@@ -105,7 +103,7 @@ class TestMultiSourceDataFetcher:
 
     def test_fetch_quote_akshare_error(self, fetcher):
         """测试使用 AkShare 获取行情 - 错误"""
-        with patch.object(fetcher, '_fetch_quote_akshare') as mock_method:
+        with patch.object(fetcher, "_fetch_quote_akshare") as mock_method:
             mock_method.return_value = None
 
             quote = fetcher._fetch_quote_akshare("sh600519")
@@ -114,7 +112,7 @@ class TestMultiSourceDataFetcher:
 
     def test_fetch_quote_tushare_no_token(self, fetcher):
         """测试使用 Tushare 获取行情 - 无 Token"""
-        with patch.object(fetcher, '_fetch_quote_tushare') as mock_method:
+        with patch.object(fetcher, "_fetch_quote_tushare") as mock_method:
             mock_method.return_value = None
 
             quote = fetcher._fetch_quote_tushare("sh600519")
@@ -123,7 +121,7 @@ class TestMultiSourceDataFetcher:
 
     def test_fetch_quote_baostock_error(self, fetcher):
         """测试使用 Baostock 获取行情 - 登录失败"""
-        with patch.object(fetcher, '_fetch_quote_baostock') as mock_method:
+        with patch.object(fetcher, "_fetch_quote_baostock") as mock_method:
             mock_method.return_value = None
 
             quote = fetcher._fetch_quote_baostock("sh600519")
@@ -132,6 +130,7 @@ class TestMultiSourceDataFetcher:
 
     def test_fetch_with_fallback_success(self, fetcher):
         """测试故障切换 - 成功"""
+
         def mock_fetch(source_name):
             return {"data": "test"}
 
@@ -142,6 +141,7 @@ class TestMultiSourceDataFetcher:
 
     def test_fetch_with_fallback_all_failed(self, fetcher):
         """测试故障切换 - 全部失败"""
+
         def mock_fetch(source_name):
             raise Exception("All sources failed")
 
@@ -209,7 +209,7 @@ class TestMultiSourceDataFetcher:
 
     def test_fetch_stock_quote(self, fetcher):
         """测试获取股票行情"""
-        with patch.object(fetcher, 'fetch_stock_quote') as mock_method:
+        with patch.object(fetcher, "fetch_stock_quote") as mock_method:
             mock_method.return_value = {
                 "code": "sh600519",
                 "name": "贵州茅台",

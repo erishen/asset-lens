@@ -2,11 +2,9 @@
 Tests for stock_pool.py
 """
 
-import json
 import tempfile
-from datetime import datetime
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -93,7 +91,7 @@ class TestStockPool:
     @pytest.fixture
     def pool(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.trading.stock_pool.config') as mock_config:
+        with patch("asset_lens.trading.stock_pool.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             pool = StockPool("test_pool")
             yield pool
@@ -275,9 +273,10 @@ class TestStrategyStockPool:
     @pytest.fixture
     def pool(self, temp_cache_path):
         """创建股票池实例"""
-        with patch('asset_lens.trading.stock_pool.config') as mock_config:
+        with patch("asset_lens.trading.stock_pool.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             from asset_lens.trading.stock_pool import StockPool
+
             pool = StockPool("strategy_test")
             yield pool
 

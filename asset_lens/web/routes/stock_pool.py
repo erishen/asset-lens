@@ -19,23 +19,12 @@ async def get_stock_pool():
         pool_path = config.cache_path / "stock_pools"
 
         if not pool_path.exists():
-            return {
-                "stocks": [],
-                "count": 0,
-                "message": "股票池为空，请先运行策略选股"
-            }
+            return {"stocks": [], "count": 0, "message": "股票池为空，请先运行策略选股"}
 
-        pool_files = [
-            f for f in pool_path.glob("*_pool.json")
-            if not f.name.startswith("test_")
-        ]
+        pool_files = [f for f in pool_path.glob("*_pool.json") if not f.name.startswith("test_")]
 
         if not pool_files:
-            return {
-                "stocks": [],
-                "count": 0,
-                "message": "股票池为空"
-            }
+            return {"stocks": [], "count": 0, "message": "股票池为空"}
 
         all_stocks: dict[str, dict] = {}
         pool_info: dict[str, dict] = {}
@@ -47,13 +36,13 @@ async def get_stock_pool():
             min_score = 60.0
             update_time = ""
 
-            if hasattr(pool, 'config') and pool.config:
-                if hasattr(pool.config, 'strategy_name'):
+            if hasattr(pool, "config") and pool.config:
+                if hasattr(pool.config, "strategy_name"):
                     strategy_name = pool.config.strategy_name
-                if hasattr(pool.config, 'min_score'):
+                if hasattr(pool.config, "min_score"):
                     min_score = pool.config.min_score
 
-            if hasattr(pool, 'update_time'):
+            if hasattr(pool, "update_time"):
                 update_time = pool.update_time
 
             pool_info[pool.pool_name] = {
@@ -85,7 +74,9 @@ async def get_stock_pool():
                             "current_price": position.current_price,
                             "buy_date": position.buy_date,
                             "status": position.status,
-                            "profit_rate": ((position.current_price - position.buy_price) / position.buy_price * 100) if position.buy_price > 0 else 0,
+                            "profit_rate": ((position.current_price - position.buy_price) / position.buy_price * 100)
+                            if position.buy_price > 0
+                            else 0,
                             "selected_count": position.selected_count,
                             "max_profit_rate": position.max_profit_rate,
                             "min_profit_rate": position.min_profit_rate,

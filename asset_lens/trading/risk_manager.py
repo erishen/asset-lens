@@ -92,7 +92,7 @@ class RiskManager:
     def adjust_for_market_regime(
         self,
         index_returns: list[float] | None = None,
-        regime = None,
+        regime=None,
     ) -> dict[str, Any]:
         """
         根据市场环境调整风险阈值
@@ -116,11 +116,11 @@ class RiskManager:
         self._current_regime = regime
         self._regime_thresholds = analyzer.get_regime_thresholds(regime)
 
-        if 'stop_loss' in self._regime_thresholds:
-            self.config.stop_loss_default = self._regime_thresholds['stop_loss']
+        if "stop_loss" in self._regime_thresholds:
+            self.config.stop_loss_default = self._regime_thresholds["stop_loss"]
 
-        if 'position_limit' in self._regime_thresholds:
-            self.config.max_total_position = self._regime_thresholds['position_limit']
+        if "position_limit" in self._regime_thresholds:
+            self.config.max_total_position = self._regime_thresholds["position_limit"]
 
         return {
             "regime": regime.value if isinstance(regime, MarketRegime) else regime,
@@ -136,7 +136,7 @@ class RiskManager:
         """获取当前市场环境"""
         if self._current_regime is None:
             return None
-        return self._current_regime.value if hasattr(self._current_regime, 'value') else str(self._current_regime)
+        return self._current_regime.value if hasattr(self._current_regime, "value") else str(self._current_regime)
 
     def get_regime_adjusted_thresholds(self) -> dict[str, float]:
         """获取市场环境调整后的阈值"""
@@ -243,10 +243,7 @@ class RiskManager:
             if current_ratio > suggested_ratio * 1.2:
                 action = "decrease"
                 reason = f"仓位过高 ({current_ratio:.1%} > {suggested_ratio:.1%})"
-            elif (
-                current_ratio < suggested_ratio * 0.5
-                and current_total_ratio < self.config.max_total_position
-            ):
+            elif current_ratio < suggested_ratio * 0.5 and current_total_ratio < self.config.max_total_position:
                 action = "increase"
                 reason = f"仓位偏低 ({current_ratio:.1%} < {suggested_ratio:.1%})"
             else:

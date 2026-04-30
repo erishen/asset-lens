@@ -3,21 +3,7 @@ Tests for AI Q&A Module.
 AI 问答模块测试
 """
 
-import json
-from datetime import datetime
-from pathlib import Path
-from unittest.mock import MagicMock, patch
-
-import pytest
-
-from asset_lens.analysis.ai_qa import (
-    AIQAEngine,
-    QuestionType,
-    QAContext,
-    QAResponse,
-    KnowledgeEntry,
-    ai_qa_engine,
-)
+from asset_lens.analysis.ai_qa import AIQAEngine, KnowledgeEntry, QAContext, QAResponse, QuestionType, ai_qa_engine
 
 
 class TestQuestionType:

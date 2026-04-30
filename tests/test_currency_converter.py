@@ -2,15 +2,11 @@
 Tests for currency converter module.
 """
 
-import pytest
-from decimal import Decimal
-from datetime import datetime
-from pathlib import Path
 import tempfile
-import json
+from decimal import Decimal
 
-from asset_lens.utils.currency_converter import CurrencyConverter
 from asset_lens.data.models import Currency
+from asset_lens.utils.currency_converter import CurrencyConverter
 
 
 class TestCurrencyConverter:
@@ -64,9 +60,7 @@ class TestCurrencyConverter:
     def test_convert_to_cny_with_custom_rate(self):
         """Test converting with custom rate"""
         converter = CurrencyConverter()
-        result = converter.convert_to_cny(
-            Decimal("100"), Currency.USD, exchange_rate=Decimal("7.5")
-        )
+        result = converter.convert_to_cny(Decimal("100"), Currency.USD, exchange_rate=Decimal("7.5"))
         assert result == Decimal("750")
 
     def test_convert_from_cny_same_currency(self):
@@ -85,35 +79,27 @@ class TestCurrencyConverter:
     def test_convert_from_cny_with_custom_rate(self):
         """Test converting from CNY with custom rate"""
         converter = CurrencyConverter()
-        result = converter.convert_from_cny(
-            Decimal("750"), Currency.USD, exchange_rate=Decimal("7.5")
-        )
+        result = converter.convert_from_cny(Decimal("750"), Currency.USD, exchange_rate=Decimal("7.5"))
         assert result == Decimal("100")
 
     def test_convert_same_currency(self):
         """Test converting same currency"""
         converter = CurrencyConverter()
-        result = converter.convert(
-            Decimal("100"), Currency.CNY, Currency.CNY
-        )
+        result = converter.convert(Decimal("100"), Currency.CNY, Currency.CNY)
         assert result == Decimal("100")
 
     def test_convert_cny_to_usd(self):
         """Test converting CNY to USD"""
         converter = CurrencyConverter()
         converter.set_rate(Currency.USD, Decimal("7.0"))
-        result = converter.convert(
-            Decimal("700"), Currency.CNY, Currency.USD
-        )
+        result = converter.convert(Decimal("700"), Currency.CNY, Currency.USD)
         assert result == Decimal("100")
 
     def test_convert_usd_to_cny(self):
         """Test converting USD to CNY"""
         converter = CurrencyConverter()
         converter.set_rate(Currency.USD, Decimal("7.0"))
-        result = converter.convert(
-            Decimal("100"), Currency.USD, Currency.CNY
-        )
+        result = converter.convert(Decimal("100"), Currency.USD, Currency.CNY)
         assert result == Decimal("700")
 
     def test_convert_with_custom_rates(self):
@@ -132,18 +118,18 @@ class TestCurrencyConverter:
 
     def test_save_and_load_cached_rates(self):
         """Test saving and loading cached rates"""
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with tempfile.TemporaryDirectory():
             # Create a converter and set rates
             converter = CurrencyConverter()
             converter.set_rate(Currency.USD, Decimal("7.5"))
             converter.set_rate(Currency.HKD, Decimal("0.95"))
-            
+
             # Save to cache
             converter.save_cached_rates()
-            
+
             # Create a new converter to load cached rates
             converter2 = CurrencyConverter()
-            
+
             # Check rates are loaded
             assert converter2.get_rate(Currency.USD) == Decimal("7.5")
             assert converter2.get_rate(Currency.HKD) == Decimal("0.95")

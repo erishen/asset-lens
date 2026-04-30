@@ -427,9 +427,7 @@ class InvestmentReportGenerator:
         if total_value == 0:
             return {"risk_level": "unknown", "message": "无法计算持仓价值"}
 
-        position_weights = [
-            (p.code, (p.buy_price * p.shares) / total_value) for p in holding_positions
-        ]
+        position_weights = [(p.code, (p.buy_price * p.shares) / total_value) for p in holding_positions]
 
         max_weight = max(w for _, w in position_weights) if position_weights else 0
 

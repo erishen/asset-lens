@@ -6,16 +6,11 @@ Tests for Personal Data Integrator.
 import json
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-from datetime import datetime
+from unittest.mock import patch
 
 import pytest
 
-from asset_lens.data.personal_data_integrator import (
-    PersonalDataConfig,
-    PersonalDataIntegrator,
-    WeeklyIndexRecord,
-)
+from asset_lens.data.personal_data_integrator import PersonalDataConfig, PersonalDataIntegrator, WeeklyIndexRecord
 
 
 class TestWeeklyIndexRecord:
@@ -80,7 +75,7 @@ class TestPersonalDataIntegrator:
     @pytest.fixture
     def integrator(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.data.personal_data_integrator.config') as mock_config:
+        with patch("asset_lens.data.personal_data_integrator.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             mock_config.project_root = temp_cache_path
             integrator = PersonalDataIntegrator()
@@ -89,6 +84,7 @@ class TestPersonalDataIntegrator:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.data.personal_data_integrator import personal_data_integrator
+
         assert personal_data_integrator is not None
 
     def test_init(self, integrator):
@@ -156,7 +152,7 @@ class TestPersonalDataIntegrator:
 
         assert integrator.cache_file.exists()
 
-        with open(integrator.cache_file, "r", encoding="utf-8") as f:
+        with open(integrator.cache_file, encoding="utf-8") as f:
             data = json.load(f)
 
         assert "weekly_records" in data
@@ -173,6 +169,7 @@ class TestPersonalDataIntegrator:
         index_file = temp_cache_path / "test_index.csv"
         with open(index_file, "w", encoding="utf-8", newline="") as f:
             import csv
+
             writer = csv.writer(f)
             writer.writerow(["指数", "数值"])
             writer.writerow(["沪深300", "3500.5"])
@@ -198,6 +195,7 @@ class TestPersonalDataIntegrator:
         etf_file = temp_cache_path / "test_etf.csv"
         with open(etf_file, "w", encoding="utf-8", newline="") as f:
             import csv
+
             writer = csv.writer(f)
             writer.writerow(["ETF", "数值"])
             writer.writerow(["QQQ", "400.5"])
@@ -223,6 +221,7 @@ class TestPersonalDataIntegrator:
         asset_file = temp_cache_path / "test_asset.csv"
         with open(asset_file, "w", encoding="utf-8", newline="") as f:
             import csv
+
             writer = csv.writer(f)
             writer.writerow(["项目", "数值", "美元汇率", "港元汇率"])
             writer.writerow(["测试", "100", "7.0", "0.9"])
@@ -359,7 +358,7 @@ class TestPersonalDataScenarios:
     def test_weekly_tracking_scenario(self):
         """测试每周追踪场景"""
         records = []
-        
+
         for week in range(4):
             record = WeeklyIndexRecord(
                 date=f"2024-0{week + 1}-01",

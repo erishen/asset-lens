@@ -3,10 +3,6 @@ Tests for Risk Alert System.
 风险预警系统测试
 """
 
-import pytest
-from datetime import datetime
-from unittest.mock import patch, MagicMock
-
 
 class TestRiskAlertConfig:
     """风险预警配置测试"""
@@ -14,6 +10,7 @@ class TestRiskAlertConfig:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.monitoring.risk_alert import RiskAlertConfig
+
         assert RiskAlertConfig is not None
 
     def test_default_config(self):
@@ -47,7 +44,7 @@ class TestRiskAlertItem:
 
     def test_alert_item_creation(self):
         """测试预警项创建"""
-        from asset_lens.monitoring.risk_alert import RiskAlertItem, AlertLevel, AlertType
+        from asset_lens.monitoring.risk_alert import AlertLevel, AlertType, RiskAlertItem
 
         alert = RiskAlertItem(
             id="test_001",
@@ -68,7 +65,7 @@ class TestRiskAlertItem:
 
     def test_alert_item_to_dict(self):
         """测试预警项转换为字典"""
-        from asset_lens.monitoring.risk_alert import RiskAlertItem, AlertLevel, AlertType
+        from asset_lens.monitoring.risk_alert import AlertLevel, AlertType, RiskAlertItem
 
         alert = RiskAlertItem(
             id="test_001",
@@ -96,11 +93,12 @@ class TestRiskAlertSystem:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.monitoring.risk_alert import RiskAlertSystem
+
         assert RiskAlertSystem is not None
 
     def test_system_init(self):
         """测试系统初始化"""
-        from asset_lens.monitoring.risk_alert import RiskAlertSystem, RiskAlertConfig
+        from asset_lens.monitoring.risk_alert import RiskAlertConfig, RiskAlertSystem
 
         config = RiskAlertConfig()
         system = RiskAlertSystem(config)
@@ -110,7 +108,7 @@ class TestRiskAlertSystem:
 
     def test_check_max_drawdown_below_threshold(self):
         """测试最大回撤低于阈值"""
-        from asset_lens.monitoring.risk_alert import RiskAlertSystem, RiskAlertConfig
+        from asset_lens.monitoring.risk_alert import RiskAlertConfig, RiskAlertSystem
 
         config = RiskAlertConfig(max_drawdown_threshold=15.0)
         system = RiskAlertSystem(config)
@@ -121,7 +119,7 @@ class TestRiskAlertSystem:
 
     def test_check_max_drawdown_above_threshold(self):
         """测试最大回撤超过阈值"""
-        from asset_lens.monitoring.risk_alert import RiskAlertSystem, RiskAlertConfig, AlertLevel
+        from asset_lens.monitoring.risk_alert import AlertLevel, RiskAlertConfig, RiskAlertSystem
 
         config = RiskAlertConfig(max_drawdown_threshold=15.0, alert_cooldown_minutes=0)
         system = RiskAlertSystem(config)
@@ -134,7 +132,7 @@ class TestRiskAlertSystem:
 
     def test_check_volatility_below_threshold(self):
         """测试波动率低于阈值"""
-        from asset_lens.monitoring.risk_alert import RiskAlertSystem, RiskAlertConfig
+        from asset_lens.monitoring.risk_alert import RiskAlertConfig, RiskAlertSystem
 
         config = RiskAlertConfig(volatility_threshold=25.0)
         system = RiskAlertSystem(config)
@@ -145,7 +143,7 @@ class TestRiskAlertSystem:
 
     def test_check_volatility_above_threshold(self):
         """测试波动率超过阈值"""
-        from asset_lens.monitoring.risk_alert import RiskAlertSystem, RiskAlertConfig
+        from asset_lens.monitoring.risk_alert import RiskAlertConfig, RiskAlertSystem
 
         config = RiskAlertConfig(volatility_threshold=25.0, alert_cooldown_minutes=0)
         system = RiskAlertSystem(config)
@@ -157,7 +155,7 @@ class TestRiskAlertSystem:
 
     def test_check_concentration_below_threshold(self):
         """测试集中度低于阈值"""
-        from asset_lens.monitoring.risk_alert import RiskAlertSystem, RiskAlertConfig
+        from asset_lens.monitoring.risk_alert import RiskAlertConfig, RiskAlertSystem
 
         config = RiskAlertConfig(concentration_threshold=50.0, alert_cooldown_minutes=0)
         system = RiskAlertSystem(config)
@@ -169,7 +167,7 @@ class TestRiskAlertSystem:
 
     def test_check_concentration_above_threshold(self):
         """测试集中度超过阈值"""
-        from asset_lens.monitoring.risk_alert import RiskAlertSystem, RiskAlertConfig
+        from asset_lens.monitoring.risk_alert import RiskAlertConfig, RiskAlertSystem
 
         config = RiskAlertConfig(concentration_threshold=30.0, alert_cooldown_minutes=0)
         system = RiskAlertSystem(config)
@@ -181,7 +179,7 @@ class TestRiskAlertSystem:
 
     def test_check_stop_loss_below_threshold(self):
         """测试止损低于阈值"""
-        from asset_lens.monitoring.risk_alert import RiskAlertSystem, RiskAlertConfig
+        from asset_lens.monitoring.risk_alert import RiskAlertConfig, RiskAlertSystem
 
         config = RiskAlertConfig(stop_loss_percent=-8.0)
         system = RiskAlertSystem(config)
@@ -192,7 +190,7 @@ class TestRiskAlertSystem:
 
     def test_check_stop_loss_above_threshold(self):
         """测试止损超过阈值"""
-        from asset_lens.monitoring.risk_alert import RiskAlertSystem, RiskAlertConfig, AlertLevel
+        from asset_lens.monitoring.risk_alert import AlertLevel, RiskAlertConfig, RiskAlertSystem
 
         config = RiskAlertConfig(stop_loss_percent=-8.0, alert_cooldown_minutes=0)
         system = RiskAlertSystem(config)
@@ -204,7 +202,7 @@ class TestRiskAlertSystem:
 
     def test_check_take_profit_below_threshold(self):
         """测试止盈低于阈值"""
-        from asset_lens.monitoring.risk_alert import RiskAlertSystem, RiskAlertConfig
+        from asset_lens.monitoring.risk_alert import RiskAlertConfig, RiskAlertSystem
 
         config = RiskAlertConfig(take_profit_percent=20.0)
         system = RiskAlertSystem(config)
@@ -215,7 +213,7 @@ class TestRiskAlertSystem:
 
     def test_check_take_profit_above_threshold(self):
         """测试止盈超过阈值"""
-        from asset_lens.monitoring.risk_alert import RiskAlertSystem, RiskAlertConfig, AlertLevel
+        from asset_lens.monitoring.risk_alert import AlertLevel, RiskAlertConfig, RiskAlertSystem
 
         config = RiskAlertConfig(take_profit_percent=20.0, alert_cooldown_minutes=0)
         system = RiskAlertSystem(config)
@@ -227,7 +225,7 @@ class TestRiskAlertSystem:
 
     def test_check_position_limit_below_threshold(self):
         """测试仓位低于阈值"""
-        from asset_lens.monitoring.risk_alert import RiskAlertSystem, RiskAlertConfig
+        from asset_lens.monitoring.risk_alert import RiskAlertConfig, RiskAlertSystem
 
         config = RiskAlertConfig(position_limit=80.0)
         system = RiskAlertSystem(config)
@@ -238,7 +236,7 @@ class TestRiskAlertSystem:
 
     def test_check_position_limit_above_threshold(self):
         """测试仓位超过阈值"""
-        from asset_lens.monitoring.risk_alert import RiskAlertSystem, RiskAlertConfig
+        from asset_lens.monitoring.risk_alert import RiskAlertConfig, RiskAlertSystem
 
         config = RiskAlertConfig(position_limit=80.0, alert_cooldown_minutes=0)
         system = RiskAlertSystem(config)
@@ -249,7 +247,7 @@ class TestRiskAlertSystem:
 
     def test_check_price_change_below_threshold(self):
         """测试价格变动低于阈值"""
-        from asset_lens.monitoring.risk_alert import RiskAlertSystem, RiskAlertConfig
+        from asset_lens.monitoring.risk_alert import RiskAlertConfig, RiskAlertSystem
 
         config = RiskAlertConfig(price_change_threshold=5.0)
         system = RiskAlertSystem(config)
@@ -260,7 +258,7 @@ class TestRiskAlertSystem:
 
     def test_check_price_change_above_threshold(self):
         """测试价格变动超过阈值"""
-        from asset_lens.monitoring.risk_alert import RiskAlertSystem, RiskAlertConfig
+        from asset_lens.monitoring.risk_alert import RiskAlertConfig, RiskAlertSystem
 
         config = RiskAlertConfig(price_change_threshold=5.0, alert_cooldown_minutes=0)
         system = RiskAlertSystem(config)
@@ -271,7 +269,7 @@ class TestRiskAlertSystem:
 
     def test_run_all_checks(self):
         """测试运行所有检查"""
-        from asset_lens.monitoring.risk_alert import RiskAlertSystem, RiskAlertConfig
+        from asset_lens.monitoring.risk_alert import RiskAlertConfig, RiskAlertSystem
 
         config = RiskAlertConfig(
             max_drawdown_threshold=15.0,
@@ -297,7 +295,7 @@ class TestRiskAlertSystem:
 
     def test_get_alert_summary(self):
         """测试获取预警摘要"""
-        from asset_lens.monitoring.risk_alert import RiskAlertSystem, RiskAlertConfig
+        from asset_lens.monitoring.risk_alert import RiskAlertConfig, RiskAlertSystem
 
         config = RiskAlertConfig(alert_cooldown_minutes=0)
         system = RiskAlertSystem(config)
@@ -313,7 +311,7 @@ class TestRiskAlertSystem:
 
     def test_clear_alerts(self):
         """测试清除预警"""
-        from asset_lens.monitoring.risk_alert import RiskAlertSystem, RiskAlertConfig
+        from asset_lens.monitoring.risk_alert import RiskAlertConfig, RiskAlertSystem
 
         config = RiskAlertConfig(alert_cooldown_minutes=0)
         system = RiskAlertSystem(config)
@@ -326,7 +324,7 @@ class TestRiskAlertSystem:
 
     def test_generate_alert_report(self):
         """测试生成预警报告"""
-        from asset_lens.monitoring.risk_alert import RiskAlertSystem, RiskAlertConfig
+        from asset_lens.monitoring.risk_alert import RiskAlertConfig, RiskAlertSystem
 
         config = RiskAlertConfig(alert_cooldown_minutes=0)
         system = RiskAlertSystem(config)

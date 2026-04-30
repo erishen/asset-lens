@@ -84,9 +84,7 @@ class StockActivityAnalyzer:
         "新能源": {
             "codes": ["sz516160", "sh515790"],
             "description": "新能源ETF",
-            "stocks_filter": lambda s: any(
-                k in s.get("name", "") for k in ["新能源", "锂电", "光伏", "风电", "储能"]
-            ),
+            "stocks_filter": lambda s: any(k in s.get("name", "") for k in ["新能源", "锂电", "光伏", "风电", "储能"]),
             "weight": "equal",
             "type": "industry",
         },
@@ -100,18 +98,14 @@ class StockActivityAnalyzer:
         "医药": {
             "codes": ["sz159929", "sh512010"],
             "description": "医药ETF",
-            "stocks_filter": lambda s: any(
-                k in s.get("name", "") for k in ["医药", "生物", "医疗", "制药"]
-            ),
+            "stocks_filter": lambda s: any(k in s.get("name", "") for k in ["医药", "生物", "医疗", "制药"]),
             "weight": "equal",
             "type": "industry",
         },
         "消费": {
             "codes": ["sz159928", "sh510150"],
             "description": "消费ETF",
-            "stocks_filter": lambda s: any(
-                k in s.get("name", "") for k in ["消费", "食品", "饮料", "家电", "零售"]
-            ),
+            "stocks_filter": lambda s: any(k in s.get("name", "") for k in ["消费", "食品", "饮料", "家电", "零售"]),
             "weight": "equal",
             "type": "industry",
         },
@@ -125,7 +119,16 @@ class StockActivityAnalyzer:
                 )
                 and not any(
                     k in s.get("name", "")
-                    for k in ["南方航空", "东方航空", "中国国航", "海南航空", "吉祥航空", "春秋航空", "厦门航空", "航空股份"]
+                    for k in [
+                        "南方航空",
+                        "东方航空",
+                        "中国国航",
+                        "海南航空",
+                        "吉祥航空",
+                        "春秋航空",
+                        "厦门航空",
+                        "航空股份",
+                    ]
                 )
             ),
             "weight": "equal",
@@ -194,9 +197,7 @@ class StockActivityAnalyzer:
         avg_turnover = total_turnover / count if count > 0 else 0
         avg_change = total_change / count if count > 0 else 0
 
-        activity_score = self._calculate_activity_score(
-            avg_turnover, avg_change, up_count, down_count, count
-        )
+        activity_score = self._calculate_activity_score(avg_turnover, avg_change, up_count, down_count, count)
 
         return ActivityMetrics(
             avg_turnover_rate=avg_turnover,
@@ -279,8 +280,7 @@ class StockActivityAnalyzer:
             total_cap = sum(s.get("market_cap", 0) for s in related_stocks)
             if total_cap > 0:
                 weighted_change = sum(
-                    s.get("change_percent", 0) * s.get("market_cap", 0) / total_cap
-                    for s in related_stocks
+                    s.get("change_percent", 0) * s.get("market_cap", 0) / total_cap for s in related_stocks
                 )
             else:
                 weighted_change = metrics.avg_change_percent
@@ -289,9 +289,7 @@ class StockActivityAnalyzer:
 
         confidence = self._calculate_confidence(metrics, len(related_stocks))
 
-        sorted_stocks = sorted(
-            related_stocks, key=lambda x: x.get("change_percent", 0), reverse=True
-        )
+        sorted_stocks = sorted(related_stocks, key=lambda x: x.get("change_percent", 0), reverse=True)
         up_stocks = [s for s in sorted_stocks if s.get("change_percent", 0) > 0]
         down_stocks = [s for s in sorted_stocks if s.get("change_percent", 0) < 0]
         top_gainers = up_stocks[:5]
@@ -310,12 +308,10 @@ class StockActivityAnalyzer:
             down_ratio=down_ratio,
             related_stocks=related_stocks,
             top_gainers=[
-                {"code": s.get("code"), "name": s.get("name"), "change": s.get("change_percent")}
-                for s in top_gainers
+                {"code": s.get("code"), "name": s.get("name"), "change": s.get("change_percent")} for s in top_gainers
             ],
             top_losers=[
-                {"code": s.get("code"), "name": s.get("name"), "change": s.get("change_percent")}
-                for s in top_losers
+                {"code": s.get("code"), "name": s.get("name"), "change": s.get("change_percent")} for s in top_losers
             ],
         )
 
@@ -420,9 +416,7 @@ class StockActivityAnalyzer:
 
         activity_score = min(metrics.activity_score / 100 * 40, 40)
 
-        direction_score = (
-            30 - abs(metrics.up_count - metrics.down_count) / max(metrics.total_count, 1) * 30
-        )
+        direction_score = 30 - abs(metrics.up_count - metrics.down_count) / max(metrics.total_count, 1) * 30
 
         return min(count_score + activity_score + direction_score, 100)
 
@@ -479,9 +473,7 @@ class StockActivityAnalyzer:
             "limit_down_count": len(limit_down),
             "limit_up_stocks": [
                 {"code": s.get("code"), "name": s.get("name"), "change": s.get("change_percent")}
-                for s in sorted(limit_up, key=lambda x: x.get("change_percent", 0), reverse=True)[
-                    :10
-                ]
+                for s in sorted(limit_up, key=lambda x: x.get("change_percent", 0), reverse=True)[:10]
             ],
             "limit_down_stocks": [
                 {"code": s.get("code"), "name": s.get("name"), "change": s.get("change_percent")}
@@ -517,12 +509,8 @@ class StockActivityAnalyzer:
                     "code": etf_info["codes"][0],
                     "predicted_change": metrics.avg_change_percent,
                     "activity_score": metrics.activity_score,
-                    "up_ratio": metrics.up_count / metrics.total_count
-                    if metrics.total_count > 0
-                    else 0,
-                    "down_ratio": metrics.down_count / metrics.total_count
-                    if metrics.total_count > 0
-                    else 0,
+                    "up_ratio": metrics.up_count / metrics.total_count if metrics.total_count > 0 else 0,
+                    "down_ratio": metrics.down_count / metrics.total_count if metrics.total_count > 0 else 0,
                     "stock_count": len(related_stocks),
                     "avg_turnover": metrics.avg_turnover_rate,
                 }
@@ -560,9 +548,7 @@ class StockActivityAnalyzer:
         # 热门行业判断：综合评分
         # 条件：预测涨跌 > 0.5% 且 (上涨比例 > 40% 或 活跃度 > 50)
         hot_industries = [
-            i
-            for i in not_invested
-            if i["predicted_change"] > 0.5 and (i["up_ratio"] > 0.4 or i["activity_score"] > 50)
+            i for i in not_invested if i["predicted_change"] > 0.5 and (i["up_ratio"] > 0.4 or i["activity_score"] > 50)
         ]
 
         # 表现差的已投资行业
@@ -605,9 +591,7 @@ class StockActivityAnalyzer:
         # 换手率高的行业
         high_turnover = [i for i in not_invested if i["avg_turnover"] > 5]
         if high_turnover:
-            suggestions.append(
-                f"📊 高换手行业: {', '.join([i['name'] for i in high_turnover[:3]])} 资金关注度高"
-            )
+            suggestions.append(f"📊 高换手行业: {', '.join([i['name'] for i in high_turnover[:3]])} 资金关注度高")
 
         return suggestions
 

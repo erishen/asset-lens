@@ -2,15 +2,15 @@
 Tests for exchange rate parser module.
 """
 
-import pytest
+import tempfile
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
-import tempfile
+
+import pytest
 
 from asset_lens.data.exchange_rate_parser import ExchangeRateParser
-from asset_lens.data.parser_utils import parse_decimal, parse_date
-from asset_lens.data.models import ExchangeRateHistory
+from asset_lens.data.parser_utils import parse_date, parse_decimal
 
 
 class TestParserUtils:

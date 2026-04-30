@@ -113,9 +113,7 @@ class FundDataFetcher:
         self._fund_codes_map = {}
         return {}
 
-    def fetch_fund_quote_akshare(
-        self, fund_code: str, timeout: int = 10
-    ) -> dict[str, Any] | None:
+    def fetch_fund_quote_akshare(self, fund_code: str, timeout: int = 10) -> dict[str, Any] | None:
         """
         获取基金净值（AkShare）
 

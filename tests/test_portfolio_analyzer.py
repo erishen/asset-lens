@@ -3,19 +3,11 @@ Tests for Portfolio Analyzer.
 持仓分析模块测试
 """
 
-import json
-from datetime import datetime
-from pathlib import Path
-
-import pytest
-
 from asset_lens.analysis.portfolio_analyzer import (
+    HealthLevel,
     PortfolioAnalyzer,
-    PortfolioHealth,
     Position,
     StockDiagnosis,
-    SectorAllocation,
-    HealthLevel,
     TrendDirection,
     portfolio_analyzer,
 )

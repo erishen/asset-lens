@@ -1,4 +1,5 @@
 """全产品收益估算模块"""
+
 from decimal import Decimal
 
 from asset_lens.data.models import InvestmentProduct
@@ -88,9 +89,7 @@ def get_market_sensitivity(product_type: str) -> Decimal:
         return Decimal("0.3")
 
 
-def get_adjusted_market_sensitivity(
-    product_type: str, product_name: str, risk_level: str | None = None
-) -> Decimal:
+def get_adjusted_market_sensitivity(product_type: str, product_name: str, risk_level: str | None = None) -> Decimal:
     """根据产品类型和风险等级获取调整后的市场敏感度"""
     sensitivity = get_market_sensitivity(product_type)
 

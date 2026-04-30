@@ -12,9 +12,8 @@ Pre-market Analysis Module.
 
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from typing import Any
 
 from ..config import config
 
@@ -22,6 +21,7 @@ from ..config import config
 @dataclass
 class MarketTrend:
     """市场趋势"""
+
     index_name: str
     current_value: float
     change_percent: float
@@ -33,6 +33,7 @@ class MarketTrend:
 @dataclass
 class HotSector:
     """热点板块"""
+
     name: str
     change_percent: float
     leading_stocks: list[str]
@@ -43,6 +44,7 @@ class HotSector:
 @dataclass
 class StockAlert:
     """股票预警"""
+
     code: str
     name: str
     alert_type: str  # announcement, earnings, dividend, suspension
@@ -55,6 +57,7 @@ class StockAlert:
 @dataclass
 class PreMarketReport:
     """盘前报告"""
+
     date: str
     market_trends: list[MarketTrend] = field(default_factory=list)
     hot_sectors: list[HotSector] = field(default_factory=list)
@@ -77,13 +80,14 @@ class PreMarketAnalyzer:
 
         try:
             from ..data.market_stock_fetcher import MarketStockFetcher
+
             fetcher = MarketStockFetcher(cache_path=self.cache_path)
 
             indices = {
-                'sh000300': '沪深300',
-                'sh000016': '上证50',
-                'sz399006': '创业板指',
-                'sh000688': '科创50',
+                "sh000300": "沪深300",
+                "sh000016": "上证50",
+                "sz399006": "创业板指",
+                "sh000688": "科创50",
             }
 
             for code, name in indices.items():
@@ -91,15 +95,17 @@ class PreMarketAnalyzer:
                     stocks = fetcher.get_cached_market_stocks(max_age_hours=18)
                     if stocks:
                         for stock in stocks:
-                            if stock.get('code') == code:
-                                change = stock.get('change_percent', 0)
+                            if stock.get("code") == code:
+                                change = stock.get("change_percent", 0)
                                 trend = "up" if change > 0.5 else "down" if change < -0.5 else "flat"
-                                trends.append(MarketTrend(
-                                    index_name=name,
-                                    current_value=stock.get('current_price', 0),
-                                    change_percent=change,
-                                    trend=trend,
-                                ))
+                                trends.append(
+                                    MarketTrend(
+                                        index_name=name,
+                                        current_value=stock.get("current_price", 0),
+                                        change_percent=change,
+                                        trend=trend,
+                                    )
+                                )
                                 break
                 except Exception:
                     continue
@@ -111,12 +117,29 @@ class PreMarketAnalyzer:
 
     def identify_hot_sectors(self) -> list[HotSector]:
         """识别热点板块"""
-        sectors: list[HotSector] = []
 
         hot_sector_data = [
-            HotSector(name="AI算力", change_percent=3.5, leading_stocks=["寒武纪", "海光信息"], capital_inflow=50.2, reason="政策利好"),
-            HotSector(name="新能源", change_percent=2.1, leading_stocks=["宁德时代", "比亚迪"], capital_inflow=35.8, reason="销量超预期"),
-            HotSector(name="半导体", change_percent=1.8, leading_stocks=["中芯国际", "北方华创"], capital_inflow=28.5, reason="国产替代"),
+            HotSector(
+                name="AI算力",
+                change_percent=3.5,
+                leading_stocks=["寒武纪", "海光信息"],
+                capital_inflow=50.2,
+                reason="政策利好",
+            ),
+            HotSector(
+                name="新能源",
+                change_percent=2.1,
+                leading_stocks=["宁德时代", "比亚迪"],
+                capital_inflow=35.8,
+                reason="销量超预期",
+            ),
+            HotSector(
+                name="半导体",
+                change_percent=1.8,
+                leading_stocks=["中芯国际", "北方华创"],
+                capital_inflow=28.5,
+                reason="国产替代",
+            ),
         ]
 
         return hot_sector_data
@@ -211,40 +234,40 @@ class PreMarketAnalyzer:
         report_file = self.cache_path / f"premarket_{report.date}.json"
 
         data = {
-            'date': report.date,
-            'overall_sentiment': report.overall_sentiment,
-            'market_trends': [
+            "date": report.date,
+            "overall_sentiment": report.overall_sentiment,
+            "market_trends": [
                 {
-                    'index': t.index_name,
-                    'value': t.current_value,
-                    'change': t.change_percent,
-                    'trend': t.trend,
+                    "index": t.index_name,
+                    "value": t.current_value,
+                    "change": t.change_percent,
+                    "trend": t.trend,
                 }
                 for t in report.market_trends
             ],
-            'hot_sectors': [
+            "hot_sectors": [
                 {
-                    'name': s.name,
-                    'change': s.change_percent,
-                    'leaders': s.leading_stocks,
-                    'inflow': s.capital_inflow,
+                    "name": s.name,
+                    "change": s.change_percent,
+                    "leaders": s.leading_stocks,
+                    "inflow": s.capital_inflow,
                 }
                 for s in report.hot_sectors
             ],
-            'alerts': [
+            "alerts": [
                 {
-                    'code': a.code,
-                    'type': a.alert_type,
-                    'title': a.title,
-                    'impact': a.impact,
+                    "code": a.code,
+                    "type": a.alert_type,
+                    "title": a.title,
+                    "impact": a.impact,
                 }
                 for a in report.alerts
             ],
-            'risk_warnings': report.risk_warnings,
-            'suggestions': report.suggestions,
+            "risk_warnings": report.risk_warnings,
+            "suggestions": report.suggestions,
         }
 
-        with open(report_file, 'w', encoding='utf-8') as f:
+        with open(report_file, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
     def format_report(self, report: PreMarketReport) -> str:
@@ -256,7 +279,9 @@ class PreMarketAnalyzer:
         lines.append("")
 
         sentiment_emoji = {"bullish": "🐂", "bearish": "🐻", "neutral": "➖"}
-        lines.append(f"市场情绪: {sentiment_emoji.get(report.overall_sentiment, '')} {report.overall_sentiment.upper()}")
+        lines.append(
+            f"市场情绪: {sentiment_emoji.get(report.overall_sentiment, '')} {report.overall_sentiment.upper()}"
+        )
         lines.append("")
 
         if report.market_trends:
@@ -269,7 +294,9 @@ class PreMarketAnalyzer:
         if report.hot_sectors:
             lines.append("🔥 热点板块:")
             for sector in report.hot_sectors[:3]:
-                lines.append(f"  • {sector.name}: {sector.change_percent:+.1f}% (资金流入 {sector.capital_inflow:.1f}亿)")
+                lines.append(
+                    f"  • {sector.name}: {sector.change_percent:+.1f}% (资金流入 {sector.capital_inflow:.1f}亿)"
+                )
             lines.append("")
 
         if report.risk_warnings:

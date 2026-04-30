@@ -122,9 +122,9 @@ class PromptBuilder:
         prompt = f"""
 ## 投资组合数据
 
-- 总市值: {PromptBuilder._format_money(data.get('total_value', 0))} 元
-- 累计收益: {PromptBuilder._format_money(data.get('total_profit', 0))} 元
-- 整体收益率: {data.get('overall_return_rate', 0)}%
+- 总市值: {PromptBuilder._format_money(data.get("total_value", 0))} 元
+- 累计收益: {PromptBuilder._format_money(data.get("total_profit", 0))} 元
+- 整体收益率: {data.get("overall_return_rate", 0)}%
 - 风险偏好: {risk_preference}
 
 ## 请提供以下建议
@@ -152,7 +152,7 @@ class PromptBuilder:
         try:
             amount = float(value)
             if amount >= 10000:
-                return f"{amount/10000:.2f}万"
+                return f"{amount / 10000:.2f}万"
             return f"{amount:.2f}"
         except (ValueError, TypeError):
             return "0.00"
@@ -160,4 +160,6 @@ class PromptBuilder:
     @staticmethod
     def get_system_prompt() -> str:
         """获取系统 Prompt"""
-        return "你是一位专业的投资顾问，擅长分析投资组合的风险和收益。请基于提供的投资数据，给出专业的投资建议和风险评估。"
+        return (
+            "你是一位专业的投资顾问，擅长分析投资组合的风险和收益。请基于提供的投资数据，给出专业的投资建议和风险评估。"
+        )

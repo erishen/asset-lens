@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 class TaskStatus(Enum):
     """任务状态"""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -37,6 +38,7 @@ class TaskStatus(Enum):
 
 class ScheduleType(Enum):
     """调度类型"""
+
     INTERVAL = "interval"
     DAILY = "daily"
     WEEKLY = "weekly"
@@ -47,6 +49,7 @@ class ScheduleType(Enum):
 @dataclass
 class TaskConfig:
     """任务配置"""
+
     name: str
     func: Callable
     schedule_type: ScheduleType
@@ -61,6 +64,7 @@ class TaskConfig:
 @dataclass
 class TaskResult:
     """任务执行结果"""
+
     task_name: str
     status: TaskStatus
     start_time: str
@@ -86,6 +90,7 @@ class TaskResult:
 @dataclass
 class TaskHistory:
     """任务历史"""
+
     task_name: str
     results: list[TaskResult] = field(default_factory=list)
     last_run: str | None = None
@@ -273,8 +278,8 @@ class TaskScheduler:
                 result.result = task_result
                 result.end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 result.duration = (
-                    datetime.strptime(result.end_time, "%Y-%m-%d %H:%M:%S") -
-                    datetime.strptime(result.start_time, "%Y-%m-%d %H:%M:%S")
+                    datetime.strptime(result.end_time, "%Y-%m-%d %H:%M:%S")
+                    - datetime.strptime(result.start_time, "%Y-%m-%d %H:%M:%S")
                 ).total_seconds()
                 result.retry_count = retry_count
 
@@ -294,8 +299,8 @@ class TaskScheduler:
                     result.error = last_error
                     result.end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     result.duration = (
-                        datetime.strptime(result.end_time, "%Y-%m-%d %H:%M:%S") -
-                        datetime.strptime(result.start_time, "%Y-%m-%d %H:%M:%S")
+                        datetime.strptime(result.end_time, "%Y-%m-%d %H:%M:%S")
+                        - datetime.strptime(result.start_time, "%Y-%m-%d %H:%M:%S")
                     ).total_seconds()
 
                     logger.error(f"任务最终失败: {config.name}, 错误: {last_error}")
@@ -326,10 +331,7 @@ class TaskScheduler:
         while self._running:
             try:
                 with self._lock:
-                    tasks_to_run = [
-                        (name, config) for name, config in self._tasks.items()
-                        if self._should_run(config)
-                    ]
+                    tasks_to_run = [(name, config) for name, config in self._tasks.items() if self._should_run(config)]
 
                 for name, config in tasks_to_run:
                     if not self._running:
@@ -421,6 +423,7 @@ def register_default_tasks():
 
     def update_data_task():
         from asset_lens.db.migration import DataMigration
+
         migration = DataMigration()
         result = migration.fetch_and_store_history(
             codes=[],
@@ -447,7 +450,7 @@ def register_default_tasks():
         for product in products:
             current = float(product.current_amount or product.total_amount or 0)
             if current > 0:
-                code = product.code if hasattr(product, 'code') else (product.name or "unknown")
+                code = product.code if hasattr(product, "code") else (product.name or "unknown")
                 portfolio_data["holdings"][code] = current
 
         alerts = risk_alert_system.run_all_checks(portfolio_data)
@@ -485,34 +488,42 @@ def register_default_tasks():
 
         return f"总资产: ¥{total_assets:,.2f}, 收益: ¥{total_profit:,.2f}"
 
-    task_scheduler.register_task(TaskConfig(
-        name="update_data",
-        func=update_data_task,
-        schedule_type=ScheduleType.DAILY,
-        schedule_value=(9, 30),
-        description="每日更新股票数据",
-    ))
+    task_scheduler.register_task(
+        TaskConfig(
+            name="update_data",
+            func=update_data_task,
+            schedule_type=ScheduleType.DAILY,
+            schedule_value=(9, 30),
+            description="每日更新股票数据",
+        )
+    )
 
-    task_scheduler.register_task(TaskConfig(
-        name="risk_check",
-        func=risk_check_task,
-        schedule_type=ScheduleType.INTERVAL,
-        schedule_value=60,
-        description="每小时风险检查",
-    ))
+    task_scheduler.register_task(
+        TaskConfig(
+            name="risk_check",
+            func=risk_check_task,
+            schedule_type=ScheduleType.INTERVAL,
+            schedule_value=60,
+            description="每小时风险检查",
+        )
+    )
 
-    task_scheduler.register_task(TaskConfig(
-        name="backup",
-        func=backup_task,
-        schedule_type=ScheduleType.DAILY,
-        schedule_value=(23, 0),
-        description="每日备份",
-    ))
+    task_scheduler.register_task(
+        TaskConfig(
+            name="backup",
+            func=backup_task,
+            schedule_type=ScheduleType.DAILY,
+            schedule_value=(23, 0),
+            description="每日备份",
+        )
+    )
 
-    task_scheduler.register_task(TaskConfig(
-        name="daily_report",
-        func=report_task,
-        schedule_type=ScheduleType.DAILY,
-        schedule_value=(15, 30),
-        description="每日报告",
-    ))
+    task_scheduler.register_task(
+        TaskConfig(
+            name="daily_report",
+            func=report_task,
+            schedule_type=ScheduleType.DAILY,
+            schedule_value=(15, 30),
+            description="每日报告",
+        )
+    )

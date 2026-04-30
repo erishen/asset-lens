@@ -424,12 +424,8 @@ class CSVParser:
                 else:
                     transactions = cls._parse_transaction_records(product.transaction_records)
 
-            total_buy = (
-                sum(t["amount"] for t in transactions if t["type"] == "buy") if transactions else 0
-            )
-            total_sell = (
-                sum(t["amount"] for t in transactions if t["type"] == "sell") if transactions else 0
-            )
+            total_buy = sum(t["amount"] for t in transactions if t["type"] == "buy") if transactions else 0
+            total_sell = sum(t["amount"] for t in transactions if t["type"] == "sell") if transactions else 0
 
             is_dca_product = cls._is_dca_product(product)
             if is_dca_product and product.initial_amount and product.initial_amount > 0:
@@ -445,8 +441,8 @@ class CSVParser:
                             "csv_amount": float(product.initial_amount),
                             "transaction_amount": net_invest,
                             "difference": diff,
-                            "diff_days": diff_days
-                        }
+                            "diff_days": diff_days,
+                        },
                     )
 
                 current_value = float(product.current_amount or 0)
@@ -475,9 +471,9 @@ class CSVParser:
 
             total_days = product.investment_days or 0
             if total_days > 0:
-                is_bond_product = (
-                    product.investment_type.value and "债" in product.investment_type.value
-                ) or (product.name and "分红" in product.name)
+                is_bond_product = (product.investment_type.value and "债" in product.investment_type.value) or (
+                    product.name and "分红" in product.name
+                )
 
                 if is_bond_product:
                     # 对于债券类产品，使用简化计算方法（与 ts-demo 保持一致）
@@ -509,23 +505,15 @@ class CSVParser:
                             product.annual_return = Decimal(str(round(irr * 100, 2)))
                         else:
                             if product.return_rate is not None:
-                                simple_annualized = (1 + float(product.return_rate) / 100) ** (
-                                    360 / total_days
-                                ) - 1
-                                product.annual_return = Decimal(
-                                    str(round(simple_annualized * 100, 2))
-                                )
+                                simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
+                                product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
                     else:
                         if product.return_rate is not None:
-                            simple_annualized = (1 + float(product.return_rate) / 100) ** (
-                                360 / total_days
-                            ) - 1
+                            simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
                             product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
                 elif total_days < 180:
                     if product.return_rate is not None:
-                        simple_annualized = (1 + float(product.return_rate) / 100) ** (
-                            360 / total_days
-                        ) - 1
+                        simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
                         product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
                 elif transactions and len(transactions) > 1 and total_buy > 0:
                     cashflows = cls._calculate_cashflows_with_days(
@@ -539,30 +527,20 @@ class CSVParser:
                         irr = irr_calculator.calculate_irr_with_days(cashflows)
                         if irr is not None and -1 < irr < 10:
                             if product.return_rate is not None:
-                                simple_annualized = (1 + float(product.return_rate) / 100) ** (
-                                    360 / total_days
-                                ) - 1
+                                simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
                                 diff = abs(irr - simple_annualized)
                                 if diff > 1:
-                                    product.annual_return = Decimal(
-                                        str(round(simple_annualized * 100, 2))
-                                    )
+                                    product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
                                 else:
                                     product.annual_return = Decimal(str(round(irr * 100, 2)))
                             else:
                                 product.annual_return = Decimal(str(round(irr * 100, 2)))
                         else:
                             if product.return_rate is not None:
-                                simple_annualized = (1 + float(product.return_rate) / 100) ** (
-                                    360 / total_days
-                                ) - 1
-                                product.annual_return = Decimal(
-                                    str(round(simple_annualized * 100, 2))
-                                )
+                                simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
+                                product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
                 elif product.return_rate is not None:
-                    simple_annualized = (1 + float(product.return_rate) / 100) ** (
-                        360 / total_days
-                    ) - 1
+                    simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
                     product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
 
         return products
@@ -759,9 +737,7 @@ class CSVParser:
         return cashflows
 
     @classmethod
-    def parse_csv_file(
-        cls, csv_path: Path, reference_date: date | None = None
-    ) -> list[InvestmentProduct]:
+    def parse_csv_file(cls, csv_path: Path, reference_date: date | None = None) -> list[InvestmentProduct]:
         """
         解析 CSV 文件
         Args:
@@ -844,8 +820,7 @@ class CSVParser:
                 dirs = [
                     d
                     for d in data_dir.iterdir()
-                    if d.is_dir()
-                    and (d.name.startswith("money_csv_") or d.name.startswith("money_"))
+                    if d.is_dir() and (d.name.startswith("money_csv_") or d.name.startswith("money_"))
                 ]
 
                 if dirs:
@@ -872,7 +847,6 @@ class CSVParser:
 
                     logger.info(f"使用数据目录: {target_dir.name}")
 
-
                     usd_rate, hkd_rate = cls.get_exchange_rates(target_dir)
                     csv_files = list(target_dir.glob("投资产品-表格 1.csv"))
                     if not csv_files:
@@ -891,7 +865,9 @@ class CSVParser:
                             dir_date_str = target_dir.name.split("_")[-1]
                             reference_date = datetime.strptime(dir_date_str, "%Y%m%d")
                             products = cls._calculate_irr_for_products(products, reference_date)
-                            logger.info(f"成功加载 {len(products)} 个投资产品, 美元汇率: {usd_rate}, 港元汇率: {hkd_rate}")
+                            logger.info(
+                                f"成功加载 {len(products)} 个投资产品, 美元汇率: {usd_rate}, 港元汇率: {hkd_rate}"
+                            )
                             return products
                         except Exception as e:
                             logger.error(f"加载数据失败: {e}", exc_info=True)

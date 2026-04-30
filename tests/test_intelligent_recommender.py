@@ -2,13 +2,11 @@
 Tests for Intelligent Recommender
 """
 
-import pytest
 from unittest.mock import Mock, patch
-from asset_lens.data.intelligent_recommender import (
-    IntelligentRecommender,
-    StrategyRecommendation,
-    StockRecommendation,
-)
+
+import pytest
+
+from asset_lens.data.intelligent_recommender import IntelligentRecommender, StockRecommendation, StrategyRecommendation
 
 
 @pytest.fixture
@@ -92,9 +90,7 @@ class TestIntelligentRecommender:
         mock_strategy.max_positions = 5
         mock_strategy.holding_period_max = 30
 
-        mock_engine.list_strategies.return_value = [
-            {"name": "value", "description": "价值策略"}
-        ]
+        mock_engine.list_strategies.return_value = [{"name": "value", "description": "价值策略"}]
         mock_engine.get_strategy.return_value = mock_strategy
         mock_engine.validate_strategy.return_value = {
             "valid": True,
@@ -111,9 +107,7 @@ class TestIntelligentRecommender:
 
     @patch("asset_lens.strategy.screener.stock_screener")
     @patch("asset_lens.data.market_stock_fetcher.market_stock_fetcher")
-    def test_recommend_stocks_no_stocks(
-        self, mock_fetcher, mock_screener, recommender
-    ):
+    def test_recommend_stocks_no_stocks(self, mock_fetcher, mock_screener, recommender):
         """测试推荐股票 - 无股票"""
         mock_fetcher.get_cached_market_stocks.return_value = []
         mock_screener.load_market_stocks.return_value = []
@@ -126,9 +120,7 @@ class TestIntelligentRecommender:
     @patch("asset_lens.strategy.screener.stock_screener")
     @patch("asset_lens.data.market_stock_fetcher.market_stock_fetcher")
     @patch("asset_lens.strategy.engine.strategy_engine")
-    def test_recommend_stocks_success(
-        self, mock_engine, mock_fetcher, mock_screener, recommender
-    ):
+    def test_recommend_stocks_success(self, mock_engine, mock_fetcher, mock_screener, recommender):
         """测试推荐股票 - 成功"""
         mock_fetcher.get_cached_market_stocks.return_value = [
             {"code": "sh600519", "name": "贵州茅台", "pe_ratio": 12.0, "pb_ratio": 1.2}
@@ -148,9 +140,7 @@ class TestIntelligentRecommender:
         mock_strategy.take_profit = 0.10
         mock_strategy.max_positions = 3
 
-        score = recommender._calculate_risk_compatibility(
-            mock_strategy, "conservative"
-        )
+        score = recommender._calculate_risk_compatibility(mock_strategy, "conservative")
 
         assert score > 0
 
@@ -161,9 +151,7 @@ class TestIntelligentRecommender:
         mock_strategy.take_profit = 0.30
         mock_strategy.max_positions = 15
 
-        score = recommender._calculate_risk_compatibility(
-            mock_strategy, "aggressive"
-        )
+        score = recommender._calculate_risk_compatibility(mock_strategy, "aggressive")
 
         assert score > 0
 
@@ -214,9 +202,7 @@ class TestIntelligentRecommender:
         }
         market_environment = {"market_type": "牛市"}
 
-        reason = recommender._generate_strategy_reason(
-            "value", score, market_environment
-        )
+        reason = recommender._generate_strategy_reason("value", score, market_environment)
 
         assert isinstance(reason, str)
         assert len(reason) > 0
@@ -230,9 +216,7 @@ class TestIntelligentRecommender:
         }
         market_environment = {"market_type": "牛市"}
 
-        reason = recommender._generate_stock_reason(
-            stock, score, market_environment
-        )
+        reason = recommender._generate_stock_reason(stock, score, market_environment)
 
         assert isinstance(reason, str)
         assert len(reason) > 0

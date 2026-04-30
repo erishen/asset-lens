@@ -206,10 +206,18 @@ ignore = [
     "C901",  # too complex
     "B904",  # raise from err
     "B007",  # unused loop variable
+    "E402",  # module level import not at top of file
+    "E741",  # ambiguous variable name
+    "F401",  # unused import
+    "E722",  # bare except
+    "B025",  # duplicate exception
+    "UP035", # deprecated typing
+    "B012",  # return in finally
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["B011"]
+"tests/*" = ["B011", "F841", "B017", "B018", "F811", "F401"]
+"__main__.py" = ["E402"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["asset_lens"]

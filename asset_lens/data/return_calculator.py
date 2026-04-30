@@ -21,10 +21,7 @@ class ReturnCalculator:
         self.irr_calculator = IRRCalculator()
 
     def calculate_returns(
-        self,
-        product: InvestmentProduct,
-        transactions: list[dict],
-        reference_date: datetime | None = None
+        self, product: InvestmentProduct, transactions: list[dict], reference_date: datetime | None = None
     ) -> None:
         """
         计算产品收益率
@@ -41,11 +38,7 @@ class ReturnCalculator:
         if total_days > 0:
             self._calculate_annual_return(product, transactions, total_days)
 
-    def _calculate_simple_return(
-        self,
-        product: InvestmentProduct,
-        transactions: list[dict]
-    ) -> None:
+    def _calculate_simple_return(self, product: InvestmentProduct, transactions: list[dict]) -> None:
         """计算简单收益率"""
         total_buy = sum(t["amount"] for t in transactions if t["type"] == "buy") if transactions else 0
         total_sell = sum(t["amount"] for t in transactions if t["type"] == "sell") if transactions else 0
@@ -71,11 +64,7 @@ class ReturnCalculator:
                 simple_return = (current_value - initial_value) / initial_value
             product.return_rate = Decimal(str(round(simple_return * 100, 2)))
 
-    def _calculate_dca_simple_return(
-        self,
-        product: InvestmentProduct,
-        transactions: list[dict]
-    ) -> None:
+    def _calculate_dca_simple_return(self, product: InvestmentProduct, transactions: list[dict]) -> None:
         """计算定投产品简单收益率"""
         if not product.initial_amount:
             return
@@ -95,8 +84,8 @@ class ReturnCalculator:
                     "csv_amount": initial_value,
                     "transaction_amount": net_invest,
                     "difference": diff,
-                    "diff_days": diff_days
-                }
+                    "diff_days": diff_days,
+                },
             )
 
         current_value = float(product.current_amount or 0)
@@ -106,12 +95,7 @@ class ReturnCalculator:
             simple_return = (current_value - initial_value) / initial_value
         product.return_rate = Decimal(str(round(simple_return * 100, 2)))
 
-    def _calculate_annual_return(
-        self,
-        product: InvestmentProduct,
-        transactions: list[dict],
-        total_days: int
-    ) -> None:
+    def _calculate_annual_return(self, product: InvestmentProduct, transactions: list[dict], total_days: int) -> None:
         """计算年化收益率"""
         is_bond = self._is_bond_product(product)
         is_dca = self._is_dca_product(product)
@@ -123,11 +107,7 @@ class ReturnCalculator:
         else:
             self._calculate_regular_annual_return(product, transactions, total_days)
 
-    def _calculate_bond_annual_return(
-        self,
-        product: InvestmentProduct,
-        total_days: int
-    ) -> None:
+    def _calculate_bond_annual_return(self, product: InvestmentProduct, total_days: int) -> None:
         """计算债券类产品年化收益率"""
         if product.initial_amount and product.initial_amount > 0:
             current_value = float(product.current_amount or 0)
@@ -142,10 +122,7 @@ class ReturnCalculator:
             product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
 
     def _calculate_dca_annual_return(
-        self,
-        product: InvestmentProduct,
-        transactions: list[dict],
-        total_days: int
+        self, product: InvestmentProduct, transactions: list[dict], total_days: int
     ) -> None:
         """计算定投产品年化收益率"""
         if not product.start_date or not product.current_amount:
@@ -153,11 +130,7 @@ class ReturnCalculator:
             return
 
         cashflows = self._build_cashflows_for_dca(
-            transactions,
-            product.start_date,
-            product.current_amount,
-            total_days,
-            product.initial_amount
+            transactions, product.start_date, product.current_amount, total_days, product.initial_amount
         )
 
         if cashflows and len(cashflows) > 1:
@@ -169,10 +142,7 @@ class ReturnCalculator:
         self._fallback_simple_annual_return(product, total_days)
 
     def _calculate_regular_annual_return(
-        self,
-        product: InvestmentProduct,
-        transactions: list[dict],
-        total_days: int
+        self, product: InvestmentProduct, transactions: list[dict], total_days: int
     ) -> None:
         """计算普通产品年化收益率"""
         if total_days < 180:
@@ -182,12 +152,7 @@ class ReturnCalculator:
         total_buy = sum(t["amount"] for t in transactions if t["type"] == "buy") if transactions else 0
 
         if transactions and len(transactions) > 1 and total_buy > 0:
-            cashflows = self._build_cashflows(
-                transactions,
-                product.start_date,
-                product.current_amount,
-                total_days
-            )
+            cashflows = self._build_cashflows(transactions, product.start_date, product.current_amount, total_days)
 
             if cashflows and len(cashflows) > 1:
                 irr = self.irr_calculator.calculate_irr_with_days(cashflows)
@@ -205,11 +170,7 @@ class ReturnCalculator:
 
         self._fallback_simple_annual_return(product, total_days)
 
-    def _fallback_simple_annual_return(
-        self,
-        product: InvestmentProduct,
-        total_days: int
-    ) -> None:
+    def _fallback_simple_annual_return(self, product: InvestmentProduct, total_days: int) -> None:
         """降级到简单年化收益率"""
         if product.return_rate is not None:
             simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
@@ -238,11 +199,7 @@ class ReturnCalculator:
         return False
 
     def _build_cashflows(
-        self,
-        transactions: list[dict],
-        start_date: date | None,
-        current_amount: Decimal | None,
-        total_days: int
+        self, transactions: list[dict], start_date: date | None, current_amount: Decimal | None, total_days: int
     ) -> list[dict]:
         """构建现金流"""
         cashflows: list[dict] = []
@@ -286,7 +243,7 @@ class ReturnCalculator:
         start_date: date | None,
         current_amount: Decimal | None,
         total_days: int,
-        initial_amount: Decimal | None
+        initial_amount: Decimal | None,
     ) -> list[dict]:
         """为 DCA 产品构建现金流"""
         cashflows: list[dict] = []

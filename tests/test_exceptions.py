@@ -2,20 +2,18 @@
 Tests for custom exceptions.
 """
 
-import pytest
-
 from asset_lens.core.exceptions import (
+    APIError,
     AssetLensError,
+    CacheError,
+    CalculationError,
     ConfigurationError,
     DataLoadError,
     DataParseError,
-    ValidationError,
-    APIError,
-    RateLimitError,
-    CacheError,
-    CalculationError,
-    InsufficientDataError,
     FileFormatError,
+    InsufficientDataError,
+    RateLimitError,
+    ValidationError,
 )
 
 

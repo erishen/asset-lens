@@ -24,10 +24,9 @@ def status():
 
     config = enhanced_notification_service.config
 
-    console.print(Panel.fit(
-        "[bold cyan]通知服务状态[/bold cyan]",
-        subtitle=f"启用: {'✅' if config.enabled else '❌'}"
-    ))
+    console.print(
+        Panel.fit("[bold cyan]通知服务状态[/bold cyan]", subtitle=f"启用: {'✅' if config.enabled else '❌'}")
+    )
 
     channels_table = Table(title="通知渠道配置")
     channels_table.add_column("渠道", style="cyan")
@@ -35,10 +34,22 @@ def status():
     channels_table.add_column("配置", style="yellow")
 
     channels = [
-        ("钉钉", bool(config.dingtalk_webhook), "Webhook + Secret" if config.dingtalk_secret else "Webhook" if config.dingtalk_webhook else "未配置"),
+        (
+            "钉钉",
+            bool(config.dingtalk_webhook),
+            "Webhook + Secret" if config.dingtalk_secret else "Webhook" if config.dingtalk_webhook else "未配置",
+        ),
         ("企业微信", bool(config.wecom_webhook), "Webhook" if config.wecom_webhook else "未配置"),
-        ("Telegram", bool(config.telegram_bot_token and config.telegram_chat_id), "Bot Token + Chat ID" if config.telegram_bot_token else "未配置"),
-        ("飞书", bool(config.feishu_webhook), "Webhook + Secret" if config.feishu_secret else "Webhook" if config.feishu_webhook else "未配置"),
+        (
+            "Telegram",
+            bool(config.telegram_bot_token and config.telegram_chat_id),
+            "Bot Token + Chat ID" if config.telegram_bot_token else "未配置",
+        ),
+        (
+            "飞书",
+            bool(config.feishu_webhook),
+            "Webhook + Secret" if config.feishu_secret else "Webhook" if config.feishu_webhook else "未配置",
+        ),
         ("Server酱", bool(config.serverchan_key), "Key 已配置" if config.serverchan_key else "未配置"),
         ("邮件", bool(config.email_username), f"{config.email_username}" if config.email_username else "未配置"),
     ]
@@ -64,10 +75,7 @@ def send(title, content, channel):
         asset-lens notify send "测试标题" "测试内容"
         asset-lens notify send "预警" "价格异常" -c dingtalk -c telegram
     """
-    from asset_lens.notification.enhanced_notification import (
-        NotificationMessage,
-        enhanced_notification_service,
-    )
+    from asset_lens.notification.enhanced_notification import NotificationMessage, enhanced_notification_service
 
     channels = list(channel) if channel else None
 

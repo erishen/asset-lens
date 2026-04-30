@@ -75,7 +75,7 @@ class Backtester:
     ) -> list[str]:
         """获取交易日列表"""
         all_dates_set = set()
-        for code, data_list in historical_data.items():
+        for _, data_list in historical_data.items():
             for data in data_list:
                 all_dates_set.add(data.get("date", ""))
 
@@ -133,10 +133,10 @@ class Backtester:
         profit_rate = (current_price - pos["buy_price"]) / pos["buy_price"]
 
         if profit_rate <= strategy.stop_loss:
-            return True, f"止损 ({profit_rate*100:.1f}%)"
+            return True, f"止损 ({profit_rate * 100:.1f}%)"
 
         if profit_rate >= strategy.take_profit:
-            return True, f"止盈 ({profit_rate*100:.1f}%)"
+            return True, f"止盈 ({profit_rate * 100:.1f}%)"
 
         if holding_days >= strategy.holding_period_max:
             return True, f"持有到期 ({holding_days}天)"
@@ -194,10 +194,12 @@ class Backtester:
 
             evaluation = strategy_engine.evaluate_stock(stock, strategy_name)
             if evaluation["match"] and evaluation["score"] >= 60:
-                candidates.append({
-                    **stock,
-                    "strategy_score": evaluation["score"],
-                })
+                candidates.append(
+                    {
+                        **stock,
+                        "strategy_score": evaluation["score"],
+                    }
+                )
 
         candidates.sort(key=lambda x: x.get("strategy_score", 0), reverse=True)
         return candidates
@@ -279,9 +281,9 @@ class Backtester:
 
         returns = []
         for i in range(1, len(daily_values)):
-            daily_return = (
-                daily_values[i]["total_value"] - daily_values[i - 1]["total_value"]
-            ) / daily_values[i - 1]["total_value"]
+            daily_return = (daily_values[i]["total_value"] - daily_values[i - 1]["total_value"]) / daily_values[i - 1][
+                "total_value"
+            ]
             returns.append(daily_return)
 
         avg_return = sum(returns) / len(returns) if returns else 0
@@ -341,19 +343,21 @@ class Backtester:
         trades: list[BacktestTrade] = []
         daily_values: list[dict[str, Any]] = []
 
-        for i, date in enumerate(all_dates):
+        for date in all_dates:
             daily_stocks = self._get_daily_stocks(historical_data, date)
 
             position_value = self._update_position_values(positions, daily_stocks)
 
             total_value = capital + position_value
-            daily_values.append({
-                "date": date,
-                "capital": capital,
-                "position_value": position_value,
-                "total_value": total_value,
-                "positions": len(positions),
-            })
+            daily_values.append(
+                {
+                    "date": date,
+                    "capital": capital,
+                    "position_value": position_value,
+                    "total_value": total_value,
+                    "positions": len(positions),
+                }
+            )
 
             for code in list(positions.keys()):
                 pos = positions[code]
@@ -364,34 +368,34 @@ class Backtester:
 
                 current_price = stock_data.get("close", pos["buy_price"])
                 holding_days = (
-                    datetime.strptime(date, "%Y-%m-%d")
-                    - datetime.strptime(pos["buy_date"], "%Y-%m-%d")
+                    datetime.strptime(date, "%Y-%m-%d") - datetime.strptime(pos["buy_date"], "%Y-%m-%d")
                 ).days
 
-                should_sell, sell_reason = self._check_sell_conditions(
-                    pos, current_price, holding_days, strategy
-                )
+                should_sell, sell_reason = self._check_sell_conditions(pos, current_price, holding_days, strategy)
 
                 if should_sell:
                     sell_capital = self._execute_sell(
-                        code, pos, stock_data, date, sell_reason,
-                        slippage_rate, commission_rate, trades
+                        code, pos, stock_data, date, sell_reason, slippage_rate, commission_rate, trades
                     )
                     capital += sell_capital
                     del positions[code]
 
             if len(positions) < strategy.max_positions:
-                candidates = self._find_buy_candidates(
-                    daily_stocks, positions, strategy_name, strategy_engine
-                )
+                candidates = self._find_buy_candidates(daily_stocks, positions, strategy_name, strategy_engine)
 
-                for candidate in candidates[:strategy.max_positions - len(positions)]:
+                for candidate in candidates[: strategy.max_positions - len(positions)]:
                     if capital < initial_capital * strategy.position_size:
                         break
 
                     capital, new_pos = self._execute_buy(
-                        candidate, date, capital, initial_capital,
-                        strategy.position_size, slippage_rate, commission_rate, trades
+                        candidate,
+                        date,
+                        capital,
+                        initial_capital,
+                        strategy.position_size,
+                        slippage_rate,
+                        commission_rate,
+                        trades,
                     )
 
                     if new_pos:

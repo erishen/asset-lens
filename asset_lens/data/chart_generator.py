@@ -247,9 +247,7 @@ class ChartGenerator:
         data_dict: dict[str, Any] = chart_data["data"]  # type: ignore
         data_dict["dates"] = sorted_dates
         data_dict["signal_counts"] = [date_counts.get(d, 0) for d in sorted_dates]
-        data_dict["signal_types"] = dict(
-            sorted(type_counts.items(), key=lambda x: x[1], reverse=True)[:10]
-        )
+        data_dict["signal_types"] = dict(sorted(type_counts.items(), key=lambda x: x[1], reverse=True)[:10])
 
         filename = f"monster_signal_{pool_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         filepath = self.chart_path / filename

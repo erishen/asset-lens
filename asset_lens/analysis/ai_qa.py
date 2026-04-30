@@ -13,28 +13,30 @@ AI 问答模块 - 投资问题解答和策略咨询
 import json
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from typing import Any
-from enum import Enum
 
 from ..config import config
 
 
 class QuestionType(Enum):
     """问题类型"""
-    MARKET_OUTLOOK = "market_outlook"     # 市场展望
-    STOCK_ANALYSIS = "stock_analysis"     # 个股分析
-    STRATEGY = "strategy"                 # 策略咨询
-    RISK_MANAGEMENT = "risk_management"   # 风险管理
-    PORTFOLIO = "portfolio"               # 持仓问题
-    TECHNICAL = "technical"               # 技术分析
-    FUNDAMENTAL = "fundamental"           # 基本面分析
-    GENERAL = "general"                   # 一般问题
+
+    MARKET_OUTLOOK = "market_outlook"  # 市场展望
+    STOCK_ANALYSIS = "stock_analysis"  # 个股分析
+    STRATEGY = "strategy"  # 策略咨询
+    RISK_MANAGEMENT = "risk_management"  # 风险管理
+    PORTFOLIO = "portfolio"  # 持仓问题
+    TECHNICAL = "technical"  # 技术分析
+    FUNDAMENTAL = "fundamental"  # 基本面分析
+    GENERAL = "general"  # 一般问题
 
 
 @dataclass
 class QAContext:
     """问答上下文"""
+
     user_holdings: list[dict[str, Any]]
     recent_trades: list[dict[str, Any]]
     market_data: dict[str, Any]
@@ -44,6 +46,7 @@ class QAContext:
 @dataclass
 class QAResponse:
     """问答响应"""
+
     question: str
     question_type: QuestionType
     answer: str
@@ -57,6 +60,7 @@ class QAResponse:
 @dataclass
 class KnowledgeEntry:
     """知识库条目"""
+
     id: str
     title: str
     content: str
@@ -151,15 +155,20 @@ class AIQAEngine:
                     score += 3
 
             if score > 0:
-                scored_results.append((score, KnowledgeEntry(
-                    id=entry["id"],
-                    title=entry["title"],
-                    content=entry["content"],
-                    category=entry["category"],
-                    tags=entry.get("tags", []),
-                    created_at=entry.get("created_at", ""),
-                    updated_at=entry.get("updated_at", ""),
-                )))
+                scored_results.append(
+                    (
+                        score,
+                        KnowledgeEntry(
+                            id=entry["id"],
+                            title=entry["title"],
+                            content=entry["content"],
+                            category=entry["category"],
+                            tags=entry.get("tags", []),
+                            created_at=entry.get("created_at", ""),
+                            updated_at=entry.get("updated_at", ""),
+                        ),
+                    )
+                )
 
         scored_results.sort(key=lambda x: x[0], reverse=True)
         return [r[1] for r in scored_results[:limit]]
@@ -311,15 +320,17 @@ class AIQAEngine:
     def add_knowledge(self, entry: KnowledgeEntry) -> None:
         """添加知识条目"""
         entries = self._load_knowledge_base()
-        entries.append({
-            "id": entry.id,
-            "title": entry.title,
-            "content": entry.content,
-            "category": entry.category,
-            "tags": entry.tags,
-            "created_at": entry.created_at,
-            "updated_at": entry.updated_at,
-        })
+        entries.append(
+            {
+                "id": entry.id,
+                "title": entry.title,
+                "content": entry.content,
+                "category": entry.category,
+                "tags": entry.tags,
+                "created_at": entry.created_at,
+                "updated_at": entry.updated_at,
+            }
+        )
 
         with open(self.knowledge_base_file, "w", encoding="utf-8") as f:
             json.dump(entries, f, ensure_ascii=False, indent=2)
@@ -345,13 +356,15 @@ class AIQAEngine:
             except Exception:
                 history = []
 
-        history.append({
-            "question": response.question,
-            "type": response.question_type.value,
-            "answer": response.answer,
-            "confidence": response.confidence,
-            "timestamp": response.timestamp,
-        })
+        history.append(
+            {
+                "question": response.question,
+                "type": response.question_type.value,
+                "answer": response.answer,
+                "confidence": response.confidence,
+                "timestamp": response.timestamp,
+            }
+        )
 
         if len(history) > 100:
             history = history[-100:]

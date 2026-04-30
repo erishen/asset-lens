@@ -3,8 +3,9 @@ Tests for AI Stock Advisor.
 AI 股票顾问测试
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 
 class TestAIStockAdvisor:
@@ -13,13 +14,15 @@ class TestAIStockAdvisor:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.data.ai_stock_advisor import AIStockAdvisor
+
         assert AIStockAdvisor is not None
 
     @pytest.fixture
     def advisor(self):
         """创建顾问实例"""
         from asset_lens.data.ai_stock_advisor import AIStockAdvisor
-        with patch('asset_lens.data.ai_stock_advisor.config') as mock_config:
+
+        with patch("asset_lens.data.ai_stock_advisor.config") as mock_config:
             mock_config.cache_path = MagicMock()
             return AIStockAdvisor()
 
@@ -29,7 +32,7 @@ class TestAIStockAdvisor:
 
     def test_generate_advice_method(self, advisor):
         """测试生成建议方法"""
-        assert hasattr(advisor, 'generate_stock_advice') or hasattr(advisor, 'get_advice')
+        assert hasattr(advisor, "generate_stock_advice") or hasattr(advisor, "get_advice")
 
 
 class TestStockAdvice:

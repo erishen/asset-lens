@@ -7,8 +7,8 @@ from typing import Any
 
 import click
 from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
+from rich.table import Table
 
 console = Console()
 
@@ -32,18 +32,18 @@ def stats():
 
     table.add_row("K线数据总数", f"{stats_data['kline_count']:,}")
     table.add_row("股票数量", f"{stats_data['stock_count']:,}")
-    table.add_row("ML模型数量", str(stats_data['model_count']))
-    table.add_row("预测记录数", str(stats_data['prediction_count']))
-    table.add_row("最新数据日期", stats_data['latest_date'] or "无数据")
+    table.add_row("ML模型数量", str(stats_data["model_count"]))
+    table.add_row("预测记录数", str(stats_data["prediction_count"]))
+    table.add_row("最新数据日期", stats_data["latest_date"] or "无数据")
 
     console.print(table)
 
-    if stats_data['data_sources']:
+    if stats_data["data_sources"]:
         source_table = Table(title="数据来源分布")
         source_table.add_column("数据源", style="cyan")
         source_table.add_column("记录数", style="green")
 
-        for source, count in stats_data['data_sources'].items():
+        for source, count in stats_data["data_sources"].items():
             source_table.add_row(source, f"{count:,}")
 
         console.print(source_table)
@@ -60,30 +60,27 @@ def coverage(target: float, enhance: bool):
         asset-lens db coverage --enhance    # 自动提升覆盖率
         asset-lens db coverage --target 98  # 设置目标覆盖率
     """
-    from asset_lens.data.data_coverage_analyzer import (
-        data_coverage_analyzer,
-        data_coverage_enhancer,
-    )
+    from asset_lens.data.data_coverage_analyzer import data_coverage_analyzer, data_coverage_enhancer
 
     console.print(Panel.fit("📊 数据覆盖率分析", style="bold blue"))
 
     if enhance:
         console.print(f"\n[yellow]正在提升覆盖率到 {target}%...[/yellow]")
-        result = data_coverage_enhancer.enhance(target)
+        enhance_result = data_coverage_enhancer.enhance(target)
 
-        if result["before"]:
-            console.print(f"\n提升前覆盖率: [red]{result['before']['coverage']:.1f}%[/red]")
-        if result["after"]:
-            console.print(f"提升后覆盖率: [green]{result['after']['coverage']:.1f}%[/green]")
+        if enhance_result["before"]:
+            console.print(f"\n提升前覆盖率: [red]{enhance_result['before']['coverage']:.1f}%[/red]")
+        if enhance_result["after"]:
+            console.print(f"提升后覆盖率: [green]{enhance_result['after']['coverage']:.1f}%[/green]")
 
-        if result["actions"]:
+        if enhance_result["actions"]:
             console.print("\n[bold]执行的动作:[/bold]")
-            for action in result["actions"]:
+            for action in enhance_result["actions"]:
                 console.print(f"  • {action}")
 
-        if result["improvements"]:
+        if enhance_result["improvements"]:
             console.print("\n[bold]改进结果:[/bold]")
-            for imp in result["improvements"]:
+            for imp in enhance_result["improvements"]:
                 console.print(f"  ✅ {imp}")
     else:
         result = data_coverage_analyzer.analyze()
@@ -395,19 +392,23 @@ def update_missing(days, limit, delay, source) -> None:
             count = stock.count
 
             if latest_date < cutoff_date:
-                stocks_to_update.append({
-                    "code": stock.code,
-                    "reason": "数据过期",
-                    "latest_date": latest_date,
-                    "count": count,
-                })
+                stocks_to_update.append(
+                    {
+                        "code": stock.code,
+                        "reason": "数据过期",
+                        "latest_date": latest_date,
+                        "count": count,
+                    }
+                )
             elif count < days * 0.5:
-                stocks_to_update.append({
-                    "code": stock.code,
-                    "reason": "数据不足",
-                    "latest_date": latest_date,
-                    "count": count,
-                })
+                stocks_to_update.append(
+                    {
+                        "code": stock.code,
+                        "reason": "数据不足",
+                        "latest_date": latest_date,
+                        "count": count,
+                    }
+                )
 
         stocks_to_update.sort(key=lambda x: x["latest_date"])
 
@@ -501,14 +502,14 @@ def auto_sync(days, daily_limit, update_limit, delay, fast):
             console.print(f"   数据库股票数: {db_stock_count}")
             console.print(f"   数据库K线数: {db_kline_count:,}")
             console.print(f"   最新日期: {latest_date or '无数据'}")
-            
+
             if db_stock_count > 100 and latest_date:
                 latest = datetime.strptime(latest_date, "%Y-%m-%d")
                 days_ago = (datetime.now() - latest).days
                 if days_ago <= 3:
                     console.print(f"\n[green]✅ 数据较新（{days_ago}天前更新），跳过同步[/green]")
                     return
-            
+
             console.print("\n[cyan]继续执行同步...[/cyan]")
 
         fetcher = MarketStockFetcher()
@@ -519,7 +520,11 @@ def auto_sync(days, daily_limit, update_limit, delay, fast):
         console.print(f"   数据库股票数: {db_stock_count}")
         console.print(f"   数据库K线数: {db_kline_count:,}")
         console.print(f"   市场股票总数: {total_market_stocks}")
-        console.print(f"   覆盖率: {db_stock_count / total_market_stocks * 100:.1f}%" if total_market_stocks > 0 else "   覆盖率: 0%")
+        console.print(
+            f"   覆盖率: {db_stock_count / total_market_stocks * 100:.1f}%"
+            if total_market_stocks > 0
+            else "   覆盖率: 0%"
+        )
 
         migration = DataMigration()
 
@@ -561,17 +566,21 @@ def auto_sync(days, daily_limit, update_limit, delay, fast):
             stocks_to_update = []
             for stock in stocks_with_data:
                 if stock.latest_date < cutoff_date:
-                    stocks_to_update.append({
-                        "code": stock.code,
-                        "reason": "数据过期",
-                        "latest_date": stock.latest_date,
-                    })
+                    stocks_to_update.append(
+                        {
+                            "code": stock.code,
+                            "reason": "数据过期",
+                            "latest_date": stock.latest_date,
+                        }
+                    )
                 elif stock.count < days * 0.5:
-                    stocks_to_update.append({
-                        "code": stock.code,
-                        "reason": "数据不足",
-                        "latest_date": stock.latest_date,
-                    })
+                    stocks_to_update.append(
+                        {
+                            "code": stock.code,
+                            "reason": "数据不足",
+                            "latest_date": stock.latest_date,
+                        }
+                    )
 
             if stocks_to_update:
                 stocks_to_update.sort(key=lambda x: x["latest_date"])
@@ -599,8 +608,7 @@ def auto_sync(days, daily_limit, update_limit, delay, fast):
                 if cached_stocks:
                     existing_codes = {s.code for s in stocks_with_data}
                     new_codes = [
-                        s.get("code") for s in cached_stocks
-                        if s.get("code") and s.get("code") not in existing_codes
+                        s.get("code") for s in cached_stocks if s.get("code") and s.get("code") not in existing_codes
                     ][:daily_limit]
                 else:
                     new_codes = []

@@ -10,25 +10,27 @@ ML 预测历史记录模块 - 追踪模型效果
 """
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from typing import Any
-from enum import Enum
 
 from ..config import config
 
 
 class PredictionOutcome(Enum):
     """预测结果"""
-    CORRECT = "correct"          # 预测正确
-    WRONG = "wrong"              # 预测错误
-    PENDING = "pending"          # 待验证
+
+    CORRECT = "correct"  # 预测正确
+    WRONG = "wrong"  # 预测错误
+    PENDING = "pending"  # 待验证
 
 
 @dataclass
 class PredictionRecord:
     """预测记录"""
+
     id: str
     code: str
     name: str
@@ -62,6 +64,7 @@ class PredictionRecord:
 @dataclass
 class ModelPerformance:
     """模型表现"""
+
     total_predictions: int
     correct_predictions: int
     wrong_predictions: int
@@ -79,6 +82,7 @@ class ModelPerformance:
 @dataclass
 class PredictionAnalysis:
     """预测分析"""
+
     by_direction: dict[str, dict[str, int]]
     by_confidence: dict[str, dict[str, int]]
     by_stock: dict[str, dict[str, int]]
@@ -175,13 +179,11 @@ class MLPredictionTracker:
 
         cutoff_date = datetime.now()
         from datetime import timedelta
+
         cutoff_date = cutoff_date - timedelta(days=days)
         cutoff_str = cutoff_date.strftime("%Y-%m-%d")
 
-        recent_predictions = [
-            p for p in predictions
-            if p.created_at >= cutoff_str
-        ]
+        recent_predictions = [p for p in predictions if p.created_at >= cutoff_str]
 
         total = len(recent_predictions)
         correct = sum(1 for p in recent_predictions if p.outcome == PredictionOutcome.CORRECT)
@@ -205,7 +207,9 @@ class MLPredictionTracker:
         loss_preds = sum(1 for p in recent_predictions if p.predicted_direction == "down")
 
         period_start = min(p.created_at for p in recent_predictions) if recent_predictions else cutoff_str
-        period_end = max(p.created_at for p in recent_predictions) if recent_predictions else datetime.now().strftime("%Y-%m-%d")
+        period_end = (
+            max(p.created_at for p in recent_predictions) if recent_predictions else datetime.now().strftime("%Y-%m-%d")
+        )
 
         return ModelPerformance(
             total_predictions=total,
@@ -228,6 +232,7 @@ class MLPredictionTracker:
 
         cutoff_date = datetime.now()
         from datetime import timedelta
+
         cutoff_date = cutoff_date - timedelta(days=days)
         cutoff_str = cutoff_date.strftime("%Y-%m-%d")
 
@@ -277,9 +282,13 @@ class MLPredictionTracker:
                 by_stock[p.code]["correct"] += 1
 
         verified = [p for p in recent if p.outcome != PredictionOutcome.PENDING]
-        recent_accuracy = sum(1 for p in verified if p.outcome == PredictionOutcome.CORRECT) / len(verified) if verified else 0
+        recent_accuracy = (
+            sum(1 for p in verified if p.outcome == PredictionOutcome.CORRECT) / len(verified) if verified else 0
+        )
 
-        older_predictions = [p for p in predictions if p.created_at < cutoff_str and p.outcome != PredictionOutcome.PENDING]
+        older_predictions = [
+            p for p in predictions if p.created_at < cutoff_str and p.outcome != PredictionOutcome.PENDING
+        ]
         older_correct = sum(1 for p in older_predictions if p.outcome == PredictionOutcome.CORRECT)
         older_accuracy = older_correct / len(older_predictions) if older_predictions else 0
 

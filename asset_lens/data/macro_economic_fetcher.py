@@ -85,6 +85,7 @@ class MacroEconomicFetcher:
     def requests(self):
         """延迟加载 requests - 已弃用，使用 http_client"""
         from ..utils.http_client import http_client
+
         return http_client
 
     def _is_cache_valid(self, cache_key: str) -> bool:

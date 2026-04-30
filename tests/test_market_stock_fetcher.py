@@ -5,7 +5,7 @@ Tests for market_stock_fetcher.py
 import json
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pandas as pd
 import pytest
@@ -24,6 +24,7 @@ class TestMarketStockFetcher:
     def fetcher(self, temp_cache_path):
         """创建测试实例"""
         from asset_lens.data.market_stock_fetcher import MarketStockFetcher
+
         fetcher = MarketStockFetcher(cache_path=temp_cache_path)
         yield fetcher
 
@@ -42,7 +43,7 @@ class TestMarketStockFetcher:
         fetcher.save_market_stocks(stocks)
 
         assert fetcher.market_stock_cache_file.exists()
-        with open(fetcher.market_stock_cache_file, "r", encoding="utf-8") as f:
+        with open(fetcher.market_stock_cache_file, encoding="utf-8") as f:
             data = json.load(f)
             assert data["total"] == 2
             assert len(data["data"]) == 2
@@ -115,10 +116,10 @@ class TestMarketStockFetcher:
         mock_stocks = [
             {"code": "sh600519", "name": "贵州茅台", "current_price": 1800, "change_percent": 2.5, "volume": 1000000}
         ]
-        
+
         fetcher._fetch_stocks_tushare = MagicMock(return_value=[])
         fetcher._fetch_stocks_tencent = MagicMock(return_value=mock_stocks)
-        
+
         result = fetcher.fetch_all_cn_stocks()
         assert len(result) == 1
         assert result[0]["code"] == "sh600519"

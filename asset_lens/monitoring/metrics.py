@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class MetricValue:
     """指标值"""
+
     value: float
     labels: dict[str, str] = field(default_factory=dict)
     timestamp: float = field(default_factory=time.time)
@@ -177,7 +178,11 @@ class Histogram:
                     lines.append(f"{self.name}_bucket{bucket_label} {cumulative}")
 
                 cumulative += counts[-1]
-                inf_label = '{le="+Inf"}' if not labels else "{" + ",".join(f'{k}="{v}"' for k, v in labels.items()) + ',le="+Inf"}'
+                inf_label = (
+                    '{le="+Inf"}'
+                    if not labels
+                    else "{" + ",".join(f'{k}="{v}"' for k, v in labels.items()) + ',le="+Inf"}'
+                )
                 lines.append(f"{self.name}_bucket{inf_label} {cumulative}")
                 lines.append(f"{self.name}_sum{label_str} {self._sums[key]}")
                 lines.append(f"{self.name}_count{label_str} {cumulative}")
@@ -212,6 +217,7 @@ metrics_registry = MetricsRegistry()
 
 def timer(metric: Histogram) -> Callable:
     """计时装饰器"""
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -221,12 +227,15 @@ def timer(metric: Histogram) -> Callable:
             finally:
                 duration = time.time() - start
                 metric.observe(duration)
+
         return wrapper
+
     return decorator
 
 
 async def async_timer(metric: Histogram) -> Callable:
     """异步计时装饰器"""
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         async def wrapper(*args, **kwargs):
@@ -236,7 +245,9 @@ async def async_timer(metric: Histogram) -> Callable:
             finally:
                 duration = time.time() - start
                 metric.observe(duration)
+
         return wrapper
+
     return decorator
 
 

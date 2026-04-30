@@ -2,12 +2,11 @@
 Additional tests for csv_parser.py to improve coverage
 """
 
-import os
 import tempfile
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -134,9 +133,7 @@ class TestCalculateCashflowsWithDays:
             {"date": "2024/1/15", "type": "buy", "amount": 1000},
             {"date": "2024/6/15", "type": "sell", "amount": 500},
         ]
-        result = CSVParser._calculate_cashflows_with_days(
-            transactions, date(2024, 1, 1), Decimal("600"), 360
-        )
+        result = CSVParser._calculate_cashflows_with_days(transactions, date(2024, 1, 1), Decimal("600"), 360)
         assert len(result) == 3
         assert result[0]["amount"] == -1000
         assert result[1]["amount"] == 500
@@ -147,9 +144,7 @@ class TestCalculateCashflowsWithDays:
         transactions = [
             {"date": "2024/1/15", "type": "buy", "amount": 1000},
         ]
-        result = CSVParser._calculate_cashflows_with_days(
-            transactions, None, Decimal("1200"), 360
-        )
+        result = CSVParser._calculate_cashflows_with_days(transactions, None, Decimal("1200"), 360)
         assert len(result) == 0
 
     def test_calculate_cashflows_with_days_no_current_amount(self):
@@ -157,9 +152,7 @@ class TestCalculateCashflowsWithDays:
         transactions = [
             {"date": "2024/1/15", "type": "buy", "amount": 1000},
         ]
-        result = CSVParser._calculate_cashflows_with_days(
-            transactions, date(2024, 1, 1), None, 360
-        )
+        result = CSVParser._calculate_cashflows_with_days(transactions, date(2024, 1, 1), None, 360)
         assert len(result) == 1
 
 
@@ -279,8 +272,12 @@ class TestGetExchangeRatesAdvanced:
             # Create summary file (priority source for exchange rates)
             summary_file = temp_path / "资产汇总-表格 1.csv"
             with open(summary_file, "w", encoding="utf-8-sig") as f:
-                f.write("日期,微信,中金财富,支付宝,富途,招商,信用卡,港招,交通,浦发,建设,中信,民生,工商,中银,京东白条,抖音月付,多多后付,美团月付,总金额,美元汇率,港元汇率,黄金\n")
-                f.write("2024/01/15,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000,11000,12000,13000,14000,15000,16000,17000,18000,190000,7.25,0.93,500\n")
+                f.write(
+                    "日期,微信,中金财富,支付宝,富途,招商,信用卡,港招,交通,浦发,建设,中信,民生,工商,中银,京东白条,抖音月付,多多后付,美团月付,总金额,美元汇率,港元汇率,黄金\n"
+                )
+                f.write(
+                    "2024/01/15,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000,11000,12000,13000,14000,15000,16000,17000,18000,190000,7.25,0.93,500\n"
+                )
 
             usd, hkd = CSVParser.get_exchange_rates(temp_path)
             assert usd == 7.25
@@ -292,8 +289,8 @@ class TestParseRowAdvanced:
 
     def setup_method(self):
         """Setup method - ensure platform config is loaded"""
-        from asset_lens.core.platform_loader import PlatformLoader
         from asset_lens.config import config
+        from asset_lens.core.platform_loader import PlatformLoader
 
         config.data_mode = "sample"
         PlatformLoader.reset()
@@ -504,9 +501,7 @@ class TestParseTransactionRecordsAdvanced:
 
     def test_parse_transaction_records_multiple_semicolon(self):
         """Test parsing multiple records with semicolon"""
-        result = CSVParser._parse_transaction_records(
-            "2024/1/15:buy:1000; 2024/6/15:sell:500; 2024/12/15:buy:2000"
-        )
+        result = CSVParser._parse_transaction_records("2024/1/15:buy:1000; 2024/6/15:sell:500; 2024/12/15:buy:2000")
         assert len(result) == 3
 
     def test_parse_transaction_records_invalid_amount(self):
@@ -530,7 +525,7 @@ class TestLoadDataRealMode:
 
     def test_load_data_real_mode_no_data_dir(self):
         """Test loading data in real mode without data directory"""
-        with patch('asset_lens.data.csv_parser.config') as mock_config:
+        with patch("asset_lens.data.csv_parser.config") as mock_config:
             mock_config.is_real_mode = False
             mock_config.project_root = Path("/nonexistent")
             mock_config.data_path = Path("/nonexistent")
@@ -545,10 +540,7 @@ class TestParseDcaTransactions:
     def test_parse_dca_transactions_basic(self):
         """Test parsing DCA transactions"""
         result = CSVParser._parse_dca_transactions(
-            "2024/1/1-now:buy:1000",
-            InvestmentType.DCA_FUND,
-            datetime(2024, 6, 30),
-            "测试定投"
+            "2024/1/1-now:buy:1000", InvestmentType.DCA_FUND, datetime(2024, 6, 30), "测试定投"
         )
         assert len(result) > 0
         assert all(t["type"] == "buy" for t in result)
@@ -556,9 +548,6 @@ class TestParseDcaTransactions:
     def test_parse_dca_transactions_with_reference_date(self):
         """Test parsing DCA transactions with reference date"""
         result = CSVParser._parse_dca_transactions(
-            "2024/1/1-2024/6/30:buy:1000",
-            InvestmentType.DCA_FUND,
-            datetime(2024, 6, 30),
-            "测试定投"
+            "2024/1/1-2024/6/30:buy:1000", InvestmentType.DCA_FUND, datetime(2024, 6, 30), "测试定投"
         )
         assert len(result) > 0

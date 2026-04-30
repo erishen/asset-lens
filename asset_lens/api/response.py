@@ -58,12 +58,7 @@ class APIResponse(BaseModel):
 
     class Config:
         json_schema_extra = {
-            "example": {
-                "success": True,
-                "data": {"key": "value"},
-                "error": None,
-                "timestamp": "2024-01-01 12:00:00"
-            }
+            "example": {"success": True, "data": {"key": "value"}, "error": None, "timestamp": "2024-01-01 12:00:00"}
         }
 
 

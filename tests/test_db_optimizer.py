@@ -3,9 +3,7 @@ Tests for Database Optimizer.
 数据库优化器测试
 """
 
-import pytest
 import tempfile
-from unittest.mock import patch, MagicMock
 
 
 class TestDatabaseOptimizer:
@@ -14,6 +12,7 @@ class TestDatabaseOptimizer:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.db.optimizer import DatabaseOptimizer
+
         assert DatabaseOptimizer is not None
 
     def test_init_with_temp_db(self):
@@ -28,8 +27,8 @@ class TestDatabaseOptimizer:
 
     def test_enable_wal_mode(self):
         """测试启用 WAL 模式"""
+
         from asset_lens.db.optimizer import DatabaseOptimizer
-        import sqlite3
 
         with tempfile.TemporaryDirectory() as tmpdir:
             db_path = f"{tmpdir}/test.db"
@@ -56,8 +55,8 @@ class TestDatabaseOptimizer:
 
     def test_create_indexes(self):
         """测试创建索引"""
-        from asset_lens.db.optimizer import DatabaseOptimizer
         from asset_lens.db.database import DatabaseManager
+        from asset_lens.db.optimizer import DatabaseOptimizer
 
         with tempfile.TemporaryDirectory() as tmpdir:
             db_path = f"sqlite:///{tmpdir}/test.db"
@@ -77,8 +76,8 @@ class TestDatabaseOptimizer:
 
     def test_analyze_tables(self):
         """测试分析表"""
-        from asset_lens.db.optimizer import DatabaseOptimizer
         from asset_lens.db.database import DatabaseManager
+        from asset_lens.db.optimizer import DatabaseOptimizer
 
         with tempfile.TemporaryDirectory() as tmpdir:
             db_path = f"sqlite:///{tmpdir}/test.db"
@@ -98,8 +97,8 @@ class TestDatabaseOptimizer:
 
     def test_get_index_usage(self):
         """测试获取索引使用情况"""
-        from asset_lens.db.optimizer import DatabaseOptimizer
         from asset_lens.db.database import DatabaseManager
+        from asset_lens.db.optimizer import DatabaseOptimizer
 
         with tempfile.TemporaryDirectory() as tmpdir:
             db_path = f"sqlite:///{tmpdir}/test.db"
@@ -119,8 +118,8 @@ class TestDatabaseOptimizer:
 
     def test_get_table_stats(self):
         """测试获取表统计信息"""
-        from asset_lens.db.optimizer import DatabaseOptimizer
         from asset_lens.db.database import DatabaseManager
+        from asset_lens.db.optimizer import DatabaseOptimizer
 
         with tempfile.TemporaryDirectory() as tmpdir:
             db_path = f"sqlite:///{tmpdir}/test.db"
@@ -140,8 +139,8 @@ class TestDatabaseOptimizer:
 
     def test_benchmark_query(self):
         """测试基准查询"""
-        from asset_lens.db.optimizer import DatabaseOptimizer
         from asset_lens.db.database import DatabaseManager
+        from asset_lens.db.optimizer import DatabaseOptimizer
 
         with tempfile.TemporaryDirectory() as tmpdir:
             db_path = f"sqlite:///{tmpdir}/test.db"
@@ -161,8 +160,8 @@ class TestDatabaseOptimizer:
 
     def test_run_full_optimization(self):
         """测试完整优化流程"""
-        from asset_lens.db.optimizer import DatabaseOptimizer
         from asset_lens.db.database import DatabaseManager
+        from asset_lens.db.optimizer import DatabaseOptimizer
 
         with tempfile.TemporaryDirectory() as tmpdir:
             db_path = f"sqlite:///{tmpdir}/test.db"

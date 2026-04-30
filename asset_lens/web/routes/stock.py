@@ -12,6 +12,7 @@ router = APIRouter(prefix="/api/stock", tags=["stock"])
 
 class StockQuote(BaseModel):
     """股票行情模型"""
+
     code: str
     name: str = ""
     current_price: float = 0
@@ -169,6 +170,7 @@ async def _get_kline_tencent(code: str, ktype: str, count: int) -> list[dict]:
 
     if response.status_code == 200:
         import json
+
         text = response.text
         json_start = text.find("{")
         if json_start != -1:
@@ -180,14 +182,16 @@ async def _get_kline_tencent(code: str, ktype: str, count: int) -> list[dict]:
 
                 result = []
                 for item in kline_data:
-                    result.append({
-                        "date": item[0],
-                        "open": float(item[1]),
-                        "close": float(item[2]),
-                        "high": float(item[3]),
-                        "low": float(item[4]),
-                        "volume": float(item[5]),
-                    })
+                    result.append(
+                        {
+                            "date": item[0],
+                            "open": float(item[1]),
+                            "close": float(item[2]),
+                            "high": float(item[3]),
+                            "low": float(item[4]),
+                            "volume": float(item[5]),
+                        }
+                    )
 
                 return result
 

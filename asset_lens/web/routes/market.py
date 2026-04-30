@@ -2,7 +2,6 @@
 Market Routes - 市场数据相关 API
 """
 
-
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
@@ -11,6 +10,7 @@ router = APIRouter(prefix="/api/market", tags=["market"])
 
 class MarketIndex(BaseModel):
     """市场指数模型"""
+
     code: str
     name: str
     price: float = 0

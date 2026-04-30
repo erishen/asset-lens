@@ -4,21 +4,17 @@ Tests for Signal Pusher.
 """
 
 import json
-from datetime import datetime
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from asset_lens.analysis.signal_pusher import (
-    SignalPusher,
-    SignalGenerator,
-    Signal,
-    SignalType,
     Priority,
     PushConfig,
-    signal_pusher,
+    Signal,
+    SignalGenerator,
+    SignalPusher,
+    SignalType,
     signal_generator,
+    signal_pusher,
 )
 
 

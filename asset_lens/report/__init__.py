@@ -6,12 +6,7 @@ Report Components - 报告组件模块
 
 from .charts import ChartGenerator
 from .data_collectors import ReportDataCollector
-from .formatters import (
-    format_currency,
-    format_date,
-    format_number,
-    format_percentage,
-)
+from .formatters import format_currency, format_date, format_number, format_percentage
 
 __all__ = [
     "format_currency",

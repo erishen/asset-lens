@@ -43,7 +43,11 @@ class PortfolioComparator:
 
     def compare_periods(self, date1: str, date2: str) -> dict[str, Any] | None:
         """对比指定日期"""
-        snapshots = [s for s in self._snapshots if s.get("timestamp", "").startswith(date1) or s.get("timestamp", "").startswith(date2)]
+        snapshots = [
+            s
+            for s in self._snapshots
+            if s.get("timestamp", "").startswith(date1) or s.get("timestamp", "").startswith(date2)
+        ]
 
         if len(snapshots) < 2:
             return None
@@ -58,7 +62,8 @@ class PortfolioComparator:
         """获取趋势分析"""
         cutoff_date = datetime.now() - timedelta(days=days)
         recent_snapshots = [
-            s for s in self._snapshots
+            s
+            for s in self._snapshots
             if datetime.strptime(s.get("timestamp", "2000-01-01"), "%Y-%m-%d %H:%M:%S") >= cutoff_date
         ]
 

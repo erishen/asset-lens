@@ -142,16 +142,12 @@ class SoldInvestmentAnalyzer:
                 negative_count += 1
 
         # 计算总体收益率
-        total_return_rate_pct = (
-            (total_profit / total_initial * Decimal("100")) if total_initial > 0 else Decimal("0")
-        )
+        total_return_rate_pct = (total_profit / total_initial * Decimal("100")) if total_initial > 0 else Decimal("0")
 
         # 计算平均值
         avg_holding_days = total_holding_days / len(sell_records) if sell_records else 0.0
         # 加权平均年化收益率
-        avg_return_rate = (
-            (weighted_annualized / total_initial) if total_initial > 0 else Decimal("0")
-        )
+        avg_return_rate = (weighted_annualized / total_initial) if total_initial > 0 else Decimal("0")
 
         stats = SoldInvestmentStats(
             total_records=len(sell_records),
@@ -270,9 +266,7 @@ class SoldInvestmentAnalyzer:
             "长期投资（> 2年）": calculate_group_stats(long_term),
         }
 
-    def get_top_performers(
-        self, details: list[SoldInvestmentDetail], top_n: int = 3
-    ) -> list[SoldInvestmentDetail]:
+    def get_top_performers(self, details: list[SoldInvestmentDetail], top_n: int = 3) -> list[SoldInvestmentDetail]:
         """
         获取表现最好的产品（按年化收益率排序，与 ts-demo 保持一致）
 
@@ -286,9 +280,7 @@ class SoldInvestmentAnalyzer:
         positive = [d for d in details if d.annualized_return and d.annualized_return > 0]
         return sorted(positive, key=lambda x: x.annualized_return or 0, reverse=True)[:top_n]
 
-    def get_worst_performers(
-        self, details: list[SoldInvestmentDetail], top_n: int = 3
-    ) -> list[SoldInvestmentDetail]:
+    def get_worst_performers(self, details: list[SoldInvestmentDetail], top_n: int = 3) -> list[SoldInvestmentDetail]:
         """
         获取表现最差的产品
 

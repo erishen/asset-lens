@@ -2,10 +2,7 @@
 Tests for AI Components Module
 """
 
-import pytest
-from pathlib import Path
-from datetime import datetime
-from asset_lens.ai import PromptBuilder, ResultParser, AICacheManager
+from asset_lens.ai import AICacheManager, PromptBuilder, ResultParser
 from asset_lens.ai.result_parser import ParsedResult
 
 
@@ -30,9 +27,9 @@ class TestPromptBuilder:
             },
             "low_returns": [],
         }
-        
+
         prompt = PromptBuilder.build_portfolio_analysis_prompt(data)
-        
+
         assert "投资组合概览" in prompt
         assert "100000" in prompt or "10.00万" in prompt
         assert "风险分布" in prompt
@@ -48,9 +45,9 @@ class TestPromptBuilder:
                 "高风险": {"total_value": 20000},
             },
         }
-        
+
         prompt = PromptBuilder.build_risk_assessment_prompt(data)
-        
+
         assert "风险分布分析" in prompt
 
     def test_build_suggestion_prompt(self):
@@ -60,9 +57,9 @@ class TestPromptBuilder:
             "total_profit": 10000,
             "overall_return_rate": 10.0,
         }
-        
+
         prompt = PromptBuilder.build_suggestion_prompt(data, risk_preference="balanced")
-        
+
         assert "投资组合数据" in prompt
         assert "balanced" in prompt
         assert "建议" in prompt
@@ -70,7 +67,7 @@ class TestPromptBuilder:
     def test_get_system_prompt(self):
         """测试获取系统 Prompt"""
         prompt = PromptBuilder.get_system_prompt()
-        
+
         assert "投资顾问" in prompt
         assert len(prompt) > 0
 
@@ -86,7 +83,7 @@ class TestResultParser:
 
     def test_parse_json_response(self):
         """测试 JSON 响应解析"""
-        response = '''
+        response = """
         这里是一些文本
         ```json
         {
@@ -97,10 +94,10 @@ class TestResultParser:
             "score": 75
         }
         ```
-        '''
-        
+        """
+
         result = ResultParser.parse_json_response(response)
-        
+
         assert result.success is True
         assert result.summary == "投资组合表现良好"
         assert result.risk_assessment == "风险适中"
@@ -111,9 +108,9 @@ class TestResultParser:
     def test_parse_json_response_invalid(self):
         """测试无效 JSON 响应"""
         response = "这不是 JSON 格式的响应"
-        
+
         result = ResultParser.parse_json_response(response)
-        
+
         assert result.success is False
 
     def test_parse_markdown_response(self):
@@ -121,22 +118,22 @@ class TestResultParser:
         response = """
         ## 投资摘要
         投资组合表现良好。
-        
+
         ## 风险评估
         风险适中。
-        
+
         ## 投资建议
         - 建议1
         - 建议2
-        
+
         ## 风险警告
         - 警告1
-        
+
         ## 综合评分：75
         """
-        
+
         result = ResultParser.parse_markdown_response(response)
-        
+
         assert result.success is True
         assert len(result.suggestions) > 0
         assert result.score == 75
@@ -158,9 +155,9 @@ class TestResultParser:
             warnings=["警告1"],
             score=80,
         )
-        
+
         data = ResultParser.to_dict(result)
-        
+
         assert data["success"] is True
         assert data["summary"] == "测试摘要"
         assert data["score"] == 80
@@ -172,7 +169,7 @@ class TestAICacheManager:
     def test_initialization(self, tmp_path):
         """测试初始化"""
         manager = AICacheManager(cache_dir=tmp_path, ttl=3600, enabled=True)
-        
+
         assert manager.enabled is True
         assert manager.ttl == 3600
         assert manager.cache_dir == tmp_path
@@ -185,10 +182,10 @@ class TestAICacheManager:
             "total_profit": 10000,
             "total_products": 5,
         }
-        
+
         key1 = manager.generate_key(data)
         key2 = manager.generate_key(data)
-        
+
         assert key1 == key2  # 相同数据生成相同键
         assert key1.startswith("ai_")
 
@@ -197,11 +194,11 @@ class TestAICacheManager:
         manager = AICacheManager(cache_dir=tmp_path, enabled=True)
         key = "test_key"
         data = {"summary": "测试结果", "score": 80}
-        
+
         # 设置缓存
         result = manager.set(key, data)
         assert result is True
-        
+
         # 获取缓存
         cached = manager.get(key)
         assert cached is not None
@@ -210,9 +207,9 @@ class TestAICacheManager:
     def test_get_nonexistent(self, tmp_path):
         """测试获取不存在的缓存"""
         manager = AICacheManager(cache_dir=tmp_path)
-        
+
         result = manager.get("nonexistent_key")
-        
+
         assert result is None
 
     def test_delete(self, tmp_path):
@@ -220,22 +217,22 @@ class TestAICacheManager:
         manager = AICacheManager(cache_dir=tmp_path, enabled=True)
         key = "test_key"
         data = {"test": "data"}
-        
+
         manager.set(key, data)
         result = manager.delete(key)
-        
+
         assert result is True
         assert manager.get(key) is None
 
     def test_clear(self, tmp_path):
         """测试清除所有缓存"""
         manager = AICacheManager(cache_dir=tmp_path, enabled=True)
-        
+
         manager.set("key1", {"data": 1})
         manager.set("key2", {"data": 2})
-        
+
         count = manager.clear()
-        
+
         assert count >= 2
         assert manager.get("key1") is None
         assert manager.get("key2") is None
@@ -243,22 +240,22 @@ class TestAICacheManager:
     def test_disabled_cache(self, tmp_path):
         """测试禁用缓存"""
         manager = AICacheManager(cache_dir=tmp_path, enabled=False)
-        
+
         # 禁用时不应该缓存
         result = manager.set("key", {"data": "test"})
         assert result is False
-        
+
         cached = manager.get("key")
         assert cached is None
 
     def test_get_stats(self, tmp_path):
         """测试获取统计信息"""
         manager = AICacheManager(cache_dir=tmp_path, enabled=True)
-        
+
         manager.set("key1", {"data": 1})
-        
+
         stats = manager.get_stats()
-        
+
         assert stats["enabled"] is True
         assert stats["memory_cache_count"] == 1
         assert stats["file_cache_count"] == 1

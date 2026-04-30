@@ -119,7 +119,11 @@ async def get_ml_signals() -> dict[str, Any]:
                     "up_prob": result.up_prob,
                     "down_prob": result.down_prob,
                     "expected_return": result.expected_return,
-                    "signal_strength": "strong" if result.confidence > 0.7 else "medium" if result.confidence > 0.6 else "weak",
+                    "signal_strength": "strong"
+                    if result.confidence > 0.7
+                    else "medium"
+                    if result.confidence > 0.6
+                    else "weak",
                     "timestamp": result.timestamp,
                 }
                 signals.append(signal)
@@ -244,34 +248,39 @@ async def get_signal_history(days: int = 30) -> dict[str, Any]:
         历史信号记录
     """
     try:
-        from asset_lens.db.database import db_manager
         from sqlalchemy import text
+
+        from asset_lens.db.database import db_manager
 
         with db_manager.session_scope() as db:
             result = db.execute(
-                text("""
+                text(
+                    """
                     SELECT code, name, prediction, confidence, up_prob, down_prob, timestamp
                     FROM ml_signals
                     WHERE timestamp >= datetime('now', :days_str)
                     ORDER BY timestamp DESC
                     LIMIT 100
-                """),
-                {"days_str": f"-{days} days"}
+                """
+                ),
+                {"days_str": f"-{days} days"},
             )
 
             rows = result.fetchall()
 
             history = []
             for row in rows:
-                history.append({
-                    "code": row[0],
-                    "name": row[1],
-                    "prediction": row[2],
-                    "confidence": row[3],
-                    "up_prob": row[4],
-                    "down_prob": row[5],
-                    "timestamp": row[6],
-                })
+                history.append(
+                    {
+                        "code": row[0],
+                        "name": row[1],
+                        "prediction": row[2],
+                        "confidence": row[3],
+                        "up_prob": row[4],
+                        "down_prob": row[5],
+                        "timestamp": row[6],
+                    }
+                )
 
             return {
                 "history": history,

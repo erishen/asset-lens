@@ -2,8 +2,7 @@
 Tests for advanced analytics.
 """
 
-import pytest
-from datetime import date, timedelta
+from datetime import date
 from decimal import Decimal
 
 from asset_lens.core.advanced_analytics import (
@@ -11,10 +10,9 @@ from asset_lens.core.advanced_analytics import (
     DrawdownResult,
     SharpeResult,
     VolatilityResult,
-    PortfolioAnalytics,
     advanced_analytics,
 )
-from asset_lens.data.models import InvestmentProduct, InvestmentType, RiskLevel, Portfolio
+from asset_lens.data.models import InvestmentProduct, InvestmentType, Portfolio, RiskLevel
 
 
 class TestDrawdownResult:

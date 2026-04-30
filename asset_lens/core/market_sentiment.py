@@ -17,6 +17,7 @@ from datetime import datetime
 @dataclass
 class SentimentIndicator:
     """情绪指标"""
+
     name: str
     value: float
     level: str  # bullish, bearish, neutral
@@ -26,6 +27,7 @@ class SentimentIndicator:
 @dataclass
 class MarketSentiment:
     """市场风向结果"""
+
     overall_score: float  # 综合评分 0-100
     trend: str  # bullish, bearish, neutral
     risk_level: str  # low, medium, high
@@ -220,7 +222,7 @@ class MarketSentimentAnalyzer:
                     if position.status in ["watching", "holding"]:
                         if not code.startswith("sh92") and not code.startswith("bj"):
                             total_stocks += 1
-                            profit_rate = position.return_rate if hasattr(position, 'return_rate') else 0
+                            profit_rate = position.return_rate if hasattr(position, "return_rate") else 0
                             if profit_rate > 0:
                                 profit_stocks += 1
                                 total_profit_rate += profit_rate
@@ -491,18 +493,22 @@ class MarketSentimentAnalyzer:
             lines.append(f"  {indicator.name}: {indicator.value}分 {level_emoji.get(indicator.level, '')}")
             lines.append(f"    └─ {indicator.description}")
 
-        lines.extend([
-            "",
-            "【投资建议】",
-        ])
+        lines.extend(
+            [
+                "",
+                "【投资建议】",
+            ]
+        )
 
         for suggestion in sentiment.suggestions:
             lines.append(f"  {suggestion}")
 
-        lines.extend([
-            "",
-            "=" * 60,
-        ])
+        lines.extend(
+            [
+                "",
+                "=" * 60,
+            ]
+        )
 
         return "\n".join(lines)
 

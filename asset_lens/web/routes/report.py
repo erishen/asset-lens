@@ -25,10 +25,10 @@ async def export_report():
 
         rows_html = ""
         for p in products[:50]:
-            profit = float(getattr(p, 'profit', 0) or 0)
-            profit_rate = float(getattr(p, 'return_rate', 0) or 0)
+            profit = float(getattr(p, "profit", 0) or 0)
+            profit_rate = float(getattr(p, "return_rate", 0) or 0)
             profit_class = "positive" if profit >= 0 else "negative"
-            ptype = getattr(p, 'investment_type', None)
+            ptype = getattr(p, "investment_type", None)
             ptype_str = ptype.value if ptype else "其他"
             rows_html += f"""
                 <tr>
@@ -71,13 +71,13 @@ async def export_report():
                 </div>
                 <div class="summary-item">
                     <div class="summary-label">Total Profit</div>
-                    <div class="summary-value {'positive' if total_profit >= 0 else 'negative'}">
+                    <div class="summary-value {"positive" if total_profit >= 0 else "negative"}">
                         {total_profit:,.2f} CNY
                     </div>
                 </div>
                 <div class="summary-item">
                     <div class="summary-label">Return Rate</div>
-                    <div class="summary-value {'positive' if total_return >= 0 else 'negative'}">
+                    <div class="summary-value {"positive" if total_return >= 0 else "negative"}">
                         {total_return:.2f}%
                     </div>
                 </div>

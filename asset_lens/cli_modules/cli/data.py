@@ -3,7 +3,6 @@ Data CLI commands for asset-lens.
 数据管理命令模块 - 包含 fetch-stock, fetch-fund, search-fund, update-market-data, fetch-portfolio-funds, update-all-data
 """
 
-
 import click
 
 
@@ -216,7 +215,13 @@ def register_data_commands(cli: click.Group) -> None:
         click.echo("\n💡 使用 Provider Registry 自动选择最佳数据源")
 
     @cli.command("fetch-unified")
-    @click.option("--type", "data_type", type=click.Choice(["stock_cn", "stock_us", "fund_cn", "index"]), required=True, help="数据类型")
+    @click.option(
+        "--type",
+        "data_type",
+        type=click.Choice(["stock_cn", "stock_us", "fund_cn", "index"]),
+        required=True,
+        help="数据类型",
+    )
     @click.argument("symbol")
     def fetch_unified(data_type: str, symbol: str):
         """使用 Provider Registry 获取数据
@@ -275,6 +280,7 @@ def register_data_commands(cli: click.Group) -> None:
 
         if output_json:
             import json
+
             output = {name: h.to_dict() for name, h in health_data.items()}
             click.echo(json.dumps(output, indent=2, ensure_ascii=False))
             return
@@ -342,7 +348,9 @@ def register_data_commands(cli: click.Group) -> None:
         click.echo(f"   缓存目录: {file_stats['cache_dir']}")
 
     @cli.command("cache-clear")
-    @click.option("--type", "data_type", type=click.Choice(["stock_quote", "fund_quote", "market_index", "all"]), help="缓存类型")
+    @click.option(
+        "--type", "data_type", type=click.Choice(["stock_quote", "fund_quote", "market_index", "all"]), help="缓存类型"
+    )
     def cache_clear(data_type: str | None):
         """清空缓存数据"""
         from asset_lens.data.providers.cache import provider_cache
@@ -416,14 +424,30 @@ def register_data_commands(cli: click.Group) -> None:
     @cli.command("fetch-history-batch")
     @click.option("--codes", "codes_str", help="股票代码列表（逗号分隔）")
     @click.option("--days", default=250, help="历史天数")
-    @click.option("--source", "data_source", default="auto", type=click.Choice(["auto", "akshare", "baostock", "tushare"]), help="数据源")
+    @click.option(
+        "--source",
+        "data_source",
+        default="auto",
+        type=click.Choice(["auto", "akshare", "baostock", "tushare"]),
+        help="数据源",
+    )
     @click.option("--delay", default=0.3, type=float, help="请求间隔（秒）")
     @click.option("--use-market-stocks", is_flag=True, help="使用市场股票列表")
     @click.option("--limit", default=0, type=int, help="限制股票数量（0=不限制）")
     @click.option("--skip-existing", is_flag=True, default=False, help="跳过已有历史数据的股票")
     @click.option("--concurrent", is_flag=True, default=False, help="使用并发获取（更快）")
     @click.option("--workers", default=5, type=int, help="并发数（仅并发模式有效）")
-    def fetch_history_batch(codes_str: str | None, days: int, data_source: str, delay: float, use_market_stocks: bool, limit: int, skip_existing: bool, concurrent: bool, workers: int):
+    def fetch_history_batch(
+        codes_str: str | None,
+        days: int,
+        data_source: str,
+        delay: float,
+        use_market_stocks: bool,
+        limit: int,
+        skip_existing: bool,
+        concurrent: bool,
+        workers: int,
+    ):
         """批量获取股票历史K线数据（用于ML训练）
 
         示例:
@@ -463,6 +487,7 @@ def register_data_commands(cli: click.Group) -> None:
 
         if skip_existing:
             from asset_lens.db.database import db_manager
+
             existing_codes = db_manager.get_stock_codes_with_klines()
             original_count = len(codes)
             codes = [c for c in codes if c not in existing_codes]
@@ -534,7 +559,7 @@ def register_data_commands(cli: click.Group) -> None:
                 console.print("[yellow]⚠️ 无法获取北向资金数据[/yellow]")
                 return
 
-            data_source = df['data_source'].iloc[0] if 'data_source' in df.columns else '历史数据'
+            data_source = df["data_source"].iloc[0] if "data_source" in df.columns else "历史数据"
             console.print(f"\n📊 最近 {len(df)} 天北向资金流向 (数据来源: {data_source})")
 
             table = Table()
@@ -544,19 +569,19 @@ def register_data_commands(cli: click.Group) -> None:
 
             total_inflow = 0
             for _, row in df.iterrows():
-                net_inflow = row.get('north_net_inflow', 0)
+                net_inflow = row.get("north_net_inflow", 0)
                 if net_inflow:
                     total_inflow += net_inflow
                     trend = "🔴 流出" if net_inflow < 0 else "🟢 流入"
                     table.add_row(
-                        str(row.get('date', '')),
+                        str(row.get("date", "")),
                         f"{net_inflow:.2f}",
                         trend,
                     )
 
             console.print(table)
 
-            console.print(f"\n📊 汇总:")
+            console.print("\n📊 汇总:")
             console.print(f"   总净流入: {total_inflow:.2f} 亿")
             if total_inflow > 0:
                 console.print("   [green]整体趋势: 北向资金净流入[/green]")

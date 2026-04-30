@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 try:
     import lightgbm as lgb
+
     HAS_LIGHTGBM = True
 except ImportError:
     HAS_LIGHTGBM = False
@@ -33,6 +34,7 @@ except ImportError:
 
 try:
     import xgboost as xgb
+
     HAS_XGBOOST = True
 except ImportError:
     HAS_XGBOOST = False
@@ -42,6 +44,7 @@ try:
     from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, StackingClassifier
     from sklearn.linear_model import LogisticRegression
     from sklearn.preprocessing import StandardScaler
+
     HAS_SKLEARN = True
 except ImportError:
     HAS_SKLEARN = False
@@ -51,6 +54,7 @@ except ImportError:
 @dataclass
 class PredictionResult:
     """预测结果"""
+
     code: str
     name: str
     up_prob: float
@@ -63,15 +67,15 @@ class PredictionResult:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            'code': self.code,
-            'name': self.name,
-            'up_prob': self.up_prob,
-            'down_prob': self.down_prob,
-            'prediction': self.prediction,
-            'confidence': self.confidence,
-            'expected_return': self.expected_return,
-            'features': self.features,
-            'timestamp': self.timestamp,
+            "code": self.code,
+            "name": self.name,
+            "up_prob": self.up_prob,
+            "down_prob": self.down_prob,
+            "prediction": self.prediction,
+            "confidence": self.confidence,
+            "expected_return": self.expected_return,
+            "features": self.features,
+            "timestamp": self.timestamp,
         }
 
 
@@ -102,19 +106,19 @@ class StockPredictor:
                 raise ImportError("LightGBM 未安装")
 
             default_params: dict[str, Any] = {
-                'n_estimators': 100,
-                'max_depth': 5,
-                'learning_rate': 0.05,
-                'num_leaves': 31,
-                'min_child_samples': 20,
-                'subsample': 0.8,
-                'colsample_bytree': 0.8,
-                'reg_alpha': 0.1,
-                'reg_lambda': 0.1,
-                'min_split_gain': 0.01,
-                'random_state': 42,
-                'verbose': -1,
-                'n_jobs': -1,
+                "n_estimators": 100,
+                "max_depth": 5,
+                "learning_rate": 0.05,
+                "num_leaves": 31,
+                "min_child_samples": 20,
+                "subsample": 0.8,
+                "colsample_bytree": 0.8,
+                "reg_alpha": 0.1,
+                "reg_lambda": 0.1,
+                "min_split_gain": 0.01,
+                "random_state": 42,
+                "verbose": -1,
+                "n_jobs": -1,
             }
             default_params.update(kwargs)
 
@@ -139,9 +143,9 @@ class StockPredictor:
                     min_child_weight=10,
                     gamma=0.1,
                     random_state=42,
-                    eval_metric='logloss',
+                    eval_metric="logloss",
                     n_jobs=-1,
-                    **kwargs
+                    **kwargs,
                 )
             else:
                 return xgb.XGBRegressor(
@@ -151,7 +155,7 @@ class StockPredictor:
                     subsample=0.8,
                     colsample_bytree=0.8,
                     random_state=42,
-                    **kwargs
+                    **kwargs,
                 )
 
         elif self.model_type == "randomforest":
@@ -166,7 +170,7 @@ class StockPredictor:
                     min_samples_leaf=2,
                     random_state=42,
                     n_jobs=-1,
-                    **kwargs
+                    **kwargs,
                 )
             else:
                 return RandomForestRegressor(
@@ -176,7 +180,7 @@ class StockPredictor:
                     min_samples_leaf=2,
                     random_state=42,
                     n_jobs=-1,
-                    **kwargs
+                    **kwargs,
                 )
 
         elif self.model_type == "stacking":
@@ -194,7 +198,7 @@ class StockPredictor:
 
         if HAS_LIGHTGBM:
             if task == "classification":
-                models['lightgbm'] = lgb.LGBMClassifier(
+                models["lightgbm"] = lgb.LGBMClassifier(
                     n_estimators=300,
                     max_depth=8,
                     learning_rate=0.03,
@@ -211,7 +215,7 @@ class StockPredictor:
 
         if HAS_XGBOOST:
             if task == "classification":
-                models['xgboost'] = xgb.XGBClassifier(
+                models["xgboost"] = xgb.XGBClassifier(
                     n_estimators=300,
                     max_depth=8,
                     learning_rate=0.03,
@@ -222,7 +226,7 @@ class StockPredictor:
                     min_child_weight=3,
                     gamma=0.01,
                     random_state=42,
-                    eval_metric='logloss',
+                    eval_metric="logloss",
                 )
 
         return models
@@ -232,43 +236,58 @@ class StockPredictor:
         estimators = []
 
         if HAS_LIGHTGBM:
-            estimators.append(('lgb', lgb.LGBMClassifier(
-                n_estimators=100,
-                max_depth=6,
-                learning_rate=0.05,
-                num_leaves=31,
-                min_child_samples=20,
-                subsample=0.8,
-                colsample_bytree=0.8,
-                random_state=42,
-                verbose=-1,
-                n_jobs=1,
-            )))
+            estimators.append(
+                (
+                    "lgb",
+                    lgb.LGBMClassifier(
+                        n_estimators=100,
+                        max_depth=6,
+                        learning_rate=0.05,
+                        num_leaves=31,
+                        min_child_samples=20,
+                        subsample=0.8,
+                        colsample_bytree=0.8,
+                        random_state=42,
+                        verbose=-1,
+                        n_jobs=1,
+                    ),
+                )
+            )
 
         if HAS_XGBOOST:
-            estimators.append(('xgb', xgb.XGBClassifier(
-                n_estimators=100,
-                max_depth=6,
-                learning_rate=0.05,
-                subsample=0.8,
-                colsample_bytree=0.8,
-                reg_alpha=0.05,
-                reg_lambda=0.05,
-                random_state=42,
-                eval_metric='logloss',
-                use_label_encoder=False,
-                n_jobs=1,
-            )))
+            estimators.append(
+                (
+                    "xgb",
+                    xgb.XGBClassifier(
+                        n_estimators=100,
+                        max_depth=6,
+                        learning_rate=0.05,
+                        subsample=0.8,
+                        colsample_bytree=0.8,
+                        reg_alpha=0.05,
+                        reg_lambda=0.05,
+                        random_state=42,
+                        eval_metric="logloss",
+                        use_label_encoder=False,
+                        n_jobs=1,
+                    ),
+                )
+            )
 
         if HAS_SKLEARN:
-            estimators.append(('rf', RandomForestClassifier(
-                n_estimators=50,
-                max_depth=8,
-                min_samples_split=5,
-                min_samples_leaf=2,
-                random_state=42,
-                n_jobs=1,
-            )))
+            estimators.append(
+                (
+                    "rf",
+                    RandomForestClassifier(
+                        n_estimators=50,
+                        max_depth=8,
+                        min_samples_split=5,
+                        min_samples_leaf=2,
+                        random_state=42,
+                        n_jobs=1,
+                    ),
+                )
+            )
 
         if not estimators:
             raise ValueError("没有可用的基模型")
@@ -281,7 +300,7 @@ class StockPredictor:
                 random_state=42,
             ),
             cv=3,
-            stack_method='predict_proba',
+            stack_method="predict_proba",
             n_jobs=-1,
         )
 
@@ -293,7 +312,7 @@ class StockPredictor:
         y: pd.Series,
         feature_names: list[str] | None = None,
         task: str = "classification",
-        **kwargs
+        **kwargs,
     ) -> "StockPredictor":
         """
         训练模型
@@ -375,9 +394,7 @@ class StockPredictor:
             if not StockPredictor._missing_features_warned:
                 logger.warning(f"缺失特征: {missing_features}，将使用默认值 0")
                 StockPredictor._missing_features_warned = True
-            missing_df = pd.DataFrame(
-                0.0, index=X.index, columns=list(missing_features)
-            )
+            missing_df = pd.DataFrame(0.0, index=X.index, columns=list(missing_features))
             X = pd.concat([X, missing_df], axis=1)
 
         X = X[self.feature_names].fillna(0)
@@ -393,9 +410,9 @@ class StockPredictor:
             for name, model in self.model.items():
                 proba = model.predict_proba(X)
                 probas.append(proba)
-                if name == 'lightgbm':
+                if name == "lightgbm":
                     weights_list.append(0.5)
-                elif name == 'xgboost':
+                elif name == "xgboost":
                     weights_list.append(0.5)
             weights_arr = np.array(weights_list) / sum(weights_list)
             weighted_proba = np.zeros_like(probas[0])
@@ -494,15 +511,15 @@ class StockPredictor:
         if history_data and len(history_data) >= 30:
             try:
                 df = pd.DataFrame(history_data)
-                required_cols = ['close', 'high', 'low', 'volume']
+                required_cols = ["close", "high", "low", "volume"]
                 if all(col in df.columns for col in required_cols):
-                    if 'open' not in df.columns:
-                        df['open'] = df['close'].shift(1).fillna(df['close'])
-                    if 'amount' not in df.columns:
-                        df['amount'] = df['volume'] * df['close']
-                    
+                    if "open" not in df.columns:
+                        df["open"] = df["close"].shift(1).fillna(df["close"])
+                    if "amount" not in df.columns:
+                        df["amount"] = df["volume"] * df["close"]
+
                     df = self.feature_engineer.calculate_all_features(df)
-                    
+
                     if not df.empty:
                         latest = df.iloc[-1]
                         for feat in self.feature_engineer.feature_names:
@@ -548,16 +565,18 @@ class StockPredictor:
             confidence = max(up_prob, down_prob)
             expected_return = (up_prob - 0.5) * 0.1
 
-            results.append(PredictionResult(
-                code=code,
-                name=name,
-                up_prob=round(up_prob, 4),
-                down_prob=round(down_prob, 4),
-                prediction=prediction,
-                confidence=round(confidence, 4),
-                expected_return=round(expected_return, 4),
-                features=stocks_data[i],
-            ))
+            results.append(
+                PredictionResult(
+                    code=code,
+                    name=name,
+                    up_prob=round(up_prob, 4),
+                    down_prob=round(down_prob, 4),
+                    prediction=prediction,
+                    confidence=round(confidence, 4),
+                    expected_return=round(expected_return, 4),
+                    features=stocks_data[i],
+                )
+            )
 
         return results
 
@@ -569,26 +588,26 @@ class StockPredictor:
         if self.model_type == "ensemble" and isinstance(self.model, dict):
             importances = []
             for name, model in self.model.items():
-                if hasattr(model, 'feature_importances_'):
+                if hasattr(model, "feature_importances_"):
                     importances.append(model.feature_importances_)
-                elif hasattr(model, 'get_score'):
-                    importance_dict = model.get_score(importance_type='gain')
-                    imp = [importance_dict.get(f'f{i}', 0) for i in range(len(self.feature_names))]
+                elif hasattr(model, "get_score"):
+                    importance_dict = model.get_score(importance_type="gain")
+                    imp = [importance_dict.get(f"f{i}", 0) for i in range(len(self.feature_names))]
                     importances.append(imp)
             importance = np.mean(importances, axis=0)
-        elif hasattr(self.model, 'feature_importances_'):
+        elif hasattr(self.model, "feature_importances_"):
             importance = self.model.feature_importances_
-        elif hasattr(self.model, 'get_score'):
-            importance_dict = self.model.get_score(importance_type='gain')
-            importance = [importance_dict.get(f'f{i}', 0) for i in range(len(self.feature_names))]
-        elif hasattr(self.model, 'estimators_') and self.model_type == 'stacking':
+        elif hasattr(self.model, "get_score"):
+            importance_dict = self.model.get_score(importance_type="gain")
+            importance = [importance_dict.get(f"f{i}", 0) for i in range(len(self.feature_names))]
+        elif hasattr(self.model, "estimators_") and self.model_type == "stacking":
             importances = []
             for estimator_item in self.model.estimators_:
-                if hasattr(estimator_item, 'estimator'):
+                if hasattr(estimator_item, "estimator"):
                     estimator = estimator_item.estimator
                 else:
                     estimator = estimator_item
-                if hasattr(estimator, 'feature_importances_'):
+                if hasattr(estimator, "feature_importances_"):
                     importances.append(estimator.feature_importances_)
             if importances:
                 importance = np.mean(importances, axis=0)
@@ -597,13 +616,15 @@ class StockPredictor:
         else:
             importance = np.zeros(len(self.feature_names))
 
-        df = pd.DataFrame({
-            'feature': self.feature_names,
-            'importance': importance,
-        })
+        df = pd.DataFrame(
+            {
+                "feature": self.feature_names,
+                "importance": importance,
+            }
+        )
 
-        df = df.sort_values('importance', ascending=False)
-        df['importance_pct'] = df['importance'] / df['importance'].sum() * 100
+        df = df.sort_values("importance", ascending=False)
+        df["importance_pct"] = df["importance"] / df["importance"].sum() * 100
 
         return df
 
@@ -613,11 +634,11 @@ class StockPredictor:
         path.parent.mkdir(parents=True, exist_ok=True)
 
         model_data = {
-            'model': self.model,
-            'scaler': self.scaler,
-            'feature_names': self.feature_names,
-            'model_type': self.model_type,
-            'saved_at': datetime.now().isoformat(),
+            "model": self.model,
+            "scaler": self.scaler,
+            "feature_names": self.feature_names,
+            "model_type": self.model_type,
+            "saved_at": datetime.now().isoformat(),
         }
 
         joblib.dump(model_data, path)
@@ -632,9 +653,9 @@ class StockPredictor:
 
         model_data = joblib.load(path)
 
-        self.model = model_data['model']
-        self.scaler = model_data.get('scaler')
-        self.feature_names = model_data['feature_names']
-        self.model_type = model_data.get('model_type', self.model_type)
+        self.model = model_data["model"]
+        self.scaler = model_data.get("scaler")
+        self.feature_names = model_data["feature_names"]
+        self.model_type = model_data.get("model_type", self.model_type)
 
         logger.info(f"模型已加载: {path}, 类型: {self.model_type}")

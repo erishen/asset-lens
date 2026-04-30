@@ -10,6 +10,7 @@ router = APIRouter(prefix="/api/recommendations", tags=["recommendations"])
 
 class StockRecommendation(BaseModel):
     """股票推荐模型"""
+
     code: str
     name: str = ""
     score: float = 0
@@ -21,6 +22,7 @@ class StockRecommendation(BaseModel):
 
 class StrategyRecommendation(BaseModel):
     """策略推荐模型"""
+
     strategy_name: str
     score: float = 0
     reason: str = ""

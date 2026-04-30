@@ -32,7 +32,9 @@ app = FastAPI(
     version="1.0.0",
 )
 
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173,http://localhost:3002,http://localhost:8080").split(",")
+CORS_ORIGINS = os.getenv(
+    "CORS_ORIGINS", "http://localhost:3000,http://localhost:5173,http://localhost:3002,http://localhost:8080"
+).split(",")
 CORS_METHODS = os.getenv("CORS_METHODS", "GET,POST,PUT,DELETE,OPTIONS").split(",")
 CORS_HEADERS = os.getenv("CORS_HEADERS", "Content-Type,Authorization,Accept").split(",")
 
@@ -160,31 +162,37 @@ async def websocket_market(websocket: WebSocket):
 
                 if action == "subscribe":
                     codes = message.get("codes", [])
-                    await websocket.send_json({
-                        "type": "subscribed",
-                        "codes": codes,
-                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": "subscribed",
+                            "codes": codes,
+                            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        }
+                    )
 
                 elif action == "ping":
                     await websocket.send_json({"type": "pong"})
 
                 elif action == "get_market_indexes":
                     indexes = await _get_market_indexes()
-                    await websocket.send_json({
-                        "type": "market_indexes",
-                        "data": indexes,
-                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": "market_indexes",
+                            "data": indexes,
+                            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        }
+                    )
 
                 elif action == "get_stock_quotes":
                     codes = message.get("codes", [])
                     quotes = await _get_stock_quotes(codes)
-                    await websocket.send_json({
-                        "type": "stock_quotes",
-                        "data": quotes,
-                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": "stock_quotes",
+                            "data": quotes,
+                            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        }
+                    )
 
             except json.JSONDecodeError:
                 await websocket.send_json({"type": "error", "message": "Invalid JSON"})
@@ -227,13 +235,17 @@ async def _get_market_indexes():
                     parts = data_str.split(",")
 
                     if len(parts) >= 32:
-                        indexes.append({
-                            "code": code,
-                            "name": name,
-                            "price": float(parts[3]) if parts[3] else 0,
-                            "change": float(parts[3]) - float(parts[2]) if parts[3] and parts[2] else 0,
-                            "changePercent": ((float(parts[3]) - float(parts[2])) / float(parts[2]) * 100) if parts[2] and parts[3] else 0,
-                        })
+                        indexes.append(
+                            {
+                                "code": code,
+                                "name": name,
+                                "price": float(parts[3]) if parts[3] else 0,
+                                "change": float(parts[3]) - float(parts[2]) if parts[3] and parts[2] else 0,
+                                "changePercent": ((float(parts[3]) - float(parts[2])) / float(parts[2]) * 100)
+                                if parts[2] and parts[3]
+                                else 0,
+                            }
+                        )
         except Exception:
             pass
 
@@ -270,14 +282,16 @@ async def _get_stock_quotes(codes: list[str]):
                         prev_close = float(parts[2]) if parts[2] else 0
                         change_percent = ((current_price - prev_close) / prev_close * 100) if prev_close > 0 else 0
 
-                        quotes.append({
-                            "code": code,
-                            "name": parts[0],
-                            "current_price": current_price,
-                            "change_percent": change_percent,
-                            "volume": float(parts[8]) if parts[8] else 0,
-                            "amount": float(parts[9]) if parts[9] else 0,
-                        })
+                        quotes.append(
+                            {
+                                "code": code,
+                                "name": parts[0],
+                                "current_price": current_price,
+                                "change_percent": change_percent,
+                                "volume": float(parts[8]) if parts[8] else 0,
+                                "amount": float(parts[9]) if parts[9] else 0,
+                            }
+                        )
         except Exception:
             pass
 

@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class BacktestConfig:
     """回测配置"""
+
     initial_capital: float = 100000.0
     position_size: float = 0.1
     max_position: float = 0.6
@@ -39,6 +40,7 @@ class BacktestConfig:
 @dataclass
 class TradeRecord:
     """交易记录"""
+
     code: str
     name: str
     action: str
@@ -54,6 +56,7 @@ class TradeRecord:
 @dataclass
 class BacktestResult:
     """回测结果"""
+
     total_return: float
     annual_return: float
     max_drawdown: float
@@ -75,22 +78,22 @@ class BacktestResult:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            'total_return': round(self.total_return, 4),
-            'annual_return': round(self.annual_return, 4),
-            'max_drawdown': round(self.max_drawdown, 4),
-            'sharpe_ratio': round(self.sharpe_ratio, 4),
-            'win_rate': round(self.win_rate, 4),
-            'profit_factor': round(self.profit_factor, 4),
-            'total_trades': self.total_trades,
-            'win_trades': self.win_trades,
-            'loss_trades': self.loss_trades,
-            'avg_profit': round(self.avg_profit, 4),
-            'avg_loss': round(self.avg_loss, 4),
-            'max_consecutive_wins': self.max_consecutive_wins,
-            'max_consecutive_losses': self.max_consecutive_losses,
-            'final_capital': round(self.final_capital, 2),
-            'trades_count': len(self.trades),
-            'timestamp': self.timestamp,
+            "total_return": round(self.total_return, 4),
+            "annual_return": round(self.annual_return, 4),
+            "max_drawdown": round(self.max_drawdown, 4),
+            "sharpe_ratio": round(self.sharpe_ratio, 4),
+            "win_rate": round(self.win_rate, 4),
+            "profit_factor": round(self.profit_factor, 4),
+            "total_trades": self.total_trades,
+            "win_trades": self.win_trades,
+            "loss_trades": self.loss_trades,
+            "avg_profit": round(self.avg_profit, 4),
+            "avg_loss": round(self.avg_loss, 4),
+            "max_consecutive_wins": self.max_consecutive_wins,
+            "max_consecutive_losses": self.max_consecutive_losses,
+            "final_capital": round(self.final_capital, 2),
+            "trades_count": len(self.trades),
+            "timestamp": self.timestamp,
         }
 
 
@@ -126,16 +129,16 @@ class BacktestEngine:
         self._reset()
 
         if start_date:
-            predictions = predictions[predictions['date'] >= start_date]
+            predictions = predictions[predictions["date"] >= start_date]
         if end_date:
-            predictions = predictions[predictions['date'] <= end_date]
+            predictions = predictions[predictions["date"] <= end_date]
 
-        predictions = predictions.sort_values('date')
+        predictions = predictions.sort_values("date")
 
-        all_dates = sorted(predictions['date'].unique())
+        all_dates = sorted(predictions["date"].unique())
 
         for date in all_dates:
-            day_preds = predictions[predictions['date'] == date]
+            day_preds = predictions[predictions["date"] == date]
 
             self._process_sell_signals(day_preds, price_data, date)
             self._process_buy_signals(day_preds, price_data, date)
@@ -161,7 +164,7 @@ class BacktestEngine:
     ) -> None:
         """处理卖出信号"""
         for _, row in predictions.iterrows():
-            code = row['code']
+            code = row["code"]
 
             if code not in self.positions:
                 continue
@@ -172,13 +175,13 @@ class BacktestEngine:
             if df is None or df.empty:
                 continue
 
-            day_data = df[df['date'] == date] if 'date' in df.columns else df[df.index == date]
+            day_data = df[df["date"] == date] if "date" in df.columns else df[df.index == date]
 
             if day_data.empty:
                 continue
 
-            current_price = float(day_data['close'].iloc[0])
-            buy_price = position['avg_price']
+            current_price = float(day_data["close"].iloc[0])
+            buy_price = position["avg_price"]
             pnl_pct = (current_price - buy_price) / buy_price
 
             should_sell = False
@@ -190,12 +193,12 @@ class BacktestEngine:
             elif pnl_pct >= self.config.take_profit:
                 should_sell = True
                 sell_reason = "take_profit"
-            elif row.get('prediction', 0) == 0 and row.get('up_prob', 0) < 0.4:
+            elif row.get("prediction", 0) == 0 and row.get("up_prob", 0) < 0.4:
                 should_sell = True
                 sell_reason = "signal"
 
             if should_sell:
-                self._execute_sell(code, current_price, date, sell_reason, row.get('up_prob', 0))
+                self._execute_sell(code, current_price, date, sell_reason, row.get("up_prob", 0))
 
     def _process_buy_signals(
         self,
@@ -205,23 +208,23 @@ class BacktestEngine:
     ) -> None:
         """处理买入信号"""
         for _, row in predictions.iterrows():
-            code = row['code']
+            code = row["code"]
 
-            if row.get('prediction', 0) != 1:
+            if row.get("prediction", 0) != 1:
                 continue
 
-            up_prob = row.get('up_prob', 0)
+            up_prob = row.get("up_prob", 0)
             if up_prob < self.config.signal_threshold:
                 continue
 
-            total_position = sum(p['value'] for p in self.positions.values())
+            total_position = sum(p["value"] for p in self.positions.values())
             total_position_pct = total_position / self.capital
 
             if total_position_pct >= self.config.max_position:
                 continue
 
             if code in self.positions:
-                current_pct = self.positions[code]['value'] / self.capital
+                current_pct = self.positions[code]["value"] / self.capital
                 if current_pct >= self.config.single_stock_max:
                     continue
 
@@ -229,12 +232,12 @@ class BacktestEngine:
             if df is None or df.empty:
                 continue
 
-            day_data = df[df['date'] == date] if 'date' in df.columns else df[df.index == date]
+            day_data = df[df["date"] == date] if "date" in df.columns else df[df.index == date]
 
             if day_data.empty:
                 continue
 
-            current_price = float(day_data['close'].iloc[0])
+            current_price = float(day_data["close"].iloc[0])
 
             position_multiplier = min(1.5, 1.0 + (up_prob - 0.6) * 2)
             position_size = self.config.position_size * position_multiplier
@@ -269,35 +272,37 @@ class BacktestEngine:
 
         if code in self.positions:
             old_position = self.positions[code]
-            total_shares = old_position['shares'] + shares
-            total_cost = old_position['cost'] + actual_cost
+            total_shares = old_position["shares"] + shares
+            total_cost = old_position["cost"] + actual_cost
             self.positions[code] = {
-                'shares': total_shares,
-                'avg_price': total_cost / total_shares,
-                'cost': total_cost,
-                'value': total_shares * price,
+                "shares": total_shares,
+                "avg_price": total_cost / total_shares,
+                "cost": total_cost,
+                "value": total_shares * price,
             }
         else:
             self.positions[code] = {
-                'shares': shares,
-                'avg_price': actual_price,
-                'cost': actual_cost,
-                'value': shares * price,
+                "shares": shares,
+                "avg_price": actual_price,
+                "cost": actual_cost,
+                "value": shares * price,
             }
 
         self.capital -= actual_cost
 
-        self.trades.append(TradeRecord(
-            code=code,
-            name="",
-            action="buy",
-            date=date,
-            price=actual_price,
-            shares=shares,
-            amount=actual_cost,
-            commission=commission,
-            signal_prob=signal_prob,
-        ))
+        self.trades.append(
+            TradeRecord(
+                code=code,
+                name="",
+                action="buy",
+                date=date,
+                price=actual_price,
+                shares=shares,
+                amount=actual_cost,
+                commission=commission,
+                signal_prob=signal_prob,
+            )
+        )
 
     def _execute_sell(
         self,
@@ -314,26 +319,28 @@ class BacktestEngine:
         position = self.positions[code]
 
         actual_price = price * (1 - self.config.slippage)
-        sell_amount = position['shares'] * actual_price
+        sell_amount = position["shares"] * actual_price
         commission = sell_amount * self.config.commission_rate
         actual_amount = sell_amount - commission
 
-        pnl = actual_amount - position['cost']
+        pnl = actual_amount - position["cost"]
 
         self.capital += actual_amount
 
-        self.trades.append(TradeRecord(
-            code=code,
-            name="",
-            action="sell",
-            date=date,
-            price=actual_price,
-            shares=position['shares'],
-            amount=actual_amount,
-            commission=commission,
-            signal_prob=signal_prob,
-            pnl=pnl,
-        ))
+        self.trades.append(
+            TradeRecord(
+                code=code,
+                name="",
+                action="sell",
+                date=date,
+                price=actual_price,
+                shares=position["shares"],
+                amount=actual_amount,
+                commission=commission,
+                signal_prob=signal_prob,
+                pnl=pnl,
+            )
+        )
 
         del self.positions[code]
 
@@ -350,11 +357,11 @@ class BacktestEngine:
             if df is None or df.empty:
                 continue
 
-            day_data = df[df['date'] == date] if 'date' in df.columns else df[df.index == date]
+            day_data = df[df["date"] == date] if "date" in df.columns else df[df.index == date]
 
             if not day_data.empty:
-                current_price = float(day_data['close'].iloc[0])
-                position_value += position['shares'] * current_price
+                current_price = float(day_data["close"].iloc[0])
+                position_value += position["shares"] * current_price
 
         total_equity = self.capital + position_value
         self.equity_curve.append(total_equity)
@@ -373,13 +380,13 @@ class BacktestEngine:
                 continue
 
             if date:
-                day_data = df[df['date'] == date] if 'date' in df.columns else df[df.index == date]
+                day_data = df[df["date"] == date] if "date" in df.columns else df[df.index == date]
                 if not day_data.empty:
-                    last_price = float(day_data['close'].iloc[0])
+                    last_price = float(day_data["close"].iloc[0])
                 else:
-                    last_price = float(df['close'].iloc[-1])
+                    last_price = float(df["close"].iloc[-1])
             else:
-                last_price = float(df['close'].iloc[-1])
+                last_price = float(df["close"].iloc[-1])
 
             self._execute_sell(code, last_price, str(date or "end"), "close", 0.5)
 
@@ -484,14 +491,17 @@ class BacktestEngine:
             max_consecutive_wins=max_consecutive_wins,
             max_consecutive_losses=max_consecutive_losses,
             final_capital=final_capital,
-            trades=[{
-                'code': t.code,
-                'action': t.action,
-                'date': t.date,
-                'price': t.price,
-                'shares': t.shares,
-                'pnl': t.pnl,
-            } for t in self.trades],
+            trades=[
+                {
+                    "code": t.code,
+                    "action": t.action,
+                    "date": t.date,
+                    "price": t.price,
+                    "shares": t.shares,
+                    "pnl": t.pnl,
+                }
+                for t in self.trades
+            ],
             daily_returns=list(daily_returns),
             equity_curve=self.equity_curve,
         )
@@ -519,26 +529,26 @@ class SignalValidator:
             验证结果
         """
         results: dict[str, Any] = {
-            'total_signals': 0,
-            'correct_signals': 0,
-            'accuracy': 0.0,
-            'avg_return': 0.0,
-            'win_rate': 0.0,
-            'avg_hold_days': 0.0,
-            'by_confidence': {},
+            "total_signals": 0,
+            "correct_signals": 0,
+            "accuracy": 0.0,
+            "avg_return": 0.0,
+            "win_rate": 0.0,
+            "avg_hold_days": 0.0,
+            "by_confidence": {},
         }
 
-        by_confidence: dict[str, dict[str, Any]] = results['by_confidence']
+        by_confidence: dict[str, dict[str, Any]] = results["by_confidence"]
 
         signal_returns = []
         correct_count = 0
         total_signals = 0
 
         for _, row in predictions.iterrows():
-            code = row['code']
-            date = row['date']
-            prediction = row.get('prediction', 0)
-            up_prob = row.get('up_prob', 0)
+            code = row["code"]
+            date = row["date"]
+            prediction = row.get("prediction", 0)
+            up_prob = row.get("up_prob", 0)
 
             if prediction != 1:
                 continue
@@ -549,9 +559,9 @@ class SignalValidator:
             if df is None or df.empty:
                 continue
 
-            if 'date' in df.columns:
-                df = df.sort_values('date')
-                signal_idx = df[df['date'] == date].index
+            if "date" in df.columns:
+                df = df.sort_values("date")
+                signal_idx = df[df["date"] == date].index
                 if len(signal_idx) == 0:
                     continue
                 signal_idx = signal_idx[0]
@@ -560,8 +570,8 @@ class SignalValidator:
                 if future_idx >= len(df):
                     continue
 
-                current_price = df.loc[signal_idx, 'close']
-                future_price = df.loc[future_idx, 'close']
+                current_price = df.loc[signal_idx, "close"]
+                future_price = df.loc[future_idx, "close"]
             else:
                 continue
 
@@ -573,22 +583,24 @@ class SignalValidator:
 
             conf_bucket = f"{int(up_prob * 10) * 10}-{int(up_prob * 10) * 10 + 10}%"
             if conf_bucket not in by_confidence:
-                by_confidence[conf_bucket] = {'count': 0, 'correct': 0, 'returns': []}
-            by_confidence[conf_bucket]['count'] += 1
+                by_confidence[conf_bucket] = {"count": 0, "correct": 0, "returns": []}
+            by_confidence[conf_bucket]["count"] += 1
             if actual_return > 0:
-                by_confidence[conf_bucket]['correct'] += 1
-            by_confidence[conf_bucket]['returns'].append(actual_return)
+                by_confidence[conf_bucket]["correct"] += 1
+            by_confidence[conf_bucket]["returns"].append(actual_return)
 
-        results['total_signals'] = total_signals
-        results['correct_signals'] = correct_count
-        results['accuracy'] = correct_count / total_signals * 100 if total_signals > 0 else 0
-        results['avg_return'] = np.mean(signal_returns) * 100 if signal_returns else 0
-        results['win_rate'] = sum(1 for r in signal_returns if r > 0) / len(signal_returns) * 100 if signal_returns else 0
+        results["total_signals"] = total_signals
+        results["correct_signals"] = correct_count
+        results["accuracy"] = correct_count / total_signals * 100 if total_signals > 0 else 0
+        results["avg_return"] = np.mean(signal_returns) * 100 if signal_returns else 0
+        results["win_rate"] = (
+            sum(1 for r in signal_returns if r > 0) / len(signal_returns) * 100 if signal_returns else 0
+        )
 
         for bucket in by_confidence:
             data = by_confidence[bucket]
-            data['accuracy'] = data['correct'] / data['count'] * 100 if data['count'] > 0 else 0
-            data['avg_return'] = np.mean(data['returns']) * 100 if data['returns'] else 0
+            data["accuracy"] = data["correct"] / data["count"] * 100 if data["count"] > 0 else 0
+            data["avg_return"] = np.mean(data["returns"]) * 100 if data["returns"] else 0
 
         return results
 
@@ -640,36 +652,40 @@ def generate_backtest_report(
     ]
 
     if signal_validation:
-        report_lines.extend([
-            "【信号验证】",
-            f"  总信号数:     {signal_validation['total_signals']}",
-            f"  正确信号:     {signal_validation['correct_signals']}",
-            f"  信号准确率:   {signal_validation['accuracy']:.2f}%",
-            f"  平均收益:     {signal_validation['avg_return']:.2f}%",
-            f"  信号胜率:     {signal_validation['win_rate']:.2f}%",
-            "",
-        ])
+        report_lines.extend(
+            [
+                "【信号验证】",
+                f"  总信号数:     {signal_validation['total_signals']}",
+                f"  正确信号:     {signal_validation['correct_signals']}",
+                f"  信号准确率:   {signal_validation['accuracy']:.2f}%",
+                f"  平均收益:     {signal_validation['avg_return']:.2f}%",
+                f"  信号胜率:     {signal_validation['win_rate']:.2f}%",
+                "",
+            ]
+        )
 
-        if signal_validation.get('by_confidence'):
+        if signal_validation.get("by_confidence"):
             report_lines.append("  【按置信度分布】")
-            for bucket, data in sorted(signal_validation['by_confidence'].items()):
+            for bucket, data in sorted(signal_validation["by_confidence"].items()):
                 report_lines.append(
                     f"    {bucket}: {data['count']}次, 准确率{data['accuracy']:.1f}%, 平均收益{data['avg_return']:.2f}%"
                 )
             report_lines.append("")
 
-    report_lines.extend([
-        "=" * 60,
-        f"报告生成时间: {result.timestamp}",
-        "=" * 60,
-    ])
+    report_lines.extend(
+        [
+            "=" * 60,
+            f"报告生成时间: {result.timestamp}",
+            "=" * 60,
+        ]
+    )
 
     report = "\n".join(report_lines)
 
     if output_path:
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             f.write(report)
         logger.info(f"回测报告已保存: {output_path}")
 

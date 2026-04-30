@@ -6,16 +6,11 @@ Tests for Market Environment Analyzer.
 import json
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-from datetime import datetime
+from unittest.mock import patch
 
 import pytest
 
-from asset_lens.data.market_environment import (
-    MarketEnvironment,
-    MarketEnvironmentAnalyzer,
-    StrategyAdaptation,
-)
+from asset_lens.data.market_environment import MarketEnvironment, MarketEnvironmentAnalyzer, StrategyAdaptation
 
 
 class TestMarketEnvironment:
@@ -102,7 +97,7 @@ class TestMarketEnvironmentAnalyzer:
     @pytest.fixture
     def analyzer(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.data.market_environment.config') as mock_config:
+        with patch("asset_lens.data.market_environment.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             analyzer = MarketEnvironmentAnalyzer()
             yield analyzer
@@ -110,6 +105,7 @@ class TestMarketEnvironmentAnalyzer:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.data.market_environment import market_environment_analyzer
+
         assert market_environment_analyzer is not None
 
     def test_init(self, analyzer):
@@ -143,7 +139,7 @@ class TestMarketEnvironmentAnalyzer:
                 }
             ]
         }
-        
+
         with open(analyzer.cache_file, "w", encoding="utf-8") as f:
             json.dump(history_data, f)
 
@@ -169,9 +165,9 @@ class TestMarketEnvironmentAnalyzer:
                 risk_level="low",
             )
         ]
-        
+
         analyzer._save_history()
-        
+
         assert analyzer.cache_file.exists()
 
     def test_get_latest_environment_empty(self, analyzer):
@@ -197,39 +193,26 @@ class TestMarketEnvironmentAnalyzer:
                 risk_level="low",
             )
         ]
-        
+
         env = analyzer.history[-1] if analyzer.history else None
         assert env is not None
         assert env.market_type == "bull"
 
     def test_determine_market_type_bull(self, analyzer):
         """测试判断市场类型 - 牛市"""
-        market_type = analyzer._determine_market_type(
-            change_5d=5.0,
-            change_20d=15.0,
-            change_60d=25.0,
-            volatility=10.0
-        )
+        market_type = analyzer._determine_market_type(change_5d=5.0, change_20d=15.0, change_60d=25.0, volatility=10.0)
         assert market_type == "bull"
 
     def test_determine_market_type_bear(self, analyzer):
         """测试判断市场类型 - 熊市"""
         market_type = analyzer._determine_market_type(
-            change_5d=-5.0,
-            change_20d=-15.0,
-            change_60d=-25.0,
-            volatility=10.0
+            change_5d=-5.0, change_20d=-15.0, change_60d=-25.0, volatility=10.0
         )
         assert market_type == "bear"
 
     def test_determine_market_type_oscillation(self, analyzer):
         """测试判断市场类型 - 震荡市"""
-        market_type = analyzer._determine_market_type(
-            change_5d=1.0,
-            change_20d=0.5,
-            change_60d=1.0,
-            volatility=5.0
-        )
+        market_type = analyzer._determine_market_type(change_5d=1.0, change_20d=0.5, change_60d=1.0, volatility=5.0)
         assert market_type == "oscillation"
 
     def test_analyze_sentiment(self, analyzer):
@@ -288,44 +271,31 @@ class TestMarketScenarios:
 
     def test_bull_market_scenario(self):
         """测试牛市场景"""
-        index_changes = {
-            "hs300": {"change_5d": 5.0, "change_20d": 15.0, "change_60d": 30.0},
-            "szzs": {"change_5d": 3.0, "change_20d": 10.0, "change_60d": 20.0},
-        }
-        
+
         market_type = self._determine_market_type(5.0, 15.0, 30.0, 10.0)
         assert market_type == "bull"
 
     def test_bear_market_scenario(self):
         """测试熊市场景"""
-        index_changes = {
-            "hs300": {"change_5d": -5.0, "change_20d": -15.0, "change_60d": -30.0},
-            "szzs": {"change_5d": -3.0, "change_20d": -10.0, "change_60d": -20.0},
-        }
-        
+
         market_type = self._determine_market_type(-5.0, -15.0, -30.0, 10.0)
         assert market_type == "bear"
 
     def test_oscillation_market_scenario(self):
         """测试震荡市场景"""
-        index_changes = {
-            "hs300": {"change_5d": 1.0, "change_20d": 0.5, "change_60d": 1.0},
-            "szzs": {"change_5d": -1.0, "change_20d": 1.0, "change_60d": -0.5},
-        }
-        
+
         market_type = self._determine_market_type(1.0, 0.5, 1.0, 5.0)
         assert market_type == "oscillation"
 
     def test_risk_level_calculation(self):
         """测试风险等级计算"""
         volatility = 15.0
-        market_type = "bull"
-        
+
         if volatility > 20:
             risk_level = "high"
         elif volatility > 10:
             risk_level = "medium"
         else:
             risk_level = "low"
-        
+
         assert risk_level == "medium"

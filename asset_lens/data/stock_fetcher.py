@@ -30,6 +30,7 @@ def with_retry(max_retries: int = 3, retry_delay: float = 2.0, backoff_factor: f
         retry_delay: 初始重试延迟（秒）
         backoff_factor: 退避因子
     """
+
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -41,7 +42,7 @@ def with_retry(max_retries: int = 3, retry_delay: float = 2.0, backoff_factor: f
                 except Exception as e:
                     last_error = e
                     if attempt < max_retries - 1:
-                        delay = retry_delay * (backoff_factor ** attempt)
+                        delay = retry_delay * (backoff_factor**attempt)
                         logger.warning(f"第 {attempt + 1} 次尝试失败: {e}，{delay:.1f} 秒后重试...")
                         time.sleep(delay)
                     else:
@@ -50,6 +51,7 @@ def with_retry(max_retries: int = 3, retry_delay: float = 2.0, backoff_factor: f
             raise last_error if last_error else Exception("Unknown error")
 
         return wrapper
+
     return decorator
 
 
@@ -166,7 +168,7 @@ class StockDataFetcher:
                 logger.info(f"尝试从 {source_name} 获取 {stock_code} 行情...")
                 result = fetch_func(stock_code)
                 if result and isinstance(result, dict):
-                    result['source'] = f"AkShare-{source_name}"
+                    result["source"] = f"AkShare-{source_name}"
                     return dict(result)
             except Exception as e:
                 logger.warning(f"{source_name} 获取失败: {e}，尝试下一个数据源...")
@@ -357,8 +359,8 @@ class StockDataFetcher:
                     jq_code,
                     count=2,
                     end_date=datetime.now().strftime("%Y-%m-%d"),
-                    frequency='daily',
-                    fields=['open', 'close', 'high', 'low', 'volume', 'money']
+                    frequency="daily",
+                    fields=["open", "close", "high", "low", "volume", "money"],
                 )
 
                 if df is None or df.empty or len(df) == 0:
@@ -366,9 +368,9 @@ class StockDataFetcher:
                     return None
 
                 current_row = df.iloc[-1]
-                prev_close = df.iloc[-2]['close'] if len(df) > 1 else current_row['close']
+                prev_close = df.iloc[-2]["close"] if len(df) > 1 else current_row["close"]
 
-                current_price = float(current_row['close'])
+                current_price = float(current_row["close"])
                 change_amount = current_price - prev_close
                 change_percent = (change_amount / prev_close * 100) if prev_close > 0 else 0
 
@@ -378,12 +380,12 @@ class StockDataFetcher:
                     "code": stock_code,
                     "name": "",
                     "current_price": current_price,
-                    "open": float(current_row['open']),
+                    "open": float(current_row["open"]),
                     "prev_close": float(prev_close),
-                    "high": float(current_row['high']),
-                    "low": float(current_row['low']),
-                    "volume": int(current_row['volume']),
-                    "amount": float(current_row['money']),
+                    "high": float(current_row["high"]),
+                    "low": float(current_row["low"]),
+                    "volume": int(current_row["volume"]),
+                    "amount": float(current_row["money"]),
                     "change_amount": change_amount,
                     "change_percent": change_percent,
                     "amplitude": 0,
@@ -415,9 +417,9 @@ class StockDataFetcher:
             聚宽格式股票代码（如 600519.XSHG, 000001.XSHE）
         """
         code = stock_code[2:]
-        if stock_code.startswith('sh'):
+        if stock_code.startswith("sh"):
             return f"{code}.XSHG"
-        elif stock_code.startswith('sz'):
+        elif stock_code.startswith("sz"):
             return f"{code}.XSHE"
         else:
             return stock_code
@@ -579,7 +581,7 @@ class StockDataFetcher:
             headers = {
                 "Authorization": f"Bearer {config.finnhub_api_key}",
                 "User-Agent": "asset-lens/1.0",
-                "Accept": "application/json"
+                "Accept": "application/json",
             }
 
             url = "https://api.finnhub.io/api/v1/quote"
@@ -677,10 +679,7 @@ class StockDataFetcher:
         return {}
 
     def fetch_multiple_stocks_concurrent(
-        self,
-        stock_codes: list[str],
-        max_concurrent: int = 10,
-        use_cache: bool = True
+        self, stock_codes: list[str], max_concurrent: int = 10, use_cache: bool = True
     ) -> dict[str, Any]:
         """
         并发获取股票行情（性能优化版本）
@@ -744,8 +743,8 @@ class StockDataFetcher:
                 "total": len(stock_codes),
                 "cached": cached_count,
                 "fetched": fetch_count,
-                "failed": len(stock_codes) - cached_count - fetch_count
-            }
+                "failed": len(stock_codes) - cached_count - fetch_count,
+            },
         }
 
         with open(self.stock_cache_file, "w", encoding="utf-8") as f:

@@ -41,6 +41,7 @@ class AlphaVantageProvider(BaseProvider):
         if self._session is None:
             try:
                 import requests
+
                 self._session = requests.Session()
             except ImportError:
                 pass

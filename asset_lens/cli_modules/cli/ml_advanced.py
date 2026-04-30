@@ -41,29 +41,26 @@ def _prepare_training_data():
 
         for code in codes[:30]:
             try:
-                klines = (
-                    session.query(StockKline)
-                    .filter(StockKline.code == code)
-                    .order_by(StockKline.date.asc())
-                    .all()
-                )
+                klines = session.query(StockKline).filter(StockKline.code == code).order_by(StockKline.date.asc()).all()
 
                 if len(klines) < 100:
                     continue
 
-                df = pd.DataFrame([
-                    {
-                        'date': k.date,
-                        'open': k.open,
-                        'high': k.high,
-                        'low': k.low,
-                        'close': k.close,
-                        'volume': k.volume,
-                        'amount': k.amount,
-                        'turnover_rate': k.turnover_rate,
-                    }
-                    for k in klines
-                ])
+                df = pd.DataFrame(
+                    [
+                        {
+                            "date": k.date,
+                            "open": k.open,
+                            "high": k.high,
+                            "low": k.low,
+                            "close": k.close,
+                            "volume": k.volume,
+                            "amount": k.amount,
+                            "turnover_rate": k.turnover_rate,
+                        }
+                        for k in klines
+                    ]
+                )
 
                 if df.empty or len(df) < 100:
                     continue
@@ -122,7 +119,8 @@ def optimize(model, trials, timeout):
 
         with console.status("[bold green]优化中...[/bold green]"):
             result = advanced_trainer.optimize_hyperparameters(
-                X, y,
+                X,
+                y,
                 model_type=model,
                 n_trials=trials,
                 timeout=timeout,
@@ -188,15 +186,14 @@ def train(model, cv_splits, optimize):
             from asset_lens.ml.advanced_trainer import HAS_OPTUNA
 
             if HAS_OPTUNA:
-                opt_result = advanced_trainer.optimize_hyperparameters(
-                    X, y, model_type=model, n_trials=30
-                )
+                opt_result = advanced_trainer.optimize_hyperparameters(X, y, model_type=model, n_trials=30)
                 params = opt_result.best_params
                 console.print(f"优化完成，最佳 AUC: {opt_result.best_value:.4f}")
 
         with console.status("[bold green]训练中...[/bold green]"):
             result = advanced_trainer.train_with_cv(
-                X, y,
+                X,
+                y,
                 model_type=model,
                 params=params,
                 cv_splits=cv_splits,
@@ -222,7 +219,7 @@ def train(model, cv_splits, optimize):
         cv_table.add_column("AUC", style="green")
 
         for i, score in enumerate(result.cv_scores):
-            cv_table.add_row(f"Fold {i+1}", f"{score:.4f}")
+            cv_table.add_row(f"Fold {i + 1}", f"{score:.4f}")
 
         cv_table.add_row("[bold]Mean[/bold]", f"[bold]{result.cv_mean:.4f}[/bold]")
         cv_table.add_row("[bold]Std[/bold]", f"[bold]{result.cv_std:.4f}[/bold]")
@@ -329,7 +326,7 @@ def select_features(k, method):
         features_table.add_column("特征", style="cyan")
 
         for i, feature in enumerate(advanced_trainer._selected_features[:30]):
-            features_table.add_row(str(i+1), feature)
+            features_table.add_row(str(i + 1), feature)
 
         console.print(features_table)
 

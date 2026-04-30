@@ -2,8 +2,9 @@
 Tests for report performance module.
 """
 
-import pytest
 from decimal import Decimal
+
+import pytest
 
 from asset_lens.report.performance import PerformanceAnalyzer
 

@@ -39,9 +39,7 @@ def with_retry(max_retries: int = 3, retry_delay: float = 2.0):
                 except Exception as e:
                     last_exception = e
                     if attempt < max_retries - 1:
-                        print(
-                            f"{func.__name__} 失败 (尝试 {attempt + 1}/{max_retries}): {e}"
-                        )
+                        print(f"{func.__name__} 失败 (尝试 {attempt + 1}/{max_retries}): {e}")
                         time.sleep(retry_delay)
             print(f"{func.__name__} 所有重试失败: {last_exception}")
             return None
@@ -118,11 +116,7 @@ class InternationalStockFetcher:
 
                 # 构建 AlphaVantage API 请求
                 url = "https://www.alphavantage.co/query"
-                params = {
-                    "function": "GLOBAL_QUOTE",
-                    "symbol": code,
-                    "apikey": api_key
-                }
+                params = {"function": "GLOBAL_QUOTE", "symbol": code, "apikey": api_key}
 
                 response = requests.get(url, params=params, timeout=10)
                 response.raise_for_status()
@@ -233,11 +227,7 @@ class InternationalStockFetcher:
 
                 # 构建 AlphaVantage API 请求
                 url = "https://www.alphavantage.co/query"
-                params = {
-                    "function": "GLOBAL_QUOTE",
-                    "symbol": symbol,
-                    "apikey": api_key
-                }
+                params = {"function": "GLOBAL_QUOTE", "symbol": symbol, "apikey": api_key}
 
                 response = requests.get(url, params=params, timeout=10)
                 response.raise_for_status()
@@ -374,9 +364,7 @@ class InternationalStockFetcher:
                             "close": float(row.get("收盘", 0)),
                             "high": float(row.get("最高", 0)),
                             "low": float(row.get("最低", 0)),
-                            "volume": float(row.get("成交量", 0))
-                            if row.get("成交量")
-                            else 0,
+                            "volume": float(row.get("成交量", 0)) if row.get("成交量") else 0,
                             "amount": 0,
                             "amplitude": 0,
                             "change_percent": 0,
@@ -441,9 +429,7 @@ class InternationalStockFetcher:
                             "close": float(row.get("收盘", 0)),
                             "high": float(row.get("最高", 0)),
                             "low": float(row.get("最低", 0)),
-                            "volume": float(row.get("成交量", 0))
-                            if row.get("成交量")
-                            else 0,
+                            "volume": float(row.get("成交量", 0)) if row.get("成交量") else 0,
                             "amount": 0,
                             "amplitude": 0,
                             "change_percent": 0,
@@ -481,14 +467,11 @@ class InternationalStockFetcher:
             if df is None or df.empty:
                 return []
 
-            mask = (df["代码"].str.contains(keyword, na=False)) | (
-                df["名称"].str.contains(keyword, na=False)
-            )
+            mask = (df["代码"].str.contains(keyword, na=False)) | (df["名称"].str.contains(keyword, na=False))
             result = df[mask]
 
             return [
-                {"code": str(row.get("代码", "")), "name": str(row.get("名称", ""))}
-                for _, row in result.iterrows()
+                {"code": str(row.get("代码", "")), "name": str(row.get("名称", ""))} for _, row in result.iterrows()
             ]
 
         try:
@@ -515,14 +498,11 @@ class InternationalStockFetcher:
             if df is None or df.empty:
                 return []
 
-            mask = (df["代码"].str.contains(keyword, na=False)) | (
-                df["名称"].str.contains(keyword, na=False)
-            )
+            mask = (df["代码"].str.contains(keyword, na=False)) | (df["名称"].str.contains(keyword, na=False))
             result = df[mask]
 
             return [
-                {"code": str(row.get("代码", "")), "name": str(row.get("名称", ""))}
-                for _, row in result.iterrows()
+                {"code": str(row.get("代码", "")), "name": str(row.get("名称", ""))} for _, row in result.iterrows()
             ]
 
         try:
