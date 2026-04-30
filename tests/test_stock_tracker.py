@@ -2,20 +2,13 @@
 Tests for stock_tracker.py
 """
 
-import json
 import tempfile
-from datetime import datetime
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
-from asset_lens.data.stock_tracker import (
-    DailyRecord,
-    MonsterStockSignal,
-    StockTracker,
-    TrackerConfig,
-)
+from asset_lens.data.stock_tracker import DailyRecord, MonsterStockSignal, StockTracker, TrackerConfig
 
 
 class TestDailyRecord:
@@ -102,7 +95,7 @@ class TestStockTracker:
     @pytest.fixture
     def tracker(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.data.stock_tracker.config') as mock_config:
+        with patch("asset_lens.data.stock_tracker.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             tracker = StockTracker("test_pool")
             yield tracker
@@ -201,13 +194,22 @@ class TestStockTracker:
     def test_record_batch(self, tracker):
         """测试批量记录"""
         # 先添加股票到股票池
-        from asset_lens.trading.stock_pool import StockPool, StockPosition
         from datetime import date
-        
-        with patch.object(tracker.stock_pool, 'positions', {
-            "sh600519": StockPosition(code="sh600519", name="贵州茅台", status="holding", buy_price=1800.0, buy_date=date(2024, 1, 1)),
-            "sh600000": StockPosition(code="sh600000", name="浦发银行", status="holding", buy_price=10.0, buy_date=date(2024, 1, 1)),
-        }):
+
+        from asset_lens.trading.stock_pool import StockPosition
+
+        with patch.object(
+            tracker.stock_pool,
+            "positions",
+            {
+                "sh600519": StockPosition(
+                    code="sh600519", name="贵州茅台", status="holding", buy_price=1800.0, buy_date=date(2024, 1, 1)
+                ),
+                "sh600000": StockPosition(
+                    code="sh600000", name="浦发银行", status="holding", buy_price=10.0, buy_date=date(2024, 1, 1)
+                ),
+            },
+        ):
             stocks = [
                 {
                     "code": "sh600519",
@@ -241,12 +243,19 @@ class TestStockTracker:
 
     def test_record_batch_skips_duplicates(self, tracker):
         """测试批量记录跳过重复数据"""
-        from asset_lens.trading.stock_pool import StockPosition
         from datetime import date
-        
-        with patch.object(tracker.stock_pool, 'positions', {
-            "sh600519": StockPosition(code="sh600519", name="贵州茅台", status="holding", buy_price=1800.0, buy_date=date(2024, 1, 1)),
-        }):
+
+        from asset_lens.trading.stock_pool import StockPosition
+
+        with patch.object(
+            tracker.stock_pool,
+            "positions",
+            {
+                "sh600519": StockPosition(
+                    code="sh600519", name="贵州茅台", status="holding", buy_price=1800.0, buy_date=date(2024, 1, 1)
+                ),
+            },
+        ):
             stocks = [
                 {
                     "code": "sh600519",

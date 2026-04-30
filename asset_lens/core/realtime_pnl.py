@@ -201,10 +201,7 @@ class RealtimePnlEstimator:
         result = {}
 
         if not config_file.exists():
-            logger.warning(
-                f"基金代码配置文件不存在: {config_file}",
-                extra={"config_file": str(config_file)}
-            )
+            logger.warning(f"基金代码配置文件不存在: {config_file}", extra={"config_file": str(config_file)})
             self._fund_codes_map = {}
             return {}
 
@@ -215,7 +212,7 @@ class RealtimePnlEstimator:
             if not isinstance(data, dict):
                 logger.error(
                     f"基金代码配置格式错误: 期望 dict，得到 {type(data).__name__}",
-                    extra={"config_file": str(config_file)}
+                    extra={"config_file": str(config_file)},
                 )
                 self._fund_codes_map = {}
                 return {}
@@ -223,8 +220,7 @@ class RealtimePnlEstimator:
             funds = data.get("funds", [])
             if not isinstance(funds, list):
                 logger.warning(
-                    f"基金列表格式错误: 期望 list，得到 {type(funds).__name__}",
-                    extra={"config_file": str(config_file)}
+                    f"基金列表格式错误: 期望 list，得到 {type(funds).__name__}", extra={"config_file": str(config_file)}
                 )
                 self._fund_codes_map = {}
                 return {}
@@ -241,16 +237,11 @@ class RealtimePnlEstimator:
                             result[keyword] = code
                 except Exception as e:
                     logger.warning(
-                        f"处理基金数据失败: {fund}",
-                        exc_info=True,
-                        extra={"fund": str(fund), "error": str(e)}
+                        f"处理基金数据失败: {fund}", exc_info=True, extra={"fund": str(fund), "error": str(e)}
                     )
                     continue
 
-            logger.info(
-                f"成功加载 {len(result)} 个基金代码映射",
-                extra={"count": len(result)}
-            )
+            logger.info(f"成功加载 {len(result)} 个基金代码映射", extra={"count": len(result)})
             self._fund_codes_map = result
             return result
 
@@ -258,7 +249,7 @@ class RealtimePnlEstimator:
             logger.error(
                 f"基金代码配置 JSON 解析失败: {e}",
                 exc_info=True,
-                extra={"config_file": str(config_file), "error": str(e)}
+                extra={"config_file": str(config_file), "error": str(e)},
             )
             self._fund_codes_map = {}
             return {}
@@ -267,7 +258,7 @@ class RealtimePnlEstimator:
             logger.error(
                 f"读取基金代码配置文件失败: {e}",
                 exc_info=True,
-                extra={"config_file": str(config_file), "error": str(e)}
+                extra={"config_file": str(config_file), "error": str(e)},
             )
             self._fund_codes_map = {}
             return {}
@@ -276,7 +267,7 @@ class RealtimePnlEstimator:
             logger.error(
                 f"加载基金代码配置时发生未知错误: {e}",
                 exc_info=True,
-                extra={"config_file": str(config_file), "error": str(e)}
+                extra={"config_file": str(config_file), "error": str(e)},
             )
             self._fund_codes_map = {}
             return {}
@@ -297,10 +288,7 @@ class RealtimePnlEstimator:
         result = {}
 
         if not config_file.exists():
-            logger.warning(
-                f"股票代码配置文件不存在: {config_file}",
-                extra={"config_file": str(config_file)}
-            )
+            logger.warning(f"股票代码配置文件不存在: {config_file}", extra={"config_file": str(config_file)})
             self._stock_codes_map = {}
             return {}
 
@@ -311,7 +299,7 @@ class RealtimePnlEstimator:
             if not isinstance(data, dict):
                 logger.error(
                     f"股票代码配置格式错误: 期望 dict，得到 {type(data).__name__}",
-                    extra={"config_file": str(config_file)}
+                    extra={"config_file": str(config_file)},
                 )
                 self._stock_codes_map = {}
                 return {}
@@ -320,7 +308,7 @@ class RealtimePnlEstimator:
             if not isinstance(stocks, list):
                 logger.warning(
                     f"股票列表格式错误: 期望 list，得到 {type(stocks).__name__}",
-                    extra={"config_file": str(config_file)}
+                    extra={"config_file": str(config_file)},
                 )
                 self._stock_codes_map = {}
                 return {}
@@ -337,16 +325,11 @@ class RealtimePnlEstimator:
                             result[keyword] = code
                 except Exception as e:
                     logger.warning(
-                        f"处理股票数据失败: {stock}",
-                        exc_info=True,
-                        extra={"stock": str(stock), "error": str(e)}
+                        f"处理股票数据失败: {stock}", exc_info=True, extra={"stock": str(stock), "error": str(e)}
                     )
                     continue
 
-            logger.info(
-                f"成功加载 {len(result)} 个股票代码映射",
-                extra={"count": len(result)}
-            )
+            logger.info(f"成功加载 {len(result)} 个股票代码映射", extra={"count": len(result)})
             self._stock_codes_map = result
             return result
 
@@ -354,7 +337,7 @@ class RealtimePnlEstimator:
             logger.error(
                 f"股票代码配置 JSON 解析失败: {e}",
                 exc_info=True,
-                extra={"config_file": str(config_file), "error": str(e)}
+                extra={"config_file": str(config_file), "error": str(e)},
             )
             self._stock_codes_map = {}
             return {}
@@ -363,7 +346,7 @@ class RealtimePnlEstimator:
             logger.error(
                 f"读取股票代码配置文件失败: {e}",
                 exc_info=True,
-                extra={"config_file": str(config_file), "error": str(e)}
+                extra={"config_file": str(config_file), "error": str(e)},
             )
             self._stock_codes_map = {}
             return {}
@@ -372,7 +355,7 @@ class RealtimePnlEstimator:
             logger.error(
                 f"加载股票代码配置时发生未知错误: {e}",
                 exc_info=True,
-                extra={"config_file": str(config_file), "error": str(e)}
+                extra={"config_file": str(config_file), "error": str(e)},
             )
             self._stock_codes_map = {}
             return {}
@@ -638,9 +621,7 @@ class RealtimePnlEstimator:
         pct = (index_move / Decimal("100")) * sensitivity
         pnl = amount_eq * pct
 
-        return_rate = (
-            (pnl / current_amount * Decimal("100")) if current_amount != 0 else Decimal("0")
-        )
+        return_rate = (pnl / current_amount * Decimal("100")) if current_amount != 0 else Decimal("0")
 
         return {
             "name": product.name,
@@ -701,9 +682,7 @@ class RealtimePnlEstimator:
             products = [
                 p
                 for p in products
-                if p.investment_type not in exclude_types
-                and p.current_amount
-                and p.current_amount > 0
+                if p.investment_type not in exclude_types and p.current_amount and p.current_amount > 0
             ]
 
         # 计算每个产品的盈亏
@@ -718,9 +697,7 @@ class RealtimePnlEstimator:
             total_amount += result["amount"]
 
         # 计算整体收益率
-        total_return_rate = (
-            (total_pnl / total_amount * Decimal("100")) if total_amount != 0 else Decimal("0")
-        )
+        total_return_rate = (total_pnl / total_amount * Decimal("100")) if total_amount != 0 else Decimal("0")
 
         # 按盈亏排序
         details.sort(key=lambda x: x["pnl"], reverse=True)

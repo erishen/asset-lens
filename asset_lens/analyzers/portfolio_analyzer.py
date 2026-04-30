@@ -43,28 +43,22 @@ class PortfolioAnalyzer:
 
     def _calculate_positive_avg_return(self, portfolio: Portfolio) -> str:
         """计算正收益产品的平均收益率"""
-        positive_products = [
-            p for p in portfolio.products if p.annual_return and p.annual_return > Decimal("0")
-        ]
+        positive_products = [p for p in portfolio.products if p.annual_return and p.annual_return > Decimal("0")]
 
         if not positive_products:
             return "N/A"
-        avg_return = Decimal(
-            str(sum(p.annual_return for p in positive_products if p.annual_return))
-        ) / Decimal(str(len(positive_products)))
+        avg_return = Decimal(str(sum(p.annual_return for p in positive_products if p.annual_return))) / Decimal(
+            str(len(positive_products))
+        )
         return f"{avg_return:.2f}%"
 
     def get_top_performers(self, portfolio: Portfolio, top_n: int = 10) -> list[dict[str, Any]]:
         """获取收益率最高的产品"""
         products_with_return = [
-            p
-            for p in portfolio.products
-            if p.annual_return is not None or p.return_rate is not None
+            p for p in portfolio.products if p.annual_return is not None or p.return_rate is not None
         ]
 
-        products_with_return.sort(
-            key=lambda p: p.annual_return or p.return_rate or Decimal("0"), reverse=True
-        )
+        products_with_return.sort(key=lambda p: p.annual_return or p.return_rate or Decimal("0"), reverse=True)
 
         top_products = products_with_return[:top_n]
 
@@ -100,14 +94,10 @@ class PortfolioAnalyzer:
             for i, p in enumerate(top_products)
         ]
 
-    def get_low_return_products(
-        self, portfolio: Portfolio, threshold: float = 2.0
-    ) -> list[dict[str, Any]]:
+    def get_low_return_products(self, portfolio: Portfolio, threshold: float = 2.0) -> list[dict[str, Any]]:
         """获取低收益产品列表"""
         low_return_products = [
-            p
-            for p in portfolio.products
-            if p.annual_return is not None and p.annual_return < Decimal(str(threshold))
+            p for p in portfolio.products if p.annual_return is not None and p.annual_return < Decimal(str(threshold))
         ]
 
         low_return_products.sort(key=lambda p: p.annual_return or Decimal("0"))
@@ -128,10 +118,7 @@ class PortfolioAnalyzer:
         short_term_products = [
             p
             for p in portfolio.products
-            if p.investment_days
-            and p.investment_days < 90
-            and p.annual_return
-            and p.annual_return < Decimal("3")
+            if p.investment_days and p.investment_days < 90 and p.annual_return and p.annual_return < Decimal("3")
         ]
 
         return [
@@ -149,9 +136,7 @@ class PortfolioAnalyzer:
 
     def get_high_return_reference_products(self, portfolio: Portfolio) -> list[dict[str, Any]]:
         """获取高收益参考产品"""
-        high_return_products = [
-            p for p in portfolio.products if p.annual_return and p.annual_return > Decimal("10")
-        ]
+        high_return_products = [p for p in portfolio.products if p.annual_return and p.annual_return > Decimal("10")]
 
         high_return_products.sort(key=lambda p: p.annual_return or Decimal("0"), reverse=True)
 
@@ -204,12 +189,8 @@ class PortfolioAnalyzer:
                     {
                         "name": product.name,
                         "type": product.investment_type.value,
-                        "current_amount": str(product.current_amount)
-                        if product.current_amount
-                        else "-",
-                        "annual_return": f"{product.annual_return:.2f}%"
-                        if product.annual_return
-                        else "-",
+                        "current_amount": str(product.current_amount) if product.current_amount else "-",
+                        "annual_return": f"{product.annual_return:.2f}%" if product.annual_return else "-",
                         "investment_days": product.investment_days or "-",
                     }
                 )

@@ -248,9 +248,7 @@ class StockTracker:
         self._save_tracker()
         return signals
 
-    def _analyze_monster_signals(
-        self, code: str, records: list[DailyRecord]
-    ) -> MonsterStockSignal | None:
+    def _analyze_monster_signals(self, code: str, records: list[DailyRecord]) -> MonsterStockSignal | None:
         """分析妖股信号"""
         if not records:
             return None
@@ -452,9 +450,7 @@ class StockTracker:
         sold_stocks = self.stock_pool.list_stocks("sold")
 
         recent_monsters = [
-            s
-            for s in self.monster_signals
-            if (datetime.now() - datetime.strptime(s.signal_date, "%Y-%m-%d")).days <= 7
+            s for s in self.monster_signals if (datetime.now() - datetime.strptime(s.signal_date, "%Y-%m-%d")).days <= 7
         ]
 
         return {
@@ -464,9 +460,7 @@ class StockTracker:
             "watching_count": len(watching_stocks),
             "holding_count": len(holding_stocks),
             "sold_count": len(sold_stocks),
-            "tracked_days": max(
-                (len(records) for records in self.daily_records.values()), default=0
-            ),
+            "tracked_days": max((len(records) for records in self.daily_records.values()), default=0),
             "monster_signals_count": len(self.monster_signals),
             "recent_monsters": [
                 {

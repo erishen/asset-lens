@@ -3,9 +3,7 @@ Tests for report/html_report.py
 """
 
 import tempfile
-from decimal import Decimal
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
@@ -74,9 +72,7 @@ class TestHTMLReportGenerator:
             ],
         }
 
-        result = generator.generate_investment_report(
-            portfolio_data, analysis_result=analysis_result
-        )
+        result = generator.generate_investment_report(portfolio_data, analysis_result=analysis_result)
 
         assert result.exists()
 
@@ -96,9 +92,7 @@ class TestHTMLReportGenerator:
 
         charts = {"asset_allocation": chart_file}
 
-        result = generator.generate_investment_report(
-            portfolio_data, charts=charts
-        )
+        result = generator.generate_investment_report(portfolio_data, charts=charts)
 
         assert result.exists()
 
@@ -113,9 +107,7 @@ class TestHTMLReportGenerator:
             "risk_distribution": {},
         }
 
-        result = generator.generate_investment_report(
-            portfolio_data, filename="custom_report.html"
-        )
+        result = generator.generate_investment_report(portfolio_data, filename="custom_report.html")
 
         assert result.exists()
         assert result.name == "custom_report.html"

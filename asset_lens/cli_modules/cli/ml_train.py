@@ -34,12 +34,12 @@ def ml_cli() -> None:
 
 
 @ml_cli.command()
-@click.option('--model', '-m', default='lightgbm', help='模型类型 (lightgbm/xgboost/ensemble)')
-@click.option('--days', '-d', default=500, help='训练数据天数')
-@click.option('--codes', '-c', multiple=True, help='股票代码 (可多个)')
-@click.option('--optimize', '-o', is_flag=True, help='是否进行超参数优化')
-@click.option('--trials', '-t', default=50, help='Optuna 优化次数')
-@click.option('--output', '-out', default='models', help='输出目录')
+@click.option("--model", "-m", default="lightgbm", help="模型类型 (lightgbm/xgboost/ensemble)")
+@click.option("--days", "-d", default=500, help="训练数据天数")
+@click.option("--codes", "-c", multiple=True, help="股票代码 (可多个)")
+@click.option("--optimize", "-o", is_flag=True, help="是否进行超参数优化")
+@click.option("--trials", "-t", default=50, help="Optuna 优化次数")
+@click.option("--output", "-out", default="models", help="输出目录")
 def train(
     model: str,
     days: int,
@@ -70,7 +70,8 @@ def train(
         X, y = trainer.prepare_multi_stock_data(stocks_data)
 
         opt_result = advanced_trainer.optimize_hyperparameters(
-            X, y,
+            X,
+            y,
             model_type=model,
             n_trials=trials,
             cv_splits=5,
@@ -90,14 +91,15 @@ def train(
     click.echo(f"   精确率:   {result.precision:.2%}")
     click.echo(f"   召回率:   {result.recall:.2%}")
     click.echo(f"   F1 分数:  {result.f1_score:.2%}")
-    auc_value = getattr(result, 'auc', None) or getattr(result, 'auc_roc', 0)
+    auc_value = getattr(result, "auc", None) or getattr(result, "auc_roc", 0)
     click.echo(f"   AUC:      {auc_value:.4f}")
 
-    if hasattr(result, 'cv_scores') and result.cv_scores:
-        if hasattr(result, 'cv_mean'):
+    if hasattr(result, "cv_scores") and result.cv_scores:
+        if hasattr(result, "cv_mean"):
             click.echo(f"   交叉验证: {result.cv_mean:.4f} ± {result.cv_std:.4f}")
         else:
             import numpy as np
+
             cv_mean = np.mean(result.cv_scores)
             cv_std = np.std(result.cv_scores)
             click.echo(f"   交叉验证: {cv_mean:.4f} ± {cv_std:.4f}")
@@ -112,12 +114,12 @@ def train(
 
 
 @ml_cli.command()
-@click.option('--model', '-m', default='lightgbm', help='模型类型')
-@click.option('--days', '-d', default=500, help='训练数据天数')
-@click.option('--backtest-days', '-bd', default=250, help='回测天数')
-@click.option('--capital', '-c', default=100000, help='初始资金')
-@click.option('--position-size', '-ps', default=0.1, help='仓位比例')
-@click.option('--output', '-out', default='reports', help='输出目录')
+@click.option("--model", "-m", default="lightgbm", help="模型类型")
+@click.option("--days", "-d", default=500, help="训练数据天数")
+@click.option("--backtest-days", "-bd", default=250, help="回测天数")
+@click.option("--capital", "-c", default=100000, help="初始资金")
+@click.option("--position-size", "-ps", default=0.1, help="仓位比例")
+@click.option("--output", "-out", default="reports", help="输出目录")
 def backtest(
     model: str,
     days: int,
@@ -153,28 +155,30 @@ def backtest(
             continue
 
         df = pd.DataFrame(klines)
-        df['date'] = pd.to_datetime(df['date'])
-        df = df.sort_values('date').reset_index(drop=True)
+        df["date"] = pd.to_datetime(df["date"])
+        df = df.sort_values("date").reset_index(drop=True)
 
-        for col in ['open', 'close', 'high', 'low', 'volume', 'amount']:
+        for col in ["open", "close", "high", "low", "volume", "amount"]:
             if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
         df_features = feature_engineer.calculate_all_features(df)
 
         feature_cols = feature_engineer.feature_names
-        X = df_features[feature_cols].fillna(0).replace([float('inf'), float('-inf')], 0)
+        X = df_features[feature_cols].fillna(0).replace([float("inf"), float("-inf")], 0)
 
         predictions = trainer.predictor.predict(X)
         probas = trainer.predictor.predict_proba(X)[:, 1]
 
-        for i, (date, pred, prob) in enumerate(zip(df['date'], predictions, probas, strict=False)):
-            predictions_list.append({
-                'code': code,
-                'date': str(date.date()),
-                'prediction': int(pred),
-                'up_prob': float(prob),
-            })
+        for i, (date, pred, prob) in enumerate(zip(df["date"], predictions, probas, strict=False)):
+            predictions_list.append(
+                {
+                    "code": code,
+                    "date": str(date.date()),
+                    "prediction": int(pred),
+                    "up_prob": float(prob),
+                }
+            )
 
         price_data[code] = df
 
@@ -220,15 +224,15 @@ def backtest(
     click.echo(f"\n📄 报告已保存: {report_path}")
 
     result_json_path = output_dir / f"backtest_result_{model}.json"
-    with open(result_json_path, 'w', encoding='utf-8') as f:
+    with open(result_json_path, "w", encoding="utf-8") as f:
         json.dump(result.to_dict(), f, indent=2, ensure_ascii=False)
     click.echo(f"📄 结果已保存: {result_json_path}")
 
 
 @ml_cli.command()
-@click.option('--days', '-d', default=500, help='训练数据天数')
-@click.option('--trials', '-t', default=100, help='Optuna 优化次数')
-@click.option('--output', '-out', default='models', help='输出目录')
+@click.option("--days", "-d", default=500, help="训练数据天数")
+@click.option("--trials", "-t", default=100, help="Optuna 优化次数")
+@click.option("--output", "-out", default="models", help="输出目录")
 def optimize(
     days: int,
     trials: int,
@@ -255,11 +259,12 @@ def optimize(
 
     results = {}
 
-    for model_type in ['lightgbm', 'xgboost']:
+    for model_type in ["lightgbm", "xgboost"]:
         click.echo(f"\n🔧 优化 {model_type}...")
 
         opt_result = advanced_trainer.optimize_hyperparameters(
-            X, y,
+            X,
+            y,
             model_type=model_type,
             n_trials=trials,
             cv_splits=5,
@@ -272,35 +277,37 @@ def optimize(
         advanced_trainer.save_results(opt_result, f"{model_type}_opt_result")
 
         train_result = advanced_trainer.train_with_cv(
-            X, y,
+            X,
+            y,
             model_type=model_type,
             params=opt_result.best_params,
         )
 
         results[model_type] = {
-            'optimization': opt_result.to_dict(),
-            'training': train_result.to_dict(),
+            "optimization": opt_result.to_dict(),
+            "training": train_result.to_dict(),
         }
 
         click.echo(f"   训练准确率: {train_result.accuracy:.2%}")
 
     click.echo("\n📊 模型对比:")
     for model_type, result in results.items():
-        click.echo(f"   {model_type}: AUC={result['optimization']['best_value']:.4f}, "
-                   f"ACC={result['training']['accuracy']:.2%}")
+        click.echo(
+            f"   {model_type}: AUC={result['optimization']['best_value']:.4f}, ACC={result['training']['accuracy']:.2%}"
+        )
 
-    best_model = max(results.keys(), key=lambda k: results[k]['optimization']['best_value'])
+    best_model = max(results.keys(), key=lambda k: results[k]["optimization"]["best_value"])
     click.echo(f"\n🏆 最佳模型: {best_model}")
 
     all_results_path = output_dir / "optimization_results.json"
-    with open(all_results_path, 'w', encoding='utf-8') as f:
+    with open(all_results_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
     click.echo(f"📄 所有结果已保存: {all_results_path}")
 
 
 @ml_cli.command()
-@click.option('--days', '-d', default=500, help='训练数据天数')
-@click.option('--output', '-out', default='models', help='输出目录')
+@click.option("--days", "-d", default=500, help="训练数据天数")
+@click.option("--output", "-out", default="models", help="输出目录")
 def ensemble(
     days: int,
     output: str,
@@ -324,7 +331,7 @@ def ensemble(
 
     click.echo(f"📊 数据准备完成: {len(X)} 样本")
 
-    result = advanced_trainer.train_ensemble(X, y, models=['lightgbm', 'xgboost'])
+    result = advanced_trainer.train_ensemble(X, y, models=["lightgbm", "xgboost"])
 
     click.echo("\n📈 集成模型训练完成:")
     click.echo(f"   特征数量: {result.n_features}")
@@ -337,8 +344,8 @@ def ensemble(
 
 
 @ml_cli.command()
-@click.option('--model', '-m', default='lightgbm', help='模型类型')
-@click.option('--days', '-d', default=250, help='验证天数')
+@click.option("--model", "-m", default="lightgbm", help="模型类型")
+@click.option("--days", "-d", default=250, help="验证天数")
 def validate(
     model: str,
     days: int,
@@ -365,28 +372,30 @@ def validate(
             continue
 
         df = pd.DataFrame(klines)
-        df['date'] = pd.to_datetime(df['date'])
-        df = df.sort_values('date').reset_index(drop=True)
+        df["date"] = pd.to_datetime(df["date"])
+        df = df.sort_values("date").reset_index(drop=True)
 
-        for col in ['open', 'close', 'high', 'low', 'volume', 'amount']:
+        for col in ["open", "close", "high", "low", "volume", "amount"]:
             if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
         df_features = feature_engineer.calculate_all_features(df)
 
         feature_cols = feature_engineer.feature_names
-        X = df_features[feature_cols].fillna(0).replace([float('inf'), float('-inf')], 0)
+        X = df_features[feature_cols].fillna(0).replace([float("inf"), float("-inf")], 0)
 
         predictions = trainer.predictor.predict(X)
         probas = trainer.predictor.predict_proba(X)[:, 1]
 
-        for i, (date, pred, prob) in enumerate(zip(df['date'], predictions, probas, strict=False)):
-            predictions_list.append({
-                'code': code,
-                'date': str(date.date()),
-                'prediction': int(pred),
-                'up_prob': float(prob),
-            })
+        for i, (date, pred, prob) in enumerate(zip(df["date"], predictions, probas, strict=False)):
+            predictions_list.append(
+                {
+                    "code": code,
+                    "date": str(date.date()),
+                    "prediction": int(pred),
+                    "up_prob": float(prob),
+                }
+            )
 
         price_data[code] = df
 
@@ -404,12 +413,12 @@ def validate(
     click.echo(f"  平均收益:   {result['avg_return']:.2f}%")
     click.echo(f"  信号胜率:   {result['win_rate']:.2f}%")
 
-    if result.get('by_confidence'):
+    if result.get("by_confidence"):
         click.echo("\n  【按置信度分布】")
-        for bucket, data in sorted(result['by_confidence'].items()):
-            click.echo(f"    {bucket}: {data['count']}次, "
-                       f"准确率{data['accuracy']:.1f}%, "
-                       f"平均收益{data['avg_return']:.2f}%")
+        for bucket, data in sorted(result["by_confidence"].items()):
+            click.echo(
+                f"    {bucket}: {data['count']}次, 准确率{data['accuracy']:.1f}%, 平均收益{data['avg_return']:.2f}%"
+            )
 
     click.echo("=" * 50)
 
@@ -423,12 +432,12 @@ def _prepare_stocks_data(klines_data: dict[str, list]) -> dict[str, pd.DataFrame
             continue
 
         df = pd.DataFrame(klines)
-        df['date'] = pd.to_datetime(df['date'])
-        df = df.sort_values('date').reset_index(drop=True)
+        df["date"] = pd.to_datetime(df["date"])
+        df = df.sort_values("date").reset_index(drop=True)
 
-        for col in ['open', 'close', 'high', 'low', 'volume', 'amount']:
+        for col in ["open", "close", "high", "low", "volume", "amount"]:
             if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
         stocks_data[code] = df
 

@@ -246,12 +246,8 @@ class Config:
             with open(config_file, encoding="utf-8") as f:
                 data = json.load(f)
 
-            self._investment_types = [
-                InvestmentTypeConfig(t) for t in data.get("investment_types", [])
-            ]
-            self._risk_levels = {
-                k: RiskLevelConfig(v) for k, v in data.get("risk_levels", {}).items()
-            }
+            self._investment_types = [InvestmentTypeConfig(t) for t in data.get("investment_types", [])]
+            self._risk_levels = {k: RiskLevelConfig(v) for k, v in data.get("risk_levels", {}).items()}
         except (OSError, json.JSONDecodeError):
             self._investment_types = []
             self._risk_levels = {}
@@ -323,9 +319,7 @@ class Config:
         from .core.exceptions import ConfigurationError
 
         if mode not in ("sample", "real"):
-            raise ConfigurationError(
-                f"无效的数据模式: {mode}。必须是 'sample' 或 'real'", config_key="data_mode"
-            )
+            raise ConfigurationError(f"无效的数据模式: {mode}。必须是 'sample' 或 'real'", config_key="data_mode")
         self.data_mode = mode
 
     def ensure_directories(self) -> None:
@@ -367,11 +361,7 @@ class Config:
         return dirs[0]
 
     def __str__(self) -> str:
-        return (
-            f"Config(data_mode={self.data_mode}, "
-            f"data_path={self.data_path}, "
-            f"output_path={self.output_path})"
-        )
+        return f"Config(data_mode={self.data_mode}, data_path={self.data_path}, output_path={self.output_path})"
 
 
 # 全局配置实例

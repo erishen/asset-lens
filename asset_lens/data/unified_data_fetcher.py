@@ -5,10 +5,7 @@ Unified Data Fetcher using Provider Registry.
 
 from typing import Any, Optional
 
-from .providers import (
-    DataType,
-    ProviderRegistry,
-)
+from .providers import DataType, ProviderRegistry
 from .providers.akshare_provider import AkshareProvider
 from .providers.alpha_vantage_provider import AlphaVantageProvider
 

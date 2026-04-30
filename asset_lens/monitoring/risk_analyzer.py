@@ -37,15 +37,17 @@ logger = logging.getLogger(__name__)
 
 class MarketRegime(Enum):
     """市场环境类型"""
-    BULL = "bull"          # 牛市 - 上涨趋势
-    BEAR = "bear"          # 熊市 - 下跌趋势
+
+    BULL = "bull"  # 牛市 - 上涨趋势
+    BEAR = "bear"  # 熊市 - 下跌趋势
     SIDEWAYS = "sideways"  # 震荡 - 横盘整理
-    CRISIS = "crisis"      # 危机 - 极端波动
+    CRISIS = "crisis"  # 危机 - 极端波动
 
 
 @dataclass
 class RiskMetrics:
     """风险指标"""
+
     volatility: float = 0.0
     max_drawdown: float = 0.0
     sharpe_ratio: float = 0.0
@@ -57,6 +59,7 @@ class RiskMetrics:
 @dataclass
 class RiskAlert:
     """风险预警"""
+
     level: str
     type: str
     message: str
@@ -172,7 +175,7 @@ class RiskAnalyzer:
                 return 0.0
 
             weights = [value / total_value for value in holdings.values()]
-            herfindahl_index = sum(w ** 2 for w in weights)
+            herfindahl_index = sum(w**2 for w in weights)
 
             return float(herfindahl_index * 100)
         except Exception as e:
@@ -194,61 +197,66 @@ class RiskAnalyzer:
 
         return metrics
 
-    def check_risk_thresholds(self, metrics: RiskMetrics, thresholds: dict[str, float] | None = None) -> list[RiskAlert]:
+    def check_risk_thresholds(
+        self, metrics: RiskMetrics, thresholds: dict[str, float] | None = None
+    ) -> list[RiskAlert]:
         """检查风险阈值"""
         if thresholds is None:
-            thresholds = {
-                'volatility': 25.0,
-                'max_drawdown': 15.0,
-                'sharpe_ratio': 0.5,
-                'concentration_risk': 30.0
-            }
+            thresholds = {"volatility": 25.0, "max_drawdown": 15.0, "sharpe_ratio": 0.5, "concentration_risk": 30.0}
 
         alerts = []
 
-        if metrics.volatility > thresholds['volatility']:
-            alerts.append(RiskAlert(
-                level='high',
-                type='volatility',
-                message=f"波动率过高: {metrics.volatility:.2f}%",
-                value=metrics.volatility,
-                threshold=thresholds['volatility'],
-                timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                suggestion="考虑降低仓位或增加对冲"
-            ))
+        if metrics.volatility > thresholds["volatility"]:
+            alerts.append(
+                RiskAlert(
+                    level="high",
+                    type="volatility",
+                    message=f"波动率过高: {metrics.volatility:.2f}%",
+                    value=metrics.volatility,
+                    threshold=thresholds["volatility"],
+                    timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    suggestion="考虑降低仓位或增加对冲",
+                )
+            )
 
-        if metrics.max_drawdown > thresholds['max_drawdown']:
-            alerts.append(RiskAlert(
-                level='high',
-                type='max_drawdown',
-                message=f"最大回撤过大: {metrics.max_drawdown:.2f}%",
-                value=metrics.max_drawdown,
-                threshold=thresholds['max_drawdown'],
-                timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                suggestion="检查止损策略，考虑减仓"
-            ))
+        if metrics.max_drawdown > thresholds["max_drawdown"]:
+            alerts.append(
+                RiskAlert(
+                    level="high",
+                    type="max_drawdown",
+                    message=f"最大回撤过大: {metrics.max_drawdown:.2f}%",
+                    value=metrics.max_drawdown,
+                    threshold=thresholds["max_drawdown"],
+                    timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    suggestion="检查止损策略，考虑减仓",
+                )
+            )
 
-        if metrics.sharpe_ratio < thresholds['sharpe_ratio']:
-            alerts.append(RiskAlert(
-                level='medium',
-                type='sharpe_ratio',
-                message=f"夏普比率过低: {metrics.sharpe_ratio:.2f}",
-                value=metrics.sharpe_ratio,
-                threshold=thresholds['sharpe_ratio'],
-                timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                suggestion="优化资产配置，提高风险调整后收益"
-            ))
+        if metrics.sharpe_ratio < thresholds["sharpe_ratio"]:
+            alerts.append(
+                RiskAlert(
+                    level="medium",
+                    type="sharpe_ratio",
+                    message=f"夏普比率过低: {metrics.sharpe_ratio:.2f}",
+                    value=metrics.sharpe_ratio,
+                    threshold=thresholds["sharpe_ratio"],
+                    timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    suggestion="优化资产配置，提高风险调整后收益",
+                )
+            )
 
-        if metrics.concentration_risk > thresholds['concentration_risk']:
-            alerts.append(RiskAlert(
-                level='medium',
-                type='concentration_risk',
-                message=f"集中度风险过高: {metrics.concentration_risk:.2f}%",
-                value=metrics.concentration_risk,
-                threshold=thresholds['concentration_risk'],
-                timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                suggestion="分散投资，降低单一资产权重"
-            ))
+        if metrics.concentration_risk > thresholds["concentration_risk"]:
+            alerts.append(
+                RiskAlert(
+                    level="medium",
+                    type="concentration_risk",
+                    message=f"集中度风险过高: {metrics.concentration_risk:.2f}%",
+                    value=metrics.concentration_risk,
+                    threshold=thresholds["concentration_risk"],
+                    timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    suggestion="分散投资，降低单一资产权重",
+                )
+            )
 
         return alerts
 
@@ -272,7 +280,7 @@ class RiskAnalyzer:
         if alerts:
             report_lines.append("🚨 风险预警:")
             for alert in alerts:
-                level_emoji = "🔴" if alert.level == 'high' else "🟡"
+                level_emoji = "🔴" if alert.level == "high" else "🟡"
                 report_lines.append(f"  {level_emoji} [{alert.type}] {alert.message}")
                 report_lines.append(f"     建议: {alert.suggestion}")
             report_lines.append("")
@@ -290,13 +298,13 @@ class RiskAnalyzer:
     def save_risk_metrics(self, metrics: RiskMetrics):
         """保存风险指标历史"""
         metrics_data = {
-            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            'volatility': metrics.volatility,
-            'max_drawdown': metrics.max_drawdown,
-            'sharpe_ratio': metrics.sharpe_ratio,
-            'beta': metrics.beta,
-            'var_95': metrics.var_95,
-            'concentration_risk': metrics.concentration_risk
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "volatility": metrics.volatility,
+            "max_drawdown": metrics.max_drawdown,
+            "sharpe_ratio": metrics.sharpe_ratio,
+            "beta": metrics.beta,
+            "var_95": metrics.var_95,
+            "concentration_risk": metrics.concentration_risk,
         }
 
         self.risk_history.append(metrics_data)
@@ -306,7 +314,7 @@ class RiskAnalyzer:
 
         if history_file.exists():
             try:
-                with open(history_file, encoding='utf-8') as f:
+                with open(history_file, encoding="utf-8") as f:
                     history_data = json.load(f)
             except (json.JSONDecodeError, OSError) as e:
                 logger.warning(f"加载历史数据失败: {e}")
@@ -314,7 +322,7 @@ class RiskAnalyzer:
 
         history_data.append(metrics_data)
 
-        with open(history_file, 'w', encoding='utf-8') as f:
+        with open(history_file, "w", encoding="utf-8") as f:
             json.dump(history_data, f, ensure_ascii=False, indent=2)
 
     def detect_market_regime(
@@ -380,36 +388,36 @@ class RiskAnalyzer:
         """
         REGIME_THRESHOLDS = {
             MarketRegime.BULL: {
-                'volatility': 30.0,
-                'max_drawdown': 15.0,
-                'sharpe_ratio': 0.5,
-                'concentration_risk': 40.0,
-                'stop_loss': -0.10,
-                'position_limit': 0.8,
+                "volatility": 30.0,
+                "max_drawdown": 15.0,
+                "sharpe_ratio": 0.5,
+                "concentration_risk": 40.0,
+                "stop_loss": -0.10,
+                "position_limit": 0.8,
             },
             MarketRegime.BEAR: {
-                'volatility': 20.0,
-                'max_drawdown': 10.0,
-                'sharpe_ratio': 0.3,
-                'concentration_risk': 25.0,
-                'stop_loss': -0.05,
-                'position_limit': 0.5,
+                "volatility": 20.0,
+                "max_drawdown": 10.0,
+                "sharpe_ratio": 0.3,
+                "concentration_risk": 25.0,
+                "stop_loss": -0.05,
+                "position_limit": 0.5,
             },
             MarketRegime.SIDEWAYS: {
-                'volatility': 25.0,
-                'max_drawdown': 12.0,
-                'sharpe_ratio': 0.4,
-                'concentration_risk': 30.0,
-                'stop_loss': -0.08,
-                'position_limit': 0.6,
+                "volatility": 25.0,
+                "max_drawdown": 12.0,
+                "sharpe_ratio": 0.4,
+                "concentration_risk": 30.0,
+                "stop_loss": -0.08,
+                "position_limit": 0.6,
             },
             MarketRegime.CRISIS: {
-                'volatility': 15.0,
-                'max_drawdown': 5.0,
-                'sharpe_ratio': 0.0,
-                'concentration_risk': 20.0,
-                'stop_loss': -0.03,
-                'position_limit': 0.3,
+                "volatility": 15.0,
+                "max_drawdown": 5.0,
+                "sharpe_ratio": 0.0,
+                "concentration_risk": 20.0,
+                "stop_loss": -0.03,
+                "position_limit": 0.3,
             },
         }
 

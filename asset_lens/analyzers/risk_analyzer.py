@@ -28,9 +28,7 @@ class RiskAnalyzer:
                 }
             )
 
-        loss_products = [
-            p for p in portfolio.products if p.profit_amount and p.profit_amount < Decimal("0")
-        ]
+        loss_products = [p for p in portfolio.products if p.profit_amount and p.profit_amount < Decimal("0")]
         if loss_products:
             loss_products.sort(key=lambda p: p.profit_amount or Decimal("0"))
             warnings.append(
@@ -52,9 +50,7 @@ class RiskAnalyzer:
         risk_dist = portfolio.get_risk_distribution()
         high_risk_stats = risk_dist.get("高", {})
         if high_risk_stats and portfolio.total_value > Decimal("0"):
-            high_risk_ratio = (
-                high_risk_stats.get("total_value", Decimal("0")) / portfolio.total_value
-            )
+            high_risk_ratio = high_risk_stats.get("total_value", Decimal("0")) / portfolio.total_value
             if high_risk_ratio > Decimal("0.5"):
                 warnings.append(
                     {
@@ -82,9 +78,7 @@ class RiskAnalyzer:
                         {
                             "name": p.name,
                             "days": p.investment_days,
-                            "return": f"{p.annual_return:.2f}%"
-                            if p.annual_return is not None
-                            else "-",
+                            "return": f"{p.annual_return:.2f}%" if p.annual_return is not None else "-",
                         }
                         for p in long_term_low_return[:3]
                     ],
@@ -93,14 +87,10 @@ class RiskAnalyzer:
 
         return warnings
 
-    def _get_low_return_products(
-        self, portfolio: Portfolio, threshold: float = 2.0
-    ) -> list[dict[str, Any]]:
+    def _get_low_return_products(self, portfolio: Portfolio, threshold: float = 2.0) -> list[dict[str, Any]]:
         """获取低收益产品列表"""
         low_return_products = [
-            p
-            for p in portfolio.products
-            if p.annual_return is not None and p.annual_return < Decimal(str(threshold))
+            p for p in portfolio.products if p.annual_return is not None and p.annual_return < Decimal(str(threshold))
         ]
 
         low_return_products.sort(key=lambda p: p.annual_return or Decimal("0"))
@@ -195,9 +185,7 @@ class RiskAnalyzer:
         risk_dist = portfolio.get_risk_distribution()
         high_risk_stats = risk_dist.get("高", {})
         if high_risk_stats and portfolio.total_value > Decimal("0"):
-            high_risk_ratio = (
-                high_risk_stats.get("total_value", Decimal("0")) / portfolio.total_value
-            )
+            high_risk_ratio = high_risk_stats.get("total_value", Decimal("0")) / portfolio.total_value
             if high_risk_ratio > Decimal("0.5"):
                 advice.append("高风险产品占比过高，建议适当降低风险敞口")
 

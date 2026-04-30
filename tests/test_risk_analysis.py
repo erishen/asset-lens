@@ -2,8 +2,9 @@
 Tests for report risk analysis module.
 """
 
-import pytest
 from decimal import Decimal
+
+import pytest
 
 from asset_lens.report.risk_analysis import RiskAnalyzer
 

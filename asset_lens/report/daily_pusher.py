@@ -74,7 +74,8 @@ class DailyReportPusher:
             },
             "positions": portfolio_data.get("positions", []),
             "risk_alerts": risk_alerts or [],
-            "suggestions": suggestions or [
+            "suggestions": suggestions
+            or [
                 "定期检查持仓风险",
                 "保持资产配置多元化",
                 "关注市场动态",
@@ -195,7 +196,8 @@ class DailyReportPusher:
             "end_date": end_of_week.strftime("%Y-%m-%d"),
             "timestamp": today,
             "summary": weekly_summary,
-            "market_regime": market_regime or {
+            "market_regime": market_regime
+            or {
                 "description": "未知",
                 "volatility": 0,
                 "position_limit": 0.6,
@@ -203,11 +205,13 @@ class DailyReportPusher:
             "top_performers": top_performers or [],
             "bottom_performers": bottom_performers or [],
             "risk_alerts": risk_alerts or [],
-            "suggestions": suggestions or [
+            "suggestions": suggestions
+            or [
                 "保持资产配置多元化",
                 "定期检查持仓风险",
             ],
-            "next_week_tasks": next_week_tasks or [
+            "next_week_tasks": next_week_tasks
+            or [
                 "检查持仓风险",
                 "关注市场动态",
             ],

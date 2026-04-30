@@ -13,6 +13,7 @@ from typing import Any
 @dataclass
 class PortfolioSnapshot:
     """投资组合快照"""
+
     snapshot_id: str
     timestamp: str
     total_assets: float

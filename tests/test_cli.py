@@ -51,7 +51,7 @@ class TestCLI:
         """测试初始化命令"""
         from asset_lens.cli import cli
 
-        with patch('asset_lens.config.config') as mock_config:
+        with patch("asset_lens.config.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             mock_config.project_root = temp_cache_path
             mock_config.ensure_directories = MagicMock()
@@ -63,7 +63,7 @@ class TestCLI:
         """测试显示配置命令"""
         from asset_lens.cli import cli
 
-        with patch('asset_lens.config.config') as mock_config:
+        with patch("asset_lens.config.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             mock_config.project_root = temp_cache_path
             mock_config.data_mode = "test"
@@ -75,7 +75,7 @@ class TestCLI:
         """测试初始化示例数据命令"""
         from asset_lens.cli import cli
 
-        with patch('asset_lens.config.config') as mock_config:
+        with patch("asset_lens.config.config") as mock_config:
             mock_config.project_root = temp_cache_path
             result = runner.invoke(cli, ["init-sample"])
             assert result.exit_code == 0
@@ -84,16 +84,16 @@ class TestCLI:
         """测试计算命令 - 使用 mock"""
         from asset_lens.cli import cli
 
-        with patch('asset_lens.data.csv_parser.CSVParser') as mock_parser:
+        with patch("asset_lens.data.csv_parser.CSVParser") as mock_parser:
             mock_parser.load_data.return_value = []
             mock_parser.get_exchange_rates.return_value = (7.0, 0.9)
-            
-            with patch('asset_lens.config.config') as mock_config:
+
+            with patch("asset_lens.config.config") as mock_config:
                 mock_config.default_usd_rate = 7.0
                 mock_config.default_hkd_rate = 0.9
                 mock_config.data_mode = "sample"
                 mock_config.get_latest_data_dir.return_value = None
-                
+
                 result = runner.invoke(cli, ["calculate", "--data-mode", "sample"])
                 assert result.exit_code == 0
 
@@ -101,18 +101,18 @@ class TestCLI:
         """测试分析命令 - 使用 mock"""
         from asset_lens.cli import cli
 
-        with patch('asset_lens.data.csv_parser.CSVParser') as mock_parser:
+        with patch("asset_lens.data.csv_parser.CSVParser") as mock_parser:
             mock_parser.load_data.return_value = []
             mock_parser.get_exchange_rates.return_value = (7.0, 0.9)
-            
-            with patch('asset_lens.config.config') as mock_config:
+
+            with patch("asset_lens.config.config") as mock_config:
                 mock_config.default_usd_rate = 7.0
                 mock_config.default_hkd_rate = 0.9
                 mock_config.data_mode = "sample"
                 mock_config.output_path = temp_cache_path
                 mock_config.project_root = temp_cache_path
                 mock_config.get_latest_data_dir.return_value = None
-                
+
                 result = runner.invoke(cli, ["analyze", "--data-mode", "sample"])
                 assert result.exit_code == 0
 
@@ -123,9 +123,9 @@ class TestCLI:
         env_file = temp_cache_path / ".env"
         env_file.write_text("DATA_MODE=sample\n")
 
-        with patch('asset_lens.config.config') as mock_config:
+        with patch("asset_lens.config.config") as mock_config:
             mock_config.project_root = temp_cache_path
-            
+
             result = runner.invoke(cli, ["switch-mode", "--target-mode", "real"])
             assert result.exit_code == 0
             assert "real" in result.output
@@ -134,10 +134,10 @@ class TestCLI:
         """测试设置汇率命令"""
         from asset_lens.cli import cli
 
-        with patch('asset_lens.utils.currency_converter.currency_converter') as mock_converter:
+        with patch("asset_lens.utils.currency_converter.currency_converter") as mock_converter:
             mock_converter.set_rate = MagicMock()
             mock_converter.save_cached_rates = MagicMock()
-            
+
             result = runner.invoke(cli, ["set-rate", "--currency", "USD", "--rate", "7.2"])
             assert result.exit_code == 0
             assert "USD" in result.output
@@ -146,18 +146,18 @@ class TestCLI:
         """测试显示资产汇总 - 无文件"""
         from asset_lens.cli import cli
 
-        with patch('asset_lens.data.csv_parser.CSVParser.load_data') as mock_load:
+        with patch("asset_lens.data.csv_parser.CSVParser.load_data") as mock_load:
             mock_load.return_value = []
-            
-            with patch('asset_lens.cli_modules.cli.analyze._get_data_dir') as mock_get_dir:
+
+            with patch("asset_lens.cli_modules.cli.analyze._get_data_dir") as mock_get_dir:
                 mock_get_dir.return_value = None
-                
-                with patch('asset_lens.config.config') as mock_config:
+
+                with patch("asset_lens.config.config") as mock_config:
                     mock_config.default_usd_rate = 7.0
                     mock_config.default_hkd_rate = 0.9
                     mock_config.data_mode = "sample"
                     mock_config.output_path = temp_cache_path
-                    
+
                     result = runner.invoke(cli, ["analyze", "--data-mode", "sample"])
                     assert result.exit_code == 0
 
@@ -179,9 +179,11 @@ class TestCLI:
         """测试导出资产汇总 - 无文件"""
         from asset_lens.cli import cli
 
-        with patch('asset_lens.data.csv_parser.CSVParser.load_data') as mock_load, \
-             patch('asset_lens.cli_modules.cli.report._get_north_flow') as mock_north, \
-             patch('asset_lens.cli_modules.cli.report._get_ml_predictions') as mock_ml:
+        with (
+            patch("asset_lens.data.csv_parser.CSVParser.load_data") as mock_load,
+            patch("asset_lens.cli_modules.cli.report._get_north_flow") as mock_north,
+            patch("asset_lens.cli_modules.cli.report._get_ml_predictions") as mock_ml,
+        ):
             mock_load.return_value = []
             mock_north.return_value = {"total_flow": 0, "flows": []}
             mock_ml.return_value = {"bullish": [], "bearish": []}
@@ -192,12 +194,12 @@ class TestCLI:
         """测试盈亏估算命令 - 使用 mock"""
         from asset_lens.cli import cli
 
-        with patch('asset_lens.data.csv_parser.CSVParser') as mock_parser:
+        with patch("asset_lens.data.csv_parser.CSVParser") as mock_parser:
             mock_parser.load_data.return_value = []
-            
-            with patch('asset_lens.config.config') as mock_config:
+
+            with patch("asset_lens.config.config") as mock_config:
                 mock_config.data_mode = "sample"
-                
+
                 result = runner.invoke(cli, ["pnl"])
                 assert result.exit_code == 0
 
@@ -205,12 +207,12 @@ class TestCLI:
         """测试收益估算命令 - 使用 mock"""
         from asset_lens.cli import cli
 
-        with patch('asset_lens.data.csv_parser.CSVParser') as mock_parser:
+        with patch("asset_lens.data.csv_parser.CSVParser") as mock_parser:
             mock_parser.load_data.return_value = []
-            
-            with patch('asset_lens.config.config') as mock_config:
+
+            with patch("asset_lens.config.config") as mock_config:
                 mock_config.data_mode = "sample"
-                
+
                 result = runner.invoke(cli, ["estimate"])
                 assert result.exit_code == 0
 
@@ -226,9 +228,9 @@ class TestCLI:
         from asset_lens.cli import cli
 
         # 使用 investment-status 命令测试（更简单）
-        with patch('asset_lens.config.config') as mock_config:
+        with patch("asset_lens.config.config") as mock_config:
             mock_config.data_mode = "sample"
-            
+
             result = runner.invoke(cli, ["investment-status"])
             # 命令可能因为数据问题失败，但至少应该能识别
             assert result.exit_code in [0, 1]

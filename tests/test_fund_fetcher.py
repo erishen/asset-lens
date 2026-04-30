@@ -3,9 +3,7 @@ Tests for fund_fetcher.py
 """
 
 import json
-import signal
 import tempfile
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -26,7 +24,7 @@ class TestTimeoutContext:
     def test_timeout_context_timeout(self):
         """测试超时"""
         import time
-        
+
         with pytest.raises(TimeoutError):
             with timeout_context(1, "测试超时"):
                 time.sleep(2)
@@ -44,7 +42,7 @@ class TestFundDataFetcher:
     @pytest.fixture
     def fetcher(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.data.fund_fetcher.config') as mock_config:
+        with patch("asset_lens.data.fund_fetcher.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             mock_config.project_root = temp_cache_path
             fetcher = FundDataFetcher()
@@ -64,14 +62,14 @@ class TestFundDataFetcher:
     def test_akshare_lazy_load(self, fetcher):
         """测试 AkShare 延迟加载"""
         mock_ak = MagicMock()
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             ak = fetcher.akshare
             assert ak == mock_ak
 
     def test_akshare_import_error(self, fetcher):
         """测试 AkShare 未安装"""
-        with patch.dict('sys.modules', {'akshare': None}):
-            with patch('builtins.__import__', side_effect=ImportError("No module")):
+        with patch.dict("sys.modules", {"akshare": None}):
+            with patch("builtins.__import__", side_effect=ImportError("No module")):
                 fetcher._akshare = None
                 with pytest.raises(ImportError) as exc_info:
                     _ = fetcher.akshare
@@ -83,11 +81,7 @@ class TestFundDataFetcher:
         config_dir.mkdir()
         config_file = config_dir / "fund_stock_codes.json"
 
-        config_data = {
-            "funds": [
-                {"name": "测试基金", "code": "000001", "keywords": ["测试", "基金"]}
-            ]
-        }
+        config_data = {"funds": [{"name": "测试基金", "code": "000001", "keywords": ["测试", "基金"]}]}
 
         with open(config_file, "w", encoding="utf-8") as f:
             json.dump(config_data, f)
@@ -224,11 +218,13 @@ class TestAutoMatchFundCodes:
 
     def test_auto_match_fund_codes_success(self):
         """测试自动匹配基金代码成功"""
-        with patch('asset_lens.data.fund_fetcher.fund_fetcher') as mock_fetcher:
-            mock_fetcher._load_fund_codes_config = MagicMock(return_value={
-                "测试基金": "000001",
-                "股票基金": "000002",
-            })
+        with patch("asset_lens.data.fund_fetcher.fund_fetcher") as mock_fetcher:
+            mock_fetcher._load_fund_codes_config = MagicMock(
+                return_value={
+                    "测试基金": "000001",
+                    "股票基金": "000002",
+                }
+            )
 
             from asset_lens.data.fund_fetcher import auto_match_fund_codes
 
@@ -239,7 +235,7 @@ class TestAutoMatchFundCodes:
 
     def test_auto_match_fund_codes_skip_keywords(self):
         """测试自动匹配基金代码 - 跳过关键词"""
-        with patch('asset_lens.data.fund_fetcher.fund_fetcher') as mock_fetcher:
+        with patch("asset_lens.data.fund_fetcher.fund_fetcher") as mock_fetcher:
             mock_fetcher._load_fund_codes_config = MagicMock(return_value={})
 
             from asset_lens.data.fund_fetcher import auto_match_fund_codes
@@ -252,7 +248,7 @@ class TestAutoMatchFundCodes:
 
     def test_auto_match_fund_codes_empty_name(self):
         """测试自动匹配基金代码 - 空名称"""
-        with patch('asset_lens.data.fund_fetcher.fund_fetcher') as mock_fetcher:
+        with patch("asset_lens.data.fund_fetcher.fund_fetcher") as mock_fetcher:
             mock_fetcher._load_fund_codes_config = MagicMock(return_value={})
 
             from asset_lens.data.fund_fetcher import auto_match_fund_codes
@@ -263,10 +259,12 @@ class TestAutoMatchFundCodes:
 
     def test_auto_match_fund_codes_partial_match(self):
         """测试自动匹配基金代码 - 部分匹配"""
-        with patch('asset_lens.data.fund_fetcher.fund_fetcher') as mock_fetcher:
-            mock_fetcher._load_fund_codes_config = MagicMock(return_value={
-                "易方达": "000001",
-            })
+        with patch("asset_lens.data.fund_fetcher.fund_fetcher") as mock_fetcher:
+            mock_fetcher._load_fund_codes_config = MagicMock(
+                return_value={
+                    "易方达": "000001",
+                }
+            )
 
             from asset_lens.data.fund_fetcher import auto_match_fund_codes
 
@@ -281,10 +279,10 @@ class TestFetchPortfolioFundQuotes:
 
     def test_fetch_portfolio_fund_quotes(self):
         """测试获取投资组合基金净值"""
-        with patch('asset_lens.data.fund_fetcher.fund_fetcher') as mock_fetcher:
-            mock_fetcher.fetch_multiple_funds = MagicMock(return_value={
-                "000001": {"code": "000001", "current_nav": 1.5}
-            })
+        with patch("asset_lens.data.fund_fetcher.fund_fetcher") as mock_fetcher:
+            mock_fetcher.fetch_multiple_funds = MagicMock(
+                return_value={"000001": {"code": "000001", "current_nav": 1.5}}
+            )
 
             from asset_lens.data.fund_fetcher import fetch_portfolio_fund_quotes
 

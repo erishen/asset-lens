@@ -17,6 +17,7 @@ from dataclasses import dataclass
 @dataclass
 class IndicatorResult:
     """指标结果"""
+
     name: str
     value: float
     signal: str  # buy, sell, hold
@@ -69,9 +70,7 @@ class TechnicalIndicators:
 
     @staticmethod
     def calculate_boll(
-        prices: list[float],
-        period: int = 20,
-        std_dev: float = 2.0
+        prices: list[float], period: int = 20, std_dev: float = 2.0
     ) -> tuple[float, float, float] | None:
         """
         计算布林带
@@ -99,10 +98,7 @@ class TechnicalIndicators:
         return (round(upper, 2), round(middle, 2), round(lower, 2))
 
     @staticmethod
-    def calculate_obv(
-        prices: list[float],
-        volumes: list[float]
-    ) -> float | None:
+    def calculate_obv(prices: list[float], volumes: list[float]) -> float | None:
         """
         计算 OBV (能量潮)
 
@@ -127,10 +123,7 @@ class TechnicalIndicators:
 
     @staticmethod
     def calculate_wr(
-        high_prices: list[float],
-        low_prices: list[float],
-        close_prices: list[float],
-        period: int = 14
+        high_prices: list[float], low_prices: list[float], close_prices: list[float], period: int = 14
     ) -> float | None:
         """
         计算 WR (威廉指标)
@@ -160,10 +153,7 @@ class TechnicalIndicators:
 
     @staticmethod
     def calculate_atr(
-        high_prices: list[float],
-        low_prices: list[float],
-        close_prices: list[float],
-        period: int = 14
+        high_prices: list[float], low_prices: list[float], close_prices: list[float], period: int = 14
     ) -> float | None:
         """
         计算 ATR (平均真实波幅)

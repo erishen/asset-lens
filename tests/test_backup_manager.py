@@ -2,11 +2,12 @@
 Tests for Backup Manager
 """
 
-import pytest
 import os
 import tarfile
-from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
+
+import pytest
+
 from asset_lens.data.backup_manager import BackupManager
 
 
@@ -139,15 +140,14 @@ class TestBackupManager:
     def test_list_backups_with_backups(self, backup_manager, tmp_path):
         """测试列出备份 - 有备份"""
         # 直接创建备份文件
-        import tarfile
 
         backup_file1 = tmp_path / "backup_20240101_120000.tar.gz"
         backup_file2 = tmp_path / "backup_20240102_120000.tar.gz"
 
         # 创建空的 tar.gz 文件
-        with tarfile.open(backup_file1, "w:gz") as tar:
+        with tarfile.open(backup_file1, "w:gz"):
             pass
-        with tarfile.open(backup_file2, "w:gz") as tar:
+        with tarfile.open(backup_file2, "w:gz"):
             pass
 
         backups = backup_manager.list_backups()
@@ -209,9 +209,7 @@ class TestBackupManager:
         """测试是否需要备份 - 不需要"""
         from datetime import datetime
 
-        backup_manager.config["last_backup_time"] = datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
+        backup_manager.config["last_backup_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         backup_manager.config["backup_interval_days"] = 1
 
         should = backup_manager.should_backup()
@@ -223,9 +221,7 @@ class TestBackupManager:
         from datetime import datetime, timedelta
 
         last_time = datetime.now() - timedelta(days=2)
-        backup_manager.config["last_backup_time"] = last_time.strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
+        backup_manager.config["last_backup_time"] = last_time.strftime("%Y-%m-%d %H:%M:%S")
         backup_manager.config["backup_interval_days"] = 1
 
         should = backup_manager.should_backup()
@@ -254,9 +250,7 @@ class TestBackupManager:
         """测试自动备份 - 不需要"""
         from datetime import datetime
 
-        backup_manager.config["last_backup_time"] = datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
+        backup_manager.config["last_backup_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         result = backup_manager.auto_backup()
 

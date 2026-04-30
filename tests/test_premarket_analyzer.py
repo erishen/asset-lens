@@ -5,16 +5,12 @@ Tests for Pre-market Analyzer.
 
 import json
 from datetime import datetime
-from pathlib import Path
-from unittest.mock import MagicMock, patch
-
-import pytest
 
 from asset_lens.analysis.premarket_analyzer import (
+    HotSector,
+    MarketTrend,
     PreMarketAnalyzer,
     PreMarketReport,
-    MarketTrend,
-    HotSector,
     StockAlert,
     premarket_analyzer,
 )

@@ -2,16 +2,16 @@
 Tests for CSV parser.
 """
 
-import pytest
-import tempfile
 import os
-from datetime import datetime, date
+import tempfile
+from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+
+import pytest
 
 from asset_lens.data.csv_parser import CSVParser
-from asset_lens.data.models import InvestmentType, RiskLevel, InvestmentProduct
+from asset_lens.data.models import InvestmentType, RiskLevel
 
 
 class TestParseDecimal:
@@ -222,8 +222,8 @@ class TestParseRow:
 
     def setup_method(self):
         """Setup method - ensure platform config is loaded"""
-        from asset_lens.core.platform_loader import PlatformLoader
         from asset_lens.config import config
+        from asset_lens.core.platform_loader import PlatformLoader
 
         # 设置 sample 模式并加载平台配置
         config.data_mode = "sample"
@@ -402,11 +402,11 @@ class TestParseCsvFile:
 
     def test_parse_csv_file_basic(self):
         csv_content = "类型,名称,风险\n指数基金,中证500ETF,中\n债券基金,测试债券,低"
-        
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, encoding='utf-8-sig') as f:
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, encoding="utf-8-sig") as f:
             f.write(csv_content)
             temp_path = Path(f.name)
-        
+
         try:
             result = CSVParser.parse_csv_file(temp_path)
             assert len(result) == 2
@@ -421,11 +421,11 @@ class TestParseCsvFile:
 
     def test_parse_csv_file_with_bom(self):
         csv_content = "\ufeff类型,名称,风险\n指数基金,中证500ETF,中"
-        
-        with tempfile.NamedTemporaryFile(mode='wb', suffix='.csv', delete=False) as f:
-            f.write(csv_content.encode('utf-8-sig'))
+
+        with tempfile.NamedTemporaryFile(mode="wb", suffix=".csv", delete=False) as f:
+            f.write(csv_content.encode("utf-8-sig"))
             temp_path = Path(f.name)
-        
+
         try:
             result = CSVParser.parse_csv_file(temp_path)
             assert len(result) == 1
@@ -436,7 +436,7 @@ class TestParseCsvFile:
     def test_parse_csv_file_empty_rows(self):
         csv_content = "类型,名称,风险\n指数基金,中证500ETF,中\n,,"
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, encoding='utf-8-sig') as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, encoding="utf-8-sig") as f:
             f.write(csv_content)
             temp_path = Path(f.name)
 
@@ -549,28 +549,36 @@ class TestDays360:
     def test_days360_basic(self):
         """Test basic days360 calculation"""
         from datetime import date
+
         from asset_lens.data.csv_parser import days360
+
         result = days360(date(2024, 1, 1), date(2024, 12, 31))
         assert result == 360
 
     def test_days360_same_day(self):
         """Test days360 with same day"""
         from datetime import date
+
         from asset_lens.data.csv_parser import days360
+
         result = days360(date(2024, 1, 1), date(2024, 1, 1))
         assert result == 0
 
     def test_days360_one_month(self):
         """Test days360 with one month"""
         from datetime import date
+
         from asset_lens.data.csv_parser import days360
+
         result = days360(date(2024, 1, 1), date(2024, 2, 1))
         assert result == 30
 
     def test_days360_end_of_month(self):
         """Test days360 with end of month"""
         from datetime import date
+
         from asset_lens.data.csv_parser import days360
+
         result = days360(date(2024, 1, 31), date(2024, 2, 28))
         # Jan 31 is treated as Jan 30 in 30/360 convention
         assert result >= 28
@@ -578,14 +586,18 @@ class TestDays360:
     def test_days360_european_mode(self):
         """Test days360 with European mode"""
         from datetime import date
+
         from asset_lens.data.csv_parser import days360
+
         result = days360(date(2024, 1, 31), date(2024, 2, 28), european=True)
         assert result >= 28
 
     def test_days360_end_of_month_both_31(self):
         """Test days360 with both dates on 31st"""
         from datetime import date
+
         from asset_lens.data.csv_parser import days360
+
         result = days360(date(2024, 1, 31), date(2024, 3, 31))
         # Both 31st should be treated as 30th
         assert result >= 58
@@ -597,14 +609,14 @@ class TestLoadData:
     def test_load_data_with_dir(self):
         """Test loading data from directory"""
         csv_content = "类型,名称,风险\n指数基金,测试产品,中"
-        
+
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
             csv_file = temp_path / "工作表 1-表格 1.csv"
-            
+
             with open(csv_file, "w", encoding="utf-8-sig") as f:
                 f.write(csv_content)
-            
+
             result = CSVParser.load_data(temp_path)
             assert len(result) == 1
             assert result[0].name == "测试产品"
@@ -612,11 +624,11 @@ class TestLoadData:
     def test_load_data_with_csv_file(self):
         """Test loading data from CSV file"""
         csv_content = "类型,名称,风险\n指数基金,测试产品,中"
-        
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, encoding='utf-8-sig') as f:
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, encoding="utf-8-sig") as f:
             f.write(csv_content)
             temp_path = Path(f.name)
-        
+
         try:
             result = CSVParser.load_data(temp_path)
             assert len(result) == 1
@@ -649,13 +661,17 @@ class TestGetExchangeRates:
         """Test getting exchange rates from file"""
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
-            
+
             # Create summary file (priority source for exchange rates)
             summary_file = temp_path / "资产汇总-表格 1.csv"
             with open(summary_file, "w", encoding="utf-8-sig") as f:
-                f.write("日期,微信,中金财富,支付宝,富途,招商,信用卡,港招,交通,浦发,建设,中信,民生,工商,中银,京东白条,抖音月付,多多后付,美团月付,总金额,美元汇率,港元汇率,黄金\n")
-                f.write("2024/01/15,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000,11000,12000,13000,14000,15000,16000,17000,18000,190000,7.25,0.93,500\n")
-            
+                f.write(
+                    "日期,微信,中金财富,支付宝,富途,招商,信用卡,港招,交通,浦发,建设,中信,民生,工商,中银,京东白条,抖音月付,多多后付,美团月付,总金额,美元汇率,港元汇率,黄金\n"
+                )
+                f.write(
+                    "2024/01/15,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000,11000,12000,13000,14000,15000,16000,17000,18000,190000,7.25,0.93,500\n"
+                )
+
             usd, hkd = CSVParser.get_exchange_rates(temp_path)
             assert usd == 7.25
             assert hkd == 0.93
@@ -667,13 +683,14 @@ class TestParseCsvFileAdvanced:
     def test_parse_csv_file_with_reference_date(self):
         """Test parsing CSV file with reference date"""
         csv_content = "类型,名称,风险,开始日期\n指数基金,测试产品,中,2024/01/01"
-        
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, encoding='utf-8-sig') as f:
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, encoding="utf-8-sig") as f:
             f.write(csv_content)
             temp_path = Path(f.name)
-        
+
         try:
             from datetime import date
+
             ref_date = date(2024, 6, 30)
             result = CSVParser.parse_csv_file(temp_path, reference_date=ref_date)
             assert len(result) == 1
@@ -683,11 +700,11 @@ class TestParseCsvFileAdvanced:
     def test_parse_csv_file_with_invalid_rows(self):
         """Test parsing CSV file with some invalid rows"""
         csv_content = "类型,名称,风险\n指数基金,产品A,中\n,产品B,低\n指数基金,产品C,高"
-        
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, encoding='utf-8-sig') as f:
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, encoding="utf-8-sig") as f:
             f.write(csv_content)
             temp_path = Path(f.name)
-        
+
         try:
             result = CSVParser.parse_csv_file(temp_path)
             # Should skip row with empty type
@@ -701,8 +718,8 @@ class TestParseRowAdvanced:
 
     def setup_method(self):
         """Setup method - ensure platform config is loaded"""
-        from asset_lens.core.platform_loader import PlatformLoader
         from asset_lens.config import config
+        from asset_lens.core.platform_loader import PlatformLoader
 
         # 设置 sample 模式并加载平台配置
         config.data_mode = "sample"

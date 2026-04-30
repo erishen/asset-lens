@@ -293,10 +293,7 @@ class AssetSummary:
     def total_credit_amount(self) -> Decimal:
         """总信用金额"""
         return (
-            self.credit_card_amount
-            + self.jingdong_white_amount
-            + self.douyin_monthly_amount
-            + self.duoduo_later_amount
+            self.credit_card_amount + self.jingdong_white_amount + self.douyin_monthly_amount + self.duoduo_later_amount
         )
 
     @property
@@ -583,9 +580,7 @@ class Portfolio:
                     "products": [],
                 }
             type_stats[type_name]["count"] += 1
-            type_stats[type_name]["total_value"] += product.get_converted_amount(
-                self.usd_rate, self.hkd_rate
-            )
+            type_stats[type_name]["total_value"] += product.get_converted_amount(self.usd_rate, self.hkd_rate)
             type_stats[type_name]["products"].append(product)
 
         total = sum(stats["total_value"] for stats in type_stats.values())
@@ -609,9 +604,7 @@ class Portfolio:
                     "products": [],
                 }
             risk_stats[risk_name]["count"] += 1
-            risk_stats[risk_name]["total_value"] += product.get_converted_amount(
-                self.usd_rate, self.hkd_rate
-            )
+            risk_stats[risk_name]["total_value"] += product.get_converted_amount(self.usd_rate, self.hkd_rate)
             risk_stats[risk_name]["products"].append(product)
 
         total = sum(stats["total_value"] for stats in risk_stats.values())

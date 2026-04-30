@@ -92,6 +92,7 @@ class RiskAnalyzer:
 
             if product.maturity_date:
                 from datetime import date
+
                 days_to_maturity = (product.maturity_date - date.today()).days
                 if 0 < days_to_maturity <= 30:
                     warnings.append(

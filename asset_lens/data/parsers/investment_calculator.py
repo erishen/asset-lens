@@ -266,9 +266,9 @@ class InvestmentCalculator:
 
         total_days = product.investment_days or 0
         if total_days > 0:
-            is_bond_product = (
-                product.investment_type.value and "债" in product.investment_type.value
-            ) or (product.name and "分红" in product.name)
+            is_bond_product = (product.investment_type.value and "债" in product.investment_type.value) or (
+                product.name and "分红" in product.name
+            )
 
             if is_bond_product:
                 if product.initial_amount and product.initial_amount > 0:

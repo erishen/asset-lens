@@ -10,40 +10,42 @@ Portfolio Rebalancing Module.
 5. 资金效率优化
 """
 
-import json
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from typing import Any
-from enum import Enum
 
 from ..config import config
 
 
 class RebalanceAction(Enum):
     """调仓动作"""
-    REDUCE = "reduce"          # 减仓
-    INCREASE = "increase"      # 加仓
-    SELL = "sell"              # 清仓
-    HOLD = "hold"              # 持有
-    SWAP = "swap"              # 换股
+
+    REDUCE = "reduce"  # 减仓
+    INCREASE = "increase"  # 加仓
+    SELL = "sell"  # 清仓
+    HOLD = "hold"  # 持有
+    SWAP = "swap"  # 换股
 
 
 class RebalanceReason(Enum):
     """调仓原因"""
-    STOP_LOSS = "stop_loss"                    # 止损
-    TAKE_PROFIT = "take_profit"                # 止盈
-    HIGH_VALUATION = "high_valuation"          # 估值过高
-    LOW_PERFORMANCE = "low_performance"        # 表现不佳
-    INDUSTRY_ROTATION = "industry_rotation"    # 行业轮动
-    RISK_CONTROL = "risk_control"              # 风险控制
-    OPPORTUNITY_COST = "opportunity_cost"      # 机会成本
-    CONCENTRATION = "concentration"            # 集中度调整
+
+    STOP_LOSS = "stop_loss"  # 止损
+    TAKE_PROFIT = "take_profit"  # 止盈
+    HIGH_VALUATION = "high_valuation"  # 估值过高
+    LOW_PERFORMANCE = "low_performance"  # 表现不佳
+    INDUSTRY_ROTATION = "industry_rotation"  # 行业轮动
+    RISK_CONTROL = "risk_control"  # 风险控制
+    OPPORTUNITY_COST = "opportunity_cost"  # 机会成本
+    CONCENTRATION = "concentration"  # 集中度调整
 
 
 @dataclass
 class RebalanceSuggestion:
     """调仓建议"""
+
     code: str
     name: str
     action: RebalanceAction
@@ -71,6 +73,7 @@ class RebalanceSuggestion:
 @dataclass
 class PortfolioHealth:
     """持仓健康度"""
+
     overall_score: float
     diversification_score: float
     risk_score: float
@@ -83,6 +86,7 @@ class PortfolioHealth:
 @dataclass
 class RebalanceReport:
     """调仓报告"""
+
     portfolio_health: PortfolioHealth
     rebalance_suggestions: list[RebalanceSuggestion]
     industry_allocation: dict[str, float]
@@ -181,65 +185,75 @@ class PortfolioRebalancer:
             stock_score = stock_scores.get(code, 50) if stock_scores else 50
 
             if profit_rate < self.STOP_LOSS_THRESHOLD:
-                suggestions.append(RebalanceSuggestion(
-                    code=code,
-                    name=name,
-                    action=RebalanceAction.SELL,
-                    reason=RebalanceReason.STOP_LOSS,
-                    current_value=current_value,
-                    target_value=0,
-                    confidence=0.9,
-                    description=f"触发止损线，亏损 {abs(profit_rate):.1%}，建议立即卖出",
-                ))
+                suggestions.append(
+                    RebalanceSuggestion(
+                        code=code,
+                        name=name,
+                        action=RebalanceAction.SELL,
+                        reason=RebalanceReason.STOP_LOSS,
+                        current_value=current_value,
+                        target_value=0,
+                        confidence=0.9,
+                        description=f"触发止损线，亏损 {abs(profit_rate):.1%}，建议立即卖出",
+                    )
+                )
 
             elif profit_rate > self.TAKE_PROFIT_THRESHOLD:
-                suggestions.append(RebalanceSuggestion(
-                    code=code,
-                    name=name,
-                    action=RebalanceAction.REDUCE,
-                    reason=RebalanceReason.TAKE_PROFIT,
-                    current_value=current_value,
-                    target_value=current_value * 0.5,
-                    confidence=0.8,
-                    description=f"触发止盈线，盈利 {profit_rate:.1%}，建议减仓锁定收益",
-                ))
+                suggestions.append(
+                    RebalanceSuggestion(
+                        code=code,
+                        name=name,
+                        action=RebalanceAction.REDUCE,
+                        reason=RebalanceReason.TAKE_PROFIT,
+                        current_value=current_value,
+                        target_value=current_value * 0.5,
+                        confidence=0.8,
+                        description=f"触发止盈线，盈利 {profit_rate:.1%}，建议减仓锁定收益",
+                    )
+                )
 
             elif position_ratio > self.MAX_SINGLE_POSITION:
                 target_value = total_value * self.MAX_SINGLE_POSITION * 0.9
-                suggestions.append(RebalanceSuggestion(
-                    code=code,
-                    name=name,
-                    action=RebalanceAction.REDUCE,
-                    reason=RebalanceReason.RISK_CONTROL,
-                    current_value=current_value,
-                    target_value=target_value,
-                    confidence=0.85,
-                    description=f"仓位过重 ({position_ratio:.1%})，建议减仓至 {self.MAX_SINGLE_POSITION:.0%} 以下",
-                ))
+                suggestions.append(
+                    RebalanceSuggestion(
+                        code=code,
+                        name=name,
+                        action=RebalanceAction.REDUCE,
+                        reason=RebalanceReason.RISK_CONTROL,
+                        current_value=current_value,
+                        target_value=target_value,
+                        confidence=0.85,
+                        description=f"仓位过重 ({position_ratio:.1%})，建议减仓至 {self.MAX_SINGLE_POSITION:.0%} 以下",
+                    )
+                )
 
             elif profit_rate < self.LOW_PERFORMANCE_THRESHOLD and stock_score < 40:
-                suggestions.append(RebalanceSuggestion(
-                    code=code,
-                    name=name,
-                    action=RebalanceAction.SELL,
-                    reason=RebalanceReason.LOW_PERFORMANCE,
-                    current_value=current_value,
-                    target_value=0,
-                    confidence=0.7,
-                    description=f"表现不佳 (亏损 {abs(profit_rate):.1%}，评分 {stock_score:.0f})，建议清仓",
-                ))
+                suggestions.append(
+                    RebalanceSuggestion(
+                        code=code,
+                        name=name,
+                        action=RebalanceAction.SELL,
+                        reason=RebalanceReason.LOW_PERFORMANCE,
+                        current_value=current_value,
+                        target_value=0,
+                        confidence=0.7,
+                        description=f"表现不佳 (亏损 {abs(profit_rate):.1%}，评分 {stock_score:.0f})，建议清仓",
+                    )
+                )
 
             elif stock_score > 80 and profit_rate < 5:
-                suggestions.append(RebalanceSuggestion(
-                    code=code,
-                    name=name,
-                    action=RebalanceAction.INCREASE,
-                    reason=RebalanceReason.OPPORTUNITY_COST,
-                    current_value=current_value,
-                    target_value=current_value * 1.5,
-                    confidence=0.75,
-                    description=f"优质股票 (评分 {stock_score:.0f})，建议加仓",
-                ))
+                suggestions.append(
+                    RebalanceSuggestion(
+                        code=code,
+                        name=name,
+                        action=RebalanceAction.INCREASE,
+                        reason=RebalanceReason.OPPORTUNITY_COST,
+                        current_value=current_value,
+                        target_value=current_value * 1.5,
+                        confidence=0.75,
+                        description=f"优质股票 (评分 {stock_score:.0f})，建议加仓",
+                    )
+                )
 
         return suggestions
 
@@ -303,8 +317,14 @@ class PortfolioRebalancer:
             value = holding.get("current_value", holding.get("amount", 0))
             industry_positions[industry] = industry_positions.get(industry, 0) + value
 
-        max_industry_ratio = max(industry_positions.values()) / total_value if industry_positions and total_value > 0 else 0
-        max_position_ratio = max(h.get("current_value", h.get("amount", 0)) for h in holdings) / total_value if holdings and total_value > 0 else 0
+        max_industry_ratio = (
+            max(industry_positions.values()) / total_value if industry_positions and total_value > 0 else 0
+        )
+        max_position_ratio = (
+            max(h.get("current_value", h.get("amount", 0)) for h in holdings) / total_value
+            if holdings and total_value > 0
+            else 0
+        )
 
         exposure["market_risk"] = min(1.0, total_value / 100000)
         exposure["industry_risk"] = min(1.0, max_industry_ratio / self.MAX_INDUSTRY_POSITION)
@@ -322,7 +342,7 @@ class PortfolioRebalancer:
         """生成调仓报告"""
         health = self.analyze_portfolio(holdings)
         suggestions = self.generate_suggestions(holdings, market_data, stock_scores)
-        industry_suggestions = self.optimize_industry_allocation(holdings)
+        self.optimize_industry_allocation(holdings)
         risk_exposure = self.calculate_risk_exposure(holdings)
 
         industry_allocation: dict[str, float] = {}
@@ -330,7 +350,9 @@ class PortfolioRebalancer:
         for holding in holdings:
             industry = holding.get("industry", "未知")
             value = holding.get("current_value", holding.get("amount", 0))
-            industry_allocation[industry] = industry_allocation.get(industry, 0) + value / total_value if total_value > 0 else 0
+            industry_allocation[industry] = (
+                industry_allocation.get(industry, 0) + value / total_value if total_value > 0 else 0
+            )
 
         expected_improvement = self._estimate_improvement(health, suggestions)
 
@@ -348,7 +370,7 @@ class PortfolioRebalancer:
             return 0.0
 
         num_stocks = len(holdings)
-        industries = set(h.get("industry", "未知") for h in holdings)
+        industries = {h.get("industry", "未知") for h in holdings}
 
         stock_score: float = float(min(100, num_stocks * 10))
         industry_score: float = float(min(100, len(industries) * 20))

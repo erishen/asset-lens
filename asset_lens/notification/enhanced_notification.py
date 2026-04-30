@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 
 class NotificationChannel(Enum):
     """通知渠道"""
+
     CONSOLE = "console"
     EMAIL = "email"
     DINGTALK = "dingtalk"
@@ -47,6 +48,7 @@ class NotificationChannel(Enum):
 @dataclass
 class NotificationConfig:
     """通知配置"""
+
     enabled: bool = True
 
     dingtalk_webhook: str = ""
@@ -76,6 +78,7 @@ class NotificationConfig:
 @dataclass
 class NotificationMessage:
     """通知消息"""
+
     title: str
     content: str
     level: str = "info"
@@ -266,7 +269,7 @@ class EnhancedNotificationService:
                 "markdown": {
                     "title": message.title,
                     "text": f"### {message.title}\n\n{message.content}\n\n> 时间: {message.timestamp}",
-                }
+                },
             }
 
             response = requests.post(url, json=data, timeout=10)
@@ -294,7 +297,7 @@ class EnhancedNotificationService:
                 "msgtype": "markdown",
                 "markdown": {
                     "content": f"### {message.title}\n\n{message.content}\n\n> 时间: {message.timestamp}",
-                }
+                },
             }
 
             response = requests.post(self.config.wecom_webhook, json=data, timeout=10)
@@ -382,8 +385,8 @@ class EnhancedNotificationService:
                         "elements": [
                             {"tag": "div", "text": {"tag": "plain_text", "content": message.content}},
                             {"tag": "div", "text": {"tag": "plain_text", "content": f"时间: {message.timestamp}"}},
-                        ]
-                    }
+                        ],
+                    },
                 }
             else:
                 data = {
@@ -536,7 +539,7 @@ class EnhancedNotificationService:
 **总收益**: ¥{total_profit:,.2f}
 **收益率**: {total_return:.2%}
 
-**日期**: {datetime.now().strftime('%Y-%m-%d')}"""
+**日期**: {datetime.now().strftime("%Y-%m-%d")}"""
 
         notification = NotificationMessage(
             title=f"📊 每日投资报告 {profit_emoji}",

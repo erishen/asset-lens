@@ -42,15 +42,19 @@ class DCACalculator:
         for t in transactions:
             t_date = datetime.strptime(t["date"], "%Y/%m/%d")
             days = (t_date - start_date).days
-            cashflows.append({
-                "days": days,
-                "amount": float(t["amount"]),
-            })
+            cashflows.append(
+                {
+                    "days": days,
+                    "amount": float(t["amount"]),
+                }
+            )
 
-        cashflows.append({
-            "days": total_days,
-            "amount": -float(current_amount),
-        })
+        cashflows.append(
+            {
+                "days": total_days,
+                "amount": -float(current_amount),
+            }
+        )
 
         return cashflows
 

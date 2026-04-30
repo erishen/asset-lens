@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 class NotificationChannel(Enum):
     """通知渠道"""
+
     CONSOLE = "console"
     EMAIL = "email"
     QQ = "qq"
@@ -23,6 +24,7 @@ class NotificationChannel(Enum):
 @dataclass
 class NotificationMessage:
     """通知消息"""
+
     title: str
     content: str
     level: str = "info"
@@ -31,6 +33,7 @@ class NotificationMessage:
     def __post_init__(self):
         if self.timestamp is None:
             from datetime import datetime
+
             self.timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 

@@ -47,9 +47,7 @@ class CryptoFetcher:
                 if exchange_class is None:
                     raise ValueError(f"不支持的交易所: {self._exchange_name}")
 
-                self._exchange = exchange_class(
-                    {"enableRateLimit": True, "timeout": 30000}
-                )
+                self._exchange = exchange_class({"enableRateLimit": True, "timeout": 30000})
 
             except ImportError:
                 raise ImportError(
@@ -113,9 +111,7 @@ class CryptoFetcher:
                 "change": float(ticker.get("change", 0)),
                 "percentage": float(ticker.get("percentage", 0)),
                 "timestamp": ticker.get("timestamp", 0),
-                "datetime": datetime.fromtimestamp(
-                    ticker.get("timestamp", 0) / 1000
-                ).isoformat(),
+                "datetime": datetime.fromtimestamp(ticker.get("timestamp", 0) / 1000).isoformat(),
             }
 
             self._set_cache(cache_key, result)
@@ -150,9 +146,7 @@ class CryptoFetcher:
             return list(cached)  # type: ignore
 
         try:
-            ohlcvs = self.exchange.fetch_ohlcv(
-                symbol, timeframe, since=since, limit=limit
-            )
+            ohlcvs = self.exchange.fetch_ohlcv(symbol, timeframe, since=since, limit=limit)
 
             result = []
             for ohlcv in ohlcvs:
@@ -193,12 +187,10 @@ class CryptoFetcher:
                 "symbol": symbol,
                 "exchange": self._exchange_name,
                 "bids": [
-                    {"price": float(bid[0]), "amount": float(bid[1])}
-                    for bid in order_book.get("bids", [])[:limit]
+                    {"price": float(bid[0]), "amount": float(bid[1])} for bid in order_book.get("bids", [])[:limit]
                 ],
                 "asks": [
-                    {"price": float(ask[0]), "amount": float(ask[1])}
-                    for ask in order_book.get("asks", [])[:limit]
+                    {"price": float(ask[0]), "amount": float(ask[1])} for ask in order_book.get("asks", [])[:limit]
                 ],
                 "timestamp": order_book.get("timestamp", 0),
             }
@@ -227,9 +219,7 @@ class CryptoFetcher:
                     "total_volume_usd": data["data"]["total_volume"]["usd"],
                     "btc_dominance": data["data"]["market_cap_percentage"]["btc"],
                     "eth_dominance": data["data"]["market_cap_percentage"]["eth"],
-                    "updated_at": datetime.fromtimestamp(
-                        data["data"]["updated_at"]
-                    ).isoformat(),
+                    "updated_at": datetime.fromtimestamp(data["data"]["updated_at"]).isoformat(),
                 }
 
         except Exception as e:
@@ -275,9 +265,7 @@ class CryptoFetcher:
                             "market_cap_rank": coin.get("market_cap_rank"),
                             "total_volume": coin.get("total_volume"),
                             "price_change_24h": coin.get("price_change_24h"),
-                            "price_change_percentage_24h": coin.get(
-                                "price_change_percentage_24h"
-                            ),
+                            "price_change_percentage_24h": coin.get("price_change_percentage_24h"),
                             "circulating_supply": coin.get("circulating_supply"),
                             "total_supply": coin.get("total_supply"),
                             "image": coin.get("image"),

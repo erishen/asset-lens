@@ -3,9 +3,10 @@ Tests for WebSocket functionality.
 WebSocket 功能测试
 """
 
-import pytest
 import json
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from fastapi.testclient import TestClient
 
 
@@ -15,6 +16,7 @@ class TestWebSocketHook:
     def test_hook_file_exists(self):
         """测试 Hook 文件存在"""
         import os
+
         hook_path = "web-react/src/hooks/useWebSocket.ts"
         assert os.path.exists(hook_path), f"Hook file not found: {hook_path}"
 
@@ -26,6 +28,7 @@ class TestWebSocketAPI:
     def client(self):
         """创建测试客户端"""
         from asset_lens.web.api import app
+
         return TestClient(app)
 
     def test_realtime_status_endpoint(self, client):
@@ -50,10 +53,10 @@ class TestWebSocketAPI:
             {"code": "sh000001", "name": "上证指数", "price": 3000.0, "change": 10.0, "changePercent": 0.33},
             {"code": "sz399001", "name": "深证成指", "price": 10000.0, "change": 50.0, "changePercent": 0.5},
         ]
-        
+
         with patch("asset_lens.web.api._get_market_indexes", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = mock_indexes
-            
+
             with client.websocket_connect("/ws/market") as websocket:
                 websocket.send_text(json.dumps({"action": "get_market_indexes"}))
                 response = websocket.receive_json()
@@ -64,10 +67,7 @@ class TestWebSocketAPI:
     def test_websocket_subscribe(self, client):
         """测试 WebSocket 订阅"""
         with client.websocket_connect("/ws/market") as websocket:
-            websocket.send_text(json.dumps({
-                "action": "subscribe",
-                "codes": ["sh600519", "sz000001"]
-            }))
+            websocket.send_text(json.dumps({"action": "subscribe", "codes": ["sh600519", "sz000001"]}))
             response = websocket.receive_json()
             assert response["type"] == "subscribed"
             assert "codes" in response
@@ -77,15 +77,12 @@ class TestWebSocketAPI:
         mock_quotes = [
             {"code": "sh600519", "name": "贵州茅台", "current_price": 1800.0, "change_percent": 2.5},
         ]
-        
+
         with patch("asset_lens.web.api._get_stock_quotes", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = mock_quotes
-            
+
             with client.websocket_connect("/ws/market") as websocket:
-                websocket.send_text(json.dumps({
-                    "action": "get_stock_quotes",
-                    "codes": ["sh600519"]
-                }))
+                websocket.send_text(json.dumps({"action": "get_stock_quotes", "codes": ["sh600519"]}))
                 response = websocket.receive_json()
                 assert response["type"] == "stock_quotes"
                 assert "data" in response
@@ -104,11 +101,13 @@ class TestConnectionManager:
     def test_connection_manager_import(self):
         """测试 ConnectionManager 导入"""
         from asset_lens.web.api import ConnectionManager
+
         assert ConnectionManager is not None
 
     def test_connection_manager_init(self):
         """测试 ConnectionManager 初始化"""
         from asset_lens.web.api import ConnectionManager
+
         manager = ConnectionManager()
         assert manager.active_connections is not None
         assert len(manager.active_connections) == 0
@@ -120,6 +119,7 @@ class TestWebSocketModule:
     def test_connection_manager_class(self):
         """测试 ConnectionManager 类"""
         from asset_lens.web.websocket import ConnectionManager
+
         manager = ConnectionManager()
         assert manager.active_connections == set()
         assert manager._last_ping == {}
@@ -128,6 +128,7 @@ class TestWebSocketModule:
     def test_connection_manager_disconnect_empty(self):
         """测试断开不存在的连接"""
         from asset_lens.web.websocket import ConnectionManager
+
         manager = ConnectionManager()
         mock_ws = MagicMock()
         manager.disconnect(mock_ws)
@@ -136,6 +137,7 @@ class TestWebSocketModule:
     def test_connection_manager_update_ping(self):
         """测试更新 ping 时间"""
         from asset_lens.web.websocket import ConnectionManager
+
         manager = ConnectionManager()
         mock_ws = MagicMock()
         manager._last_ping[mock_ws] = 0
@@ -145,7 +147,9 @@ class TestWebSocketModule:
     def test_connection_manager_check_timeout(self):
         """测试超时检查"""
         import time
+
         from asset_lens.web.websocket import ConnectionManager
+
         manager = ConnectionManager()
         mock_ws = MagicMock()
         manager._last_ping[mock_ws] = time.time() - 400
@@ -155,6 +159,7 @@ class TestWebSocketModule:
     def test_connection_manager_no_timeout(self):
         """测试未超时"""
         from asset_lens.web.websocket import ConnectionManager
+
         manager = ConnectionManager()
         mock_ws = MagicMock()
         manager._last_ping[mock_ws] = 0
@@ -165,12 +170,13 @@ class TestWebSocketModule:
     async def test_connection_manager_broadcast(self):
         """测试广播消息"""
         from asset_lens.web.websocket import ConnectionManager
+
         manager = ConnectionManager()
         mock_ws = AsyncMock()
         mock_ws.send_json = AsyncMock()
         manager.active_connections.add(mock_ws)
         manager._last_ping[mock_ws] = 0
-        
+
         await manager.broadcast({"type": "test"})
         mock_ws.send_json.assert_called_once_with({"type": "test"})
 
@@ -178,18 +184,20 @@ class TestWebSocketModule:
     async def test_connection_manager_broadcast_failed(self):
         """测试广播消息失败"""
         from asset_lens.web.websocket import ConnectionManager
+
         manager = ConnectionManager()
         mock_ws = AsyncMock()
         mock_ws.send_json = AsyncMock(side_effect=Exception("Connection error"))
         manager.active_connections.add(mock_ws)
         manager._last_ping[mock_ws] = 0
-        
+
         await manager.broadcast({"type": "test"})
         assert mock_ws not in manager.active_connections
 
     def test_manager_instance(self):
         """测试全局 manager 实例"""
         from asset_lens.web.websocket import manager
+
         assert manager is not None
         assert isinstance(manager.active_connections, set)
 
@@ -197,20 +205,22 @@ class TestWebSocketModule:
     async def test_get_market_indexes_async(self):
         """测试异步获取市场指数"""
         from asset_lens.web.websocket import _get_market_indexes_async
-        
+
         mock_response = AsyncMock()
         mock_response.status = 200
-        mock_response.text = AsyncMock(return_value='var hq_str_sh000001="上证指数,3000.0,2990.0,3005.0,3010.0,2995.0,3000.0,3001.0,1000000,3000000000,..."')
-        
+        mock_response.text = AsyncMock(
+            return_value='var hq_str_sh000001="上证指数,3000.0,2990.0,3005.0,3010.0,2995.0,3000.0,3001.0,1000000,3000000000,..."'
+        )
+
         mock_get_context = MagicMock()
         mock_get_context.__aenter__ = AsyncMock(return_value=mock_response)
         mock_get_context.__aexit__ = AsyncMock(return_value=None)
-        
+
         mock_session = MagicMock()
         mock_session.get = MagicMock(return_value=mock_get_context)
         mock_session.__aenter__ = AsyncMock(return_value=mock_session)
         mock_session.__aexit__ = AsyncMock(return_value=None)
-        
+
         with patch("aiohttp.ClientSession", return_value=mock_session):
             result = await _get_market_indexes_async()
             assert isinstance(result, list)
@@ -219,20 +229,22 @@ class TestWebSocketModule:
     async def test_get_stock_quotes_async(self):
         """测试异步获取股票行情"""
         from asset_lens.web.websocket import _get_stock_quotes_async
-        
+
         mock_response = AsyncMock()
         mock_response.status = 200
-        mock_response.text = AsyncMock(return_value='var hq_str_sh600519="贵州茅台,1800.0,1790.0,1805.0,1810.0,1795.0,1800.0,1801.0,1000000,1800000000,..."')
-        
+        mock_response.text = AsyncMock(
+            return_value='var hq_str_sh600519="贵州茅台,1800.0,1790.0,1805.0,1810.0,1795.0,1800.0,1801.0,1000000,1800000000,..."'
+        )
+
         mock_get_context = MagicMock()
         mock_get_context.__aenter__ = AsyncMock(return_value=mock_response)
         mock_get_context.__aexit__ = AsyncMock(return_value=None)
-        
+
         mock_session = MagicMock()
         mock_session.get = MagicMock(return_value=mock_get_context)
         mock_session.__aenter__ = AsyncMock(return_value=mock_session)
         mock_session.__aexit__ = AsyncMock(return_value=None)
-        
+
         with patch("aiohttp.ClientSession", return_value=mock_session):
             result = await _get_stock_quotes_async(["sh600519"])
             assert isinstance(result, list)
@@ -245,6 +257,7 @@ class TestStockPoolAPI:
     def client(self):
         """创建测试客户端"""
         from asset_lens.web.api import app
+
         return TestClient(app)
 
     def test_stock_pool_endpoint(self, client):
@@ -263,6 +276,7 @@ class TestPortfolioPerformanceAPI:
     def client(self):
         """创建测试客户端"""
         from asset_lens.web.api import app
+
         return TestClient(app)
 
     def test_portfolio_performance_endpoint(self, client):
@@ -281,6 +295,7 @@ class TestPortfolioItemsAPI:
     def client(self):
         """创建测试客户端"""
         from asset_lens.web.api import app
+
         return TestClient(app)
 
     def test_portfolio_items_endpoint(self, client):

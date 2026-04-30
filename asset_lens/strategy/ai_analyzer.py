@@ -19,6 +19,7 @@ import httpx
 
 class AIDecision(Enum):
     """AI 决策"""
+
     BUY = "buy"
     SELL = "sell"
     HOLD = "hold"
@@ -28,6 +29,7 @@ class AIDecision(Enum):
 @dataclass
 class AIAnalysisResult:
     """AI 分析结果"""
+
     decision: AIDecision
     confidence: float  # 0-100
     reasoning: str
@@ -46,7 +48,7 @@ class AIAnalysisResult:
 class AIAnalyzer:
     """AI 分析器"""
 
-    SYSTEM_PROMPT = "你是股票分析师，输出JSON格式: {\"d\":\"buy/sell/hold/wait\",\"c\":0-100,\"r\":\"理由\",\"rl\":\"low/medium/high\",\"kf\":[\"因素\"],\"ms\":\"乐观/中性/悲观\",\"sl\":止损价,\"tp\":止盈价}"
+    SYSTEM_PROMPT = '你是股票分析师，输出JSON格式: {"d":"buy/sell/hold/wait","c":0-100,"r":"理由","rl":"low/medium/high","kf":["因素"],"ms":"乐观/中性/悲观","sl":止损价,"tp":止盈价}'
 
     def __init__(self):
         self.api_key = os.getenv("DEEPSEEK_API_KEY") or os.getenv("OPENAI_API_KEY") or os.getenv("ZHIPU_API_KEY")
@@ -71,23 +73,23 @@ class AIAnalyzer:
         stock_data: dict[str, Any],
         market_data: dict[str, Any] | None = None,
         strategy_signal: str | None = None,
-        additional_context: str | None = None,
+        _additional_context: str | None = None,
     ) -> str:
         """构建分析提示词（优化版，减少 token）"""
 
-        code = stock_data.get('code', '')
-        name = stock_data.get('name', '')
-        price = stock_data.get('price', 0)
-        change = stock_data.get('change_percent', 0)
-        stock_data.get('volume', 0)
-        turnover = stock_data.get('turnover_rate', 0)
-        cap = stock_data.get('market_cap', 0)
-        pe = stock_data.get('pe_ratio', 0)
+        code = stock_data.get("code", "")
+        name = stock_data.get("name", "")
+        price = stock_data.get("price", 0)
+        change = stock_data.get("change_percent", 0)
+        stock_data.get("volume", 0)
+        turnover = stock_data.get("turnover_rate", 0)
+        cap = stock_data.get("market_cap", 0)
+        pe = stock_data.get("pe_ratio", 0)
 
         parts = [f"{code}|{name}|¥{price}|{change:+.2f}%|换手{turnover:.1f}%|市值{cap}亿|PE{pe}"]
 
         if market_data:
-            idx = market_data.get('index_change', 0)
+            idx = market_data.get("index_change", 0)
             parts.append(f"大盘{idx:+.2f}%")
 
         if strategy_signal:
@@ -108,9 +110,7 @@ class AIAnalyzer:
             return self._default_result("AI 分析未启用，请配置 API Key")
 
         try:
-            prompt = self._build_analysis_prompt(
-                stock_data, market_data, strategy_signal, additional_context
-            )
+            prompt = self._build_analysis_prompt(stock_data, market_data, strategy_signal, additional_context)
 
             with httpx.Client(timeout=30.0) as client:
                 response = client.post(
@@ -124,16 +124,13 @@ class AIAnalyzer:
                         "messages": [
                             {
                                 "role": "system",
-                                "content": "你是一位专业的股票分析师，擅长技术分析和基本面分析。请以JSON格式输出分析结果，格式：{\"d\":\"buy/sell/hold/wait\",\"c\":0-100,\"r\":\"理由\",\"rl\":\"low/medium/high\",\"kf\":[\"因素\"],\"ms\":\"乐观/中性/悲观\",\"sl\":止损价,\"tp\":止盈价}"
+                                "content": '你是一位专业的股票分析师，擅长技术分析和基本面分析。请以JSON格式输出分析结果，格式：{"d":"buy/sell/hold/wait","c":0-100,"r":"理由","rl":"low/medium/high","kf":["因素"],"ms":"乐观/中性/悲观","sl":止损价,"tp":止盈价}',
                             },
-                            {
-                                "role": "user",
-                                "content": prompt
-                            }
+                            {"role": "user", "content": prompt},
                         ],
                         "temperature": 0.3,
                         "max_tokens": 500,
-                    }
+                    },
                 )
 
                 if response.status_code != 200:
@@ -157,11 +154,7 @@ class AIAnalyzer:
             return self._default_result(f"分析异常: {str(e)}")
 
     def _parse_response(
-        self,
-        content: str,
-        prompt_tokens: int = 0,
-        completion_tokens: int = 0,
-        total_tokens: int = 0
+        self, content: str, prompt_tokens: int = 0, completion_tokens: int = 0, total_tokens: int = 0
     ) -> AIAnalysisResult:
         """解析 AI 响应（支持简短格式和完整格式）"""
         try:
@@ -179,10 +172,7 @@ class AIAnalyzer:
                 }
 
                 # 支持简短格式 (d, c, r, rl, kf, ms, sl, tp) 和完整格式
-                decision = decision_map.get(
-                    data.get("d", data.get("decision", "wait")).lower(),
-                    AIDecision.WAIT
-                )
+                decision = decision_map.get(data.get("d", data.get("decision", "wait")).lower(), AIDecision.WAIT)
 
                 confidence = float(data.get("c", data.get("confidence", 50)))
                 reasoning = data.get("r", data.get("reasoning", ""))
@@ -370,47 +360,32 @@ class AITradingAdvisor:
             if strategy_score >= 70:
                 return {
                     "action": "buy",
-                    "reason": f"策略得分{strategy_score:.1f}分 + AI强烈推荐买入，信心{ai_decision.confidence}%"
+                    "reason": f"策略得分{strategy_score:.1f}分 + AI强烈推荐买入，信心{ai_decision.confidence}%",
                 }
             elif strategy_score >= 60:
                 if ai_decision.confidence >= 60:
                     return {
                         "action": "buy",
-                        "reason": f"策略得分{strategy_score:.1f}分 + AI推荐买入，信心{ai_decision.confidence}%"
+                        "reason": f"策略得分{strategy_score:.1f}分 + AI推荐买入，信心{ai_decision.confidence}%",
                     }
                 else:
                     return {
                         "action": "wait",
-                        "reason": f"策略得分{strategy_score:.1f}分，但AI信心不足({ai_decision.confidence}%)"
+                        "reason": f"策略得分{strategy_score:.1f}分，但AI信心不足({ai_decision.confidence}%)",
                     }
             else:
-                return {
-                    "action": "wait",
-                    "reason": f"策略得分{strategy_score:.1f}分偏低，等待更好时机"
-                }
+                return {"action": "wait", "reason": f"策略得分{strategy_score:.1f}分偏低，等待更好时机"}
 
         elif ai_decision.decision == AIDecision.WAIT:
-            return {
-                "action": "wait",
-                "reason": f"AI建议观望: {ai_decision.reasoning[:100]}"
-            }
+            return {"action": "wait", "reason": f"AI建议观望: {ai_decision.reasoning[:100]}"}
 
         elif ai_decision.decision == AIDecision.SELL:
-            return {
-                "action": "skip",
-                "reason": f"AI判断当前不适合买入: {ai_decision.reasoning[:100]}"
-            }
+            return {"action": "skip", "reason": f"AI判断当前不适合买入: {ai_decision.reasoning[:100]}"}
 
         else:
             if strategy_score >= 75:
-                return {
-                    "action": "buy",
-                    "reason": f"策略得分{strategy_score:.1f}分较高，AI中性，可考虑买入"
-                }
-            return {
-                "action": "wait",
-                "reason": f"策略得分{strategy_score:.1f}分，AI中性，建议观望"
-            }
+                return {"action": "buy", "reason": f"策略得分{strategy_score:.1f}分较高，AI中性，可考虑买入"}
+            return {"action": "wait", "reason": f"策略得分{strategy_score:.1f}分，AI中性，建议观望"}
 
     def _combine_sell_decisions(
         self,
@@ -421,35 +396,23 @@ class AITradingAdvisor:
         """组合卖出决策"""
 
         if profit_rate < -5:
-            return {
-                "action": "sell",
-                "reason": f"触发止损线，亏损{abs(profit_rate):.2f}%"
-            }
+            return {"action": "sell", "reason": f"触发止损线，亏损{abs(profit_rate):.2f}%"}
 
         if profit_rate > 15:
-            return {
-                "action": "sell",
-                "reason": f"触发止盈线，盈利{profit_rate:.2f}%"
-            }
+            return {"action": "sell", "reason": f"触发止盈线，盈利{profit_rate:.2f}%"}
 
         if ai_decision.decision == AIDecision.SELL:
             if ai_decision.confidence >= 60:
-                return {
-                    "action": "sell",
-                    "reason": f"AI建议卖出: {ai_decision.reasoning[:100]}"
-                }
+                return {"action": "sell", "reason": f"AI建议卖出: {ai_decision.reasoning[:100]}"}
 
         if ai_decision.decision == AIDecision.WAIT and profit_rate > 5:
             if holding_days > 10:
                 return {
                     "action": "sell",
-                    "reason": f"持仓{holding_days}天，盈利{profit_rate:.2f}%，AI建议观望，可考虑止盈"
+                    "reason": f"持仓{holding_days}天，盈利{profit_rate:.2f}%，AI建议观望，可考虑止盈",
                 }
 
-        return {
-            "action": "hold",
-            "reason": f"持仓{holding_days}天，盈亏{profit_rate:.2f}%，继续持有"
-        }
+        return {"action": "hold", "reason": f"持仓{holding_days}天，盈亏{profit_rate:.2f}%，继续持有"}
 
 
 ai_analyzer = AIAnalyzer()

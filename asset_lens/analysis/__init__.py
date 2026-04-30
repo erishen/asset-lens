@@ -3,84 +3,42 @@ Analysis Module.
 分析模块 - 提供盘前分析、实时信号推送、异动监控、持仓分析、公告提醒、复盘总结、AI问答、黑天鹅预警、调仓建议、ML追踪、模型重训练、交易日志、回测报告等功能
 """
 
-from .premarket_analyzer import PreMarketAnalyzer, PreMarketReport, premarket_analyzer
-from .signal_pusher import (
-    SignalPusher,
-    SignalGenerator,
-    Signal,
-    SignalType,
-    Priority,
-    PushConfig,
-    signal_pusher,
-    signal_generator,
-)
-from .alert_monitor import (
-    AlertMonitor,
-    AlertType,
-    AlertThreshold,
-    StockSnapshot,
-    StockAlert,
-    alert_monitor,
-)
-from .portfolio_analyzer import (
-    PortfolioAnalyzer,
-    PortfolioHealth,
-    Position,
-    StockDiagnosis,
-    SectorAllocation,
-    HealthLevel,
-    TrendDirection,
-    portfolio_analyzer,
-)
+from .ai_qa import AIQAEngine, KnowledgeEntry, QAContext, QAResponse, QuestionType, ai_qa_engine
+from .alert_monitor import AlertMonitor, AlertThreshold, AlertType, StockAlert, StockSnapshot, alert_monitor
 from .announcement_monitor import (
+    Announcement,
+    AnnouncementAlert,
     AnnouncementMonitor,
     AnnouncementType,
     ImpactLevel,
-    Announcement,
-    AnnouncementAlert,
     announcement_monitor,
 )
-from .trading_review import (
-    TradingReview,
-    TradeType,
-    TradeResult,
-    TradeRecord,
-    ClosedPosition,
-    PerformanceMetrics,
-    AttributionAnalysis,
-    ReviewReport,
-    trading_review,
+from .backtest_reporter import (
+    BacktestMetrics,
+    BacktestReport,
+    BacktestReporter,
+    ReportPeriod,
+    StrategyComparison,
+    StrategyGrade,
+    backtest_reporter,
 )
-from .ai_qa import (
-    AIQAEngine,
-    QuestionType,
-    QAContext,
-    QAResponse,
-    KnowledgeEntry,
-    ai_qa_engine,
-)
-from .black_swan import (
-    BlackSwanMonitor,
-    RiskLevel,
-    RiskType,
-    RiskAlert,
-    MarketRiskAssessment,
-    black_swan_monitor,
-)
-from .rebalancer import (
-    PortfolioRebalancer,
-    RebalanceAction,
-    RebalanceReason,
-    RebalanceSuggestion,
-    RebalanceReport,
-    portfolio_rebalancer,
+from .black_swan import BlackSwanMonitor, MarketRiskAssessment, RiskAlert, RiskLevel, RiskType, black_swan_monitor
+from .dashboard import (
+    ChartData,
+    ChartType,
+    DashboardGenerator,
+    DashboardSection,
+    MetricCard,
+    MetricType,
+    PerformanceDashboard,
+    dashboard_generator,
 )
 from .ml_tracker import (
     MLPredictionTracker,
-    PredictionOutcome,
-    PredictionRecord,
     ModelPerformance,
     PredictionAnalysis,
+    PredictionOutcome,
+    PredictionRecord,
     ml_prediction_tracker,
 )
 from .model_retrainer import (
@@ -91,35 +49,56 @@ from .model_retrainer import (
     RetrainingResult,
     model_retrainer,
 )
+from .portfolio_analyzer import (
+    HealthLevel,
+    PortfolioAnalyzer,
+    PortfolioHealth,
+    Position,
+    SectorAllocation,
+    StockDiagnosis,
+    TrendDirection,
+    portfolio_analyzer,
+)
+from .premarket_analyzer import PreMarketAnalyzer, PreMarketReport, premarket_analyzer
+from .rebalancer import (
+    PortfolioRebalancer,
+    RebalanceAction,
+    RebalanceReason,
+    RebalanceReport,
+    RebalanceSuggestion,
+    portfolio_rebalancer,
+)
+from .signal_pusher import (
+    Priority,
+    PushConfig,
+    Signal,
+    SignalGenerator,
+    SignalPusher,
+    SignalType,
+    signal_generator,
+    signal_pusher,
+)
 from .trade_logger import (
-    EnhancedTradeLogger,
-    TradeAction,
-    TradeSource,
-    TradeResult as LogTradeResult,
-    TradeContext,
     DecisionBasis,
     EnhancedTradeLog,
+    EnhancedTradeLogger,
+    TradeAction,
+    TradeContext,
+    TradeSource,
     TradeStatistics,
     enhanced_trade_logger,
 )
-from .backtest_reporter import (
-    BacktestReporter,
-    ReportPeriod,
-    StrategyGrade,
-    BacktestMetrics,
-    StrategyComparison,
-    BacktestReport,
-    backtest_reporter,
-)
-from .dashboard import (
-    DashboardGenerator,
-    ChartType,
-    MetricType,
-    ChartData,
-    MetricCard,
-    DashboardSection,
-    PerformanceDashboard,
-    dashboard_generator,
+from .trade_logger import TradeResult as LogTradeResult
+from .trading_review import (
+    AttributionAnalysis,
+    ClosedPosition,
+    PerformanceMetrics,
+    ReviewReport,
+    TradeRecord,
+    TradeResult,
+    TradeType,
+    TradingReview,
+    trading_review,
 )
 
 __all__ = [

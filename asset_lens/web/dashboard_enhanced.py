@@ -20,6 +20,7 @@ router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
 class DashboardConfig(BaseModel):
     """Dashboard 配置"""
+
     theme: str = "dark"
     refresh_interval: int = 30
     show_risk_alerts: bool = True
@@ -56,11 +57,9 @@ class WebSocketManager:
             if self.connections:
                 try:
                     data = await get_dashboard_data()
-                    await self.broadcast({
-                        "type": "update",
-                        "data": data,
-                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    })
+                    await self.broadcast(
+                        {"type": "update", "data": data, "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+                    )
                 except Exception as e:
                     logger.error(f"广播数据失败: {e}")
             await asyncio.sleep(interval)
@@ -92,15 +91,17 @@ async def get_dashboard_data() -> dict[str, Any]:
             total_profit += profit
             total_cost += cost
 
-            items.append({
-                "name": product.name,
-                "code": product.code if hasattr(product, 'code') else None,
-                "type": product.investment_type if hasattr(product, 'investment_type') else "其他",
-                "current_amount": current,
-                "initial_amount": cost,
-                "profit": profit,
-                "profit_rate": (profit / cost * 100) if cost > 0 else 0,
-            })
+            items.append(
+                {
+                    "name": product.name,
+                    "code": product.code if hasattr(product, "code") else None,
+                    "type": product.investment_type if hasattr(product, "investment_type") else "其他",
+                    "current_amount": current,
+                    "initial_amount": cost,
+                    "profit": profit,
+                    "profit_rate": (profit / cost * 100) if cost > 0 else 0,
+                }
+            )
 
         risk_summary = risk_alert_system.get_alert_summary()
 
@@ -114,7 +115,11 @@ async def get_dashboard_data() -> dict[str, Any]:
             "items": items,
             "risk": {
                 "score": 50 + (1 - risk_summary["total_alerts"] / 10) * 50,
-                "level": "低" if risk_summary["total_alerts"] == 0 else "中" if risk_summary["total_alerts"] < 5 else "高",
+                "level": "低"
+                if risk_summary["total_alerts"] == 0
+                else "中"
+                if risk_summary["total_alerts"] < 5
+                else "高",
                 "alerts_count": risk_summary["total_alerts"],
             },
             "market": await get_market_summary(),
@@ -166,12 +171,14 @@ async def get_market_summary() -> dict[str, Any]:
                         prev = float(parts[2]) if parts[2] else 0
                         change_pct = ((current - prev) / prev * 100) if prev > 0 else 0
 
-                        indexes.append({
-                            "code": code,
-                            "name": name,
-                            "price": current,
-                            "change_percent": round(change_pct, 2),
-                        })
+                        indexes.append(
+                            {
+                                "code": code,
+                                "name": name,
+                                "price": current,
+                                "change_percent": round(change_pct, 2),
+                            }
+                        )
         except Exception:
             pass
 
@@ -212,18 +219,22 @@ async def dashboard_websocket(websocket: WebSocket):
 
                 elif action == "get_data":
                     dashboard_data = await get_dashboard_data()
-                    await websocket.send_json({
-                        "type": "data",
-                        "data": dashboard_data,
-                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": "data",
+                            "data": dashboard_data,
+                            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        }
+                    )
 
                 elif action == "set_theme":
                     theme = message.get("theme", "dark")
-                    await websocket.send_json({
-                        "type": "theme_changed",
-                        "theme": theme,
-                    })
+                    await websocket.send_json(
+                        {
+                            "type": "theme_changed",
+                            "theme": theme,
+                        }
+                    )
 
             except json.JSONDecodeError:
                 await websocket.send_json({"type": "error", "message": "Invalid JSON"})

@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class FetchResult:
     """数据获取结果"""
+
     success: bool
     data: dict[str, Any] | None = None
     error: str | None = None

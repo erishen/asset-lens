@@ -13,41 +13,44 @@ Stock Alert Monitor Module.
 import json
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from typing import Any
-from enum import Enum
 
 from ..config import config
-from .signal_pusher import SignalPusher, Signal, SignalType, Priority
+from .signal_pusher import Priority, Signal, SignalPusher, SignalType
 
 
 class AlertType(Enum):
     """异动类型"""
-    PRICE_UP = "price_up"           # 涨幅异动
-    PRICE_DOWN = "price_down"       # 跌幅异动
-    VOLUME_SURGE = "volume_surge"   # 放量
-    VOLUME_SHRINK = "volume_shrink" # 缩量
-    LIMIT_UP = "limit_up"           # 涨停
-    LIMIT_DOWN = "limit_down"       # 跌停
-    BIG_BUY = "big_buy"             # 大单买入
-    BIG_SELL = "big_sell"           # 大单卖出
-    SUPPORT_BREAK = "support_break" # 跌破支撑
+
+    PRICE_UP = "price_up"  # 涨幅异动
+    PRICE_DOWN = "price_down"  # 跌幅异动
+    VOLUME_SURGE = "volume_surge"  # 放量
+    VOLUME_SHRINK = "volume_shrink"  # 缩量
+    LIMIT_UP = "limit_up"  # 涨停
+    LIMIT_DOWN = "limit_down"  # 跌停
+    BIG_BUY = "big_buy"  # 大单买入
+    BIG_SELL = "big_sell"  # 大单卖出
+    SUPPORT_BREAK = "support_break"  # 跌破支撑
     RESISTANCE_BREAK = "resistance_break"  # 突破阻力
 
 
 @dataclass
 class AlertThreshold:
     """异动阈值配置"""
-    price_up_percent: float = 5.0      # 涨幅阈值
-    price_down_percent: float = -5.0   # 跌幅阈值
-    volume_surge_ratio: float = 2.0    # 放量倍数
-    volume_shrink_ratio: float = 0.5   # 缩量比例
+
+    price_up_percent: float = 5.0  # 涨幅阈值
+    price_down_percent: float = -5.0  # 跌幅阈值
+    volume_surge_ratio: float = 2.0  # 放量倍数
+    volume_shrink_ratio: float = 0.5  # 缩量比例
     big_order_amount: float = 1000000  # 大单金额 (元)
 
 
 @dataclass
 class StockSnapshot:
     """股票快照"""
+
     code: str
     name: str
     price: float
@@ -81,6 +84,7 @@ class StockSnapshot:
 @dataclass
 class StockAlert:
     """股票异动"""
+
     code: str
     name: str
     alert_type: AlertType
@@ -350,16 +354,18 @@ class AlertMonitor:
             except Exception:
                 history = []
 
-        history.append({
-            "code": alert.code,
-            "name": alert.name,
-            "type": alert.alert_type.value,
-            "price": alert.current_price,
-            "change": alert.change_percent,
-            "description": alert.description,
-            "severity": alert.severity.value,
-            "timestamp": alert.timestamp,
-        })
+        history.append(
+            {
+                "code": alert.code,
+                "name": alert.name,
+                "type": alert.alert_type.value,
+                "price": alert.current_price,
+                "change": alert.change_percent,
+                "description": alert.description,
+                "severity": alert.severity.value,
+                "timestamp": alert.timestamp,
+            }
+        )
 
         if len(history) > 1000:
             history = history[-1000:]

@@ -195,6 +195,7 @@ class DataMigration:
 
                 if delay > 0:
                     import time
+
                     time.sleep(delay)
 
         fetcher.baostock_logout()
@@ -308,6 +309,7 @@ class DataMigration:
 
                     if batch_delay > 0 and completed % max_workers == 0:
                         import time
+
                         time.sleep(batch_delay)
 
         fetcher.baostock_logout()
@@ -336,18 +338,18 @@ class DataMigration:
 
         table.add_row("K线数据总数", f"{stats['kline_count']:,}")
         table.add_row("股票数量", f"{stats['stock_count']:,}")
-        table.add_row("ML模型数量", str(stats['model_count']))
-        table.add_row("预测记录数", str(stats['prediction_count']))
-        table.add_row("最新数据日期", stats['latest_date'] or "无数据")
+        table.add_row("ML模型数量", str(stats["model_count"]))
+        table.add_row("预测记录数", str(stats["prediction_count"]))
+        table.add_row("最新数据日期", stats["latest_date"] or "无数据")
 
         console.print(table)
 
-        if stats['data_sources']:
+        if stats["data_sources"]:
             source_table = Table(title="数据来源分布")
             source_table.add_column("数据源", style="cyan")
             source_table.add_column("记录数", style="green")
 
-            for source, count in stats['data_sources'].items():
+            for source, count in stats["data_sources"].items():
                 source_table.add_row(source, f"{count:,}")
 
             console.print(source_table)
@@ -369,6 +371,7 @@ class DataMigration:
             return {"status": "no_data"}
 
         import random
+
         sample_codes = random.sample(codes, min(sample_size, len(codes)))
 
         result: dict[str, Any] = {
@@ -380,11 +383,13 @@ class DataMigration:
         for code in sample_codes:
             klines = self.db.get_klines(code, limit=500)
             if len(klines) < 30:
-                result["issues"].append({
-                    "code": code,
-                    "issue": "数据不足",
-                    "count": len(klines),
-                })
+                result["issues"].append(
+                    {
+                        "code": code,
+                        "issue": "数据不足",
+                        "count": len(klines),
+                    }
+                )
 
         if result["issues"]:
             console.print(f"[yellow]发现 {len(result['issues'])} 个问题[/yellow]")

@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ParseResult:
     """解析结果"""
+
     success: bool
     value: Any = None
     error: str | None = None
@@ -60,10 +61,7 @@ class DateParser:
         if not end_result.success:
             return end_result
 
-        return ParseResult(
-            success=True,
-            value=(start_result.value, end_result.value)
-        )
+        return ParseResult(success=True, value=(start_result.value, end_result.value))
 
     @classmethod
     def format_date(cls, dt: datetime | date, fmt: str = "%Y-%m-%d") -> str:

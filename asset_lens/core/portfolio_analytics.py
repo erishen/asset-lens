@@ -153,16 +153,10 @@ class PortfolioAnalytics:
         beta = self._calculate_beta(returns, benchmark_returns) if benchmark_returns else 1.0
 
         # 跟踪误差
-        tracking_error = (
-            self._calculate_tracking_error(returns, benchmark_returns) if benchmark_returns else 0.0
-        )
+        tracking_error = self._calculate_tracking_error(returns, benchmark_returns) if benchmark_returns else 0.0
 
         # 信息比率
-        information_ratio = (
-            self._calculate_information_ratio(returns, benchmark_returns)
-            if benchmark_returns
-            else 0.0
-        )
+        information_ratio = self._calculate_information_ratio(returns, benchmark_returns) if benchmark_returns else 0.0
 
         return RiskMetrics(
             value_at_risk_95=var_95,
@@ -301,21 +295,17 @@ class PortfolioAnalytics:
         mean_r = sum(returns) / len(returns)
         mean_b = sum(benchmark_returns) / len(benchmark_returns)
 
-        covariance = sum(
-            (r - mean_r) * (b - mean_b) for r, b in zip(returns, benchmark_returns, strict=False)
-        ) / (len(returns) - 1)
-        benchmark_variance = sum((b - mean_b) ** 2 for b in benchmark_returns) / (
-            len(benchmark_returns) - 1
+        covariance = sum((r - mean_r) * (b - mean_b) for r, b in zip(returns, benchmark_returns, strict=False)) / (
+            len(returns) - 1
         )
+        benchmark_variance = sum((b - mean_b) ** 2 for b in benchmark_returns) / (len(benchmark_returns) - 1)
 
         if benchmark_variance == 0:
             return 1.0
 
         return covariance / benchmark_variance
 
-    def _calculate_tracking_error(
-        self, returns: list[float], benchmark_returns: list[float]
-    ) -> float:
+    def _calculate_tracking_error(self, returns: list[float], benchmark_returns: list[float]) -> float:
         """计算跟踪误差"""
         if len(returns) != len(benchmark_returns) or len(returns) < 2:
             return 0.0
@@ -326,20 +316,13 @@ class PortfolioAnalytics:
 
         return math.sqrt(variance) * math.sqrt(self.TRADING_DAYS_PER_YEAR) * 100
 
-    def _calculate_information_ratio(
-        self, returns: list[float], benchmark_returns: list[float]
-    ) -> float:
+    def _calculate_information_ratio(self, returns: list[float], benchmark_returns: list[float]) -> float:
         """计算信息比率"""
         tracking_error = self._calculate_tracking_error(returns, benchmark_returns)
         if tracking_error == 0:
             return 0.0
 
-        excess_return = (
-            (sum(returns) - sum(benchmark_returns))
-            / len(returns)
-            * self.TRADING_DAYS_PER_YEAR
-            * 100
-        )
+        excess_return = (sum(returns) - sum(benchmark_returns)) / len(returns) * self.TRADING_DAYS_PER_YEAR * 100
         return excess_return / tracking_error
 
     def generate_report(

@@ -3,7 +3,6 @@ Tests for report metrics module.
 报告指标模块测试
 """
 
-import pytest
 from decimal import Decimal
 from unittest.mock import MagicMock
 
@@ -14,6 +13,7 @@ class TestCalculateTotalReturn:
     def test_calculate_total_return_positive(self):
         """测试正收益"""
         from asset_lens.report.metrics import calculate_total_return
+
         portfolio = MagicMock()
         portfolio.total_initial = Decimal("10000")
         portfolio.total_value = Decimal("12000")
@@ -23,6 +23,7 @@ class TestCalculateTotalReturn:
     def test_calculate_total_return_negative(self):
         """测试负收益"""
         from asset_lens.report.metrics import calculate_total_return
+
         portfolio = MagicMock()
         portfolio.total_initial = Decimal("10000")
         portfolio.total_value = Decimal("8000")
@@ -32,6 +33,7 @@ class TestCalculateTotalReturn:
     def test_calculate_total_return_zero_initial(self):
         """测试初始值为零"""
         from asset_lens.report.metrics import calculate_total_return
+
         portfolio = MagicMock()
         portfolio.total_initial = Decimal("0")
         portfolio.total_value = Decimal("1000")
@@ -45,6 +47,7 @@ class TestCalculateAverageReturn:
     def test_calculate_average_return_normal(self):
         """测试正常计算"""
         from asset_lens.report.metrics import calculate_average_return
+
         portfolio = MagicMock()
         product1 = MagicMock()
         product1.annualized_return_irr = Decimal("10")
@@ -57,6 +60,7 @@ class TestCalculateAverageReturn:
     def test_calculate_average_return_empty(self):
         """测试空产品列表"""
         from asset_lens.report.metrics import calculate_average_return
+
         portfolio = MagicMock()
         portfolio.products = []
         result = calculate_average_return(portfolio)
@@ -65,6 +69,7 @@ class TestCalculateAverageReturn:
     def test_calculate_average_return_none_values(self):
         """测试 None 值"""
         from asset_lens.report.metrics import calculate_average_return
+
         portfolio = MagicMock()
         product1 = MagicMock()
         product1.annualized_return_irr = None
@@ -81,6 +86,7 @@ class TestCalculatePositiveAvgReturn:
     def test_positive_avg_return_normal(self):
         """测试正常计算"""
         from asset_lens.report.metrics import calculate_positive_avg_return
+
         portfolio = MagicMock()
         product1 = MagicMock()
         product1.annualized_return_irr = Decimal("10")
@@ -95,6 +101,7 @@ class TestCalculatePositiveAvgReturn:
     def test_positive_avg_return_no_positive(self):
         """测试没有正收益产品"""
         from asset_lens.report.metrics import calculate_positive_avg_return
+
         portfolio = MagicMock()
         product1 = MagicMock()
         product1.annualized_return_irr = Decimal("-5")
@@ -111,6 +118,7 @@ class TestCalculateWeightedReturn:
     def test_weighted_return_normal(self):
         """测试正常计算"""
         from asset_lens.report.metrics import calculate_weighted_return
+
         portfolio = MagicMock()
         portfolio.total_initial = Decimal("10000")
         product1 = MagicMock()
@@ -126,6 +134,7 @@ class TestCalculateWeightedReturn:
     def test_weighted_return_zero_initial(self):
         """测试初始值为零"""
         from asset_lens.report.metrics import calculate_weighted_return
+
         portfolio = MagicMock()
         portfolio.total_initial = Decimal("0")
         portfolio.products = []
@@ -139,6 +148,7 @@ class TestCalculateInvestmentEfficiency:
     def test_investment_efficiency_normal(self):
         """测试正常计算"""
         from asset_lens.report.metrics import calculate_investment_efficiency
+
         portfolio = MagicMock()
         product1 = MagicMock()
         product1.annualized_return_irr = Decimal("10")
@@ -155,6 +165,7 @@ class TestCalculateInvestmentEfficiency:
     def test_investment_efficiency_empty(self):
         """测试空产品列表"""
         from asset_lens.report.metrics import calculate_investment_efficiency
+
         portfolio = MagicMock()
         portfolio.products = []
         result = calculate_investment_efficiency(portfolio)
@@ -169,6 +180,7 @@ class TestGetReturnDistribution:
     def test_return_distribution_all_categories(self):
         """测试所有类别"""
         from asset_lens.report.metrics import get_return_distribution
+
         portfolio = MagicMock()
         products = []
         for ret in [15, 5, -5, -15]:
@@ -189,6 +201,7 @@ class TestCalculateRiskScore:
     def test_risk_score_normal(self):
         """测试正常计算"""
         from asset_lens.report.metrics import calculate_risk_score
+
         portfolio = MagicMock()
         product1 = MagicMock()
         product1.risk_level = "low"
@@ -201,6 +214,7 @@ class TestCalculateRiskScore:
     def test_risk_score_empty(self):
         """测试空产品列表"""
         from asset_lens.report.metrics import calculate_risk_score
+
         portfolio = MagicMock()
         portfolio.products = []
         result = calculate_risk_score(portfolio)
@@ -209,6 +223,7 @@ class TestCalculateRiskScore:
     def test_risk_score_enum_value(self):
         """测试枚举值"""
         from asset_lens.report.metrics import calculate_risk_score
+
         portfolio = MagicMock()
         product = MagicMock()
         risk_level = MagicMock()
@@ -225,6 +240,7 @@ class TestGetTypeDistribution:
     def test_type_distribution_normal(self):
         """测试正常计算"""
         from asset_lens.report.metrics import get_type_distribution
+
         portfolio = MagicMock()
         product1 = MagicMock()
         product1.investment_type = "基金"
@@ -243,6 +259,7 @@ class TestGetTypeDistribution:
     def test_type_distribution_enum_value(self):
         """测试枚举值"""
         from asset_lens.report.metrics import get_type_distribution
+
         portfolio = MagicMock()
         product = MagicMock()
         investment_type = MagicMock()
@@ -261,6 +278,7 @@ class TestGetRiskDistribution:
     def test_risk_distribution_normal(self):
         """测试正常计算"""
         from asset_lens.report.metrics import get_risk_distribution
+
         portfolio = MagicMock()
         product1 = MagicMock()
         product1.risk_level = "低"
@@ -275,6 +293,7 @@ class TestGetRiskDistribution:
     def test_risk_distribution_enum_value(self):
         """测试枚举值"""
         from asset_lens.report.metrics import get_risk_distribution
+
         portfolio = MagicMock()
         product = MagicMock()
         risk_level = MagicMock()

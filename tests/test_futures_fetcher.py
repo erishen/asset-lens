@@ -3,13 +3,9 @@ Tests for futures_fetcher module.
 期货数据获取模块测试
 """
 
-import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-from asset_lens.data.futures_fetcher import (
-    FuturesFetcher,
-    get_futures_fetcher,
-)
+from asset_lens.data.futures_fetcher import FuturesFetcher, get_futures_fetcher
 
 
 class TestFuturesFetcher:

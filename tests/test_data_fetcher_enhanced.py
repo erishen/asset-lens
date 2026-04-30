@@ -6,16 +6,15 @@ Tests for Enhanced Data Fetcher.
 import json
 import os
 from datetime import datetime
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from asset_lens.data.data_fetcher_enhanced import (
     EnhancedDataFetcher,
-    retry_with_backoff,
     _disable_proxy,
     enhanced_fetcher,
+    retry_with_backoff,
 )
 
 
@@ -158,7 +157,7 @@ class TestEnhancedDataFetcher:
         """测试腾讯财经获取成功"""
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.text = "v_sh600000=\"1~浦发银行~600000~9.45~9.54\""
+        mock_response.text = 'v_sh600000="1~浦发银行~600000~9.45~9.54"'
         mock_get.return_value = mock_response
 
         fetcher = EnhancedDataFetcher(cache_path=tmp_path)
@@ -188,9 +187,7 @@ class TestEnhancedDataFetcher:
         """测试东方财富获取成功"""
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "data": {"diff": [{"f12": "600000", "f14": "浦发银行"}]}
-        }
+        mock_response.json.return_value = {"data": {"diff": [{"f12": "600000", "f14": "浦发银行"}]}}
         mock_get.return_value = mock_response
 
         fetcher = EnhancedDataFetcher(cache_path=tmp_path)

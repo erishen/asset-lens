@@ -307,9 +307,7 @@ class StockScreener:
 
         return min(100, max(0, score))
 
-    def _check_technical_conditions(
-        self, stock: dict[str, Any], klines: list[dict], cfg: TechnicalConfig
-    ) -> bool:
+    def _check_technical_conditions(self, _stock: dict[str, Any], klines: list[dict], cfg: TechnicalConfig) -> bool:
         """检查技术面条件"""
         closes = [k.get("close", 0) for k in klines[-60:] if k.get("close")]
         if len(closes) < 20:

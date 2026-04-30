@@ -45,11 +45,7 @@ class ExchangeRateCache:
 
     def get_stats(self) -> dict[str, Any]:
         """获取缓存统计信息"""
-        return {
-            "size": len(self._cache),
-            "ttl": self._ttl,
-            "entries": list(self._cache.keys())
-        }
+        return {"size": len(self._cache), "ttl": self._ttl, "entries": list(self._cache.keys())}
 
 
 exchange_rate_cache = ExchangeRateCache(ttl_seconds=3600)

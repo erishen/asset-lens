@@ -3,11 +3,8 @@ Tests for config_manager module.
 配置管理器模块测试
 """
 
-import pytest
 import tempfile
-import json
 from pathlib import Path
-from unittest.mock import patch, MagicMock
 
 
 class TestDataSourceConfig:
@@ -16,6 +13,7 @@ class TestDataSourceConfig:
     def test_data_source_config_default(self):
         """测试默认数据源配置"""
         from asset_lens.core.config_manager import DataSourceConfig
+
         config = DataSourceConfig(name="test")
         assert config.name == "test"
         assert config.priority == 1
@@ -27,6 +25,7 @@ class TestDataSourceConfig:
     def test_data_source_config_custom(self):
         """测试自定义数据源配置"""
         from asset_lens.core.config_manager import DataSourceConfig
+
         config = DataSourceConfig(
             name="custom",
             priority=5,
@@ -34,7 +33,7 @@ class TestDataSourceConfig:
             api_key="test_key",
             api_url="http://test.com",
             timeout=60,
-            retry_times=5
+            retry_times=5,
         )
         assert config.name == "custom"
         assert config.priority == 5
@@ -51,6 +50,7 @@ class TestMonitorConfig:
     def test_monitor_config_default(self):
         """测试默认监控配置"""
         from asset_lens.core.config_manager import MonitorConfig
+
         config = MonitorConfig()
         assert config.price_threshold == 5.0
         assert config.volatility_threshold == 20.0
@@ -66,6 +66,7 @@ class TestUserPreferences:
     def test_user_preferences_default(self):
         """测试默认用户偏好"""
         from asset_lens.core.config_manager import UserPreferences
+
         prefs = UserPreferences()
         assert prefs.risk_tolerance == "moderate"
         assert prefs.investment_goal == "balanced"
@@ -77,13 +78,14 @@ class TestUserPreferences:
     def test_user_preferences_custom(self):
         """测试自定义用户偏好"""
         from asset_lens.core.config_manager import UserPreferences
+
         prefs = UserPreferences(
             risk_tolerance="aggressive",
             investment_goal="growth",
             preferred_sectors=["科技", "医药"],
             excluded_sectors=["房地产"],
             max_position_size=15.0,
-            rebalance_frequency="weekly"
+            rebalance_frequency="weekly",
         )
         assert prefs.risk_tolerance == "aggressive"
         assert prefs.preferred_sectors == ["科技", "医药"]
@@ -95,6 +97,7 @@ class TestAlertConfig:
     def test_alert_config_default(self):
         """测试默认提醒配置"""
         from asset_lens.core.config_manager import AlertConfig
+
         config = AlertConfig()
         assert config.enable_email is False
         assert config.enable_qq is True
@@ -110,6 +113,7 @@ class TestConfigManager:
     def test_config_manager_init(self):
         """测试配置管理器初始化"""
         from asset_lens.core.config_manager import ConfigManager
+
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / "test_config.json"
             manager = ConfigManager(config_path)
@@ -119,6 +123,7 @@ class TestConfigManager:
     def test_config_manager_default_config(self):
         """测试默认配置"""
         from asset_lens.core.config_manager import ConfigManager
+
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / "test_config.json"
             manager = ConfigManager(config_path)
@@ -129,6 +134,7 @@ class TestConfigManager:
     def test_config_manager_get_data_source_config(self):
         """测试获取数据源配置"""
         from asset_lens.core.config_manager import ConfigManager
+
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / "test_config.json"
             manager = ConfigManager(config_path)
@@ -139,6 +145,7 @@ class TestConfigManager:
     def test_config_manager_get_data_source_config_not_found(self):
         """测试获取不存在的数据源配置"""
         from asset_lens.core.config_manager import ConfigManager
+
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / "test_config.json"
             manager = ConfigManager(config_path)
@@ -148,6 +155,7 @@ class TestConfigManager:
     def test_config_manager_get_monitor_config(self):
         """测试获取监控配置"""
         from asset_lens.core.config_manager import ConfigManager
+
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / "test_config.json"
             manager = ConfigManager(config_path)
@@ -158,6 +166,7 @@ class TestConfigManager:
     def test_config_manager_get_set(self):
         """测试 get/set 配置项"""
         from asset_lens.core.config_manager import ConfigManager
+
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / "test_config.json"
             manager = ConfigManager(config_path)
@@ -168,6 +177,7 @@ class TestConfigManager:
     def test_config_manager_get_user_preferences(self):
         """测试获取用户偏好"""
         from asset_lens.core.config_manager import ConfigManager
+
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / "test_config.json"
             manager = ConfigManager(config_path)
@@ -178,6 +188,7 @@ class TestConfigManager:
     def test_config_manager_get_alert_config(self):
         """测试获取提醒配置"""
         from asset_lens.core.config_manager import ConfigManager
+
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / "test_config.json"
             manager = ConfigManager(config_path)
@@ -188,6 +199,7 @@ class TestConfigManager:
     def test_config_manager_save(self):
         """测试保存配置"""
         from asset_lens.core.config_manager import ConfigManager
+
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / "test_config.json"
             manager = ConfigManager(config_path)
@@ -198,6 +210,7 @@ class TestConfigManager:
     def test_config_manager_validate(self):
         """测试验证配置"""
         from asset_lens.core.config_manager import ConfigManager
+
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / "test_config.json"
             manager = ConfigManager(config_path)
@@ -206,6 +219,7 @@ class TestConfigManager:
     def test_config_manager_validate_missing_key(self):
         """测试验证缺少配置项"""
         from asset_lens.core.config_manager import ConfigManager
+
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / "test_config.json"
             manager = ConfigManager(config_path)
@@ -215,6 +229,7 @@ class TestConfigManager:
     def test_config_manager_reload(self):
         """测试重新加载配置"""
         from asset_lens.core.config_manager import ConfigManager
+
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / "test_config.json"
             manager = ConfigManager(config_path)
@@ -224,6 +239,7 @@ class TestConfigManager:
     def test_config_manager_get_all_config(self):
         """测试获取所有配置"""
         from asset_lens.core.config_manager import ConfigManager
+
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / "test_config.json"
             manager = ConfigManager(config_path)
@@ -237,7 +253,8 @@ class TestCreateConfigManager:
 
     def test_create_config_manager(self):
         """测试创建配置管理器"""
-        from asset_lens.core.config_manager import create_config_manager, ConfigManager
+        from asset_lens.core.config_manager import ConfigManager, create_config_manager
+
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / "test_config.json"
             manager = create_config_manager(config_path)
@@ -247,5 +264,6 @@ class TestCreateConfigManager:
     def test_create_config_manager_default_path(self):
         """测试使用默认路径创建配置管理器"""
         from asset_lens.core.config_manager import create_config_manager
+
         manager = create_config_manager()
         assert manager is not None

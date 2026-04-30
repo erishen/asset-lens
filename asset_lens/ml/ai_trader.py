@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class TradeSignal:
     """交易信号"""
+
     code: str
     name: str
     action: str  # buy, sell, hold
@@ -44,6 +45,7 @@ class TradeSignal:
 @dataclass
 class TradeRecord:
     """交易记录"""
+
     code: str
     name: str
     action: str
@@ -157,17 +159,19 @@ class AISimulatedTrader:
         signals = self._generate_signals(candidates, strategy_config, analysis)
 
         for signal in signals:
-            self.signals.append({
-                "code": signal.code,
-                "name": signal.name,
-                "action": signal.action,
-                "confidence": signal.confidence,
-                "price": signal.price,
-                "reason": signal.reason,
-                "market_condition": signal.market_condition,
-                "strategy": signal.strategy,
-                "timestamp": signal.timestamp,
-            })
+            self.signals.append(
+                {
+                    "code": signal.code,
+                    "name": signal.name,
+                    "action": signal.action,
+                    "confidence": signal.confidence,
+                    "price": signal.price,
+                    "reason": signal.reason,
+                    "market_condition": signal.market_condition,
+                    "strategy": signal.strategy,
+                    "timestamp": signal.timestamp,
+                }
+            )
 
         self._save_signals()
 
@@ -200,14 +204,16 @@ class AISimulatedTrader:
 
             if config["min_market_cap"] <= market_cap <= config["max_market_cap"]:
                 if config["min_turnover"] <= turnover <= config["max_turnover"]:
-                    candidates.append({
-                        "code": code,
-                        "name": name,
-                        "price": price,
-                        "market_cap": market_cap,
-                        "turnover": turnover,
-                        "change_percent": stock.get("change_percent", 0),
-                    })
+                    candidates.append(
+                        {
+                            "code": code,
+                            "name": name,
+                            "price": price,
+                            "market_cap": market_cap,
+                            "turnover": turnover,
+                            "change_percent": stock.get("change_percent", 0),
+                        }
+                    )
 
         return candidates[:100]
 
@@ -253,23 +259,27 @@ class AISimulatedTrader:
                         df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
                 try:
-                    result = trainer.predictor.predict_stock(df.to_dict('records')[0] if not df.empty else {}, code=code)
-                    prediction = result.prediction if hasattr(result, 'prediction') else 0
-                    confidence = result.confidence if hasattr(result, 'confidence') else 0
+                    result = trainer.predictor.predict_stock(
+                        df.to_dict("records")[0] if not df.empty else {}, code=code
+                    )
+                    prediction = result.prediction if hasattr(result, "prediction") else 0
+                    confidence = result.confidence if hasattr(result, "confidence") else 0
 
                     if prediction == 1 and confidence >= self.min_confidence:
                         action = "buy"
                         reason = f"ML预测上涨 (置信度: {confidence:.1%})"
-                        signals.append(TradeSignal(
-                            code=code,
-                            name=name,
-                            action=action,
-                            confidence=confidence,
-                            price=price,
-                            reason=reason,
-                            market_condition=self.market_condition,
-                            strategy=self.current_strategy,
-                        ))
+                        signals.append(
+                            TradeSignal(
+                                code=code,
+                                name=name,
+                                action=action,
+                                confidence=confidence,
+                                price=price,
+                                reason=reason,
+                                market_condition=self.market_condition,
+                                strategy=self.current_strategy,
+                            )
+                        )
 
                 except Exception as e:
                     logger.debug(f"预测 {code} 失败: {e}")
@@ -304,66 +314,76 @@ class AISimulatedTrader:
 
             if self.market_condition == "bull":
                 if change > 2 and turnover > 3:
-                    signals.append(TradeSignal(
-                        code=code,
-                        name=name,
-                        action="buy",
-                        confidence=0.6 + min(change / 20, 0.3),
-                        price=price,
-                        reason=f"牛市动量策略: 涨幅{change:.1f}%, 换手{turnover:.1f}%",
-                        market_condition=self.market_condition,
-                        strategy=self.current_strategy,
-                    ))
+                    signals.append(
+                        TradeSignal(
+                            code=code,
+                            name=name,
+                            action="buy",
+                            confidence=0.6 + min(change / 20, 0.3),
+                            price=price,
+                            reason=f"牛市动量策略: 涨幅{change:.1f}%, 换手{turnover:.1f}%",
+                            market_condition=self.market_condition,
+                            strategy=self.current_strategy,
+                        )
+                    )
 
             elif self.market_condition == "bear":
                 if change < -3 and turnover < 3:
-                    signals.append(TradeSignal(
-                        code=code,
-                        name=name,
-                        action="sell",
-                        confidence=0.6 + min(abs(change) / 20, 0.3),
-                        price=price,
-                        reason=f"熊市防御策略: 跌幅{change:.1f}%",
-                        market_condition=self.market_condition,
-                        strategy=self.current_strategy,
-                    ))
+                    signals.append(
+                        TradeSignal(
+                            code=code,
+                            name=name,
+                            action="sell",
+                            confidence=0.6 + min(abs(change) / 20, 0.3),
+                            price=price,
+                            reason=f"熊市防御策略: 跌幅{change:.1f}%",
+                            market_condition=self.market_condition,
+                            strategy=self.current_strategy,
+                        )
+                    )
 
             elif self.market_condition == "volatile":
                 if change < -5:
-                    signals.append(TradeSignal(
-                        code=code,
-                        name=name,
-                        action="buy",
-                        confidence=0.65,
-                        price=price,
-                        reason=f"反转策略: 超跌反弹机会 (跌幅{change:.1f}%)",
-                        market_condition=self.market_condition,
-                        strategy=self.current_strategy,
-                    ))
+                    signals.append(
+                        TradeSignal(
+                            code=code,
+                            name=name,
+                            action="buy",
+                            confidence=0.65,
+                            price=price,
+                            reason=f"反转策略: 超跌反弹机会 (跌幅{change:.1f}%)",
+                            market_condition=self.market_condition,
+                            strategy=self.current_strategy,
+                        )
+                    )
                 elif change < -3:
-                    signals.append(TradeSignal(
-                        code=code,
-                        name=name,
-                        action="buy",
-                        confidence=0.58,
-                        price=price,
-                        reason=f"反转策略: 跌幅较大可能有反弹 (跌幅{change:.1f}%)",
-                        market_condition=self.market_condition,
-                        strategy=self.current_strategy,
-                    ))
+                    signals.append(
+                        TradeSignal(
+                            code=code,
+                            name=name,
+                            action="buy",
+                            confidence=0.58,
+                            price=price,
+                            reason=f"反转策略: 跌幅较大可能有反弹 (跌幅{change:.1f}%)",
+                            market_condition=self.market_condition,
+                            strategy=self.current_strategy,
+                        )
+                    )
 
             elif self.market_condition == "sideways":
                 if -2 < change < 2 and turnover > 2:
-                    signals.append(TradeSignal(
-                        code=code,
-                        name=name,
-                        action="buy",
-                        confidence=0.55,
-                        price=price,
-                        reason="震荡市策略: 横盘整理后可能突破",
-                        market_condition=self.market_condition,
-                        strategy=self.current_strategy,
-                    ))
+                    signals.append(
+                        TradeSignal(
+                            code=code,
+                            name=name,
+                            action="buy",
+                            confidence=0.55,
+                            price=price,
+                            reason="震荡市策略: 横盘整理后可能突破",
+                            market_condition=self.market_condition,
+                            strategy=self.current_strategy,
+                        )
+                    )
 
         return signals[:10]
 
@@ -407,20 +427,22 @@ class AISimulatedTrader:
                             profit_rate=profit_rate,
                         )
                         trades.append(trade)
-                        self.trades.append({
-                            "code": trade.code,
-                            "name": trade.name,
-                            "action": trade.action,
-                            "price": trade.price,
-                            "shares": trade.shares,
-                            "amount": trade.amount,
-                            "confidence": trade.confidence,
-                            "market_condition": trade.market_condition,
-                            "strategy": trade.strategy,
-                            "reason": trade.reason,
-                            "timestamp": trade.timestamp,
-                            "profit_rate": trade.profit_rate,
-                        })
+                        self.trades.append(
+                            {
+                                "code": trade.code,
+                                "name": trade.name,
+                                "action": trade.action,
+                                "price": trade.price,
+                                "shares": trade.shares,
+                                "amount": trade.amount,
+                                "confidence": trade.confidence,
+                                "market_condition": trade.market_condition,
+                                "strategy": trade.strategy,
+                                "reason": trade.reason,
+                                "timestamp": trade.timestamp,
+                                "profit_rate": trade.profit_rate,
+                            }
+                        )
                         print(f"  🔴 卖出 {signal.code} {signal.name} @ {signal.price:.2f} (收益: {profit_rate:+.2f}%)")
 
         for signal in buy_signals:
@@ -461,19 +483,21 @@ class AISimulatedTrader:
                             timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         )
                         trades.append(trade)
-                        self.trades.append({
-                            "code": trade.code,
-                            "name": trade.name,
-                            "action": trade.action,
-                            "price": trade.price,
-                            "shares": trade.shares,
-                            "amount": trade.amount,
-                            "confidence": trade.confidence,
-                            "market_condition": trade.market_condition,
-                            "strategy": trade.strategy,
-                            "reason": trade.reason,
-                            "timestamp": trade.timestamp,
-                        })
+                        self.trades.append(
+                            {
+                                "code": trade.code,
+                                "name": trade.name,
+                                "action": trade.action,
+                                "price": trade.price,
+                                "shares": trade.shares,
+                                "amount": trade.amount,
+                                "confidence": trade.confidence,
+                                "market_condition": trade.market_condition,
+                                "strategy": trade.strategy,
+                                "reason": trade.reason,
+                                "timestamp": trade.timestamp,
+                            }
+                        )
                         holding_count += 1
                         print(f"  🟢 买入 {signal.code} {signal.name} @ {signal.price:.2f} x {shares}股")
 
@@ -525,16 +549,18 @@ class AISimulatedTrader:
                 profit = (pos.current_price - pos.buy_price) * pos.shares
                 profit_rate = (pos.current_price - pos.buy_price) / pos.buy_price * 100
 
-                holding_stocks.append({
-                    "code": code,
-                    "name": pos.name,
-                    "buy_price": pos.buy_price,
-                    "current_price": pos.current_price,
-                    "shares": pos.shares,
-                    "market_value": market_value,
-                    "profit": profit,
-                    "profit_rate": profit_rate,
-                })
+                holding_stocks.append(
+                    {
+                        "code": code,
+                        "name": pos.name,
+                        "buy_price": pos.buy_price,
+                        "current_price": pos.current_price,
+                        "shares": pos.shares,
+                        "market_value": market_value,
+                        "profit": profit,
+                        "profit_rate": profit_rate,
+                    }
+                )
 
                 total_market_value += market_value
                 total_profit += profit

@@ -21,7 +21,7 @@ from ..config import config
 @contextmanager
 def _disable_proxy() -> Generator[None, None, None]:
     """临时禁用代理的上下文管理器"""
-    proxy_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'ALL_PROXY', 'all_proxy']
+    proxy_vars = ["HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy", "ALL_PROXY", "all_proxy"]
     original_values = {}
 
     for var in proxy_vars:
@@ -99,12 +99,12 @@ class MarketStockFetcher:
             行业名称
         """
         name_lower = name.lower()
-        
+
         for industry, keywords in self.INDUSTRY_KEYWORDS.items():
             for keyword in keywords:
                 if keyword.lower() in name_lower:
                     return industry
-        
+
         if code.startswith("601318") or "平安" in name:
             return "金融"
         if code.startswith("601899") or "紫金" in name:
@@ -115,7 +115,7 @@ class MarketStockFetcher:
             return "新能源"
         if code.startswith("300502"):
             return "通信"
-        
+
         return "其他"
 
     def fetch_cn_stock_list(self, page: int = 1, page_size: int = 100) -> list[dict[str, Any]]:
@@ -280,68 +280,72 @@ class MarketStockFetcher:
         """使用 Tushare 获取A股列表（需要Token，数据最完整）"""
         import os
         import tempfile
-        
+
         try:
-            os.environ['HOME'] = tempfile.gettempdir()
+            os.environ["HOME"] = tempfile.gettempdir()
             import tushare as ts
-            
-            token = os.environ.get('TUSHARE_TOKEN', '')
+
+            token = os.environ.get("TUSHARE_TOKEN", "")
             if not token:
                 print("⚠️ Tushare Token 未配置，跳过")
                 return []
-            
+
             print("正在获取A股股票列表(Tushare)...")
-            print(f"🌐 API请求: https://tushare.pro (Tushare)")
-            
+            print("🌐 API请求: https://tushare.pro (Tushare)")
+
             ts.set_token(token)
             pro = ts.pro_api()
-            
-            df = pro.stock_basic(exchange='', list_status='L', fields='ts_code,symbol,name,area,industry,list_date')
-            
+
+            df = pro.stock_basic(exchange="", list_status="L", fields="ts_code,symbol,name,area,industry,list_date")
+
             if df is None or df.empty:
                 print("❌ Tushare: 获取数据为空")
                 return []
-            
+
             stocks = []
             for _, row in df.iterrows():
-                ts_code = str(row.get('ts_code', ''))
-                symbol = str(row.get('symbol', ''))
-                name = str(row.get('name', ''))
-                industry = str(row.get('industry', ''))
-                
+                ts_code = str(row.get("ts_code", ""))
+                symbol = str(row.get("symbol", ""))
+                name = str(row.get("name", ""))
+                industry = str(row.get("industry", ""))
+
                 if not symbol or not name:
                     continue
-                
+
                 # 转换代码格式
-                if ts_code.endswith('.SH'):
+                if ts_code.endswith(".SH"):
                     full_code = f"sh{symbol}"
-                elif ts_code.endswith('.SZ'):
+                elif ts_code.endswith(".SZ"):
                     full_code = f"sz{symbol}"
                 else:
                     continue
-                
-                stocks.append({
-                    "code": full_code,
-                    "name": name,
-                    "current_price": 0,
-                    "change_percent": 0,
-                    "volume": 0,
-                    "amount": 0,
-                    "turnover_rate": 0,
-                    "pe_ratio": 0,
-                    "market_cap": 0,
-                    "market": "A股",
-                    "industry": industry if industry and industry != 'nan' else self.infer_industry(name, full_code),
-                    "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                })
-            
+
+                stocks.append(
+                    {
+                        "code": full_code,
+                        "name": name,
+                        "current_price": 0,
+                        "change_percent": 0,
+                        "volume": 0,
+                        "amount": 0,
+                        "turnover_rate": 0,
+                        "pe_ratio": 0,
+                        "market_cap": 0,
+                        "market": "A股",
+                        "industry": industry
+                        if industry and industry != "nan"
+                        else self.infer_industry(name, full_code),
+                        "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    }
+                )
+
             print(f"✅ Tushare: 获取 {len(stocks)} 只股票")
-            
+
             # 用腾讯财经补充实时价格
             stocks = self._enrich_prices_tencent(stocks)
-            
+
             return stocks
-            
+
         except ImportError:
             print("⚠️ Tushare 未安装: pip install tushare")
             return []
@@ -356,39 +360,39 @@ class MarketStockFetcher:
         """
         try:
             import requests
-            
+
             print("正在获取A股股票列表(腾讯财经)...")
 
             # 国内 API 不需要代理
             with _disable_proxy():
                 session = requests.Session()
-                
+
                 # 获取沪市股票列表
                 sh_url = "https://qt.gtimg.cn/q=s_sh"
                 r = session.get(sh_url, timeout=10)
-                
+
                 if r.status_code != 200:
                     print(f"❌ 腾讯财经: HTTP {r.status_code}")
                     return []
-                
+
                 # 解析股票列表 - 腾讯财经不提供完整列表，使用缓存或Baostock
                 print("腾讯财经不提供完整股票列表，尝试 Baostock...")
-                
+
                 import baostock as bs
 
                 lg = bs.login()
-                if lg.error_code != '0':
+                if lg.error_code != "0":
                     print(f"❌ Baostock 登录失败: {lg.error_msg}")
                     return []
 
                 rs = bs.query_stock_basic()
-                if rs.error_code != '0':
+                if rs.error_code != "0":
                     print(f"❌ Baostock 查询失败: {rs.error_msg}")
                     bs.logout()
                     return []
 
                 data_list = []
-                while rs.error_code == '0' and rs.next():
+                while rs.error_code == "0" and rs.next():
                     data_list.append(rs.get_row_data())
                 bs.logout()
 
@@ -413,20 +417,22 @@ class MarketStockFetcher:
                     if not (full_code.startswith("sh") or full_code.startswith("sz")):
                         continue
 
-                    stocks.append({
-                        "code": full_code,
-                        "name": name,
-                        "current_price": 0,
-                        "change_percent": 0,
-                        "volume": 0,
-                        "amount": 0,
-                        "turnover_rate": 0,
-                        "pe_ratio": 0,
-                        "market_cap": 0,
-                        "market": "A股",
-                        "industry": self.infer_industry(name, full_code),
-                        "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    })
+                    stocks.append(
+                        {
+                            "code": full_code,
+                            "name": name,
+                            "current_price": 0,
+                            "change_percent": 0,
+                            "volume": 0,
+                            "amount": 0,
+                            "turnover_rate": 0,
+                            "pe_ratio": 0,
+                            "market_cap": 0,
+                            "market": "A股",
+                            "industry": self.infer_industry(name, full_code),
+                            "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        }
+                    )
 
                 print(f"Baostock: 获取 {len(stocks)} 只股票列表")
 
@@ -452,7 +458,7 @@ class MarketStockFetcher:
             print("⚠️ Baostock 未安装，跳过此数据源")
             return []
         except Exception as e:
-            error_msg = str(e).split('\n')[0][:50]
+            error_msg = str(e).split("\n")[0][:50]
             print(f"❌ 腾讯财经获取失败: {error_msg}")
             return []
 
@@ -474,7 +480,7 @@ class MarketStockFetcher:
             return self._parse_stock_df(df, "akshare")
 
         except Exception as e:
-            error_msg = str(e).split('\n')[0][:50]
+            error_msg = str(e).split("\n")[0][:50]
             print(f"❌ AkShare 获取失败: {error_msg}")
             return []
 
@@ -501,7 +507,7 @@ class MarketStockFetcher:
             print("⚠️ Efinance 未安装，跳过此数据源")
             return []
         except Exception as e:
-            error_msg = str(e).split('\n')[0][:50]
+            error_msg = str(e).split("\n")[0][:50]
             print(f"❌ Efinance 获取失败: {error_msg}")
             return []
 
@@ -516,19 +522,19 @@ class MarketStockFetcher:
             # 国内 API 不需要代理
             with _disable_proxy():
                 lg = bs.login()
-                if lg.error_code != '0':
+                if lg.error_code != "0":
                     print(f"❌ Baostock 登录失败: {lg.error_msg}")
                     return []
 
                 rs = bs.query_stock_basic()
 
-                if rs.error_code != '0':
+                if rs.error_code != "0":
                     print(f"Baostock 查询失败: {rs.error_msg}")
                     bs.logout()
                     return []
 
                 data_list = []
-                while rs.error_code == '0' and rs.next():
+                while rs.error_code == "0" and rs.next():
                     data_list.append(rs.get_row_data())
 
                 bs.logout()
@@ -571,7 +577,7 @@ class MarketStockFetcher:
         """使用腾讯财经补充价格数据"""
         try:
             import requests
-            
+
             print("正在获取实时价格数据(腾讯财经)...")
 
             codes = []
@@ -588,7 +594,7 @@ class MarketStockFetcher:
             session = requests.Session()
 
             for i in range(0, len(codes), batch_size):
-                batch = codes[i:i+batch_size]
+                batch = codes[i : i + batch_size]
                 url = "https://qt.gtimg.cn/q=" + ",".join(batch)
 
                 try:
@@ -626,7 +632,7 @@ class MarketStockFetcher:
                         except (ValueError, IndexError):
                             continue
                 except Exception as e:
-                    print(f"  批次 {i//batch_size + 1} 获取失败: {str(e)[:50]}")
+                    print(f"  批次 {i // batch_size + 1} 获取失败: {str(e)[:50]}")
                     continue
 
             enriched = 0
@@ -639,7 +645,9 @@ class MarketStockFetcher:
                     stock["volume"] = price_data["volume"]
                     stock["amount"] = price_data["amount"]
                     stock["turnover_rate"] = price_data["turnover_rate"]
-                    stock["market_cap"] = price_data["market_cap"] if price_data["market_cap"] > 0 else stock.get("market_cap", 0)
+                    stock["market_cap"] = (
+                        price_data["market_cap"] if price_data["market_cap"] > 0 else stock.get("market_cap", 0)
+                    )
                     enriched += 1
 
             print(f"腾讯财经: 已补充 {enriched} 只股票的实时价格")
@@ -947,9 +955,8 @@ class MarketStockFetcher:
 
                 now = datetime.now()
                 weekday = now.weekday()
-                
+
                 if weekday >= 5:
-                    trading_end_hour = 15
                     if weekday == 5:
                         friday = now - timedelta(days=1)
                         friday_15pm = friday.replace(hour=15, minute=0, second=0, microsecond=0)

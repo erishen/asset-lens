@@ -3,10 +3,7 @@ Tests for Task Scheduler.
 定时任务调度器测试
 """
 
-import pytest
 import time
-from datetime import datetime
-from unittest.mock import patch, MagicMock
 
 
 class TestTaskConfig:
@@ -15,11 +12,12 @@ class TestTaskConfig:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.scheduler.task_scheduler import TaskConfig
+
         assert TaskConfig is not None
 
     def test_task_config_creation(self):
         """测试任务配置创建"""
-        from asset_lens.scheduler.task_scheduler import TaskConfig, ScheduleType
+        from asset_lens.scheduler.task_scheduler import ScheduleType, TaskConfig
 
         def dummy_func():
             return "done"
@@ -81,13 +79,15 @@ class TestTaskScheduler:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.scheduler.task_scheduler import TaskScheduler
+
         assert TaskScheduler is not None
 
     def test_scheduler_init(self):
         """测试调度器初始化"""
-        from asset_lens.scheduler.task_scheduler import TaskScheduler
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
+
+        from asset_lens.scheduler.task_scheduler import TaskScheduler
 
         with tempfile.TemporaryDirectory() as tmpdir:
             scheduler = TaskScheduler(Path(tmpdir))
@@ -96,9 +96,10 @@ class TestTaskScheduler:
 
     def test_register_task(self):
         """测试注册任务"""
-        from asset_lens.scheduler.task_scheduler import TaskScheduler, TaskConfig, ScheduleType
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
+
+        from asset_lens.scheduler.task_scheduler import ScheduleType, TaskConfig, TaskScheduler
 
         with tempfile.TemporaryDirectory() as tmpdir:
             scheduler = TaskScheduler(Path(tmpdir))
@@ -121,9 +122,10 @@ class TestTaskScheduler:
 
     def test_unregister_task(self):
         """测试注销任务"""
-        from asset_lens.scheduler.task_scheduler import TaskScheduler, TaskConfig, ScheduleType
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
+
+        from asset_lens.scheduler.task_scheduler import ScheduleType, TaskConfig, TaskScheduler
 
         with tempfile.TemporaryDirectory() as tmpdir:
             scheduler = TaskScheduler(Path(tmpdir))
@@ -146,9 +148,10 @@ class TestTaskScheduler:
 
     def test_enable_disable_task(self):
         """测试启用/禁用任务"""
-        from asset_lens.scheduler.task_scheduler import TaskScheduler, TaskConfig, ScheduleType
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
+
+        from asset_lens.scheduler.task_scheduler import ScheduleType, TaskConfig, TaskScheduler
 
         with tempfile.TemporaryDirectory() as tmpdir:
             scheduler = TaskScheduler(Path(tmpdir))
@@ -175,9 +178,10 @@ class TestTaskScheduler:
 
     def test_run_task(self):
         """测试运行任务"""
-        from asset_lens.scheduler.task_scheduler import TaskScheduler, TaskConfig, ScheduleType
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
+
+        from asset_lens.scheduler.task_scheduler import ScheduleType, TaskConfig, TaskScheduler
 
         with tempfile.TemporaryDirectory() as tmpdir:
             scheduler = TaskScheduler(Path(tmpdir))
@@ -201,9 +205,10 @@ class TestTaskScheduler:
 
     def test_run_nonexistent_task(self):
         """测试运行不存在的任务"""
-        from asset_lens.scheduler.task_scheduler import TaskScheduler
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
+
+        from asset_lens.scheduler.task_scheduler import TaskScheduler
 
         with tempfile.TemporaryDirectory() as tmpdir:
             scheduler = TaskScheduler(Path(tmpdir))
@@ -214,9 +219,10 @@ class TestTaskScheduler:
 
     def test_get_task_status(self):
         """测试获取任务状态"""
-        from asset_lens.scheduler.task_scheduler import TaskScheduler, TaskConfig, ScheduleType
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
+
+        from asset_lens.scheduler.task_scheduler import ScheduleType, TaskConfig, TaskScheduler
 
         with tempfile.TemporaryDirectory() as tmpdir:
             scheduler = TaskScheduler(Path(tmpdir))
@@ -242,9 +248,10 @@ class TestTaskScheduler:
 
     def test_get_all_tasks(self):
         """测试获取所有任务"""
-        from asset_lens.scheduler.task_scheduler import TaskScheduler, TaskConfig, ScheduleType
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
+
+        from asset_lens.scheduler.task_scheduler import ScheduleType, TaskConfig, TaskScheduler
 
         with tempfile.TemporaryDirectory() as tmpdir:
             scheduler = TaskScheduler(Path(tmpdir))
@@ -274,9 +281,10 @@ class TestTaskScheduler:
 
     def test_get_task_history(self):
         """测试获取任务历史"""
-        from asset_lens.scheduler.task_scheduler import TaskScheduler, TaskConfig, ScheduleType
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
+
+        from asset_lens.scheduler.task_scheduler import ScheduleType, TaskConfig, TaskScheduler
 
         with tempfile.TemporaryDirectory() as tmpdir:
             scheduler = TaskScheduler(Path(tmpdir))
@@ -301,9 +309,10 @@ class TestTaskScheduler:
 
     def test_start_stop(self):
         """测试启动/停止调度器"""
-        from asset_lens.scheduler.task_scheduler import TaskScheduler
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
+
+        from asset_lens.scheduler.task_scheduler import TaskScheduler
 
         with tempfile.TemporaryDirectory() as tmpdir:
             scheduler = TaskScheduler(Path(tmpdir))
@@ -380,9 +389,10 @@ class TestRetryMechanism:
 
     def test_retry_on_failure(self):
         """测试失败重试"""
-        from asset_lens.scheduler.task_scheduler import TaskScheduler, TaskConfig, ScheduleType
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
+
+        from asset_lens.scheduler.task_scheduler import ScheduleType, TaskConfig, TaskScheduler
 
         with tempfile.TemporaryDirectory() as tmpdir:
             scheduler = TaskScheduler(Path(tmpdir))
@@ -412,9 +422,10 @@ class TestRetryMechanism:
 
     def test_max_retries_exceeded(self):
         """测试超过最大重试次数"""
-        from asset_lens.scheduler.task_scheduler import TaskScheduler, TaskConfig, ScheduleType
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
+
+        from asset_lens.scheduler.task_scheduler import ScheduleType, TaskConfig, TaskScheduler
 
         with tempfile.TemporaryDirectory() as tmpdir:
             scheduler = TaskScheduler(Path(tmpdir))

@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SectorPrediction:
     """板块预测结果"""
+
     sector_name: str
     current_strength: float
     predicted_direction: int  # 1=上涨, 0=下跌
@@ -80,19 +81,14 @@ class SectorMLPredictor:
             feature_row["activity"] = stats.get("avg_turnover", 0) / 5.0
 
             feature_row["strength_rank"] = 0
-            sorted_sectors = sorted(
-                sector_stats.items(),
-                key=lambda x: x[1].get("strength_score", 0),
-                reverse=True
-            )
+            sorted_sectors = sorted(sector_stats.items(), key=lambda x: x[1].get("strength_score", 0), reverse=True)
             for rank, (name, _) in enumerate(sorted_sectors):
                 if name == sector_name:
                     feature_row["strength_rank"] = rank + 1
                     break
 
-            feature_row["relative_strength"] = (
-                feature_row["strength_score"] -
-                np.mean([s.get("strength_score", 0) for s in sector_stats.values()])
+            feature_row["relative_strength"] = feature_row["strength_score"] - np.mean(
+                [s.get("strength_score", 0) for s in sector_stats.values()]
             )
 
             features.append(feature_row)
@@ -220,15 +216,9 @@ class SectorMLPredictor:
         Returns:
             轮动建议
         """
-        strong_sectors = [
-            p for p in predictions
-            if p.predicted_direction == 1 and p.confidence > 0.55
-        ]
+        strong_sectors = [p for p in predictions if p.predicted_direction == 1 and p.confidence > 0.55]
 
-        weak_sectors = [
-            p for p in predictions
-            if p.predicted_direction == 0 and p.confidence > 0.55
-        ]
+        weak_sectors = [p for p in predictions if p.predicted_direction == 0 and p.confidence > 0.55]
 
         rotation_from = [s.sector_name for s in weak_sectors[:3]]
         rotation_to = [s.sector_name for s in strong_sectors[:3]]

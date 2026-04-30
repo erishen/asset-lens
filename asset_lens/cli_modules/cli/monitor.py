@@ -3,7 +3,6 @@ Monitor CLI commands for asset-lens.
 监控命令模块 - 包含 run-daily-tasks, task-status, market-environment, personal-data
 """
 
-
 import click
 
 
@@ -152,7 +151,7 @@ def register_monitor_commands(cli: click.Group) -> None:
             if filepath.exists():
                 mtime = datetime.fromtimestamp(filepath.stat().st_mtime)
                 age_hours = (datetime.now() - mtime).total_seconds() / 3600
-                age_str = f"{age_hours:.1f}小时前" if age_hours < 24 else f"{age_hours/24:.1f}天前"
+                age_str = f"{age_hours:.1f}小时前" if age_hours < 24 else f"{age_hours / 24:.1f}天前"
 
                 if age_hours < 1:
                     status = "✅ 新鲜"

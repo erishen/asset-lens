@@ -10,41 +10,43 @@ Announcement Alert Module.
 5. 停复牌提醒
 """
 
-import json
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from typing import Any
-from enum import Enum
 
 from ..config import config
-from .signal_pusher import SignalPusher, Signal, SignalType, Priority
+from .signal_pusher import Priority, Signal, SignalPusher, SignalType
 
 
 class AnnouncementType(Enum):
     """公告类型"""
-    EARNINGS = "earnings"           # 业绩公告
-    DIVIDEND = "dividend"           # 分红派息
-    SHAREHOLDER = "shareholder"     # 股东增减持
-    MAJOR_EVENT = "major_event"     # 重大事项
-    SUSPENSION = "suspension"       # 停复牌
-    IPO = "ipo"                     # 新股相关
-    RESTRUCTURING = "restructuring" # 重组
-    OTHER = "other"                 # 其他
+
+    EARNINGS = "earnings"  # 业绩公告
+    DIVIDEND = "dividend"  # 分红派息
+    SHAREHOLDER = "shareholder"  # 股东增减持
+    MAJOR_EVENT = "major_event"  # 重大事项
+    SUSPENSION = "suspension"  # 停复牌
+    IPO = "ipo"  # 新股相关
+    RESTRUCTURING = "restructuring"  # 重组
+    OTHER = "other"  # 其他
 
 
 class ImpactLevel(Enum):
     """影响程度"""
-    POSITIVE_HIGH = "positive_high"     # 重大利好
-    POSITIVE = "positive"               # 利好
-    NEUTRAL = "neutral"                 # 中性
-    NEGATIVE = "negative"               # 利空
-    NEGATIVE_HIGH = "negative_high"     # 重大利空
+
+    POSITIVE_HIGH = "positive_high"  # 重大利好
+    POSITIVE = "positive"  # 利好
+    NEUTRAL = "neutral"  # 中性
+    NEGATIVE = "negative"  # 利空
+    NEGATIVE_HIGH = "negative_high"  # 重大利空
 
 
 @dataclass
 class Announcement:
     """公告"""
+
     code: str
     name: str
     title: str
@@ -63,6 +65,7 @@ class Announcement:
 @dataclass
 class AnnouncementAlert:
     """公告预警"""
+
     code: str
     name: str
     announcements: list[Announcement]
@@ -133,7 +136,7 @@ class AnnouncementMonitor:
 
     def _classify_announcement(self, title: str, content: str) -> AnnouncementType:
         """分类公告类型"""
-        title_lower = title.lower()
+        title.lower()
 
         if any(k in title for k in ["业绩", "盈利", "亏损", "营收"]):
             return AnnouncementType.EARNINGS
@@ -204,13 +207,15 @@ class AnnouncementMonitor:
                 if important:
                     summary += f"，其中 {len(important)} 条需要关注"
 
-                alerts.append(AnnouncementAlert(
-                    code=code,
-                    name="",
-                    announcements=announcements,
-                    has_important=len(important) > 0,
-                    summary=summary,
-                ))
+                alerts.append(
+                    AnnouncementAlert(
+                        code=code,
+                        name="",
+                        announcements=announcements,
+                        has_important=len(important) > 0,
+                        summary=summary,
+                    )
+                )
 
                 for ann in important:
                     self._push_announcement(code, ann)
@@ -240,7 +245,7 @@ class AnnouncementMonitor:
 
         @contextmanager
         def _proxy_context():
-            proxy_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy']
+            proxy_vars = ["HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy"]
             original = {}
             for var in proxy_vars:
                 if var in os.environ:

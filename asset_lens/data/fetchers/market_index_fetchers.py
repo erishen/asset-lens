@@ -84,7 +84,7 @@ class DomesticIndexFetcher:
                 return None
 
             data = response.text
-            if not data or 'var hq_str_' not in data:
+            if not data or "var hq_str_" not in data:
                 return None
 
             parts = data.split('"')[1].split(",")

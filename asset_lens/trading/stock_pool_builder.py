@@ -23,6 +23,7 @@ from typing import Any
 
 class FactorCategory(Enum):
     """因子类别"""
+
     FUNDAMENTAL = "基本面"
     TECHNICAL = "技术面"
     SENTIMENT = "情绪面"
@@ -34,6 +35,7 @@ class FactorCategory(Enum):
 @dataclass
 class FilterCondition:
     """筛选条件"""
+
     name: str
     category: FactorCategory
     field: str
@@ -75,6 +77,7 @@ class FilterCondition:
 @dataclass
 class EntryReason:
     """入池理由"""
+
     factor_name: str
     category: FactorCategory
     score: float
@@ -100,6 +103,7 @@ class EntryReason:
 @dataclass
 class StockEntryMatrix:
     """股票入池理由矩阵"""
+
     code: str
     name: str
     total_score: float
@@ -139,93 +143,111 @@ class StockPoolBuilder:
 
     def add_fundamental_filters(self) -> None:
         """添加基本面筛选条件"""
-        self.add_condition(FilterCondition(
-            name="PE合理",
-            category=FactorCategory.FUNDAMENTAL,
-            field="pe_ratio",
-            operator="<",
-            value=30,
-            weight=1.0,
-            description="市盈率小于30倍",
-        ))
-        self.add_condition(FilterCondition(
-            name="PB合理",
-            category=FactorCategory.FUNDAMENTAL,
-            field="pb_ratio",
-            operator="<",
-            value=5,
-            weight=0.8,
-            description="市净率小于5倍",
-        ))
-        self.add_condition(FilterCondition(
-            name="ROE优秀",
-            category=FactorCategory.FUNDAMENTAL,
-            field="roe",
-            operator=">",
-            value=10,
-            weight=1.2,
-            description="ROE大于10%",
-        ))
-        self.add_condition(FilterCondition(
-            name="营收增长",
-            category=FactorCategory.FUNDAMENTAL,
-            field="revenue_growth",
-            operator=">",
-            value=10,
-            weight=1.0,
-            description="营收增长率大于10%",
-        ))
+        self.add_condition(
+            FilterCondition(
+                name="PE合理",
+                category=FactorCategory.FUNDAMENTAL,
+                field="pe_ratio",
+                operator="<",
+                value=30,
+                weight=1.0,
+                description="市盈率小于30倍",
+            )
+        )
+        self.add_condition(
+            FilterCondition(
+                name="PB合理",
+                category=FactorCategory.FUNDAMENTAL,
+                field="pb_ratio",
+                operator="<",
+                value=5,
+                weight=0.8,
+                description="市净率小于5倍",
+            )
+        )
+        self.add_condition(
+            FilterCondition(
+                name="ROE优秀",
+                category=FactorCategory.FUNDAMENTAL,
+                field="roe",
+                operator=">",
+                value=10,
+                weight=1.2,
+                description="ROE大于10%",
+            )
+        )
+        self.add_condition(
+            FilterCondition(
+                name="营收增长",
+                category=FactorCategory.FUNDAMENTAL,
+                field="revenue_growth",
+                operator=">",
+                value=10,
+                weight=1.0,
+                description="营收增长率大于10%",
+            )
+        )
 
     def add_technical_filters(self) -> None:
         """添加技术面筛选条件"""
-        self.add_condition(FilterCondition(
-            name="均线多头",
-            category=FactorCategory.TECHNICAL,
-            field="ma_trend",
-            operator="==",
-            value="bullish",
-            weight=1.0,
-            description="均线呈多头排列",
-        ))
-        self.add_condition(FilterCondition(
-            name="突破20日高点",
-            category=FactorCategory.TECHNICAL,
-            field="break_20d_high",
-            operator="==",
-            value=True,
-            weight=1.2,
-            description="突破20日新高",
-        ))
-        self.add_condition(FilterCondition(
-            name="成交量放大",
-            category=FactorCategory.TECHNICAL,
-            field="volume_ratio",
-            operator=">",
-            value=1.5,
-            weight=0.8,
-            description="成交量放大1.5倍以上",
-        ))
+        self.add_condition(
+            FilterCondition(
+                name="均线多头",
+                category=FactorCategory.TECHNICAL,
+                field="ma_trend",
+                operator="==",
+                value="bullish",
+                weight=1.0,
+                description="均线呈多头排列",
+            )
+        )
+        self.add_condition(
+            FilterCondition(
+                name="突破20日高点",
+                category=FactorCategory.TECHNICAL,
+                field="break_20d_high",
+                operator="==",
+                value=True,
+                weight=1.2,
+                description="突破20日新高",
+            )
+        )
+        self.add_condition(
+            FilterCondition(
+                name="成交量放大",
+                category=FactorCategory.TECHNICAL,
+                field="volume_ratio",
+                operator=">",
+                value=1.5,
+                weight=0.8,
+                description="成交量放大1.5倍以上",
+            )
+        )
 
     def add_sentiment_filters(self) -> None:
         """添加情绪面筛选条件"""
-        self.add_condition(FilterCondition(
-            name="主力净流入",
-            category=FactorCategory.SENTIMENT,
-            field="main_inflow",
-            operator=">",
-            value=0,
-            weight=1.0,
-            description="主力资金净流入",
-        ))
-        self.add_condition(FilterCondition(
-            name="北向资金增持",
-            category=FactorCategory.SENTIMENT,
-            field="north_inflow",
-            operator=">",
-            value=0,
-            weight=0.8,
-            description="北向资金净买入",
-        ))
+        self.add_condition(
+            FilterCondition(
+                name="主力净流入",
+                category=FactorCategory.SENTIMENT,
+                field="main_inflow",
+                operator=">",
+                value=0,
+                weight=1.0,
+                description="主力资金净流入",
+            )
+        )
+        self.add_condition(
+            FilterCondition(
+                name="北向资金增持",
+                category=FactorCategory.SENTIMENT,
+                field="north_inflow",
+                operator=">",
+                value=0,
+                weight=0.8,
+                description="北向资金净买入",
+            )
+        )
 
     def evaluate_stock(self, stock_data: dict[str, Any]) -> StockEntryMatrix:
         """评估单只股票"""
@@ -245,16 +267,18 @@ class StockPoolBuilder:
             score = 100 if passed else 0
             contribution = score * condition.weight
 
-            entry_reasons.append(EntryReason(
-                factor_name=condition.name,
-                category=condition.category,
-                score=score,
-                weight=condition.weight,
-                passed=passed,
-                value=field_value,
-                threshold=condition.value,
-                contribution=contribution,
-            ))
+            entry_reasons.append(
+                EntryReason(
+                    factor_name=condition.name,
+                    category=condition.category,
+                    score=score,
+                    weight=condition.weight,
+                    passed=passed,
+                    value=field_value,
+                    threshold=condition.value,
+                    contribution=contribution,
+                )
+            )
 
             total_score += score
             weighted_score += contribution

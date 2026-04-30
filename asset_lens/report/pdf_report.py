@@ -14,15 +14,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.platypus import (
-    Image,
-    PageBreak,
-    Paragraph,
-    SimpleDocTemplate,
-    Spacer,
-    Table,
-    TableStyle,
-)
+from reportlab.platypus import Image, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 
 class PDFReportGenerator:
@@ -267,9 +259,7 @@ class PDFReportGenerator:
 
             if "risk_assessment" in analysis_result:
                 story.append(Paragraph("风险评估", self.styles["ChineseBody"]))
-                story.append(
-                    Paragraph(analysis_result["risk_assessment"], self.styles["ChineseBody"])
-                )
+                story.append(Paragraph(analysis_result["risk_assessment"], self.styles["ChineseBody"]))
                 story.append(Spacer(1, 10))
 
             if "suggestions" in analysis_result:

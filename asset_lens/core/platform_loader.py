@@ -100,9 +100,7 @@ class PlatformLoader:
         }
 
     @classmethod
-    def get_platform(
-        cls, platform_id: str, data_mode: str | None = None
-    ) -> PlatformConfig | None:
+    def get_platform(cls, platform_id: str, data_mode: str | None = None) -> PlatformConfig | None:
         """Get platform by ID"""
         if not cls._loaded:
             cls.load(data_mode=data_mode)

@@ -3,11 +3,7 @@ Tests for Database Module.
 数据库模块测试
 """
 
-import pytest
-from datetime import datetime
-from unittest.mock import patch, MagicMock
 import tempfile
-import os
 
 
 class TestDatabaseManager:
@@ -16,6 +12,7 @@ class TestDatabaseManager:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.db.database import DatabaseManager
+
         assert DatabaseManager is not None
 
     def test_init_with_temp_db(self):
@@ -200,13 +197,8 @@ class TestDatabaseModels:
 
     def test_models_import(self):
         """测试模型导入"""
-        from asset_lens.db.models import (
-            StockKline,
-            StockInfo,
-            PredictionRecord,
-            MLModel,
-            DataSyncLog,
-        )
+        from asset_lens.db.models import DataSyncLog, MLModel, PredictionRecord, StockInfo, StockKline
+
         assert StockKline is not None
         assert StockInfo is not None
         assert PredictionRecord is not None
@@ -238,6 +230,7 @@ class TestDatabaseMigration:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.db.migration import DataMigration
+
         assert DataMigration is not None
 
     def test_migration_init(self):

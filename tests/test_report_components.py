@@ -2,16 +2,15 @@
 Tests for Report Components Module
 """
 
-import pytest
-from pathlib import Path
 from datetime import datetime
+
 from asset_lens.report import (
-    format_currency,
-    format_percentage,
-    format_date,
-    format_number,
     ChartGenerator,
     ReportDataCollector,
+    format_currency,
+    format_date,
+    format_number,
+    format_percentage,
 )
 
 
@@ -57,6 +56,7 @@ class TestFormatters:
     def test_format_date_date_input(self):
         """测试 date 类型输入"""
         from datetime import date
+
         d = date(2024, 1, 15)
         assert format_date(d) == "2024-01-15"
 
@@ -77,16 +77,16 @@ class TestChartGenerator:
     def test_initialization(self, tmp_path):
         """测试初始化"""
         generator = ChartGenerator(output_dir=tmp_path)
-        
+
         assert generator.output_dir == tmp_path
 
     def test_generate_pie_chart_data(self, tmp_path):
         """测试饼图数据生成"""
         generator = ChartGenerator(output_dir=tmp_path)
         data = {"股票": 50000, "基金": 30000, "债券": 20000}
-        
+
         result = generator.generate_pie_chart_data(data, title="资产分布")
-        
+
         assert result["chart_type"] == "pie"
         assert result["title"] == "资产分布"
         assert result["total"] == 100000
@@ -97,9 +97,9 @@ class TestChartGenerator:
         generator = ChartGenerator(output_dir=tmp_path)
         labels = ["股票", "基金", "债券"]
         values = [50000, 30000, 20000]
-        
+
         result = generator.generate_bar_chart_data(labels, values, title="收益对比")
-        
+
         assert result["chart_type"] == "bar"
         assert result["title"] == "收益对比"
         assert result["labels"] == labels
@@ -110,9 +110,9 @@ class TestChartGenerator:
         generator = ChartGenerator(output_dir=tmp_path)
         labels = ["1月", "2月", "3月"]
         datasets = [{"label": "收益", "data": [100, 200, 300]}]
-        
+
         result = generator.generate_line_chart_data(labels, datasets, title="收益曲线")
-        
+
         assert result["chart_type"] == "line"
         assert result["title"] == "收益曲线"
         assert result["labels"] == labels
@@ -121,9 +121,9 @@ class TestChartGenerator:
         """测试保存图表配置"""
         generator = ChartGenerator(output_dir=tmp_path)
         chart_data = {"chart_type": "pie", "title": "测试"}
-        
+
         result = generator.save_chart_config(chart_data, "test_chart")
-        
+
         assert result is not None
         assert result.exists()
         assert result.suffix == ".json"
@@ -135,13 +135,13 @@ class TestReportDataCollector:
     def test_initialization(self):
         """测试初始化"""
         collector = ReportDataCollector()
-        
+
         assert collector.collected == {}
 
     def test_collect_portfolio_data(self):
         """测试投资组合数据收集"""
         collector = ReportDataCollector()
-        
+
         # 创建模拟产品
         class MockProduct:
             def __init__(self, current_amount, initial_amount, investment_type, platform):
@@ -149,14 +149,14 @@ class TestReportDataCollector:
                 self.initial_amount = initial_amount
                 self.investment_type = investment_type
                 self.platform = platform
-        
+
         products = [
             MockProduct(50000, 48000, "股票", "券商A"),
             MockProduct(30000, 29000, "基金", "券商B"),
         ]
-        
+
         result = collector.collect_portfolio_data(products)
-        
+
         assert result["total_amount"] == 80000
         assert result["total_cost"] == 77000
         assert result["total_profit"] == 3000
@@ -169,19 +169,19 @@ class TestReportDataCollector:
             "上证指数": {"price": 3000, "change": 1.5},
             "深证成指": {"price": 10000, "change": -0.5},
         }
-        
+
         result = collector.collect_market_data(indexes)
-        
+
         assert "indexes" in result
         assert "collect_time" in result
 
     def test_get_collected_data(self):
         """测试获取已收集数据"""
         collector = ReportDataCollector()
-        collector.collected["test"] = type('obj', (object,), {'data': {"key": "value"}})()
-        
+        collector.collected["test"] = type("obj", (object,), {"data": {"key": "value"}})()
+
         result = collector.get_collected_data("test")
-        
+
         assert result is not None
         assert result["key"] == "value"
 
@@ -189,7 +189,7 @@ class TestReportDataCollector:
         """测试清除数据"""
         collector = ReportDataCollector()
         collector.collected["test"] = "data"
-        
+
         collector.clear()
-        
+
         assert collector.collected == {}

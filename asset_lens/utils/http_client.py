@@ -56,6 +56,7 @@ def get_request_session(skip_proxy: bool = False) -> requests.Session:
 
 class ErrorType(Enum):
     """错误类型枚举"""
+
     TIMEOUT = "timeout"
     CONNECTION = "connection"
     HTTP_ERROR = "http_error"
@@ -67,6 +68,7 @@ class ErrorType(Enum):
 @dataclass
 class RequestStats:
     """请求统计信息"""
+
     total_requests: int = 0
     successful_requests: int = 0
     failed_requests: int = 0
@@ -79,6 +81,7 @@ class RequestStats:
 @dataclass
 class AdaptiveTimeout:
     """自适应超时配置"""
+
     base_timeout: int = 10
     max_timeout: int = 60
     min_timeout: int = 5
@@ -94,10 +97,7 @@ class AdaptiveTimeout:
         self.failure_streak = 0
 
         if self.success_streak >= 3:
-            self.current_timeout = max(
-                self.min_timeout,
-                self.current_timeout * self.decrease_factor
-            )
+            self.current_timeout = max(self.min_timeout, self.current_timeout * self.decrease_factor)
             self.success_streak = 0
 
     def on_failure(self, error_type: ErrorType):
@@ -106,10 +106,7 @@ class AdaptiveTimeout:
         self.success_streak = 0
 
         if error_type == ErrorType.TIMEOUT:
-            self.current_timeout = min(
-                self.max_timeout,
-                self.current_timeout * self.increase_factor
-            )
+            self.current_timeout = min(self.max_timeout, self.current_timeout * self.increase_factor)
 
     def get_timeout(self) -> int:
         """获取当前超时时间"""
@@ -191,7 +188,7 @@ class HTTPClient:
         elif isinstance(error, ConnectionError):
             return ErrorType.CONNECTION
         elif isinstance(error, HTTPError):
-            if hasattr(error, 'response') and error.response is not None:
+            if hasattr(error, "response") and error.response is not None:
                 status_code = error.response.status_code
                 if status_code == 429:
                     return ErrorType.RATE_LIMIT
@@ -231,7 +228,7 @@ class HTTPClient:
     def _calculate_backoff(self, attempt: int, base_delay: float | None = None) -> float:
         """计算退避时间（指数退避 + 抖动）"""
         base = base_delay or self.retry_delay
-        backoff = base * (2 ** attempt)
+        backoff = base * (2**attempt)
 
         if self.enable_jitter:
             jitter = random.uniform(0, 0.3 * backoff)
@@ -276,9 +273,7 @@ class HTTPClient:
                 response_time = time.time() - start_time
                 self.stats.successful_requests += 1
                 self.stats.total_time += response_time
-                self.stats.avg_response_time = (
-                    self.stats.total_time / self.stats.successful_requests
-                )
+                self.stats.avg_response_time = self.stats.total_time / self.stats.successful_requests
 
                 if self.enable_adaptive_timeout:
                     self.adaptive_timeout.on_success(response_time)
@@ -386,6 +381,7 @@ def with_retry(
         exceptions: 需要重试的异常类型
         on_retry: 重试时的回调函数
     """
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -397,7 +393,7 @@ def with_retry(
                 except exceptions as e:
                     last_error = e
                     if attempt < max_retries - 1:
-                        delay = retry_delay * (2 ** attempt)
+                        delay = retry_delay * (2**attempt)
                         if on_retry:
                             on_retry(attempt, e)
                         time.sleep(delay)
@@ -407,6 +403,7 @@ def with_retry(
             return None
 
         return wrapper
+
     return decorator
 
 

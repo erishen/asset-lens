@@ -169,9 +169,7 @@ class MarketEnvironmentAnalyzer:
 
         return environment
 
-    def _determine_market_type(
-        self, change_5d: float, change_20d: float, change_60d: float, volatility: float
-    ) -> str:
+    def _determine_market_type(self, change_5d: float, change_20d: float, change_60d: float, volatility: float) -> str:
         """判断市场类型"""
         if change_20d > 10 and change_60d > 20:
             return "bull"
@@ -219,9 +217,7 @@ class MarketEnvironmentAnalyzer:
         else:
             return "neutral"
 
-    def _analyze_sectors(
-        self, stocks_data: list[dict[str, Any]] | None
-    ) -> tuple[list[str], list[str]]:
+    def _analyze_sectors(self, stocks_data: list[dict[str, Any]] | None) -> tuple[list[str], list[str]]:
         """分析热门和冷门行业"""
         if not stocks_data:
             return [], []
@@ -235,9 +231,7 @@ class MarketEnvironmentAnalyzer:
             sector_changes[sector].append(change)
 
         sector_avg = {
-            sector: sum(changes) / len(changes)
-            for sector, changes in sector_changes.items()
-            if len(changes) >= 3
+            sector: sum(changes) / len(changes) for sector, changes in sector_changes.items() if len(changes) >= 3
         }
 
         sorted_sectors = sorted(sector_avg.items(), key=lambda x: x[1], reverse=True)
@@ -247,9 +241,7 @@ class MarketEnvironmentAnalyzer:
 
         return hot_sectors, cold_sectors
 
-    def _recommend_strategies(
-        self, market_type: str, volatility: float, sentiment: str
-    ) -> list[str]:
+    def _recommend_strategies(self, market_type: str, volatility: float, sentiment: str) -> list[str]:
         """推荐策略"""
         recommendations = []
 
@@ -301,9 +293,7 @@ class MarketEnvironmentAnalyzer:
         else:
             return "low"
 
-    def adapt_strategy(
-        self, strategy_name: str, environment: MarketEnvironment
-    ) -> StrategyAdaptation:
+    def adapt_strategy(self, strategy_name: str, environment: MarketEnvironment) -> StrategyAdaptation:
         """
         根据市场环境适配策略参数
 
@@ -320,9 +310,7 @@ class MarketEnvironmentAnalyzer:
 
         if environment.market_type == "bull":
             if strategy_name == "momentum":
-                adapted_params["change_percent_min"] = (
-                    original_params.get("change_percent_min", 3) * 0.8
-                )
+                adapted_params["change_percent_min"] = original_params.get("change_percent_min", 3) * 0.8
                 adapted_params["turnover_min"] = original_params.get("turnover_min", 5) * 0.9
                 reason_parts.append("牛市环境，放宽动量条件")
 
@@ -332,9 +320,7 @@ class MarketEnvironmentAnalyzer:
 
         elif environment.market_type == "bear":
             if strategy_name == "momentum":
-                adapted_params["change_percent_min"] = (
-                    original_params.get("change_percent_min", 3) * 1.5
-                )
+                adapted_params["change_percent_min"] = original_params.get("change_percent_min", 3) * 1.5
                 adapted_params["turnover_min"] = original_params.get("turnover_min", 5) * 1.2
                 reason_parts.append("熊市环境，提高动量要求")
 
@@ -344,9 +330,7 @@ class MarketEnvironmentAnalyzer:
                 reason_parts.append("熊市环境，提高安全边际")
 
             elif strategy_name == "reversal":
-                adapted_params["change_percent_5d_min"] = (
-                    original_params.get("change_percent_5d_min", -15) * 0.8
-                )
+                adapted_params["change_percent_5d_min"] = original_params.get("change_percent_5d_min", -15) * 0.8
                 reason_parts.append("熊市环境，适度放宽抄底条件")
 
         if environment.volatility > 3:

@@ -4,7 +4,6 @@ Tests for report/charts.py
 
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
@@ -167,9 +166,7 @@ class TestChartGenerator:
             "基金": {"total_value": 50000, "count": 5},
         }
 
-        result = generator.generate_asset_allocation_chart(
-            type_distribution, filename="custom_chart.png"
-        )
+        result = generator.generate_asset_allocation_chart(type_distribution, filename="custom_chart.png")
 
         assert result.exists()
         assert result.name == "custom_chart.png"

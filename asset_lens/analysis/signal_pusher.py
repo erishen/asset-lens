@@ -11,18 +11,19 @@ Real-time Signal Pusher.
 """
 
 import json
-import os
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
-from pathlib import Path
-from typing import Any, Callable
 from enum import Enum
+from pathlib import Path
+from typing import Any
 
 from ..config import config
 
 
 class SignalType(Enum):
     """信号类型"""
+
     BUY = "buy"
     SELL = "sell"
     STOP_LOSS = "stop_loss"
@@ -35,6 +36,7 @@ class SignalType(Enum):
 
 class Priority(Enum):
     """优先级"""
+
     HIGH = "high"
     MEDIUM = "medium"
     LOW = "low"
@@ -43,6 +45,7 @@ class Priority(Enum):
 @dataclass
 class Signal:
     """交易信号"""
+
     code: str
     name: str
     signal_type: SignalType
@@ -58,6 +61,7 @@ class Signal:
 @dataclass
 class PushConfig:
     """推送配置"""
+
     enable_wechat: bool = False
     enable_dingtalk: bool = False
     enable_webhook: bool = False
@@ -173,13 +177,13 @@ class SignalPusher:
                 "markdown": {
                     "title": f"{title}: {signal.name}",
                     "text": f"### {title}\n\n"
-                            f"**股票**: {signal.name} ({signal.code})\n\n"
-                            f"**价格**: {signal.price:.2f} ({signal.change_percent:+.2f}%)\n\n"
-                            f"**置信度**: {signal.confidence:.1%}\n\n"
-                            f"**原因**: {signal.reason}\n\n"
-                            f"**建议**: {signal.suggestion}\n\n"
-                            f"> 时间: {signal.timestamp}"
-                }
+                    f"**股票**: {signal.name} ({signal.code})\n\n"
+                    f"**价格**: {signal.price:.2f} ({signal.change_percent:+.2f}%)\n\n"
+                    f"**置信度**: {signal.confidence:.1%}\n\n"
+                    f"**原因**: {signal.reason}\n\n"
+                    f"**建议**: {signal.suggestion}\n\n"
+                    f"> 时间: {signal.timestamp}",
+                },
             }
 
             url = f"https://oapi.dingtalk.com/robot/send?access_token={self.config.dingtalk_token}"
@@ -196,28 +200,30 @@ class SignalPusher:
 
         if self.signal_history_file.exists():
             try:
-                with open(self.signal_history_file, encoding='utf-8') as f:
+                with open(self.signal_history_file, encoding="utf-8") as f:
                     history = json.load(f)
             except Exception:
                 history = []
 
-        history.append({
-            'code': signal.code,
-            'name': signal.name,
-            'type': signal.signal_type.value,
-            'price': signal.price,
-            'change': signal.change_percent,
-            'confidence': signal.confidence,
-            'reason': signal.reason,
-            'suggestion': signal.suggestion,
-            'timestamp': signal.timestamp,
-            'priority': signal.priority.value,
-        })
+        history.append(
+            {
+                "code": signal.code,
+                "name": signal.name,
+                "type": signal.signal_type.value,
+                "price": signal.price,
+                "change": signal.change_percent,
+                "confidence": signal.confidence,
+                "reason": signal.reason,
+                "suggestion": signal.suggestion,
+                "timestamp": signal.timestamp,
+                "priority": signal.priority.value,
+            }
+        )
 
         if len(history) > 1000:
             history = history[-1000:]
 
-        with open(self.signal_history_file, 'w', encoding='utf-8') as f:
+        with open(self.signal_history_file, "w", encoding="utf-8") as f:
             json.dump(history, f, ensure_ascii=False, indent=2)
 
     def get_recent_signals(self, limit: int = 20) -> list[dict[str, Any]]:

@@ -222,9 +222,7 @@ class StockPool:
         )
 
         self.positions[code] = position
-        self._add_history(
-            "add", code, name, {"price": price, "status": status, "score": strategy_score}
-        )
+        self._add_history("add", code, name, {"price": price, "status": status, "score": strategy_score})
         self._save_pool()
 
         return True, f"已添加 {name}({code}) 到股票池，状态: {status}"
@@ -358,7 +356,10 @@ class StockPool:
         )
         self._save_pool()
 
-        return True, f"模拟卖出 {pos.name}({code}), 买入价: {pos.buy_price:.2f}, 卖出价: {price:.2f}, 盈亏: {profit:+.2f} ({profit_rate:+.2f}%)"
+        return (
+            True,
+            f"模拟卖出 {pos.name}({code}), 买入价: {pos.buy_price:.2f}, 卖出价: {price:.2f}, 盈亏: {profit:+.2f} ({profit_rate:+.2f}%)",
+        )
 
     def update_prices(self, prices: dict[str, float]) -> None:
         """
@@ -413,9 +414,7 @@ class StockPool:
                 total_profit += float(profit)
                 total_invested += float(pos.buy_price * pos.shares)
 
-        win_rate = (
-            (win_count / (win_count + lose_count) * 100) if (win_count + lose_count) > 0 else 0
-        )
+        win_rate = (win_count / (win_count + lose_count) * 100) if (win_count + lose_count) > 0 else 0
         profit_rate = (total_profit / total_invested * 100) if total_invested > 0 else 0
 
         return {
@@ -560,11 +559,13 @@ class StockPool:
                 # 更新现有股票的策略评分
                 existing = self.positions[code]
                 existing.selected_count += 1
-                existing.selected_history.append({
-                    "date": datetime.now().strftime("%Y-%m-%d"),
-                    "strategy": strategy_name,
-                    "score": score,
-                })
+                existing.selected_history.append(
+                    {
+                        "date": datetime.now().strftime("%Y-%m-%d"),
+                        "strategy": strategy_name,
+                        "score": score,
+                    }
+                )
                 updated_count += 1
             else:
                 # 添加新股票（使用策略评分作为价格占位）
@@ -578,11 +579,13 @@ class StockPool:
                 # 设置首次入选信息
                 self.positions[code].first_selected_date = datetime.now().strftime("%Y-%m-%d")
                 self.positions[code].selected_count = 1
-                self.positions[code].selected_history = [{
-                    "date": datetime.now().strftime("%Y-%m-%d"),
-                    "strategy": strategy_name,
-                    "score": score,
-                }]
+                self.positions[code].selected_history = [
+                    {
+                        "date": datetime.now().strftime("%Y-%m-%d"),
+                        "strategy": strategy_name,
+                        "score": score,
+                    }
+                ]
                 added_count += 1
 
         # 自动移除低分股票
@@ -610,8 +613,7 @@ class StockPool:
             "updated": updated_count,
             "removed": removed_count,
             "stocks_added": [
-                {"code": s.get("code"), "name": s.get("name"), "score": s.get("strategy_score")}
-                for s in stocks_to_add
+                {"code": s.get("code"), "name": s.get("name"), "score": s.get("strategy_score")} for s in stocks_to_add
             ],
         }
 
@@ -634,10 +636,12 @@ class StockPool:
             history = stock.get("selected_history", [])
             for entry in history:
                 if entry.get("strategy") == strategy_name:
-                    strategy_stocks.append({
-                        **stock,
-                        "strategy_score": entry.get("score", 0),
-                    })
+                    strategy_stocks.append(
+                        {
+                            **stock,
+                            "strategy_score": entry.get("score", 0),
+                        }
+                    )
                     break
 
         # 按策略评分排序

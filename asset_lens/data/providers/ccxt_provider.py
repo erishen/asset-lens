@@ -44,9 +44,7 @@ class CCXTProvider(BaseProvider):
 
                 exchange_class = getattr(ccxt, self._exchange_name, None)
                 if exchange_class is not None:
-                    self._exchange = exchange_class(
-                        {"enableRateLimit": True, "timeout": 30000}
-                    )
+                    self._exchange = exchange_class({"enableRateLimit": True, "timeout": 30000})
             except ImportError:
                 pass
         return self._exchange
@@ -91,9 +89,7 @@ class CCXTProvider(BaseProvider):
                 "change": float(ticker.get("change", 0)),
                 "percentage": float(ticker.get("percentage", 0)),
                 "timestamp": ticker.get("timestamp", 0),
-                "datetime": datetime.fromtimestamp(
-                    ticker.get("timestamp", 0) / 1000
-                ).isoformat(),
+                "datetime": datetime.fromtimestamp(ticker.get("timestamp", 0) / 1000).isoformat(),
                 "source": "ccxt",
             }
         except Exception:
@@ -111,22 +107,22 @@ class CCXTProvider(BaseProvider):
             return []
 
         try:
-            ohlcvs = self.exchange.fetch_ohlcv(
-                symbol, timeframe, since=since, limit=limit
-            )
+            ohlcvs = self.exchange.fetch_ohlcv(symbol, timeframe, since=since, limit=limit)
 
             result = []
             for ohlcv in ohlcvs:
-                result.append({
-                    "timestamp": ohlcv[0],
-                    "datetime": datetime.fromtimestamp(ohlcv[0] / 1000).isoformat(),
-                    "open": float(ohlcv[1]),
-                    "high": float(ohlcv[2]),
-                    "low": float(ohlcv[3]),
-                    "close": float(ohlcv[4]),
-                    "volume": float(ohlcv[5]),
-                    "source": "ccxt",
-                })
+                result.append(
+                    {
+                        "timestamp": ohlcv[0],
+                        "datetime": datetime.fromtimestamp(ohlcv[0] / 1000).isoformat(),
+                        "open": float(ohlcv[1]),
+                        "high": float(ohlcv[2]),
+                        "low": float(ohlcv[3]),
+                        "close": float(ohlcv[4]),
+                        "volume": float(ohlcv[5]),
+                        "source": "ccxt",
+                    }
+                )
 
             return result
         except Exception:

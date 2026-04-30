@@ -2,8 +2,8 @@
 Tests for Data Parsers Module
 """
 
-import pytest
 from datetime import date, datetime
+
 from asset_lens.data.parsers import DataParser, DateParser, InvestmentTypeParser
 
 
@@ -13,54 +13,54 @@ class TestDateParser:
     def test_parse_standard_format(self):
         """测试标准日期格式"""
         result = DateParser.parse("2024-01-15")
-        
+
         assert result.success is True
         assert result.value == date(2024, 1, 15)
 
     def test_parse_slash_format(self):
         """测试斜杠日期格式"""
         result = DateParser.parse("2024/01/15")
-        
+
         assert result.success is True
         assert result.value == date(2024, 1, 15)
 
     def test_parse_chinese_format(self):
         """测试中文日期格式"""
         result = DateParser.parse("2024年1月15日")
-        
+
         assert result.success is True
         assert result.value == date(2024, 1, 15)
 
     def test_parse_invalid_format(self):
         """测试无效日期格式"""
         result = DateParser.parse("invalid-date")
-        
+
         assert result.success is False
         assert result.error is not None
 
     def test_parse_empty_string(self):
         """测试空字符串"""
         result = DateParser.parse("")
-        
+
         assert result.success is False
 
     def test_parse_none(self):
         """测试 None 值"""
         result = DateParser.parse(None)
-        
+
         assert result.success is False
 
     def test_parse_range(self):
         """测试日期范围解析"""
         result = DateParser.parse_range("2024-01-01", "2024-12-31")
-        
+
         assert result.success is True
         assert result.value == (date(2024, 1, 1), date(2024, 12, 31))
 
     def test_format_date(self):
         """测试日期格式化"""
         dt = datetime(2024, 1, 15, 10, 30, 0)
-        
+
         assert DateParser.format_date(dt) == "2024-01-15"
         assert DateParser.format_date(dt, "%Y/%m/%d") == "2024/01/15"
 
@@ -71,41 +71,41 @@ class TestInvestmentTypeParser:
     def test_parse_stock(self):
         """测试股票类型"""
         result = InvestmentTypeParser.parse("股票")
-        
+
         assert result.success is True
         assert result.value == "stock"
 
     def test_parse_fund(self):
         """测试基金类型"""
         result = InvestmentTypeParser.parse("基金")
-        
+
         assert result.success is True
         assert result.value == "fund"
 
     def test_parse_bond(self):
         """测试债券类型"""
         result = InvestmentTypeParser.parse("债券")
-        
+
         assert result.success is True
         assert result.value == "bond"
 
     def test_parse_unknown_type(self):
         """测试未知类型"""
         result = InvestmentTypeParser.parse("未知类型")
-        
+
         assert result.success is True
         assert result.value == "other"
 
     def test_parse_empty_string(self):
         """测试空字符串"""
         result = InvestmentTypeParser.parse("")
-        
+
         assert result.success is False
 
     def test_parse_none(self):
         """测试 None 值"""
         result = InvestmentTypeParser.parse(None)
-        
+
         assert result.success is False
 
     def test_get_display_name(self):
@@ -121,7 +121,7 @@ class TestDataParser:
     def test_initialization(self):
         """测试初始化"""
         parser = DataParser()
-        
+
         assert parser.date_parser is not None
         assert parser.type_parser is not None
 
@@ -134,9 +134,9 @@ class TestDataParser:
             "amount": "10000.50",
             "name": "测试产品",
         }
-        
+
         result = parser.parse_csv_row(row)
-        
+
         assert result["date"] == date(2024, 1, 15)
         assert result["investment_type"] == "stock"
         assert result["amount"] == 10000.50
@@ -148,9 +148,9 @@ class TestDataParser:
         row = {
             "amount": "¥10,000.50",
         }
-        
+
         result = parser.parse_csv_row(row)
-        
+
         assert result["amount"] == 10000.50
 
     def test_safe_float(self):
@@ -179,9 +179,9 @@ class TestDataParser:
             "amount": "50000",
             "initial_amount": "48000",
         }
-        
+
         result = parser.parse_transaction(row)
-        
+
         assert result["date"] == date(2024, 1, 15)
         assert result["investment_type"] == "fund"
         assert result["amount"] == 50000.0

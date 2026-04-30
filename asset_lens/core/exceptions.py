@@ -39,9 +39,7 @@ class DataLoadError(AssetLensError):
 class DataParseError(AssetLensError):
     """数据解析错误"""
 
-    def __init__(
-        self, message: str, row_number: int | None = None, raw_data: str | None = None
-    ):
+    def __init__(self, message: str, row_number: int | None = None, raw_data: str | None = None):
         details: dict[str, Any] = {}
         if row_number is not None:
             details["row_number"] = row_number
@@ -65,9 +63,7 @@ class ValidationError(AssetLensError):
 class APIError(AssetLensError):
     """API 调用错误"""
 
-    def __init__(
-        self, message: str, api_name: str | None = None, status_code: int | None = None
-    ):
+    def __init__(self, message: str, api_name: str | None = None, status_code: int | None = None):
         details: dict[str, Any] = {}
         if api_name:
             details["api_name"] = api_name
@@ -79,9 +75,7 @@ class APIError(AssetLensError):
 class RateLimitError(APIError):
     """API 速率限制错误"""
 
-    def __init__(
-        self, message: str, api_name: str | None = None, retry_after: int | None = None
-    ):
+    def __init__(self, message: str, api_name: str | None = None, retry_after: int | None = None):
         super().__init__(message, api_name, 429)
         self.retry_after = retry_after
         if retry_after:

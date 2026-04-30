@@ -121,9 +121,7 @@ class FuturesFetcher:
                 return {
                     "symbol": symbol,
                     "name": self.DOMESTIC_FUTURES.get(symbol, {}).get("name", symbol),
-                    "exchange": self.DOMESTIC_FUTURES.get(symbol, {}).get(
-                        "exchange", ""
-                    ),
+                    "exchange": self.DOMESTIC_FUTURES.get(symbol, {}).get("exchange", ""),
                     "current_price": float(row.get("最新价", 0)),
                     "change": float(row.get("涨跌额", 0)),
                     "change_pct": float(row.get("涨跌幅", 0)),
@@ -172,12 +170,8 @@ class FuturesFetcher:
                     result.append(
                         {
                             "symbol": symbol,
-                            "name": self.DOMESTIC_FUTURES.get(symbol, {}).get(
-                                "name", symbol
-                            ),
-                            "exchange": self.DOMESTIC_FUTURES.get(symbol, {}).get(
-                                "exchange", ""
-                            ),
+                            "name": self.DOMESTIC_FUTURES.get(symbol, {}).get("name", symbol),
+                            "exchange": self.DOMESTIC_FUTURES.get(symbol, {}).get("exchange", ""),
                             "current_price": float(row.get("最新价", 0)),
                             "change": float(row.get("涨跌额", 0)),
                             "change_pct": float(row.get("涨跌幅", 0)),

@@ -11,25 +11,27 @@ ML 模型定期重训练模块 - 保持模型新鲜度
 
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from typing import Any
-from enum import Enum
 
 from ..config import config
 
 
 class ModelStatus(Enum):
     """模型状态"""
-    CURRENT = "current"        # 当前使用
-    OUTDATED = "outdated"      # 已过期
-    TRAINING = "training"      # 训练中
-    FAILED = "failed"          # 训练失败
+
+    CURRENT = "current"  # 当前使用
+    OUTDATED = "outdated"  # 已过期
+    TRAINING = "training"  # 训练中
+    FAILED = "failed"  # 训练失败
 
 
 @dataclass
 class ModelVersion:
     """模型版本"""
+
     version: str
     model_type: str
     accuracy: float
@@ -61,6 +63,7 @@ class ModelVersion:
 @dataclass
 class RetrainingConfig:
     """重训练配置"""
+
     max_age_days: int = 30
     min_accuracy_drop: float = 0.05
     min_new_samples: int = 1000
@@ -71,6 +74,7 @@ class RetrainingConfig:
 @dataclass
 class RetrainingResult:
     """重训练结果"""
+
     old_version: str
     new_version: str
     old_accuracy: float
@@ -170,19 +174,21 @@ class ModelRetrainer:
 
             improvement = result["accuracy"] - old_accuracy
 
-            self._save_version(ModelVersion(
-                version=new_version,
-                model_type=model_type,
-                accuracy=result["accuracy"],
-                precision=result.get("precision", 0),
-                recall=result.get("recall", 0),
-                f1_score=result.get("f1_score", 0),
-                training_samples=result.get("training_samples", 0),
-                training_date=datetime.now().strftime("%Y-%m-%d"),
-                file_path=str(self.models_path / f"model_{new_version}.pkl"),
-                status=ModelStatus.CURRENT,
-                metrics=result.get("metrics", {}),
-            ))
+            self._save_version(
+                ModelVersion(
+                    version=new_version,
+                    model_type=model_type,
+                    accuracy=result["accuracy"],
+                    precision=result.get("precision", 0),
+                    recall=result.get("recall", 0),
+                    f1_score=result.get("f1_score", 0),
+                    training_samples=result.get("training_samples", 0),
+                    training_date=datetime.now().strftime("%Y-%m-%d"),
+                    file_path=str(self.models_path / f"model_{new_version}.pkl"),
+                    status=ModelStatus.CURRENT,
+                    metrics=result.get("metrics", {}),
+                )
+            )
 
             self._update_current_model(new_version)
 
@@ -215,8 +221,8 @@ class ModelRetrainer:
 
     def _train_model(self, model_type: str, version: str) -> dict[str, Any]:
         """训练模型（调用现有训练逻辑）"""
-        from asset_lens.ml.trainer import ModelTrainer, TrainingConfig
         from asset_lens.data.market_stock_fetcher import MarketStockFetcher
+        from asset_lens.ml.trainer import ModelTrainer, TrainingConfig
 
         fetcher = MarketStockFetcher()
         stocks_data = fetcher.get_cached_market_stocks()
@@ -231,8 +237,8 @@ class ModelRetrainer:
 
         stocks_price_data = {}
         for stock in stocks_data[:200]:
-            code = stock.get('code', '')
-            current_price = stock.get('current_price', 10)
+            code = stock.get("code", "")
+            current_price = stock.get("current_price", 10)
             if not code or current_price <= 0:
                 continue
 
@@ -240,14 +246,16 @@ class ModelRetrainer:
             returns = np.random.randn(n_days) * 0.02
             prices = current_price * np.exp(np.cumsum(returns))
 
-            df = pd.DataFrame({
-                'open': prices * (1 + np.random.randn(n_days) * 0.01),
-                'high': prices * (1 + np.abs(np.random.randn(n_days) * 0.02)),
-                'low': prices * (1 - np.abs(np.random.randn(n_days) * 0.02)),
-                'close': prices,
-                'volume': np.random.randint(100000, 1000000, n_days),
-                'amount': prices * np.random.randint(100000, 1000000, n_days),
-            })
+            df = pd.DataFrame(
+                {
+                    "open": prices * (1 + np.random.randn(n_days) * 0.01),
+                    "high": prices * (1 + np.abs(np.random.randn(n_days) * 0.02)),
+                    "low": prices * (1 - np.abs(np.random.randn(n_days) * 0.02)),
+                    "close": prices,
+                    "volume": np.random.randint(100000, 1000000, n_days),
+                    "amount": prices * np.random.randint(100000, 1000000, n_days),
+                }
+            )
             stocks_price_data[code] = df
 
         result = trainer.train_with_market_data(stocks_price_data)
@@ -301,7 +309,7 @@ class ModelRetrainer:
 
         versions.insert(0, version.to_dict())
 
-        versions = versions[:self.config.keep_versions]
+        versions = versions[: self.config.keep_versions]
 
         with open(self.models_path / "versions.json", "w", encoding="utf-8") as f:
             json.dump(versions, f, ensure_ascii=False, indent=2)
@@ -309,6 +317,7 @@ class ModelRetrainer:
     def _update_current_model(self, version: str) -> None:
         """更新当前模型"""
         import shutil
+
         src = self.models_path / f"model_{version}.pkl"
         dst = self.models_path / "model.pkl"
         if src.exists():
@@ -338,17 +347,21 @@ class ModelRetrainer:
             except Exception:
                 pass
 
-        logs.append(result.to_dict() if hasattr(result, 'to_dict') else {
-            "old_version": result.old_version,
-            "new_version": result.new_version,
-            "old_accuracy": result.old_accuracy,
-            "new_accuracy": result.new_accuracy,
-            "improvement": result.improvement,
-            "training_time": result.training_time,
-            "success": result.success,
-            "message": result.message,
-            "timestamp": result.timestamp,
-        })
+        logs.append(
+            result.to_dict()
+            if hasattr(result, "to_dict")
+            else {
+                "old_version": result.old_version,
+                "new_version": result.new_version,
+                "old_accuracy": result.old_accuracy,
+                "new_accuracy": result.new_accuracy,
+                "improvement": result.improvement,
+                "training_time": result.training_time,
+                "success": result.success,
+                "message": result.message,
+                "timestamp": result.timestamp,
+            }
+        )
 
         with open(log_file, "w", encoding="utf-8") as f:
             json.dump(logs[-50:], f, ensure_ascii=False, indent=2)

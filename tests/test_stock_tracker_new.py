@@ -3,9 +3,9 @@ Tests for Stock Tracker.
 股票跟踪器测试
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from datetime import datetime
-from unittest.mock import patch, MagicMock
 
 
 class TestStockTracker:
@@ -14,13 +14,15 @@ class TestStockTracker:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.data.stock_tracker import StockTracker
+
         assert StockTracker is not None
 
     @pytest.fixture
     def tracker(self):
         """创建跟踪器实例"""
         from asset_lens.data.stock_tracker import StockTracker
-        with patch('asset_lens.data.stock_tracker.config') as mock_config:
+
+        with patch("asset_lens.data.stock_tracker.config") as mock_config:
             mock_config.cache_path = MagicMock()
             return StockTracker()
 
@@ -31,22 +33,22 @@ class TestStockTracker:
     def test_add_stock(self, tracker):
         """测试添加股票"""
         # 测试方法存在
-        assert hasattr(tracker, 'record_daily') or hasattr(tracker, 'record_batch')
+        assert hasattr(tracker, "record_daily") or hasattr(tracker, "record_batch")
 
     def test_remove_stock(self, tracker):
         """测试移除股票"""
         # 测试方法存在
-        assert hasattr(tracker, 'record_daily') or hasattr(tracker, 'detect_monster_stocks')
+        assert hasattr(tracker, "record_daily") or hasattr(tracker, "detect_monster_stocks")
 
     def test_get_stocks(self, tracker):
         """测试获取股票列表"""
         # 测试方法存在
-        assert hasattr(tracker, 'get_tracking_report') or hasattr(tracker, 'print_tracking_report')
+        assert hasattr(tracker, "get_tracking_report") or hasattr(tracker, "print_tracking_report")
 
     def test_update_stock(self, tracker):
         """测试更新股票"""
         # 测试方法存在
-        assert hasattr(tracker, 'record_daily') or hasattr(tracker, 'record_batch')
+        assert hasattr(tracker, "record_daily") or hasattr(tracker, "record_batch")
 
 
 class TestStockTrackerRecord:

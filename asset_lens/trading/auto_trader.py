@@ -32,6 +32,7 @@ class TradeReason(Enum):
 @dataclass
 class TradeRecord:
     """交易记录"""
+
     id: str
     timestamp: str
     action: TradeAction
@@ -50,6 +51,7 @@ class TradeRecord:
 @dataclass
 class TradeEvaluation:
     """交易评价"""
+
     trade_id: str
     evaluation_date: str
     current_price: float
@@ -88,20 +90,10 @@ class AutoTrader:
             "auto_trade": False,
             "trade_reasons": {
                 "momentum": {
-                    "buy": [
-                        "放量突破，量比>2",
-                        "涨幅3-9%，动量强劲",
-                        "换手率5-15%，活跃度高",
-                        "均线多头排列"
-                    ],
-                    "sell": [
-                        "放量滞涨，量比>3",
-                        "跌破5日均线",
-                        "触发止损线-8%",
-                        "触发止盈线+15%"
-                    ]
+                    "buy": ["放量突破，量比>2", "涨幅3-9%，动量强劲", "换手率5-15%，活跃度高", "均线多头排列"],
+                    "sell": ["放量滞涨，量比>3", "跌破5日均线", "触发止损线-8%", "触发止盈线+15%"],
                 }
-            }
+            },
         }
 
     def _load_json(self, file_path: Path, default: Any) -> Any:
@@ -129,7 +121,7 @@ class AutoTrader:
         reason: TradeReason = TradeReason.STRATEGY_SIGNAL,
         reason_detail: str = "",
         market_data: dict | None = None,
-        portfolio_state: dict | None = None
+        portfolio_state: dict | None = None,
     ) -> TradeRecord:
         """记录买入"""
         trade = TradeRecord(
@@ -145,7 +137,7 @@ class AutoTrader:
             reason_detail=reason_detail or self._get_default_reason("buy"),
             strategy=self.config["strategy"],
             market_data=market_data or {},
-            portfolio_state=portfolio_state or {}
+            portfolio_state=portfolio_state or {},
         )
 
         trade_dict = asdict(trade)
@@ -165,7 +157,7 @@ class AutoTrader:
         reason: TradeReason = TradeReason.STRATEGY_SIGNAL,
         reason_detail: str = "",
         market_data: dict | None = None,
-        portfolio_state: dict | None = None
+        portfolio_state: dict | None = None,
     ) -> TradeRecord:
         """记录卖出"""
         trade = TradeRecord(
@@ -181,7 +173,7 @@ class AutoTrader:
             reason_detail=reason_detail or self._get_default_reason("sell"),
             strategy=self.config["strategy"],
             market_data=market_data or {},
-            portfolio_state=portfolio_state or {}
+            portfolio_state=portfolio_state or {},
         )
 
         trade_dict = asdict(trade)
@@ -199,11 +191,7 @@ class AutoTrader:
         return "; ".join(reasons) if reasons else f"{strategy}策略信号"
 
     def evaluate_trade(
-        self,
-        trade_id: str,
-        current_price: float,
-        evaluation: str = "",
-        lessons: str = ""
+        self, trade_id: str, current_price: float, evaluation: str = "", lessons: str = ""
     ) -> TradeEvaluation | None:
         """评价交易"""
         trade = next((t for t in self.trades if t["id"] == trade_id), None)
@@ -217,9 +205,8 @@ class AutoTrader:
         profit_loss = (current_price - trade["price"]) * trade["shares"]
         profit_loss_pct = price_change_pct
 
-        is_good_trade = (
-            (trade["action"] == "buy" and price_change_pct > 0) or
-            (trade["action"] == "sell" and price_change_pct < 0)
+        is_good_trade = (trade["action"] == "buy" and price_change_pct > 0) or (
+            trade["action"] == "sell" and price_change_pct < 0
         )
 
         eval_result = TradeEvaluation(
@@ -232,7 +219,7 @@ class AutoTrader:
             profit_loss_pct=round(profit_loss_pct, 2),
             is_good_trade=is_good_trade,
             evaluation=evaluation or self._auto_evaluate(trade, price_change_pct, holding_days),
-            lessons=lessons or self._auto_lessons(trade, price_change_pct, holding_days)
+            lessons=lessons or self._auto_lessons(trade, price_change_pct, holding_days),
         )
 
         self.evaluations.append(asdict(eval_result))
@@ -240,7 +227,7 @@ class AutoTrader:
 
         return eval_result
 
-    def _auto_evaluate(self, trade: dict, price_change_pct: float, holding_days: int) -> str:
+    def _auto_evaluate(self, trade: dict, price_change_pct: float, _holding_days: int) -> str:
         """自动生成评价"""
         action = trade["action"]
 
@@ -335,7 +322,9 @@ class AutoTrader:
             lines.append("\n📋 最近交易:")
             for trade in self.trades[-5:]:
                 action_emoji = "💰" if trade["action"] == "buy" else "💸"
-                lines.append(f"  {action_emoji} {trade['timestamp'][:10]} {trade['action'].upper()} {trade['name']}({trade['code']})")
+                lines.append(
+                    f"  {action_emoji} {trade['timestamp'][:10]} {trade['action'].upper()} {trade['name']}({trade['code']})"
+                )
                 lines.append(f"     价格: ¥{trade['price']:.2f} x {trade['shares']}股 = ¥{trade['amount']:,.2f}")
                 lines.append(f"     理由: {trade['reason_detail'][:50]}...")
 
@@ -382,5 +371,6 @@ class AutoTrader:
             lines.append("  ⚠️ 需要调整策略或暂停交易")
 
         return "\n".join(lines)
+
 
 auto_trader = AutoTrader()

@@ -363,12 +363,8 @@ class AIStockAdvisor:
         return MarketPrediction(
             market_type=env.market_type,
             confidence=0.6,
-            trend="up"
-            if env.market_type == "牛市"
-            else ("down" if env.market_type == "熊市" else "stable"),
-            volatility="high"
-            if env.risk_level == "high"
-            else ("medium" if env.risk_level == "medium" else "low"),
+            trend="up" if env.market_type == "牛市" else ("down" if env.market_type == "熊市" else "stable"),
+            volatility="high" if env.risk_level == "high" else ("medium" if env.risk_level == "medium" else "low"),
             risk_factors=risk_factors if risk_factors else ["市场正常"],
             opportunities=opportunities if opportunities else ["观望"],
             suggested_actions=suggested_actions if suggested_actions else ["保持现状"],

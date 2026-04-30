@@ -2,16 +2,10 @@
 Tests for config validator.
 """
 
-import pytest
-import os
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
-from asset_lens.core.config_validator import (
-    ConfigValidator,
-    ValidationResult,
-    validate_config,
-)
+from asset_lens.core.config_validator import ConfigValidator, ValidationResult, validate_config
 
 
 class TestValidationResult:
@@ -47,7 +41,7 @@ class TestConfigValidator:
             env_path = Path(temp_dir) / ".env"
             with open(env_path, "w") as f:
                 f.write("DATA_MODE=real\n")
-            
+
             result = ConfigValidator.validate_env_file(env_path)
             assert result.is_valid is True
 
@@ -56,7 +50,7 @@ class TestConfigValidator:
             env_path = Path(temp_dir) / ".env"
             with open(env_path, "w") as f:
                 f.write("DATA_MODE=invalid\n")
-            
+
             result = ConfigValidator.validate_env_file(env_path)
             assert result.is_valid is False
             assert len(result.errors) > 0
@@ -77,45 +71,45 @@ class TestConfigValidator:
 
     def test_validate_data_path_missing(self):
         with tempfile.TemporaryDirectory() as temp_dir:
-                result = ConfigValidator.validate_data_path(Path(temp_dir) / "nonexistent")
-                assert result.is_valid is False
+            result = ConfigValidator.validate_data_path(Path(temp_dir) / "nonexistent")
+            assert result.is_valid is False
 
     def test_validate_data_path_exists(self):
         with tempfile.TemporaryDirectory() as temp_dir:
-                data_path = Path(temp_dir) / "data"
-                data_path.mkdir()
-                (data_path / "sample_data").mkdir()
-            
-                result = ConfigValidator.validate_data_path(data_path)
-                assert result.is_valid is True
+            data_path = Path(temp_dir) / "data"
+            data_path.mkdir()
+            (data_path / "sample_data").mkdir()
+
+            result = ConfigValidator.validate_data_path(data_path)
+            assert result.is_valid is True
 
     def test_validate_cache_path_creates_dir(self):
         with tempfile.TemporaryDirectory() as temp_dir:
-                cache_path = Path(temp_dir) / "cache"
-                result = ConfigValidator.validate_cache_path(cache_path)
-                assert result.is_valid is True
-                assert cache_path.exists()
+            cache_path = Path(temp_dir) / "cache"
+            result = ConfigValidator.validate_cache_path(cache_path)
+            assert result.is_valid is True
+            assert cache_path.exists()
 
     def test_validate_all(self):
         with tempfile.TemporaryDirectory() as temp_dir:
-                project_root = Path(temp_dir)
-            
-                (project_root / "data" / "sample_data").mkdir(parents=True)
-                (project_root / "cache").mkdir()
-            
-                env_path = project_root / ".env"
-                with open(env_path, "w") as f:
-                    f.write("DATA_MODE=sample\n")
-            
-                results = ConfigValidator.validate_all(project_root)
-            
-                assert "env_file" in results
-                assert "data_path" in results
-                assert "cache_path" in results
+            project_root = Path(temp_dir)
+
+            (project_root / "data" / "sample_data").mkdir(parents=True)
+            (project_root / "cache").mkdir()
+
+            env_path = project_root / ".env"
+            with open(env_path, "w") as f:
+                f.write("DATA_MODE=sample\n")
+
+            results = ConfigValidator.validate_all(project_root)
+
+            assert "env_file" in results
+            assert "data_path" in results
+            assert "cache_path" in results
 
     def test_get_validation_summary(self):
-                summary = ConfigValidator.get_validation_summary()
-                assert "配置验证结果" in summary
+        summary = ConfigValidator.get_validation_summary()
+        assert "配置验证结果" in summary
 
     def test_validate_config(self):
         result = validate_config()

@@ -2,9 +2,7 @@
 Tests for chart_generator.py
 """
 
-import json
 import tempfile
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -17,6 +15,7 @@ class TestChartConfig:
     def test_default_config(self):
         """测试默认配置"""
         from asset_lens.data.chart_generator import ChartConfig
+
         config = ChartConfig()
         assert config.width == 800
         assert config.height == 400
@@ -29,6 +28,7 @@ class TestChartConfig:
     def test_custom_config(self):
         """测试自定义配置"""
         from asset_lens.data.chart_generator import ChartConfig
+
         config = ChartConfig(
             width=1024,
             height=768,
@@ -57,9 +57,10 @@ class TestChartGenerator:
     @pytest.fixture
     def generator(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.config.config') as mock_config:
+        with patch("asset_lens.config.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             from asset_lens.data.chart_generator import ChartGenerator
+
             generator = ChartGenerator()
             yield generator
 
@@ -135,8 +136,8 @@ class TestChartGenerator:
 
     def test_generate_profit_curve_empty(self, generator):
         """测试生成收益曲线 - 空数据"""
-        with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool:
-            with patch('asset_lens.data.stock_tracker.StockTracker') as mock_tracker:
+        with patch("asset_lens.trading.stock_pool.StockPool") as mock_pool:
+            with patch("asset_lens.data.stock_tracker.StockTracker") as mock_tracker:
                 mock_tracker_instance = MagicMock()
                 mock_tracker_instance.daily_records = {}
                 mock_tracker.return_value = mock_tracker_instance
@@ -159,8 +160,8 @@ class TestChartGenerator:
         mock_position.status = "holding"
         mock_position.buy_price = 90
 
-        with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool:
-            with patch('asset_lens.data.stock_tracker.StockTracker') as mock_tracker:
+        with patch("asset_lens.trading.stock_pool.StockPool") as mock_pool:
+            with patch("asset_lens.data.stock_tracker.StockTracker") as mock_tracker:
                 mock_tracker_instance = MagicMock()
                 mock_tracker_instance.daily_records = {"sh600519": [mock_record]}
                 mock_tracker.return_value = mock_tracker_instance
@@ -175,7 +176,7 @@ class TestChartGenerator:
 
     def test_generate_strategy_comparison_chart(self, generator):
         """测试生成策略对比图"""
-        with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool:
+        with patch("asset_lens.trading.stock_pool.StockPool") as mock_pool:
             mock_pool_instance = MagicMock()
             mock_pool_instance.get_performance.return_value = {
                 "total_profit_rate": 0.1,
@@ -189,7 +190,7 @@ class TestChartGenerator:
 
     def test_generate_strategy_comparison_chart_default(self, generator):
         """测试生成策略对比图 - 默认策略"""
-        with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool:
+        with patch("asset_lens.trading.stock_pool.StockPool") as mock_pool:
             mock_pool_instance = MagicMock()
             mock_pool_instance.get_performance.return_value = {
                 "total_profit_rate": 0.1,
@@ -202,7 +203,7 @@ class TestChartGenerator:
 
     def test_generate_monster_signal_chart_empty(self, generator):
         """测试生成妖股信号图 - 空数据"""
-        with patch('asset_lens.data.stock_tracker.StockTracker') as mock_tracker:
+        with patch("asset_lens.data.stock_tracker.StockTracker") as mock_tracker:
             mock_tracker_instance = MagicMock()
             mock_tracker_instance.monster_signals = []
             mock_tracker.return_value = mock_tracker_instance
@@ -217,7 +218,7 @@ class TestChartGenerator:
         mock_signal.signal_date = "2024-01-01"
         mock_signal.signal_type = "volume_breakout|price_breakout"
 
-        with patch('asset_lens.data.stock_tracker.StockTracker') as mock_tracker:
+        with patch("asset_lens.data.stock_tracker.StockTracker") as mock_tracker:
             mock_tracker_instance = MagicMock()
             mock_tracker_instance.monster_signals = [mock_signal]
             mock_tracker.return_value = mock_tracker_instance
@@ -228,8 +229,8 @@ class TestChartGenerator:
 
     def test_generate_risk_dashboard(self, generator):
         """测试生成风险仪表盘"""
-        with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool:
-            with patch('asset_lens.data.market_environment.market_environment_analyzer') as mock_analyzer:
+        with patch("asset_lens.trading.stock_pool.StockPool") as mock_pool:
+            with patch("asset_lens.data.market_environment.market_environment_analyzer") as mock_analyzer:
                 mock_pool_instance = MagicMock()
                 mock_pool_instance.get_performance.return_value = {
                     "win_rate": 0.6,
@@ -251,8 +252,8 @@ class TestChartGenerator:
 
     def test_generate_risk_dashboard_high_risk(self, generator):
         """测试生成风险仪表盘 - 高风险"""
-        with patch('asset_lens.trading.stock_pool.StockPool') as mock_pool:
-            with patch('asset_lens.data.market_environment.market_environment_analyzer') as mock_analyzer:
+        with patch("asset_lens.trading.stock_pool.StockPool") as mock_pool:
+            with patch("asset_lens.data.market_environment.market_environment_analyzer") as mock_analyzer:
                 mock_pool_instance = MagicMock()
                 mock_pool_instance.get_performance.return_value = {
                     "win_rate": 0.3,

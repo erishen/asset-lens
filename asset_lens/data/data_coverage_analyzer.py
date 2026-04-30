@@ -5,9 +5,8 @@ Data Coverage Analyzer - 数据覆盖率分析器
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, date, timedelta
-from typing import Optional
-from collections import defaultdict
+from datetime import date, datetime, timedelta
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +14,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CoverageReport:
     """覆盖率报告"""
+
     total_expected: int = 0
     total_actual: int = 0
     coverage_rate: float = 0.0
@@ -29,6 +29,7 @@ class CoverageReport:
 @dataclass
 class DataCoverageResult:
     """数据覆盖率结果"""
+
     overall_coverage: float
     categories: dict[str, CoverageReport]
     recommendations: list[str]
@@ -166,8 +167,7 @@ class DataCoverageAnalyzer:
             products = CSVParser.load_data()
 
             stock_products = [
-                p for p in products
-                if p.investment_type and p.investment_type.value in ["股票", "港股", "美股"]
+                p for p in products if p.investment_type and p.investment_type.value in ["股票", "港股", "美股"]
             ]
 
             if not stock_products:
@@ -191,8 +191,9 @@ class DataCoverageAnalyzer:
         report = CoverageReport()
 
         try:
-            from asset_lens.config import config
             from pathlib import Path
+
+            from asset_lens.config import config
 
             data_path = config.data_path
             csv_files = list(Path(data_path).glob("*.csv"))
@@ -225,8 +226,7 @@ class DataCoverageAnalyzer:
             products = CSVParser.load_data()
 
             stock_products = [
-                p for p in products
-                if p.investment_type and p.investment_type.value in ["股票", "港股", "美股"]
+                p for p in products if p.investment_type and p.investment_type.value in ["股票", "港股", "美股"]
             ]
 
             report.total_expected = len(stock_products) if stock_products else 1
@@ -263,9 +263,9 @@ class DataCoverageEnhancer:
     def __init__(self):
         self.analyzer = DataCoverageAnalyzer()
 
-    def enhance(self, target_coverage: float = 95.0) -> dict:
+    def enhance(self, target_coverage: float = 95.0) -> dict[str, Any]:
         """提升数据覆盖率到目标值"""
-        result = {
+        result: dict[str, Any] = {
             "before": None,
             "after": None,
             "actions": [],
@@ -318,7 +318,7 @@ class DataCoverageEnhancer:
 
         return actions
 
-    def _execute_action(self, action: str) -> Optional[str]:
+    def _execute_action(self, action: str) -> str | None:
         """执行提升动作"""
         if "交易记录" in action:
             return self._fill_missing_transactions()
@@ -337,18 +337,18 @@ class DataCoverageEnhancer:
     def _fetch_missing_prices(self) -> str:
         """获取缺失的价格数据"""
         try:
-            from asset_lens.data.stock_history_fetcher import StockHistoryFetcher
             from asset_lens.data.asset_summary_parser import AssetSummaryParser
+            from asset_lens.data.stock_history_fetcher import StockHistoryFetcher
 
             parser = AssetSummaryParser()
-            holdings = parser.parse_all()
+            holdings = parser.parse_all()  # type: ignore[attr-defined]  # pylint: disable=no-member
             fetcher = StockHistoryFetcher()
 
             count = 0
             for h in holdings[:5]:
                 if h.code and h.code.startswith(("sh", "sz")):
                     try:
-                        fetcher.fetch(h.code, days=30)
+                        fetcher.fetch(h.code, days=30)  # type: ignore[attr-defined]  # pylint: disable=no-member
                         count += 1
                     except Exception:
                         pass
@@ -363,7 +363,7 @@ class DataCoverageEnhancer:
             from asset_lens.data.exchange_rate_parser import ExchangeRateParser
 
             parser = ExchangeRateParser()
-            rates = parser.parse_all()
+            rates = parser.parse_all()  # type: ignore[attr-defined]  # pylint: disable=no-member
 
             return f"已更新 {len(rates)} 个汇率数据"
         except Exception as e:

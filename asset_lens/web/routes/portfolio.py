@@ -15,6 +15,7 @@ router = APIRouter(prefix="/api/portfolio", tags=["portfolio"])
 
 class PortfolioSummary(BaseModel):
     """投资组合摘要模型"""
+
     total_assets: float = 0
     total_profit: float = 0
     total_return: float = 0
@@ -23,6 +24,7 @@ class PortfolioSummary(BaseModel):
 
 class PortfolioItem(BaseModel):
     """投资组合项目模型"""
+
     name: str
     code: str = ""
     investment_type: str = ""
@@ -87,17 +89,19 @@ async def get_portfolio_items(
             if investment_type and p.investment_type.value != investment_type:
                 continue
 
-            items.append({
-                "name": p.name,
-                "code": "",
-                "investment_type": p.investment_type.value,
-                "risk_level": p.risk_level.value if p.risk_level else "-",
-                "current_amount": float(p.current_amount or 0),
-                "initial_amount": float(p.initial_amount or 0),
-                "profit_amount": float(p.profit_amount or 0),
-                "return_rate": float(p.return_rate or 0),
-                "annual_return": float(p.annual_return or 0),
-            })
+            items.append(
+                {
+                    "name": p.name,
+                    "code": "",
+                    "investment_type": p.investment_type.value,
+                    "risk_level": p.risk_level.value if p.risk_level else "-",
+                    "current_amount": float(p.current_amount or 0),
+                    "initial_amount": float(p.initial_amount or 0),
+                    "profit_amount": float(p.profit_amount or 0),
+                    "return_rate": float(p.return_rate or 0),
+                    "annual_return": float(p.annual_return or 0),
+                }
+            )
 
         reverse = sort_order.lower() == "desc"
         items.sort(key=lambda x: x.get(sort_by, 0), reverse=reverse)

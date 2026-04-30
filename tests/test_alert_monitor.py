@@ -4,18 +4,15 @@ Tests for Alert Monitor.
 """
 
 import json
-from datetime import datetime
-from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
 
 from asset_lens.analysis.alert_monitor import (
     AlertMonitor,
-    AlertType,
     AlertThreshold,
-    StockSnapshot,
+    AlertType,
     StockAlert,
+    StockSnapshot,
     alert_monitor,
 )
 

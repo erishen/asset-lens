@@ -24,10 +24,7 @@ def status():
 
     summary = risk_alert_system.get_alert_summary()
 
-    console.print(Panel.fit(
-        "[bold cyan]风险预警系统状态[/bold cyan]",
-        subtitle=f"预警总数: {summary['total_alerts']}"
-    ))
+    console.print(Panel.fit("[bold cyan]风险预警系统状态[/bold cyan]", subtitle=f"预警总数: {summary['total_alerts']}"))
 
     config_table = Table(title="预警配置")
     config_table.add_column("配置项", style="cyan")
@@ -134,19 +131,21 @@ def check():
         for product in products:
             current_value = float(product.current_amount or product.total_amount or 0)
             if current_value > 0:
-                code = product.code if hasattr(product, 'code') else (product.name or "unknown")
+                code = product.code if hasattr(product, "code") else (product.name or "unknown")
                 holdings[code] = current_value
                 total_value += current_value
 
                 cost = float(product.initial_amount or 0)
                 if cost > 0:
                     change_percent = (current_value - cost) / cost * 100 if cost > 0 else 0
-                    stocks.append({
-                        "code": code,
-                        "cost_price": cost,
-                        "current_price": current_value,
-                        "change_percent": change_percent,
-                    })
+                    stocks.append(
+                        {
+                            "code": code,
+                            "cost_price": cost,
+                            "current_price": current_value,
+                            "change_percent": change_percent,
+                        }
+                    )
 
         portfolio_data = {
             "holdings": holdings,

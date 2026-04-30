@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 class AlertLevel(Enum):
     """预警级别"""
+
     INFO = "info"
     WARNING = "warning"
     DANGER = "danger"
@@ -25,6 +26,7 @@ class AlertLevel(Enum):
 
 class AlertType(Enum):
     """预警类型"""
+
     MAX_DRAWDOWN = "max_drawdown"
     VOLATILITY = "volatility"
     CONCENTRATION = "concentration"
@@ -40,6 +42,7 @@ class AlertType(Enum):
 @dataclass
 class RiskAlertConfig:
     """风险预警配置"""
+
     enabled: bool = True
 
     max_drawdown_threshold: float = 15.0
@@ -63,6 +66,7 @@ class RiskAlertConfig:
 @dataclass
 class RiskAlertItem:
     """风险预警项"""
+
     id: str
     level: AlertLevel
     type: AlertType
@@ -208,7 +212,11 @@ class RiskAlertSystem:
             return None
 
         if current_drawdown >= self.config.max_drawdown_threshold:
-            level = AlertLevel.DANGER if current_drawdown >= self.config.max_drawdown_threshold * 1.5 else AlertLevel.WARNING
+            level = (
+                AlertLevel.DANGER
+                if current_drawdown >= self.config.max_drawdown_threshold * 1.5
+                else AlertLevel.WARNING
+            )
 
             return self._create_alert(
                 level=level,
@@ -242,7 +250,9 @@ class RiskAlertSystem:
             return None
 
         if current_volatility >= self.config.volatility_threshold:
-            level = AlertLevel.WARNING if current_volatility < self.config.volatility_threshold * 1.5 else AlertLevel.DANGER
+            level = (
+                AlertLevel.WARNING if current_volatility < self.config.volatility_threshold * 1.5 else AlertLevel.DANGER
+            )
 
             return self._create_alert(
                 level=level,
@@ -287,7 +297,7 @@ class RiskAlertSystem:
                 level=AlertLevel.WARNING,
                 alert_type=AlertType.CONCENTRATION,
                 title="持仓集中度预警",
-                message=f"单一持仓 {top_code} 占比 {max_weight*100:.2f}% 超过阈值 {self.config.concentration_threshold:.2f}%",
+                message=f"单一持仓 {top_code} 占比 {max_weight * 100:.2f}% 超过阈值 {self.config.concentration_threshold:.2f}%",
                 value=max_weight * 100,
                 threshold=self.config.concentration_threshold,
                 suggestion="建议分散投资，降低单一资产权重",

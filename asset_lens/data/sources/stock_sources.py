@@ -47,12 +47,14 @@ def fetch_stocks_baostock() -> list[dict[str, Any]]:
             if not (full_code.startswith("sh") or full_code.startswith("sz")):
                 continue
 
-            stocks.append({
-                "code": full_code,
-                "name": name,
-                "type": stock_type,
-                "status": status,
-            })
+            stocks.append(
+                {
+                    "code": full_code,
+                    "name": name,
+                    "type": stock_type,
+                    "status": status,
+                }
+            )
 
         return stocks
 
@@ -85,18 +87,20 @@ def fetch_stocks_akshare(akshare) -> list[dict[str, Any]]:
             else:
                 continue
 
-            stocks.append({
-                "code": full_code,
-                "name": name,
-                "price": float(row.get("最新价", 0)) if row.get("最新价") else 0,
-                "change_pct": float(row.get("涨跌幅", 0)) if row.get("涨跌幅") else 0,
-                "volume": float(row.get("成交量", 0)) if row.get("成交量") else 0,
-                "amount": float(row.get("成交额", 0)) if row.get("成交额") else 0,
-                "turnover_rate": float(row.get("换手率", 0)) if row.get("换手率") else 0,
-                "pe": float(row.get("市盈率-动态", 0)) if row.get("市盈率-动态") else 0,
-                "pb": float(row.get("市净率", 0)) if row.get("市净率") else 0,
-                "market_cap": float(row.get("总市值", 0)) if row.get("总市值") else 0,
-            })
+            stocks.append(
+                {
+                    "code": full_code,
+                    "name": name,
+                    "price": float(row.get("最新价", 0)) if row.get("最新价") else 0,
+                    "change_pct": float(row.get("涨跌幅", 0)) if row.get("涨跌幅") else 0,
+                    "volume": float(row.get("成交量", 0)) if row.get("成交量") else 0,
+                    "amount": float(row.get("成交额", 0)) if row.get("成交额") else 0,
+                    "turnover_rate": float(row.get("换手率", 0)) if row.get("换手率") else 0,
+                    "pe": float(row.get("市盈率-动态", 0)) if row.get("市盈率-动态") else 0,
+                    "pb": float(row.get("市净率", 0)) if row.get("市净率") else 0,
+                    "market_cap": float(row.get("总市值", 0)) if row.get("总市值") else 0,
+                }
+            )
 
         return stocks
 
@@ -131,14 +135,16 @@ def fetch_stocks_efinance() -> list[dict[str, Any]]:
             else:
                 continue
 
-            stocks.append({
-                "code": full_code,
-                "name": name,
-                "price": float(row.get("最新价", 0)) if row.get("最新价") else 0,
-                "change_pct": float(row.get("涨跌幅", 0)) if row.get("涨跌幅") else 0,
-                "volume": float(row.get("成交量", 0)) if row.get("成交量") else 0,
-                "amount": float(row.get("成交额", 0)) if row.get("成交额") else 0,
-            })
+            stocks.append(
+                {
+                    "code": full_code,
+                    "name": name,
+                    "price": float(row.get("最新价", 0)) if row.get("最新价") else 0,
+                    "change_pct": float(row.get("涨跌幅", 0)) if row.get("涨跌幅") else 0,
+                    "volume": float(row.get("成交量", 0)) if row.get("成交量") else 0,
+                    "amount": float(row.get("成交额", 0)) if row.get("成交额") else 0,
+                }
+            )
 
         return stocks
 

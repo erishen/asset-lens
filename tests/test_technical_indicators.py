@@ -4,6 +4,7 @@ Tests for Technical Indicators.
 """
 
 import pytest
+
 from asset_lens.data.technical_indicators import TechnicalIndicators
 
 
@@ -18,6 +19,7 @@ class TestTechnicalIndicators:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.data.technical_indicators import TechnicalIndicators
+
         assert TechnicalIndicators is not None
 
     def test_calculate_rsi(self, ti):
@@ -35,8 +37,7 @@ class TestTechnicalIndicators:
 
     def test_calculate_boll(self, ti):
         """测试布林带计算"""
-        prices = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-                  19, 18, 17, 16, 15, 14, 13, 12, 11, 10]
+        prices = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10]
         boll = ti.calculate_boll(prices, period=20, std_dev=2.0)
         assert boll is not None
         upper, middle, lower = boll

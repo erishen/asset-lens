@@ -4,17 +4,17 @@ IRR Calculator - 内部收益率计算器
 """
 
 import logging
+from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
 from functools import lru_cache
-from typing import Optional
-from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
 try:
     from numpy import irr as numpy_irr  # type: ignore
     from numpy_financial import xirr as numpy_xirr  # type: ignore
+
     HAS_NUMPY = True
     HAS_NUMPY_FINANCIAL = True
 except ImportError:
@@ -27,8 +27,9 @@ from ..data.models import Transaction
 @dataclass
 class YearlyIRRResult:
     """年度 IRR 结果"""
+
     year: int
-    irr: Optional[float]
+    irr: float | None
     total_investment: float
     total_return: float
     cashflow_count: int
@@ -39,10 +40,11 @@ class YearlyIRRResult:
 @dataclass
 class IRRComparisonResult:
     """IRR 对比结果"""
+
     years: list[YearlyIRRResult]
-    average_irr: Optional[float]
-    best_year: Optional[int]
-    worst_year: Optional[int]
+    average_irr: float | None
+    best_year: int | None
+    worst_year: int | None
     trend: str  # "上升", "下降", "稳定"
 
 
@@ -183,9 +185,7 @@ class IRRCalculator:
             return None
 
     @staticmethod
-    def calculate_irr_newton(
-        cashflows: list[float], max_iter: int = 100, tol: float = 1e-6
-    ) -> float | None:
+    def calculate_irr_newton(cashflows: list[float], max_iter: int = 100, tol: float = 1e-6) -> float | None:
         """
         使用牛顿法计算IRR
 
@@ -387,8 +387,7 @@ class IRRCalculator:
 
         try:
             annual_return = (
-                (Decimal("1") + return_rate / Decimal("100")) ** (Decimal("1") / years)
-                - Decimal("1")
+                (Decimal("1") + return_rate / Decimal("100")) ** (Decimal("1") / years) - Decimal("1")
             ) * Decimal("100")
             return annual_return
         except Exception:
@@ -634,15 +633,17 @@ class IRRCalculator:
 
             dates = [d for d, _ in cfs]
 
-            years_results.append(YearlyIRRResult(
-                year=year,
-                irr=irr,
-                total_investment=total_investment,
-                total_return=total_return,
-                cashflow_count=len(cfs),
-                start_date=min(dates),
-                end_date=max(dates),
-            ))
+            years_results.append(
+                YearlyIRRResult(
+                    year=year,
+                    irr=irr,
+                    total_investment=total_investment,
+                    total_return=total_return,
+                    cashflow_count=len(cfs),
+                    start_date=min(dates),
+                    end_date=max(dates),
+                )
+            )
 
         if not years_results:
             return IRRComparisonResult(
@@ -666,8 +667,8 @@ class IRRCalculator:
 
         trend = "稳定"
         if len(valid_irrs) >= 2:
-            first_half = valid_irrs[:len(valid_irrs)//2]
-            second_half = valid_irrs[len(valid_irrs)//2:]
+            first_half = valid_irrs[: len(valid_irrs) // 2]
+            second_half = valid_irrs[len(valid_irrs) // 2 :]
             avg_first = sum(first_half) / len(first_half)
             avg_second = sum(second_half) / len(second_half)
 

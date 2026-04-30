@@ -99,9 +99,7 @@ class MultiSourceDataFetcher:
                 for name, cfg in data.get("sources", {}).items():
                     if name in default_sources:
                         default_sources[name].enabled = cfg.get("enabled", True)
-                        default_sources[name].priority = cfg.get(
-                            "priority", default_sources[name].priority
-                        )
+                        default_sources[name].priority = cfg.get("priority", default_sources[name].priority)
             except Exception:
                 pass
 
@@ -179,9 +177,7 @@ class MultiSourceDataFetcher:
     def get_available_sources(self) -> list[str]:
         """获取可用数据源列表（按优先级排序）"""
         available = [
-            name
-            for name, cfg in self.sources.items()
-            if cfg.enabled and cfg.status != DataSourceStatus.UNAVAILABLE
+            name for name, cfg in self.sources.items() if cfg.enabled and cfg.status != DataSourceStatus.UNAVAILABLE
         ]
         return sorted(available, key=lambda x: self.sources[x].priority)
 
@@ -383,9 +379,7 @@ class MultiSourceDataFetcher:
             ts.set_token(config.tushare_token)
             pro = ts.pro_api()
 
-            ts_code = (
-                f"{code[2:]}.{code[:2].upper()}" if code.startswith(("sh", "sz")) else f"{code}.SZ"
-            )
+            ts_code = f"{code[2:]}.{code[:2].upper()}" if code.startswith(("sh", "sz")) else f"{code}.SZ"
             df = pro.daily(ts_code=ts_code, limit=1)
 
             if df is None or df.empty:

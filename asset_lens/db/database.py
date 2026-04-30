@@ -16,14 +16,7 @@ from typing import Any
 from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
 
-from .models import (
-    DataSyncLog,
-    MLModel,
-    PredictionRecord,
-    StockInfo,
-    StockKline,
-    init_database,
-)
+from .models import DataSyncLog, MLModel, PredictionRecord, StockInfo, StockKline, init_database
 
 
 class DatabaseManager:
@@ -84,11 +77,7 @@ class DatabaseManager:
                 if not date:
                     continue
 
-                existing = (
-                    session.query(StockKline)
-                    .filter(StockKline.code == code, StockKline.date == date)
-                    .first()
-                )
+                existing = session.query(StockKline).filter(StockKline.code == code, StockKline.date == date).first()
 
                 if existing:
                     existing.open = kline.get("open", 0)
@@ -140,6 +129,7 @@ class DatabaseManager:
         session = self.get_session()
         try:
             from sqlalchemy import distinct
+
             results = session.query(distinct(StockKline.code)).all()
             return {r[0] for r in results}
         finally:
@@ -394,9 +384,7 @@ class DatabaseManager:
         try:
             start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
 
-            query = session.query(PredictionRecord).filter(
-                PredictionRecord.predict_date >= start_date
-            )
+            query = session.query(PredictionRecord).filter(PredictionRecord.predict_date >= start_date)
 
             if code:
                 query = query.filter(PredictionRecord.code == code)
@@ -489,11 +477,7 @@ class DatabaseManager:
             model_count = session.query(func.count(MLModel.id)).scalar() or 0
             prediction_count = session.query(func.count(PredictionRecord.id)).scalar() or 0
 
-            latest_kline = (
-                session.query(StockKline.date)
-                .order_by(desc(StockKline.date))
-                .first()
-            )
+            latest_kline = session.query(StockKline.date).order_by(desc(StockKline.date)).first()
             latest_date = latest_kline[0] if latest_kline else ""
 
             data_sources = (
@@ -521,11 +505,7 @@ class DatabaseManager:
         session = self.get_session()
         try:
             cutoff_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
-            deleted = (
-                session.query(StockKline)
-                .filter(StockKline.date < cutoff_date)
-                .delete()
-            )
+            deleted = session.query(StockKline).filter(StockKline.date < cutoff_date).delete()
             session.commit()
             return deleted
         except Exception as e:

@@ -191,9 +191,7 @@ class InvestmentSystem:
         if strategies is None:
             strategies = list(strategy_engine.strategies.keys())
 
-        best_name, best_result = self.backtester.get_best_strategy(
-            strategies, historical_data, metric
-        )
+        best_name, best_result = self.backtester.get_best_strategy(strategies, historical_data, metric)
 
         self.set_strategy(best_name)
         print(f"\n✅ 最佳策略: {best_name}")
@@ -268,9 +266,7 @@ class InvestmentSystem:
             report.append("🏆 表现最佳股票 TOP 3")
             report.append("-" * 60)
             for i, stock in enumerate(best_performers, 1):
-                report.append(
-                    f"{i}. {stock['name']}({stock['code']}): {stock['profit_rate']:+.2f}%"
-                )
+                report.append(f"{i}. {stock['name']}({stock['code']}): {stock['profit_rate']:+.2f}%")
 
         # 最差表现股票
         worst_performers = self.stock_pool.get_worst_performers(3)
@@ -279,9 +275,7 @@ class InvestmentSystem:
             report.append("⚠️ 表现最差股票 TOP 3")
             report.append("-" * 60)
             for i, stock in enumerate(worst_performers, 1):
-                report.append(
-                    f"{i}. {stock['name']}({stock['code']}): {stock['profit_rate']:+.2f}%"
-                )
+                report.append(f"{i}. {stock['name']}({stock['code']}): {stock['profit_rate']:+.2f}%")
 
         # 当前持仓
         holdings = self.stock_pool.list_stocks("holding")
@@ -291,9 +285,7 @@ class InvestmentSystem:
             report.append("-" * 60)
             for stock in holdings:
                 report.append(f"  {stock['name']}({stock['code']})")
-                report.append(
-                    f"    买入价: {stock['buy_price']:.2f}, 现价: {stock['current_price']:.2f}"
-                )
+                report.append(f"    买入价: {stock['buy_price']:.2f}, 现价: {stock['current_price']:.2f}")
                 report.append(f"    盈亏: {stock['profit']:+.2f} ({stock['profit_rate']:+.2f}%)")
 
         report.append("\n" + "=" * 60)

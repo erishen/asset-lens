@@ -24,9 +24,11 @@ class TestInvestmentSystem:
     @pytest.fixture
     def system(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.data.investment_system.config') as mock_config, \
-             patch('asset_lens.data.investment_system.StockPool') as mock_pool, \
-             patch('asset_lens.data.investment_system.Backtester') as mock_backtester:
+        with (
+            patch("asset_lens.data.investment_system.config") as mock_config,
+            patch("asset_lens.data.investment_system.StockPool") as mock_pool,
+            patch("asset_lens.data.investment_system.Backtester") as mock_backtester,
+        ):
             mock_config.cache_path = temp_cache_path
             mock_pool_instance = MagicMock()
             mock_pool_instance.positions = {}
@@ -62,7 +64,7 @@ class TestInvestmentSystem:
 
     def test_set_strategy_success(self, system):
         """测试设置策略 - 成功"""
-        with patch('asset_lens.data.investment_system.strategy_engine') as mock_engine:
+        with patch("asset_lens.data.investment_system.strategy_engine") as mock_engine:
             mock_engine.strategies = {"momentum": MagicMock(), "value": MagicMock()}
 
             result = system.set_strategy("momentum")
@@ -72,7 +74,7 @@ class TestInvestmentSystem:
 
     def test_set_strategy_not_found(self, system):
         """测试设置策略 - 不存在"""
-        with patch('asset_lens.data.investment_system.strategy_engine') as mock_engine:
+        with patch("asset_lens.data.investment_system.strategy_engine") as mock_engine:
             mock_engine.strategies = {"momentum": MagicMock()}
 
             result = system.set_strategy("not_exist")
@@ -81,7 +83,7 @@ class TestInvestmentSystem:
 
     def test_screen_and_add_to_pool(self, system):
         """测试筛选股票并添加到股票池"""
-        with patch('asset_lens.data.investment_system.strategy_engine') as mock_engine:
+        with patch("asset_lens.data.investment_system.strategy_engine") as mock_engine:
             system.current_strategy = "momentum"
             mock_engine.screen_stocks.return_value = [
                 {"code": "sh600519", "name": "贵州茅台", "current_price": 1800, "strategy_score": 85},
@@ -122,7 +124,7 @@ class TestInvestmentSystem:
 
     def test_run_backtest(self, system):
         """测试运行回测"""
-        with patch('asset_lens.data.investment_system.strategy_engine') as mock_engine:
+        with patch("asset_lens.data.investment_system.strategy_engine"):
             system.current_strategy = "momentum"
             mock_backtest_result = MagicMock()
             system.backtester.run_backtest.return_value = mock_backtest_result
@@ -141,7 +143,7 @@ class TestInvestmentSystem:
 
     def test_optimize_strategy(self, system):
         """测试优化策略"""
-        with patch('asset_lens.data.investment_system.strategy_engine') as mock_engine:
+        with patch("asset_lens.data.investment_system.strategy_engine") as mock_engine:
             mock_engine.strategies = {"momentum": MagicMock(), "value": MagicMock()}
             mock_result = MagicMock()
             mock_result.sharpe_ratio = 1.5
@@ -155,7 +157,7 @@ class TestInvestmentSystem:
 
     def test_get_system_status(self, system):
         """测试获取系统状态"""
-        with patch('asset_lens.data.investment_system.strategy_engine') as mock_engine:
+        with patch("asset_lens.data.investment_system.strategy_engine") as mock_engine:
             mock_engine.strategies = {"momentum": MagicMock()}
             system.stock_pool.get_performance.return_value = {
                 "total_stocks": 10,
@@ -175,7 +177,7 @@ class TestInvestmentSystem:
 
     def test_generate_report(self, system):
         """测试生成报告"""
-        with patch('asset_lens.data.investment_system.strategy_engine') as mock_engine:
+        with patch("asset_lens.data.investment_system.strategy_engine") as mock_engine:
             mock_engine.strategies = {"momentum": MagicMock()}
             system.stock_pool.get_performance.return_value = {
                 "total_stocks": 10,

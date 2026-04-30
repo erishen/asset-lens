@@ -4,7 +4,6 @@ Tests for international_stock_fetcher.py
 
 import json
 import tempfile
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -21,8 +20,8 @@ class TestInternationalStockFetcherInit:
         """Test initialization"""
         with tempfile.TemporaryDirectory() as tmp_dir:
             temp_path = Path(tmp_dir)
-            
-            with patch('asset_lens.data.international_stock_fetcher.config') as mock_config:
+
+            with patch("asset_lens.data.international_stock_fetcher.config") as mock_config:
                 mock_config.cache_path = temp_path
                 fetcher = InternationalStockFetcher()
 
@@ -39,7 +38,7 @@ class TestFetchHkStockQuote:
         """创建测试实例"""
         with tempfile.TemporaryDirectory() as tmp_dir:
             temp_path = Path(tmp_dir)
-            with patch('asset_lens.data.international_stock_fetcher.config') as mock_config:
+            with patch("asset_lens.data.international_stock_fetcher.config") as mock_config:
                 mock_config.cache_path = temp_path
                 fetcher = InternationalStockFetcher()
                 yield fetcher
@@ -61,7 +60,7 @@ class TestFetchHkStockQuote:
         }
         mock_response.raise_for_status = MagicMock()
 
-        with patch('requests.get', return_value=mock_response):
+        with patch("requests.get", return_value=mock_response):
             result = fetcher.fetch_hk_stock_quote("00700")
 
             assert result is not None
@@ -70,15 +69,17 @@ class TestFetchHkStockQuote:
 
     def test_fetch_hk_stock_quote_not_found(self, fetcher):
         """Test fetch_hk_stock_quote not found"""
-        mock_df = pd.DataFrame({
-            "代码": ["00700"],
-            "名称": ["腾讯控股"],
-        })
+        mock_df = pd.DataFrame(
+            {
+                "代码": ["00700"],
+                "名称": ["腾讯控股"],
+            }
+        )
 
         mock_ak = MagicMock()
         mock_ak.stock_hk_spot_em.return_value = mock_df
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             result = fetcher.fetch_hk_stock_quote("99999")
             assert result is None
 
@@ -89,7 +90,7 @@ class TestFetchHkStockQuote:
         mock_ak = MagicMock()
         mock_ak.stock_hk_spot_em.return_value = mock_df
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             result = fetcher.fetch_hk_stock_quote("00700")
             assert result is None
 
@@ -98,7 +99,7 @@ class TestFetchHkStockQuote:
         mock_ak = MagicMock()
         mock_ak.stock_hk_spot_em.side_effect = Exception("API error")
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             result = fetcher.fetch_hk_stock_quote("00700")
             assert result is None
 
@@ -111,7 +112,7 @@ class TestFetchUsStockQuote:
         """创建测试实例"""
         with tempfile.TemporaryDirectory() as tmp_dir:
             temp_path = Path(tmp_dir)
-            with patch('asset_lens.data.international_stock_fetcher.config') as mock_config:
+            with patch("asset_lens.data.international_stock_fetcher.config") as mock_config:
                 mock_config.cache_path = temp_path
                 fetcher = InternationalStockFetcher()
                 yield fetcher
@@ -133,7 +134,7 @@ class TestFetchUsStockQuote:
         }
         mock_response.raise_for_status = MagicMock()
 
-        with patch('requests.get', return_value=mock_response):
+        with patch("requests.get", return_value=mock_response):
             result = fetcher.fetch_us_stock_quote("AAPL")
 
             assert result is not None
@@ -142,15 +143,17 @@ class TestFetchUsStockQuote:
 
     def test_fetch_us_stock_quote_not_found(self, fetcher):
         """Test fetch_us_stock_quote not found"""
-        mock_df = pd.DataFrame({
-            "代码": ["AAPL"],
-            "名称": ["苹果"],
-        })
+        mock_df = pd.DataFrame(
+            {
+                "代码": ["AAPL"],
+                "名称": ["苹果"],
+            }
+        )
 
         mock_ak = MagicMock()
         mock_ak.stock_us_spot_em.return_value = mock_df
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             result = fetcher.fetch_us_stock_quote("NOTEXIST")
             assert result is None
 
@@ -159,10 +162,10 @@ class TestFetchUsStockQuote:
         mock_ak = MagicMock()
         mock_ak.stock_us_spot_em.side_effect = Exception("API error")
 
-        with patch('requests.get') as mock_get:
+        with patch("requests.get") as mock_get:
             mock_get.side_effect = Exception("AlphaVantage API error")
-            
-            with patch.dict('sys.modules', {'akshare': mock_ak}):
+
+            with patch.dict("sys.modules", {"akshare": mock_ak}):
                 result = fetcher.fetch_us_stock_quote("AAPL")
                 assert result is None
 
@@ -175,26 +178,28 @@ class TestFetchHkStockHistory:
         """创建测试实例"""
         with tempfile.TemporaryDirectory() as tmp_dir:
             temp_path = Path(tmp_dir)
-            with patch('asset_lens.data.international_stock_fetcher.config') as mock_config:
+            with patch("asset_lens.data.international_stock_fetcher.config") as mock_config:
                 mock_config.cache_path = temp_path
                 fetcher = InternationalStockFetcher()
                 yield fetcher
 
     def test_fetch_hk_stock_history_success(self, fetcher):
         """Test fetch_hk_stock_history success"""
-        mock_df = pd.DataFrame({
-            "日期": ["2024-01-01", "2024-01-02"],
-            "开盘": [350.0, 352.0],
-            "收盘": [355.0, 358.0],
-            "最高": [358.0, 360.0],
-            "最低": [348.0, 350.0],
-            "成交量": [10000000, 12000000],
-        })
+        mock_df = pd.DataFrame(
+            {
+                "日期": ["2024-01-01", "2024-01-02"],
+                "开盘": [350.0, 352.0],
+                "收盘": [355.0, 358.0],
+                "最高": [358.0, 360.0],
+                "最低": [348.0, 350.0],
+                "成交量": [10000000, 12000000],
+            }
+        )
 
         mock_ak = MagicMock()
         mock_ak.stock_hk_daily.return_value = mock_df
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             result = fetcher.fetch_hk_stock_history("00700", 60)
 
             assert result is not None
@@ -209,7 +214,7 @@ class TestFetchHkStockHistory:
         mock_ak = MagicMock()
         mock_ak.stock_hk_daily.return_value = mock_df
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             result = fetcher.fetch_hk_stock_history("00700", 60)
             assert result is None
 
@@ -218,7 +223,7 @@ class TestFetchHkStockHistory:
         mock_ak = MagicMock()
         mock_ak.stock_hk_daily.side_effect = Exception("API error")
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             result = fetcher.fetch_hk_stock_history("00700", 60)
             assert result is None
 
@@ -231,26 +236,28 @@ class TestFetchUsStockHistory:
         """创建测试实例"""
         with tempfile.TemporaryDirectory() as tmp_dir:
             temp_path = Path(tmp_dir)
-            with patch('asset_lens.data.international_stock_fetcher.config') as mock_config:
+            with patch("asset_lens.data.international_stock_fetcher.config") as mock_config:
                 mock_config.cache_path = temp_path
                 fetcher = InternationalStockFetcher()
                 yield fetcher
 
     def test_fetch_us_stock_history_success(self, fetcher):
         """Test fetch_us_stock_history success"""
-        mock_df = pd.DataFrame({
-            "日期": ["2024-01-01", "2024-01-02"],
-            "开盘": [180.0, 182.0],
-            "收盘": [182.0, 184.0],
-            "最高": [183.0, 185.0],
-            "最低": [179.0, 181.0],
-            "成交量": [50000000, 55000000],
-        })
+        mock_df = pd.DataFrame(
+            {
+                "日期": ["2024-01-01", "2024-01-02"],
+                "开盘": [180.0, 182.0],
+                "收盘": [182.0, 184.0],
+                "最高": [183.0, 185.0],
+                "最低": [179.0, 181.0],
+                "成交量": [50000000, 55000000],
+            }
+        )
 
         mock_ak = MagicMock()
         mock_ak.stock_us_daily.return_value = mock_df
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             result = fetcher.fetch_us_stock_history("AAPL", 60)
 
             assert result is not None
@@ -265,7 +272,7 @@ class TestFetchUsStockHistory:
         mock_ak = MagicMock()
         mock_ak.stock_us_daily.return_value = mock_df
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             result = fetcher.fetch_us_stock_history("AAPL", 60)
             assert result is None
 
@@ -274,7 +281,7 @@ class TestFetchUsStockHistory:
         mock_ak = MagicMock()
         mock_ak.stock_us_daily.side_effect = Exception("API error")
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             result = fetcher.fetch_us_stock_history("AAPL", 60)
             assert result is None
 
@@ -287,22 +294,24 @@ class TestSearchHkStock:
         """创建测试实例"""
         with tempfile.TemporaryDirectory() as tmp_dir:
             temp_path = Path(tmp_dir)
-            with patch('asset_lens.data.international_stock_fetcher.config') as mock_config:
+            with patch("asset_lens.data.international_stock_fetcher.config") as mock_config:
                 mock_config.cache_path = temp_path
                 fetcher = InternationalStockFetcher()
                 yield fetcher
 
     def test_search_hk_stock_success(self, fetcher):
         """Test search_hk_stock success"""
-        mock_df = pd.DataFrame({
-            "代码": ["00700", "09988"],
-            "名称": ["腾讯控股", "阿里巴巴"],
-        })
+        mock_df = pd.DataFrame(
+            {
+                "代码": ["00700", "09988"],
+                "名称": ["腾讯控股", "阿里巴巴"],
+            }
+        )
 
         mock_ak = MagicMock()
         mock_ak.stock_hk_spot_em.return_value = mock_df
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             result = fetcher.search_hk_stock("腾讯")
 
             assert len(result) == 1
@@ -310,15 +319,17 @@ class TestSearchHkStock:
 
     def test_search_hk_stock_by_code(self, fetcher):
         """Test search_hk_stock by code"""
-        mock_df = pd.DataFrame({
-            "代码": ["00700", "09988"],
-            "名称": ["腾讯控股", "阿里巴巴"],
-        })
+        mock_df = pd.DataFrame(
+            {
+                "代码": ["00700", "09988"],
+                "名称": ["腾讯控股", "阿里巴巴"],
+            }
+        )
 
         mock_ak = MagicMock()
         mock_ak.stock_hk_spot_em.return_value = mock_df
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             result = fetcher.search_hk_stock("00700")
 
             assert len(result) == 1
@@ -326,15 +337,17 @@ class TestSearchHkStock:
 
     def test_search_hk_stock_empty_result(self, fetcher):
         """Test search_hk_stock with empty result"""
-        mock_df = pd.DataFrame({
-            "代码": ["00700"],
-            "名称": ["腾讯控股"],
-        })
+        mock_df = pd.DataFrame(
+            {
+                "代码": ["00700"],
+                "名称": ["腾讯控股"],
+            }
+        )
 
         mock_ak = MagicMock()
         mock_ak.stock_hk_spot_em.return_value = mock_df
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             result = fetcher.search_hk_stock("NOTEXIST")
             assert len(result) == 0
 
@@ -343,7 +356,7 @@ class TestSearchHkStock:
         mock_ak = MagicMock()
         mock_ak.stock_hk_spot_em.side_effect = Exception("API error")
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             result = fetcher.search_hk_stock("腾讯")
             assert result == []
 
@@ -356,22 +369,24 @@ class TestSearchUsStock:
         """创建测试实例"""
         with tempfile.TemporaryDirectory() as tmp_dir:
             temp_path = Path(tmp_dir)
-            with patch('asset_lens.data.international_stock_fetcher.config') as mock_config:
+            with patch("asset_lens.data.international_stock_fetcher.config") as mock_config:
                 mock_config.cache_path = temp_path
                 fetcher = InternationalStockFetcher()
                 yield fetcher
 
     def test_search_us_stock_success(self, fetcher):
         """Test search_us_stock success"""
-        mock_df = pd.DataFrame({
-            "代码": ["AAPL", "GOOGL"],
-            "名称": ["苹果", "谷歌"],
-        })
+        mock_df = pd.DataFrame(
+            {
+                "代码": ["AAPL", "GOOGL"],
+                "名称": ["苹果", "谷歌"],
+            }
+        )
 
         mock_ak = MagicMock()
         mock_ak.stock_us_spot_em.return_value = mock_df
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             result = fetcher.search_us_stock("AAPL")
 
             assert len(result) == 1
@@ -382,7 +397,7 @@ class TestSearchUsStock:
         mock_ak = MagicMock()
         mock_ak.stock_us_spot_em.side_effect = Exception("API error")
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             result = fetcher.search_us_stock("AAPL")
             assert result == []
 
@@ -395,26 +410,28 @@ class TestGetHkStockList:
         """创建测试实例"""
         with tempfile.TemporaryDirectory() as tmp_dir:
             temp_path = Path(tmp_dir)
-            with patch('asset_lens.data.international_stock_fetcher.config') as mock_config:
+            with patch("asset_lens.data.international_stock_fetcher.config") as mock_config:
                 mock_config.cache_path = temp_path
                 fetcher = InternationalStockFetcher()
                 yield fetcher
 
     def test_get_hk_stock_list_success(self, fetcher):
         """Test get_hk_stock_list success"""
-        mock_df = pd.DataFrame({
-            "代码": ["00700", "09988"],
-            "名称": ["腾讯控股", "阿里巴巴"],
-            "最新价": [350.0, 80.0],
-            "涨跌幅": [2.5, 1.5],
-            "成交量": [10000000, 5000000],
-            "成交额": [3500000000, 400000000],
-        })
+        mock_df = pd.DataFrame(
+            {
+                "代码": ["00700", "09988"],
+                "名称": ["腾讯控股", "阿里巴巴"],
+                "最新价": [350.0, 80.0],
+                "涨跌幅": [2.5, 1.5],
+                "成交量": [10000000, 5000000],
+                "成交额": [3500000000, 400000000],
+            }
+        )
 
         mock_ak = MagicMock()
         mock_ak.stock_hk_spot_em.return_value = mock_df
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             result = fetcher.get_hk_stock_list()
 
             assert len(result) == 2
@@ -427,7 +444,7 @@ class TestGetHkStockList:
         mock_ak = MagicMock()
         mock_ak.stock_hk_spot_em.return_value = mock_df
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             result = fetcher.get_hk_stock_list()
             assert result == []
 
@@ -436,7 +453,7 @@ class TestGetHkStockList:
         mock_ak = MagicMock()
         mock_ak.stock_hk_spot_em.side_effect = Exception("API error")
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             result = fetcher.get_hk_stock_list()
             assert result == []
 
@@ -449,26 +466,28 @@ class TestGetUsStockList:
         """创建测试实例"""
         with tempfile.TemporaryDirectory() as tmp_dir:
             temp_path = Path(tmp_dir)
-            with patch('asset_lens.data.international_stock_fetcher.config') as mock_config:
+            with patch("asset_lens.data.international_stock_fetcher.config") as mock_config:
                 mock_config.cache_path = temp_path
                 fetcher = InternationalStockFetcher()
                 yield fetcher
 
     def test_get_us_stock_list_success(self, fetcher):
         """Test get_us_stock_list success"""
-        mock_df = pd.DataFrame({
-            "代码": ["AAPL", "GOOGL"],
-            "名称": ["苹果", "谷歌"],
-            "最新价": [180.0, 140.0],
-            "涨跌幅": [1.5, 2.0],
-            "成交量": [50000000, 10000000],
-            "成交额": [9000000000, 1400000000],
-        })
+        mock_df = pd.DataFrame(
+            {
+                "代码": ["AAPL", "GOOGL"],
+                "名称": ["苹果", "谷歌"],
+                "最新价": [180.0, 140.0],
+                "涨跌幅": [1.5, 2.0],
+                "成交量": [50000000, 10000000],
+                "成交额": [9000000000, 1400000000],
+            }
+        )
 
         mock_ak = MagicMock()
         mock_ak.stock_us_spot_em.return_value = mock_df
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             result = fetcher.get_us_stock_list()
 
             assert len(result) == 2
@@ -479,7 +498,7 @@ class TestGetUsStockList:
         mock_ak = MagicMock()
         mock_ak.stock_us_spot_em.side_effect = Exception("API error")
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             result = fetcher.get_us_stock_list()
             assert result == []
 
@@ -492,7 +511,7 @@ class TestCacheOperations:
         """创建测试实例"""
         with tempfile.TemporaryDirectory() as tmp_dir:
             temp_path = Path(tmp_dir)
-            with patch('asset_lens.data.international_stock_fetcher.config') as mock_config:
+            with patch("asset_lens.data.international_stock_fetcher.config") as mock_config:
                 mock_config.cache_path = temp_path
                 fetcher = InternationalStockFetcher()
                 yield fetcher
@@ -503,7 +522,7 @@ class TestCacheOperations:
         fetcher.save_hk_stocks_cache(stocks)
 
         assert fetcher.hk_stock_cache.exists()
-        with open(fetcher.hk_stock_cache, "r", encoding="utf-8") as f:
+        with open(fetcher.hk_stock_cache, encoding="utf-8") as f:
             data = json.load(f)
             assert len(data["data"]) == 1
 
@@ -526,7 +545,7 @@ class TestCacheOperations:
         fetcher.save_us_stocks_cache(stocks)
 
         assert fetcher.us_stock_cache.exists()
-        with open(fetcher.us_stock_cache, "r", encoding="utf-8") as f:
+        with open(fetcher.us_stock_cache, encoding="utf-8") as f:
             data = json.load(f)
             assert len(data["data"]) == 1
 
@@ -552,29 +571,31 @@ class TestFetchFuturesQuote:
         """创建测试实例"""
         with tempfile.TemporaryDirectory() as tmp_dir:
             temp_path = Path(tmp_dir)
-            with patch('asset_lens.data.international_stock_fetcher.config') as mock_config:
+            with patch("asset_lens.data.international_stock_fetcher.config") as mock_config:
                 mock_config.cache_path = temp_path
                 fetcher = InternationalStockFetcher()
                 yield fetcher
 
     def test_fetch_futures_quote_success(self, fetcher):
         """Test fetch_futures_quote success"""
-        mock_df = pd.DataFrame({
-            "symbol": ["AU0"],
-            "name": ["黄金"],
-            "trade": [450.0],
-            "changepercent": [1.5],
-            "change": [6.7],
-            "volume": [100000],
-            "open": [445.0],
-            "high": [452.0],
-            "low": [443.0],
-        })
+        mock_df = pd.DataFrame(
+            {
+                "symbol": ["AU0"],
+                "name": ["黄金"],
+                "trade": [450.0],
+                "changepercent": [1.5],
+                "change": [6.7],
+                "volume": [100000],
+                "open": [445.0],
+                "high": [452.0],
+                "low": [443.0],
+            }
+        )
 
         mock_ak = MagicMock()
         mock_ak.futures_main_sina.return_value = mock_df
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             result = fetcher.fetch_futures_quote("AU0")
 
             assert result is not None
@@ -583,15 +604,17 @@ class TestFetchFuturesQuote:
 
     def test_fetch_futures_quote_not_found(self, fetcher):
         """Test fetch_futures_quote not found"""
-        mock_df = pd.DataFrame({
-            "symbol": ["AU0"],
-            "name": ["黄金"],
-        })
+        mock_df = pd.DataFrame(
+            {
+                "symbol": ["AU0"],
+                "name": ["黄金"],
+            }
+        )
 
         mock_ak = MagicMock()
         mock_ak.futures_main_sina.return_value = mock_df
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             result = fetcher.fetch_futures_quote("NOTEXIST")
             assert result is None
 
@@ -600,6 +623,6 @@ class TestFetchFuturesQuote:
         mock_ak = MagicMock()
         mock_ak.futures_main_sina.side_effect = Exception("API error")
 
-        with patch.dict('sys.modules', {'akshare': mock_ak}):
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
             result = fetcher.fetch_futures_quote("AU0")
             assert result is None

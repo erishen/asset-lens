@@ -9,15 +9,15 @@ Enhanced Data Fetcher with retry mechanism and multiple data sources.
 4. 代理自动切换
 """
 
+import functools
 import json
 import os
 import time
-import functools
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from ..config import config
 
@@ -29,6 +29,7 @@ def retry_with_backoff(
     exceptions: tuple = (Exception,),
 ):
     """重试装饰器 - 指数退避"""
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -39,18 +40,20 @@ def retry_with_backoff(
                 except exceptions as e:
                     last_exception = e
                     if attempt < max_retries - 1:
-                        delay = min(base_delay * (2 ** attempt), max_delay)
+                        delay = min(base_delay * (2**attempt), max_delay)
                         print(f"  ⚠️ 第 {attempt + 1} 次重试，等待 {delay:.1f}s... ({type(e).__name__})")
                         time.sleep(delay)
             raise last_exception if last_exception else Exception("Unknown error")
+
         return wrapper
+
     return decorator
 
 
 @contextmanager
 def _disable_proxy() -> Generator[None, None, None]:
     """临时禁用代理的上下文管理器"""
-    proxy_vars = ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'ALL_PROXY', 'all_proxy']
+    proxy_vars = ["HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy", "ALL_PROXY", "all_proxy"]
     original_values = {}
 
     for var in proxy_vars:
@@ -79,14 +82,14 @@ class EnhancedDataFetcher:
             return None
 
         try:
-            with open(self.market_stock_cache_file, encoding='utf-8') as f:
+            with open(self.market_stock_cache_file, encoding="utf-8") as f:
                 data = json.load(f)
 
-            cache_time = datetime.fromisoformat(data.get('update_time', '2000-01-01'))
+            cache_time = datetime.fromisoformat(data.get("update_time", "2000-01-01"))
             age_hours = (datetime.now() - cache_time).total_seconds() / 3600
 
             if age_hours <= max_age_hours:
-                stocks: list[dict[str, Any]] = data.get('stocks', [])
+                stocks: list[dict[str, Any]] = data.get("stocks", [])
                 print(f"📦 使用缓存数据: {len(stocks)} 只股票 (缓存时间: {age_hours:.1f}小时前)")
                 return stocks
         except Exception as e:
@@ -96,12 +99,8 @@ class EnhancedDataFetcher:
 
     def save_to_cache(self, stocks: list[dict[str, Any]]) -> None:
         """保存股票列表到缓存"""
-        data = {
-            'stocks': stocks,
-            'update_time': datetime.now().isoformat(),
-            'count': len(stocks)
-        }
-        with open(self.market_stock_cache_file, 'w', encoding='utf-8') as f:
+        data = {"stocks": stocks, "update_time": datetime.now().isoformat(), "count": len(stocks)}
+        with open(self.market_stock_cache_file, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
         print(f"✅ 已缓存 {len(stocks)} 只股票")
 
@@ -115,7 +114,7 @@ class EnhancedDataFetcher:
             url = "https://qt.gtimg.cn/q=sh600000,sz000001,sh600519"
             r = requests.get(url, timeout=10)
             if r.status_code == 200:
-                return [{'source': 'tencent', 'status': 'connected'}]
+                return [{"source": "tencent", "status": "connected"}]
         return None
 
     @retry_with_backoff(max_retries=3, base_delay=2.0)
@@ -126,10 +125,10 @@ class EnhancedDataFetcher:
         print("🌐 尝试新浪财经...")
         with _disable_proxy():
             url = "https://hq.sinajs.cn/list=sh600000,sz000001"
-            headers = {'Referer': 'https://finance.sina.com.cn'}
+            headers = {"Referer": "https://finance.sina.com.cn"}
             r = requests.get(url, timeout=10, headers=headers)
             if r.status_code == 200:
-                return [{'source': 'sina', 'status': 'connected'}]
+                return [{"source": "sina", "status": "connected"}]
         return None
 
     @retry_with_backoff(max_retries=2, base_delay=3.0)
@@ -141,14 +140,16 @@ class EnhancedDataFetcher:
         with _disable_proxy():
             url = "https://push2.eastmoney.com/api/qt/clist/get"
             params: dict[str, str | int] = {
-                'pn': 1, 'pz': 100, 'fs': 'm:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23',
-                'fields': 'f12,f14,f2,f3,f4,f5,f6'
+                "pn": 1,
+                "pz": 100,
+                "fs": "m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23",
+                "fields": "f12,f14,f2,f3,f4,f5,f6",
             }
             r = requests.get(url, params=params, timeout=15)
             if r.status_code == 200:
                 data = r.json()
-                if data.get('data', {}).get('diff'):
-                    return [{'source': 'eastmoney', 'status': 'connected'}]
+                if data.get("data", {}).get("diff"):
+                    return [{"source": "eastmoney", "status": "connected"}]
         return None
 
     def fetch_with_fallback(self, use_cache: bool = True) -> list[dict[str, Any]]:
@@ -159,9 +160,9 @@ class EnhancedDataFetcher:
                 return cached
 
         sources = [
-            ('腾讯财经', self._fetch_from_tencent),
-            ('新浪财经', self._fetch_from_sina),
-            ('东方财富', self._fetch_from_eastmoney),
+            ("腾讯财经", self._fetch_from_tencent),
+            ("新浪财经", self._fetch_from_sina),
+            ("东方财富", self._fetch_from_eastmoney),
         ]
 
         for name, fetcher in sources:

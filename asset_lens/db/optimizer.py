@@ -161,9 +161,7 @@ class DatabaseOptimizer:
 
         for idx_name, table, columns in indexes:
             try:
-                check_sql = text(
-                    f"SELECT name FROM sqlite_master WHERE type='index' AND name='{idx_name}'"
-                )
+                check_sql = text(f"SELECT name FROM sqlite_master WHERE type='index' AND name='{idx_name}'")
                 existing = session.execute(check_sql).fetchone()
 
                 if existing:
@@ -177,10 +175,7 @@ class DatabaseOptimizer:
             except Exception as e:
                 result["failed"].append({"name": idx_name, "error": str(e)})
 
-        result["message"] = (
-            f"创建 {len(result['created'])} 个索引, "
-            f"跳过 {len(result['skipped'])} 个已存在索引"
-        )
+        result["message"] = f"创建 {len(result['created'])} 个索引, 跳过 {len(result['skipped'])} 个已存在索引"
 
         self._optimization_log.append(result)
         return result
@@ -277,9 +272,7 @@ class DatabaseOptimizer:
         """
         try:
             result = session.execute(
-                text(
-                    "SELECT name, tbl_name FROM sqlite_master WHERE type='index' AND sql IS NOT NULL"
-                )
+                text("SELECT name, tbl_name FROM sqlite_master WHERE type='index' AND sql IS NOT NULL")
             )
             indexes = []
             for row in result:

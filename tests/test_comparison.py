@@ -2,9 +2,8 @@
 Tests for comparison module.
 """
 
-import pytest
-from decimal import Decimal
 from datetime import date
+from decimal import Decimal
 
 from asset_lens.core.comparison import ComparisonAnalyzer, ComparisonResult, TrendAnalysis
 from asset_lens.data.models import InvestmentProduct, InvestmentType, RiskLevel
@@ -25,7 +24,7 @@ class TestComparisonResult:
             investment_days=365,
             annualized_return=Decimal("10.0"),
         )
-        
+
         assert result.name == "Test Product"
         assert result.type == "股票"
         assert result.amount_before == Decimal("10000")
@@ -45,7 +44,7 @@ class TestComparisonResult:
             investment_days=365,
             annualized_return=Decimal("10.0"),
         )
-        
+
         d = result.to_dict()
         assert d["名称"] == "Test Product"
         assert d["类型"] == "股票"
@@ -67,7 +66,7 @@ class TestTrendAnalysis:
             positive_count=7,
             negative_count=3,
         )
-        
+
         assert trend.period == "周度"
         assert trend.total_amount_before == Decimal("100000")
         assert trend.total_amount_after == Decimal("105000")
@@ -87,7 +86,7 @@ class TestTrendAnalysis:
             positive_count=7,
             negative_count=3,
         )
-        
+
         d = trend.to_dict()
         assert d["分析周期"] == "周度"
         assert d["产品数量"] == 10
@@ -105,7 +104,7 @@ class TestComparisonAnalyzer:
         """Test comparing empty periods"""
         analyzer = ComparisonAnalyzer()
         result = analyzer.compare_periods([], [])
-        
+
         assert result is not None
         assert "trend" in result
         assert "details" in result
@@ -114,7 +113,7 @@ class TestComparisonAnalyzer:
     def test_compare_periods_single_product(self):
         """Test comparing single product"""
         analyzer = ComparisonAnalyzer()
-        
+
         product_before = InvestmentProduct(
             name="Product A",
             investment_type=InvestmentType.STOCK,
@@ -122,7 +121,7 @@ class TestComparisonAnalyzer:
             current_amount=Decimal("10000"),
             start_date=date(2024, 1, 1),
         )
-        
+
         product_after = InvestmentProduct(
             name="Product A",
             investment_type=InvestmentType.STOCK,
@@ -130,9 +129,9 @@ class TestComparisonAnalyzer:
             current_amount=Decimal("11000"),
             start_date=date(2024, 1, 1),
         )
-        
+
         result = analyzer.compare_periods([product_before], [product_after])
-        
+
         assert result is not None
         assert "trend" in result
         assert "details" in result
@@ -141,7 +140,7 @@ class TestComparisonAnalyzer:
     def test_compare_periods_multiple_products(self):
         """Test comparing multiple products"""
         analyzer = ComparisonAnalyzer()
-        
+
         products_before = [
             InvestmentProduct(
                 name="Product A",
@@ -158,7 +157,7 @@ class TestComparisonAnalyzer:
                 start_date=date(2024, 2, 1),
             ),
         ]
-        
+
         products_after = [
             InvestmentProduct(
                 name="Product A",
@@ -175,9 +174,9 @@ class TestComparisonAnalyzer:
                 start_date=date(2024, 2, 1),
             ),
         ]
-        
+
         result = analyzer.compare_periods(products_before, products_after)
-        
+
         assert result is not None
         assert "trend" in result
         assert "details" in result
@@ -186,7 +185,7 @@ class TestComparisonAnalyzer:
     def test_compare_periods_new_product(self):
         """Test comparing with new product"""
         analyzer = ComparisonAnalyzer()
-        
+
         product_after = InvestmentProduct(
             name="New Product",
             investment_type=InvestmentType.FUND,
@@ -194,9 +193,9 @@ class TestComparisonAnalyzer:
             current_amount=Decimal("5000"),
             start_date=date(2024, 3, 1),
         )
-        
+
         result = analyzer.compare_periods([], [product_after])
-        
+
         assert result is not None
         assert "trend" in result
         assert "details" in result
@@ -205,7 +204,7 @@ class TestComparisonAnalyzer:
     def test_compare_periods_removed_product(self):
         """Test comparing with removed product"""
         analyzer = ComparisonAnalyzer()
-        
+
         product_before = InvestmentProduct(
             name="Removed Product",
             investment_type=InvestmentType.FUND,
@@ -213,9 +212,9 @@ class TestComparisonAnalyzer:
             current_amount=Decimal("5000"),
             start_date=date(2024, 1, 1),
         )
-        
+
         result = analyzer.compare_periods([product_before], [])
-        
+
         assert result is not None
         assert "trend" in result
         assert "details" in result
@@ -224,7 +223,7 @@ class TestComparisonAnalyzer:
     def test_analyze_by_type(self):
         """Test analyzing by type"""
         analyzer = ComparisonAnalyzer()
-        
+
         products = [
             InvestmentProduct(
                 name="Stock A",
@@ -241,8 +240,8 @@ class TestComparisonAnalyzer:
                 start_date=date(2024, 2, 1),
             ),
         ]
-        
+
         result = analyzer.analyze_by_type(products)
-        
+
         assert result is not None
         assert "type_stats" in result

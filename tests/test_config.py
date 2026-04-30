@@ -3,13 +3,9 @@ Tests for config module.
 配置模块测试
 """
 
-import pytest
-import os
-import tempfile
 from pathlib import Path
-from unittest.mock import patch
 
-from asset_lens.config import config, Config
+from asset_lens.config import Config, config
 
 
 class TestConfig:
@@ -18,28 +14,29 @@ class TestConfig:
     def test_config_singleton(self):
         """Test that config is a singleton"""
         from asset_lens.config import config as config2
+
         assert config is config2
 
     def test_config_has_data_mode(self):
         """Test that config has data_mode attribute"""
-        assert hasattr(config, 'data_mode')
+        assert hasattr(config, "data_mode")
 
     def test_config_has_project_root(self):
         """Test that config has project_root attribute"""
-        assert hasattr(config, 'project_root')
+        assert hasattr(config, "project_root")
         assert config.project_root.exists()
 
     def test_config_has_data_path(self):
         """Test that config has data_path property"""
-        assert hasattr(config, 'data_path')
+        assert hasattr(config, "data_path")
 
     def test_config_has_platforms(self):
         """Test that config has platforms property"""
-        assert hasattr(config, 'platforms')
+        assert hasattr(config, "platforms")
 
     def test_config_has_investment_types(self):
         """Test that config has investment_types property"""
-        assert hasattr(config, 'investment_types')
+        assert hasattr(config, "investment_types")
 
 
 class TestConfigDataMode:
@@ -48,14 +45,14 @@ class TestConfigDataMode:
     def test_data_mode_property(self):
         """Test data_mode property"""
         original_mode = config.data_mode
-        config.data_mode = 'sample'
-        assert config.data_mode == 'sample'
+        config.data_mode = "sample"
+        assert config.data_mode == "sample"
         config.data_mode = original_mode
 
     def test_is_sample_mode(self):
         """Test is_sample_mode property"""
         original_mode = config.data_mode
-        config.data_mode = 'sample'
+        config.data_mode = "sample"
         assert config.is_sample_mode is True
         assert config.is_real_mode is False
         config.data_mode = original_mode
@@ -63,7 +60,7 @@ class TestConfigDataMode:
     def test_is_real_mode(self):
         """Test is_real_mode property"""
         original_mode = config.data_mode
-        config.data_mode = 'real'
+        config.data_mode = "real"
         assert config.is_real_mode is True
         assert config.is_sample_mode is False
         config.data_mode = original_mode
@@ -72,10 +69,10 @@ class TestConfigDataMode:
         """Test that data mode affects data path"""
         original_mode = config.data_mode
 
-        config.data_mode = 'sample'
+        config.data_mode = "sample"
         sample_path = config.data_path
 
-        config.data_mode = 'real'
+        config.data_mode = "real"
         real_path = config.data_path
 
         # Paths should be different
@@ -116,15 +113,15 @@ class TestConfigPlatforms:
 
     def test_get_platform_by_name(self):
         """Test get_platform_by_name method"""
-        platform = config.get_platform_by_name('微信')
+        platform = config.get_platform_by_name("微信")
         # May return None if not found
-        assert platform is None or hasattr(platform, 'name')
+        assert platform is None or hasattr(platform, "name")
 
     def test_get_platform_by_field(self):
         """Test get_platform_by_field method"""
-        platform = config.get_platform_by_field('微信')
+        platform = config.get_platform_by_field("微信")
         # May return None if not found
-        assert platform is None or hasattr(platform, 'name')
+        assert platform is None or hasattr(platform, "name")
 
     def test_platform_types(self):
         """Test platform_types property"""
@@ -150,15 +147,15 @@ class TestConfigInvestmentTypes:
 
     def test_get_investment_type_by_id(self):
         """Test get_investment_type_by_id method"""
-        inv_type = config.get_investment_type_by_id('stock')
+        inv_type = config.get_investment_type_by_id("stock")
         # May return None if not found
-        assert inv_type is None or hasattr(inv_type, 'name')
+        assert inv_type is None or hasattr(inv_type, "name")
 
     def test_get_investment_type_by_name(self):
         """Test get_investment_type_by_name method"""
-        inv_type = config.get_investment_type_by_name('股票')
+        inv_type = config.get_investment_type_by_name("股票")
         # May return None if not found
-        assert inv_type is None or hasattr(inv_type, 'name')
+        assert inv_type is None or hasattr(inv_type, "name")
 
     def test_risk_levels(self):
         """Test risk_levels property"""
@@ -168,9 +165,9 @@ class TestConfigInvestmentTypes:
 
     def test_get_risk_level(self):
         """Test get_risk_level method"""
-        level = config.get_risk_level('low')
+        level = config.get_risk_level("low")
         # May return None if not found
-        assert level is None or hasattr(level, 'name')
+        assert level is None or hasattr(level, "name")
 
 
 class TestConfigStr:
@@ -196,7 +193,7 @@ class TestConfigEdgeCases:
         original_mode = config.data_mode
         # Setting invalid mode should not crash
         try:
-            config.data_mode = 'invalid'
+            config.data_mode = "invalid"
         except Exception:
             pass
         finally:
@@ -204,27 +201,27 @@ class TestConfigEdgeCases:
 
     def test_get_platform_by_name_not_found(self):
         """Test get_platform_by_name with non-existent name"""
-        platform = config.get_platform_by_name('nonexistent_platform')
+        platform = config.get_platform_by_name("nonexistent_platform")
         assert platform is None
 
     def test_get_platform_by_field_not_found(self):
         """Test get_platform_by_field with non-existent field"""
-        platform = config.get_platform_by_field('nonexistent_field')
+        platform = config.get_platform_by_field("nonexistent_field")
         assert platform is None
 
     def test_get_investment_type_by_id_not_found(self):
         """Test get_investment_type_by_id with non-existent id"""
-        inv_type = config.get_investment_type_by_id('nonexistent_id')
+        inv_type = config.get_investment_type_by_id("nonexistent_id")
         assert inv_type is None
 
     def test_get_investment_type_by_name_not_found(self):
         """Test get_investment_type_by_name with non-existent name"""
-        inv_type = config.get_investment_type_by_name('nonexistent_type')
+        inv_type = config.get_investment_type_by_name("nonexistent_type")
         assert inv_type is None
 
     def test_get_risk_level_not_found(self):
         """Test get_risk_level with non-existent id"""
-        level = config.get_risk_level('nonexistent_level')
+        level = config.get_risk_level("nonexistent_level")
         assert level is None
 
 

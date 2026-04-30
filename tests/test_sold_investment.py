@@ -2,16 +2,11 @@
 Tests for sold investment analysis.
 """
 
-import pytest
 from datetime import date
 from decimal import Decimal
 
-from asset_lens.core.sold_investment import (
-    SoldInvestmentStats,
-    SoldInvestmentDetail,
-    SoldInvestmentAnalyzer,
-)
-from asset_lens.data.models import SellRecord, RiskLevel
+from asset_lens.core.sold_investment import SoldInvestmentAnalyzer, SoldInvestmentDetail, SoldInvestmentStats
+from asset_lens.data.models import RiskLevel, SellRecord
 
 
 class TestSoldInvestmentStats:
@@ -106,7 +101,7 @@ class TestSoldInvestmentAnalyzer:
             investment_days=180,
         )
         result = self.analyzer.analyze_sold_investments([record])
-        
+
         assert result["stats"].total_records == 1
         assert result["stats"].total_initial == Decimal("10000")
         assert result["stats"].total_profit == Decimal("1000")
@@ -135,7 +130,7 @@ class TestSoldInvestmentAnalyzer:
             ),
         ]
         result = self.analyzer.analyze_sold_investments(records)
-        
+
         assert result["stats"].total_records == 2
         assert result["stats"].total_initial == Decimal("15000")
         assert result["stats"].total_profit == Decimal("800")
@@ -164,7 +159,7 @@ class TestSoldInvestmentAnalyzer:
             ),
         ]
         result = self.analyzer.analyze_sold_investments(records)
-        
+
         assert "by_type" in result
         assert "risk_stats" in result["by_type"]
 
@@ -234,6 +229,6 @@ class TestSoldInvestmentAnalyzer:
             annual_return=Decimal("10"),  # CSV中的年化收益率
         )
         result = self.analyzer.analyze_sold_investments([record])
-        
+
         detail = result["details"][0]
         assert detail.annualized_return == Decimal("10")

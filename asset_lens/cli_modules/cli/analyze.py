@@ -15,8 +15,9 @@ from rich.table import Table
 
 def _get_data_dir(data_mode: str | None) -> Path | None:
     """获取数据目录，处理 None 情况"""
-    from asset_lens.config import config
     from pathlib import Path
+
+    from asset_lens.config import config
 
     if data_mode == "real" or (data_mode is None and config.data_mode == "real"):
         if config.real_data_path:
@@ -50,9 +51,7 @@ def register_analyze_commands(cli: click.Group) -> None:
         """分析投资组合并生成报告"""
         from datetime import datetime
 
-        from asset_lens.cli_modules.cli.helpers import (
-            setup_data_mode,
-        )
+        from asset_lens.cli_modules.cli.helpers import setup_data_mode
         from asset_lens.config import config
         from asset_lens.core.dca_parser import dca_parser
         from asset_lens.core.irr_calculator import irr_calculator
@@ -76,7 +75,11 @@ def register_analyze_commands(cli: click.Group) -> None:
 
         data_dir = _get_data_dir(config.data_mode)
         try:
-            usd_rate, hkd_rate = CSVParser.get_exchange_rates(data_dir) if data_dir else (config.default_usd_rate, config.default_hkd_rate)
+            usd_rate, hkd_rate = (
+                CSVParser.get_exchange_rates(data_dir)
+                if data_dir
+                else (config.default_usd_rate, config.default_hkd_rate)
+            )
         except Exception:
             usd_rate, hkd_rate = config.default_usd_rate, config.default_hkd_rate
 
@@ -134,9 +137,7 @@ def register_analyze_commands(cli: click.Group) -> None:
         print("\n📝 正在生成分析报告...")
         report_data = report_generator.generate_analysis_report(portfolio, sell_records)
 
-        report_data["products"] = [
-            p.to_dict() for p in portfolio.products if p.annual_return is not None
-        ]
+        report_data["products"] = [p.to_dict() for p in portfolio.products if p.annual_return is not None]
 
         if output_format in ["console", "all"]:
             report_generator.print_console_report(report_data)
@@ -176,7 +177,11 @@ def register_analyze_commands(cli: click.Group) -> None:
 
         data_dir = _get_data_dir(config.data_mode)
         try:
-            usd_rate, hkd_rate = CSVParser.get_exchange_rates(data_dir) if data_dir else (config.default_usd_rate, config.default_hkd_rate)
+            usd_rate, hkd_rate = (
+                CSVParser.get_exchange_rates(data_dir)
+                if data_dir
+                else (config.default_usd_rate, config.default_hkd_rate)
+            )
         except Exception:
             usd_rate, hkd_rate = config.default_usd_rate, config.default_hkd_rate
 
@@ -443,8 +448,8 @@ def register_analyze_commands(cli: click.Group) -> None:
             data_dir = _get_data_dir(config.data_mode)
 
             # 获取汇率
-            usd_rate = Decimal('7.2')
-            hkd_rate = Decimal('0.92')
+            usd_rate = Decimal("7.2")
+            hkd_rate = Decimal("0.92")
             if data_dir:
                 try:
                     rates = CSVParser.get_exchange_rates(data_dir)
@@ -454,8 +459,8 @@ def register_analyze_commands(cli: click.Group) -> None:
                     pass
 
             # 1. 持有中产品收益
-            holding_initial = Decimal('0')
-            holding_current = Decimal('0')
+            holding_initial = Decimal("0")
+            holding_current = Decimal("0")
 
             for p in products:
                 if p.initial_amount:
@@ -466,20 +471,20 @@ def register_analyze_commands(cli: click.Group) -> None:
             holding_profit = holding_current - holding_initial
 
             # 2. 已卖出产品收益
-            sold_initial = Decimal('0')
-            sold_profit = Decimal('0')
+            sold_initial = Decimal("0")
+            sold_profit = Decimal("0")
 
             if data_dir:
                 sold_file = data_dir / "卖出记录-表格 1.csv"
                 if sold_file.exists():
-                    with open(sold_file, encoding='utf-8-sig') as f:
+                    with open(sold_file, encoding="utf-8-sig") as f:
                         reader = csv.reader(f)
                         next(reader)
                         for row in reader:
                             if len(row) >= 21:
                                 try:
-                                    sold_initial += Decimal(row[19]) if row[19] else Decimal('0')
-                                    sold_profit += Decimal(row[20]) if row[20] else Decimal('0')
+                                    sold_initial += Decimal(row[19]) if row[19] else Decimal("0")
+                                    sold_profit += Decimal(row[20]) if row[20] else Decimal("0")
                                 except:
                                     pass
 
@@ -492,46 +497,50 @@ def register_analyze_commands(cli: click.Group) -> None:
             missing_date_products: list[dict[str, Any]] = []
             for p in products:
                 start_date = None
-                initial = Decimal('0')
+                initial = Decimal("0")
 
                 if p.transaction_records:
                     for r in p.transaction_records:
-                        if isinstance(r, dict) and r.get('date'):
+                        if isinstance(r, dict) and r.get("date"):
                             try:
-                                dt = datetime.strptime(r['date'], '%Y-%m-%d')
+                                dt = datetime.strptime(r["date"], "%Y-%m-%d")
                                 if start_date is None or dt.date() < start_date:
                                     start_date = dt.date()
                             except:
                                 pass
-                        if isinstance(r, dict) and r.get('type') == 'buy':
-                            initial += Decimal(str(r.get('amount', 0)))
+                        if isinstance(r, dict) and r.get("type") == "buy":
+                            initial += Decimal(str(r.get("amount", 0)))
 
                 if start_date is None and p.start_date:
                     try:
-                        start_date = datetime.strptime(str(p.start_date), '%Y-%m-%d').date()
-                        initial = p.initial_amount or Decimal('0')
+                        start_date = datetime.strptime(str(p.start_date), "%Y-%m-%d").date()
+                        initial = p.initial_amount or Decimal("0")
                     except:
                         pass
 
                 if start_date:
-                    investments.append({
-                        'name': p.name,
-                        'start_date': start_date,
-                        'initial': float(initial) if initial > 0 else float(p.initial_amount or 0),
-                        'current': float(p.current_amount or 0),
-                    })
+                    investments.append(
+                        {
+                            "name": p.name,
+                            "start_date": start_date,
+                            "initial": float(initial) if initial > 0 else float(p.initial_amount or 0),
+                            "current": float(p.current_amount or 0),
+                        }
+                    )
                 else:
                     inv_type = p.investment_type.value if p.investment_type else "其他"
-                    missing_date_products.append({
-                        'name': p.name,
-                        'current': float(p.current_amount or 0),
-                        'type': inv_type,
-                    })
+                    missing_date_products.append(
+                        {
+                            "name": p.name,
+                            "current": float(p.current_amount or 0),
+                            "type": inv_type,
+                        }
+                    )
 
             # 5. 计算真实投资周期
             if investments:
-                earliest = min(investments, key=lambda x: x['start_date'])
-                earliest_date = earliest['start_date']
+                earliest = min(investments, key=lambda x: x["start_date"])
+                earliest_date = earliest["start_date"]
                 end_date = date(2026, 4, 25)
                 days = (end_date - earliest_date).days
                 years = days / 365
@@ -548,20 +557,20 @@ def register_analyze_commands(cli: click.Group) -> None:
             click.echo(f"\n📅 真实投资周期: {earliest_date} ~ 2026-04-25")
             click.echo(f"   投资天数: {days} 天 ({years:.2f} 年)")
 
-            click.echo(f"\n📊 产品统计:")
+            click.echo("\n📊 产品统计:")
             click.echo(f"   总产品数: {total_products}")
             click.echo(f"   有投资日期: {products_with_date}")
             if products_without_date > 0:
                 click.echo(f"   缺失日期: {products_without_date} (活期类，未计入年化分析)")
-                click.echo(f"\n⚠️  缺失投资日期的产品 (活期类):")
+                click.echo("\n⚠️  缺失投资日期的产品 (活期类):")
                 for i, item in enumerate(missing_date_products, 1):
-                    amount = item['current']
-                    inv_type = item.get('type', '其他')
+                    amount = item["current"]
+                    inv_type = item.get("type", "其他")
                     # 美元基金需要换算
-                    if inv_type == '美元基金（美元）':
+                    if inv_type == "美元基金（美元）":
                         cny_amount = amount * float(usd_rate)
                         click.echo(f"      {i}. {item['name']}: ${amount:,.0f} (≈¥{cny_amount:,.0f})")
-                    elif inv_type == '股息基金（港元）':
+                    elif inv_type == "股息基金（港元）":
                         cny_amount = amount * float(hkd_rate)
                         click.echo(f"      {i}. {item['name']}: HK${amount:,.0f} (≈¥{cny_amount:,.0f})")
                     elif amount > 0:
@@ -569,12 +578,14 @@ def register_analyze_commands(cli: click.Group) -> None:
                     else:
                         click.echo(f"      {i}. {item['name']}: ¥0")
 
-            click.echo(f"\n💰 收益汇总:")
-            click.echo(f"   持有中: 本金 ¥{float(holding_initial):,.0f}, 现值 ¥{float(holding_current):,.0f}, 收益 ¥{float(holding_profit):,.0f}")
+            click.echo("\n💰 收益汇总:")
+            click.echo(
+                f"   持有中: 本金 ¥{float(holding_initial):,.0f}, 现值 ¥{float(holding_current):,.0f}, 收益 ¥{float(holding_profit):,.0f}"
+            )
             click.echo(f"   已卖出: 本金 ¥{float(sold_initial):,.0f}, 收益 ¥{float(sold_profit):,.0f}")
 
             total_return = float(total_profit / total_initial) if total_initial > 0 else 0
-            click.echo(f"\n📊 总计:")
+            click.echo("\n📊 总计:")
             click.echo(f"   总投入本金: ¥{float(total_initial):,.0f}")
             click.echo(f"   总收益: ¥{float(total_profit):,.0f}")
             click.echo(f"   期间收益率: {total_return * 100:.2f}%")
@@ -590,7 +601,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                 # 收集所有产品的现金流
                 all_cashflows: list[dict[str, Any]] = []
                 base_date = None
-                total_current_value = Decimal('0')
+                total_current_value = Decimal("0")
 
                 # 第一步：找到最早日期（从交易记录和开始日期）
                 for p in products:
@@ -598,10 +609,10 @@ def register_analyze_commands(cli: click.Group) -> None:
                     if p.transaction_records and isinstance(p.transaction_records, str):
                         transactions = CSVParser._parse_transaction_records(p.transaction_records)
                         for t in transactions:
-                            if t.get('date') and t.get('amount'):
+                            if t.get("date") and t.get("amount"):
                                 try:
-                                    date_str = t['date'].replace('/', '-')
-                                    tx_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                                    date_str = t["date"].replace("/", "-")
+                                    tx_date = datetime.strptime(date_str, "%Y-%m-%d").date()
                                     if base_date is None or tx_date < base_date:
                                         base_date = tx_date
                                 except:
@@ -619,18 +630,18 @@ def register_analyze_commands(cli: click.Group) -> None:
                             transactions = CSVParser._parse_transaction_records(p.transaction_records)
                             if transactions:
                                 for t in transactions:
-                                    if t.get('date') and t.get('amount'):
+                                    if t.get("date") and t.get("amount"):
                                         try:
-                                            date_str = t['date'].replace('/', '-')
-                                            tx_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                                            date_str = t["date"].replace("/", "-")
+                                            tx_date = datetime.strptime(date_str, "%Y-%m-%d").date()
                                             days = (tx_date - base_date).days
-                                            amount = float(t.get('amount', 0))
-                                            tx_type = t.get('type', '').lower()
-                                            if tx_type == 'buy':
-                                                all_cashflows.append({'amount': -amount, 'days': days})
+                                            amount = float(t.get("amount", 0))
+                                            tx_type = t.get("type", "").lower()
+                                            if tx_type == "buy":
+                                                all_cashflows.append({"amount": -amount, "days": days})
                                                 tx_count += 1
-                                            elif tx_type == 'sell':
-                                                all_cashflows.append({'amount': amount, 'days': days})
+                                            elif tx_type == "sell":
+                                                all_cashflows.append({"amount": amount, "days": days})
                                                 tx_count += 1
                                         except:
                                             pass
@@ -640,43 +651,45 @@ def register_analyze_commands(cli: click.Group) -> None:
                                 # 缺失交易记录但有开始日期和初始金额的产品（一次性买入）
                                 if p.start_date and p.initial_amount and p.initial_amount > 0 and p.current_amount:
                                     days = (p.start_date - base_date).days
-                                    all_cashflows.append({'amount': -float(p.initial_amount), 'days': days})
+                                    all_cashflows.append({"amount": -float(p.initial_amount), "days": days})
                                     tx_count += 1
                                     total_current_value += p.current_amount
                         else:
                             # 缺失交易记录但有开始日期和初始金额的产品（一次性买入）
                             if p.start_date and p.initial_amount and p.initial_amount > 0 and p.current_amount:
                                 days = (p.start_date - base_date).days
-                                all_cashflows.append({'amount': -float(p.initial_amount), 'days': days})
+                                all_cashflows.append({"amount": -float(p.initial_amount), "days": days})
                                 tx_count += 1
                                 total_current_value += p.current_amount
 
                     # 添加所有产品的当前市值作为最后的正向现金流
                     end_date = date(2026, 4, 25)
                     end_days = (end_date - base_date).days
-                    all_cashflows.append({'amount': float(total_current_value), 'days': end_days})
+                    all_cashflows.append({"amount": float(total_current_value), "days": end_days})
 
                     # 计算 IRR
                     if all_cashflows and len(all_cashflows) > 1:
                         irr = irr_calculator.calculate_irr_with_days(all_cashflows)
                         if irr is not None and -1 < irr < 10:
                             click.echo(f"   IRR 年化收益率: {irr * 100:.2f}%")
-                            click.echo(f"   (基于 {tx_count} 笔买入/卖出记录 + {len([p for p in products if not (p.transaction_records and isinstance(p.transaction_records, str) and CSVParser._parse_transaction_records(p.transaction_records))])} 个一次性买入产品)")
-            except Exception as e:
+                            click.echo(
+                                f"   (基于 {tx_count} 笔买入/卖出记录 + {len([p for p in products if not (p.transaction_records and isinstance(p.transaction_records, str) and CSVParser._parse_transaction_records(p.transaction_records))])} 个一次性买入产品)"
+                            )
+            except Exception:
                 pass
 
             # 7. 按年份分组
             by_year: dict[int, dict[str, int | float | list]] = {}
             for inv in investments:
-                year = inv['start_date'].year
+                year = inv["start_date"].year
                 if year not in by_year:
-                    by_year[year] = {'count': 0, 'initial': 0.0, 'current': 0.0, 'investments': []}
-                by_year[year]['count'] += 1  # type: ignore[operator]
-                by_year[year]['initial'] += inv['initial']  # type: ignore[operator]
-                by_year[year]['current'] += inv['current']  # type: ignore[operator]
-                cast(list[dict[str, Any]], by_year[year]['investments']).append(inv)
+                    by_year[year] = {"count": 0, "initial": 0.0, "current": 0.0, "investments": []}
+                by_year[year]["count"] += 1  # type: ignore[operator]
+                by_year[year]["initial"] += inv["initial"]  # type: ignore[operator]
+                by_year[year]["current"] += inv["current"]  # type: ignore[operator]
+                cast(list[dict[str, Any]], by_year[year]["investments"]).append(inv)
 
-            click.echo(f"\n📈 按投资年份分析:")
+            click.echo("\n📈 按投资年份分析:")
 
             table = Table(title="", box=box.SIMPLE)
             table.add_column("年份", style="cyan", width=6)
@@ -690,27 +703,27 @@ def register_analyze_commands(cli: click.Group) -> None:
 
             for year in sorted(by_year.keys()):
                 stats = by_year[year]
-                current_val = stats['current']
-                initial_val = stats['initial']
+                current_val = stats["current"]
+                initial_val = stats["initial"]
                 profit = float(current_val) - float(initial_val)  # type: ignore[arg-type]
                 ret = profit / float(initial_val) * 100 if float(initial_val) > 0 else 0  # type: ignore[arg-type]
 
-                inv_list = cast(list[dict[str, Any]], stats['investments'])
+                inv_list = cast(list[dict[str, Any]], stats["investments"])
                 if inv_list:
-                    avg_days = sum((date(2026, 4, 25) - i['start_date']).days for i in inv_list) / len(inv_list)
+                    avg_days = sum((date(2026, 4, 25) - i["start_date"]).days for i in inv_list) / len(inv_list)
                 else:
                     avg_days = 0
                 avg_years = avg_days / 365
 
                 if avg_years > 0:
-                    year_annualized = (1 + ret/100) ** (1/avg_years) - 1
-                    annualized_str = f"{year_annualized*100:.2f}%"
+                    year_annualized = (1 + ret / 100) ** (1 / avg_years) - 1
+                    annualized_str = f"{year_annualized * 100:.2f}%"
                 else:
                     annualized_str = "-"
 
                 table.add_row(
                     str(year),
-                    str(stats['count']),
+                    str(stats["count"]),
                     f"¥{stats['initial']:,.0f}",
                     f"¥{stats['current']:,.0f}",
                     f"¥{profit:,.0f}",
@@ -726,6 +739,7 @@ def register_analyze_commands(cli: click.Group) -> None:
         except Exception as e:
             click.echo(f"❌ 分析失败: {e}", err=True)
             import traceback
+
             traceback.print_exc()
 
     @cli.command("personal-irr")
@@ -742,7 +756,7 @@ def register_analyze_commands(cli: click.Group) -> None:
 
         setup_data_mode(data_mode)
 
-        console = Console()
+        Console()
 
         click.echo("\n📊 综合个人财务IRR分析")
         click.echo("=" * 60)
@@ -753,13 +767,13 @@ def register_analyze_commands(cli: click.Group) -> None:
             products = CSVParser.load_data()
             data_dir = _get_data_dir(config.data_mode)
 
-            usd_rate = Decimal('7.2')
-            hkd_rate = Decimal('0.92')
+            Decimal("7.2")
+            Decimal("0.92")
             if data_dir:
                 try:
                     rates = CSVParser.get_exchange_rates(data_dir)
-                    usd_rate = Decimal(str(rates[0]))
-                    hkd_rate = Decimal(str(rates[1]))
+                    Decimal(str(rates[0]))
+                    Decimal(str(rates[1]))
                 except Exception:
                     pass
 
@@ -770,10 +784,10 @@ def register_analyze_commands(cli: click.Group) -> None:
                 if p.transaction_records and isinstance(p.transaction_records, str):
                     transactions = CSVParser._parse_transaction_records(p.transaction_records)
                     for t in transactions:
-                        if t.get('date') and t.get('amount'):
+                        if t.get("date") and t.get("amount"):
                             try:
-                                date_str = t['date'].replace('/', '-')
-                                tx_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                                date_str = t["date"].replace("/", "-")
+                                tx_date = datetime.strptime(date_str, "%Y-%m-%d").date()
                                 if base_date is None or tx_date < base_date:
                                     base_date = tx_date
                             except Exception:
@@ -791,7 +805,7 @@ def register_analyze_commands(cli: click.Group) -> None:
             consumption_data: dict[str, float] = {}
 
             if consumption_file and consumption_file.exists():
-                with open(consumption_file, encoding='utf-8-sig') as f:
+                with open(consumption_file, encoding="utf-8-sig") as f:
                     reader = csv.reader(f)
                     next(reader)
                     for row in reader:
@@ -806,10 +820,10 @@ def register_analyze_commands(cli: click.Group) -> None:
             else:
                 click.echo("⚠️  未找到消费记录文件")
 
-            total_salary_income = Decimal('0')
-            total_consumption = Decimal('0')
+            total_salary_income = Decimal("0")
+            total_consumption = Decimal("0")
 
-            click.echo(f"\n💰 工资收入设置:")
+            click.echo("\n💰 工资收入设置:")
             click.echo(f"   月工资（税后）: ¥{monthly_salary:,.0f}")
             click.echo(f"   年终奖: ¥{annual_bonus:,.0f}")
             click.echo(f"   年收入: ¥{monthly_salary * 12 + annual_bonus:,.0f}")
@@ -839,41 +853,59 @@ def register_analyze_commands(cli: click.Group) -> None:
                     salary_date = date(year, month, 15)
                     days = (salary_date - base_date).days
                     if days >= 0:
-                        salary_cashflows.append({'amount': monthly_salary, 'days': days, 'type': 'salary', 'date': salary_date})
+                        salary_cashflows.append(
+                            {"amount": monthly_salary, "days": days, "type": "salary", "date": salary_date}
+                        )
                         total_salary_income += Decimal(str(monthly_salary))
 
                     if month == 12 and year < 2025:
                         bonus_date = date(year, 12, 25)
                         days = (bonus_date - base_date).days
                         if days >= 0:
-                            salary_cashflows.append({'amount': annual_bonus, 'days': days, 'type': 'bonus', 'date': bonus_date})
+                            salary_cashflows.append(
+                                {"amount": annual_bonus, "days": days, "type": "bonus", "date": bonus_date}
+                            )
                             total_salary_income += Decimal(str(annual_bonus))
 
                     month_key = f"{year}.{month:02d}"
                     consumption_date = date(year, month, 25)
                     days = (consumption_date - base_date).days
-                    
+
                     if days >= 0:
                         if month_key in consumption_data:
                             consumption_amount = consumption_data[month_key]
-                            consumption_cashflows.append({'amount': -consumption_amount, 'days': days, 'type': 'consumption', 'date': consumption_date})
+                            consumption_cashflows.append(
+                                {
+                                    "amount": -consumption_amount,
+                                    "days": days,
+                                    "type": "consumption",
+                                    "date": consumption_date,
+                                }
+                            )
                             total_consumption += Decimal(str(consumption_amount))
                             actual_months += 1
                         elif avg_monthly_consumption > 0:
-                            consumption_cashflows.append({'amount': -avg_monthly_consumption, 'days': days, 'type': 'consumption_estimated', 'date': consumption_date})
+                            consumption_cashflows.append(
+                                {
+                                    "amount": -avg_monthly_consumption,
+                                    "days": days,
+                                    "type": "consumption_estimated",
+                                    "date": consumption_date,
+                                }
+                            )
                             total_consumption += Decimal(str(avg_monthly_consumption))
                             estimated_months += 1
 
-            click.echo(f"\n📊 收支汇总:")
+            click.echo("\n📊 收支汇总:")
             click.echo(f"   工资收入: ¥{float(total_salary_income):,.0f}")
-            click.echo(f"      (2025年年终奖未发放，已排除)")
+            click.echo("      (2025年年终奖未发放，已排除)")
             click.echo(f"   消费支出: ¥{float(total_consumption):,.0f}")
             if estimated_months > 0:
                 click.echo(f"      (实际记录 {actual_months} 个月 + 推算 {estimated_months} 个月)")
             click.echo(f"   净收入: ¥{float(total_salary_income - total_consumption):,.0f}")
 
-            holding_initial = Decimal('0')
-            holding_current = Decimal('0')
+            holding_initial = Decimal("0")
+            holding_current = Decimal("0")
 
             for p in products:
                 if p.initial_amount:
@@ -883,20 +915,20 @@ def register_analyze_commands(cli: click.Group) -> None:
 
             holding_profit = holding_current - holding_initial
 
-            sold_initial = Decimal('0')
-            sold_profit = Decimal('0')
+            sold_initial = Decimal("0")
+            sold_profit = Decimal("0")
 
             if data_dir:
                 sold_file = data_dir / "卖出记录-表格 1.csv"
                 if sold_file.exists():
-                    with open(sold_file, encoding='utf-8-sig') as f:
+                    with open(sold_file, encoding="utf-8-sig") as f:
                         reader = csv.reader(f)
                         next(reader)
                         for row in reader:
                             if len(row) >= 21:
                                 try:
-                                    sold_initial += Decimal(row[19]) if row[19] else Decimal('0')
-                                    sold_profit += Decimal(row[20]) if row[20] else Decimal('0')
+                                    sold_initial += Decimal(row[19]) if row[19] else Decimal("0")
+                                    sold_profit += Decimal(row[20]) if row[20] else Decimal("0")
                                 except Exception:
                                     pass
 
@@ -904,8 +936,10 @@ def register_analyze_commands(cli: click.Group) -> None:
             total_profit = holding_profit + sold_profit
             total_current_value = holding_current
 
-            click.echo(f"\n📈 投资汇总:")
-            click.echo(f"   持有中: 本金 ¥{float(holding_initial):,.0f}, 现值 ¥{float(holding_current):,.0f}, 收益 ¥{float(holding_profit):,.0f}")
+            click.echo("\n📈 投资汇总:")
+            click.echo(
+                f"   持有中: 本金 ¥{float(holding_initial):,.0f}, 现值 ¥{float(holding_current):,.0f}, 收益 ¥{float(holding_profit):,.0f}"
+            )
             click.echo(f"   已卖出: 本金 ¥{float(sold_initial):,.0f}, 收益 ¥{float(sold_profit):,.0f}")
             click.echo(f"   总投入: ¥{float(total_investment):,.0f}")
             click.echo(f"   总收益: ¥{float(total_profit):,.0f}")
@@ -917,78 +951,109 @@ def register_analyze_commands(cli: click.Group) -> None:
                     transactions = CSVParser._parse_transaction_records(p.transaction_records)
                     if transactions:
                         for t in transactions:
-                            if t.get('date') and t.get('amount'):
+                            if t.get("date") and t.get("amount"):
                                 try:
-                                    date_str = t['date'].replace('/', '-')
-                                    tx_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                                    date_str = t["date"].replace("/", "-")
+                                    tx_date = datetime.strptime(date_str, "%Y-%m-%d").date()
                                     days = (tx_date - base_date).days
-                                    amount = float(t.get('amount', 0))
-                                    tx_type = t.get('type', '').lower()
-                                    if tx_type == 'buy':
-                                        investment_cashflows.append({'amount': -amount, 'days': days, 'type': 'investment_buy', 'product': p.name})
-                                    elif tx_type == 'sell':
-                                        investment_cashflows.append({'amount': amount, 'days': days, 'type': 'investment_sell', 'product': p.name})
+                                    amount = float(t.get("amount", 0))
+                                    tx_type = t.get("type", "").lower()
+                                    if tx_type == "buy":
+                                        investment_cashflows.append(
+                                            {
+                                                "amount": -amount,
+                                                "days": days,
+                                                "type": "investment_buy",
+                                                "product": p.name,
+                                            }
+                                        )
+                                    elif tx_type == "sell":
+                                        investment_cashflows.append(
+                                            {
+                                                "amount": amount,
+                                                "days": days,
+                                                "type": "investment_sell",
+                                                "product": p.name,
+                                            }
+                                        )
                                 except Exception:
                                     pass
                     else:
                         if p.start_date and p.initial_amount and p.initial_amount > 0 and p.current_amount:
                             days = (p.start_date - base_date).days
-                            investment_cashflows.append({'amount': -float(p.initial_amount), 'days': days, 'type': 'investment_buy', 'product': p.name})
+                            investment_cashflows.append(
+                                {
+                                    "amount": -float(p.initial_amount),
+                                    "days": days,
+                                    "type": "investment_buy",
+                                    "product": p.name,
+                                }
+                            )
                 else:
                     if p.start_date and p.initial_amount and p.initial_amount > 0 and p.current_amount:
                         days = (p.start_date - base_date).days
-                        investment_cashflows.append({'amount': -float(p.initial_amount), 'days': days, 'type': 'investment_buy', 'product': p.name})
+                        investment_cashflows.append(
+                            {
+                                "amount": -float(p.initial_amount),
+                                "days": days,
+                                "type": "investment_buy",
+                                "product": p.name,
+                            }
+                        )
 
             all_cashflows = []
 
             for cf in salary_cashflows:
-                all_cashflows.append({'amount': cf['amount'], 'days': cf['days']})
+                all_cashflows.append({"amount": cf["amount"], "days": cf["days"]})
 
             for cf in consumption_cashflows:
-                all_cashflows.append({'amount': cf['amount'], 'days': cf['days']})
+                all_cashflows.append({"amount": cf["amount"], "days": cf["days"]})
 
             for cf in investment_cashflows:
-                all_cashflows.append({'amount': cf['amount'], 'days': cf['days']})
+                all_cashflows.append({"amount": cf["amount"], "days": cf["days"]})
 
             end_days = (end_date - base_date).days
-            all_cashflows.append({'amount': float(total_current_value), 'days': end_days})
+            all_cashflows.append({"amount": float(total_current_value), "days": end_days})
 
             if all_cashflows and len(all_cashflows) > 1:
                 from asset_lens.core.irr_calculator import irr_calculator
 
                 irr = irr_calculator.calculate_irr_with_days(all_cashflows)
                 if irr is not None and -1 < irr < 10:
-                    click.echo(f"\n🎯 综合IRR分析结果:")
+                    click.echo("\n🎯 综合IRR分析结果:")
                     click.echo(f"   IRR 年化收益率: {irr * 100:.2f}%")
-                    click.echo(f"   说明: 包含工资收入、消费支出、投资产品")
+                    click.echo("   说明: 包含工资收入、消费支出、投资产品")
 
-                    total_net_worth = float(total_current_value + total_salary_income - total_consumption - total_investment)
-                    click.echo(f"\n📊 财富净值变化:")
+                    float(total_current_value + total_salary_income - total_consumption - total_investment)
+                    click.echo("\n📊 财富净值变化:")
                     click.echo(f"   期末资产: ¥{float(total_current_value):,.0f}")
                     click.echo(f"   期间净收入: ¥{float(total_salary_income - total_consumption):,.0f}")
                 else:
-                    click.echo(f"\n📊 综合财务分析:")
+                    click.echo("\n📊 综合财务分析:")
                     total_net_income = float(total_salary_income - total_consumption)
                     total_wealth_change = total_net_income + float(total_profit)
-                    
+
                     click.echo(f"   期间净收入（工资-消费）: ¥{total_net_income:,.0f}")
                     click.echo(f"   投资收益: ¥{float(total_profit):,.0f}")
                     click.echo(f"   总财富变化: ¥{total_wealth_change:,.0f}")
-                    
+
                     if total_investment > 0:
                         investment_return_rate = float(total_profit / total_investment) * 100
                         click.echo(f"   投资收益率: {investment_return_rate:.2f}%")
-                    
-                    savings_rate = (total_net_income / float(total_salary_income) * 100) if float(total_salary_income) > 0 else 0
+
+                    savings_rate = (
+                        (total_net_income / float(total_salary_income) * 100) if float(total_salary_income) > 0 else 0
+                    )
                     click.echo(f"   储蓄率: {savings_rate:.1f}%")
-                    
-                    click.echo(f"\n💡 说明: IRR计算需要更长时间跨度的数据才能得出有意义的结果")
+
+                    click.echo("\n💡 说明: IRR计算需要更长时间跨度的数据才能得出有意义的结果")
             else:
-                click.echo(f"\n⚠️  现金流数据不足，无法计算IRR")
+                click.echo("\n⚠️  现金流数据不足，无法计算IRR")
 
             click.echo("\n✅ 分析完成！")
 
         except Exception as e:
             click.echo(f"❌ 分析失败: {e}", err=True)
             import traceback
+
             traceback.print_exc()

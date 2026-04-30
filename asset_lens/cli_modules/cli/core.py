@@ -275,6 +275,7 @@ complete -F _asset_lens_completion asset-lens
 
         try:
             from asset_lens.data.csv_parser import CSVParser
+
             CSVParser.load_data()
             click.echo("  ✅ 数据加载正常")
             checks_passed += 1
@@ -284,6 +285,7 @@ complete -F _asset_lens_completion asset-lens
 
         try:
             from asset_lens.data.enhanced_market_data_fetcher import enhanced_market_data_fetcher
+
             enhanced_market_data_fetcher.fetch_all_domestic_indexes()
             click.echo("  ✅ 市场数据获取器正常")
             checks_passed += 1

@@ -12,15 +12,16 @@ Strategy Backtest Report Module.
 import json
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from enum import Enum
 from pathlib import Path
 from typing import Any
-from enum import Enum
 
 from ..config import config
 
 
 class ReportPeriod(Enum):
     """报告周期"""
+
     DAILY = "daily"
     WEEKLY = "weekly"
     MONTHLY = "monthly"
@@ -30,6 +31,7 @@ class ReportPeriod(Enum):
 
 class StrategyGrade(Enum):
     """策略评级"""
+
     A = "A"
     B = "B"
     C = "C"
@@ -40,6 +42,7 @@ class StrategyGrade(Enum):
 @dataclass
 class BacktestMetrics:
     """回测指标"""
+
     total_return: float
     annual_return: float
     max_drawdown: float
@@ -73,6 +76,7 @@ class BacktestMetrics:
 @dataclass
 class StrategyComparison:
     """策略对比"""
+
     strategy_name: str
     current_metrics: BacktestMetrics
     previous_metrics: BacktestMetrics | None
@@ -94,6 +98,7 @@ class StrategyComparison:
 @dataclass
 class BacktestReport:
     """回测报告"""
+
     report_id: str
     period: ReportPeriod
     period_start: str
@@ -151,14 +156,16 @@ class BacktestReporter:
             improvement = self._calculate_improvement(metrics, previous)
             grade = self._calculate_grade(metrics)
 
-            strategy_comparisons.append(StrategyComparison(
-                strategy_name=strategy_name,
-                current_metrics=metrics,
-                previous_metrics=previous,
-                improvement=improvement,
-                grade=grade,
-                rank=i + 1,
-            ))
+            strategy_comparisons.append(
+                StrategyComparison(
+                    strategy_name=strategy_name,
+                    current_metrics=metrics,
+                    previous_metrics=previous,
+                    improvement=improvement,
+                    grade=grade,
+                    rank=i + 1,
+                )
+            )
 
         strategy_comparisons.sort(key=lambda x: x.current_metrics.total_return, reverse=True)
 
@@ -343,6 +350,7 @@ class BacktestReporter:
     def _get_market_benchmark(self, start: str, end: str) -> float:
         """获取市场基准"""
         import random
+
         return random.uniform(-0.05, 0.1)
 
     def _generate_recommendations(self, comparisons: list[StrategyComparison]) -> list[str]:
@@ -358,7 +366,9 @@ class BacktestReporter:
         recommendations.append(f"最佳策略: {best.strategy_name} (收益 {best.current_metrics.total_return:.1%})")
 
         if worst.current_metrics.total_return < 0:
-            recommendations.append(f"建议停用 {worst.strategy_name} 策略 (亏损 {abs(worst.current_metrics.total_return):.1%})")
+            recommendations.append(
+                f"建议停用 {worst.strategy_name} 策略 (亏损 {abs(worst.current_metrics.total_return):.1%})"
+            )
 
         for comp in comparisons:
             if comp.improvement.get("total_return", 0) < -0.05:

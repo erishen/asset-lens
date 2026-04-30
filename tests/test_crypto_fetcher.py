@@ -4,7 +4,6 @@ Tests for Crypto Fetcher.
 """
 
 import pytest
-from unittest.mock import patch, MagicMock
 
 
 class TestCryptoFetcher:
@@ -13,12 +12,14 @@ class TestCryptoFetcher:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.data.crypto_fetcher import CryptoFetcher
+
         assert CryptoFetcher is not None
 
     @pytest.fixture
     def fetcher(self):
         """创建获取器实例"""
         from asset_lens.data.crypto_fetcher import CryptoFetcher
+
         return CryptoFetcher()
 
     def test_fetcher_init(self, fetcher):
@@ -27,7 +28,7 @@ class TestCryptoFetcher:
 
     def test_fetch_method(self, fetcher):
         """测试获取方法"""
-        assert hasattr(fetcher, 'get_ticker') or hasattr(fetcher, 'get_ohlcvs')
+        assert hasattr(fetcher, "get_ticker") or hasattr(fetcher, "get_ohlcvs")
 
 
 class TestCryptoDataParsing:

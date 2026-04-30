@@ -3,14 +3,12 @@ Tests for Market Sentiment Analyzer.
 市场风向分析器测试
 """
 
-import pytest
-from datetime import datetime
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from asset_lens.core.market_sentiment import (
+    MarketSentiment,
     MarketSentimentAnalyzer,
     SentimentIndicator,
-    MarketSentiment,
     market_sentiment_analyzer,
 )
 
@@ -158,7 +156,7 @@ class TestMarketSentimentAnalyzer:
     def test_get_report(self):
         """测试生成报告"""
         from asset_lens.core.market_sentiment import MarketSentiment, SentimentIndicator
-        
+
         mock_sentiment = MarketSentiment(
             overall_score=75.0,
             trend="bullish",
@@ -170,7 +168,7 @@ class TestMarketSentimentAnalyzer:
             suggestions=["建议加仓", "关注科技板块"],
             analysis_time="2024-01-01 12:00:00",
         )
-        
+
         with patch.object(MarketSentimentAnalyzer, "analyze", return_value=mock_sentiment):
             analyzer = MarketSentimentAnalyzer()
             report = analyzer.get_report()
@@ -182,11 +180,11 @@ class TestMarketSentimentAnalyzer:
 
     def test_analyze_index_trend_success(self):
         """测试指数趋势分析 - 成功"""
-        import requests
+
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.text = 'var hq_str_sh000001="上证指数,4000.00,4100.00,4200.00,4300.00,3900.00,100000,100000000,4200.00,4100.00,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1";'
-        
+
         with patch("requests.get", return_value=mock_response):
             analyzer = MarketSentimentAnalyzer()
             indicator = analyzer._analyze_index_trend()
@@ -195,7 +193,7 @@ class TestMarketSentimentAnalyzer:
 
     def test_analyze_index_trend_failure(self):
         """测试指数趋势分析 - 失败"""
-        import requests
+
         with patch("requests.get", side_effect=Exception("Connection error")):
             analyzer = MarketSentimentAnalyzer()
             indicator = analyzer._analyze_index_trend()

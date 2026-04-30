@@ -3,10 +3,6 @@ Tests for Enhanced Notification Service.
 增强版通知服务测试
 """
 
-import pytest
-from datetime import datetime
-from unittest.mock import patch, MagicMock
-
 
 class TestNotificationConfig:
     """通知配置测试"""
@@ -14,6 +10,7 @@ class TestNotificationConfig:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.notification.enhanced_notification import NotificationConfig
+
         assert NotificationConfig is not None
 
     def test_default_config(self):
@@ -81,14 +78,12 @@ class TestEnhancedNotificationService:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.notification.enhanced_notification import EnhancedNotificationService
+
         assert EnhancedNotificationService is not None
 
     def test_service_init(self):
         """测试服务初始化"""
-        from asset_lens.notification.enhanced_notification import (
-            EnhancedNotificationService,
-            NotificationConfig,
-        )
+        from asset_lens.notification.enhanced_notification import EnhancedNotificationService, NotificationConfig
 
         config = NotificationConfig()
         service = EnhancedNotificationService(config)
@@ -140,10 +135,7 @@ class TestEnhancedNotificationService:
 
     def test_notify_risk_alert(self):
         """测试发送风险预警"""
-        from asset_lens.notification.enhanced_notification import (
-            EnhancedNotificationService,
-            NotificationConfig,
-        )
+        from asset_lens.notification.enhanced_notification import EnhancedNotificationService, NotificationConfig
 
         config = NotificationConfig(cooldown_minutes=0)
         service = EnhancedNotificationService(config)
@@ -161,10 +153,7 @@ class TestEnhancedNotificationService:
 
     def test_notify_trade_signal(self):
         """测试发送交易信号"""
-        from asset_lens.notification.enhanced_notification import (
-            EnhancedNotificationService,
-            NotificationConfig,
-        )
+        from asset_lens.notification.enhanced_notification import EnhancedNotificationService, NotificationConfig
 
         config = NotificationConfig(cooldown_minutes=0)
         service = EnhancedNotificationService(config)
@@ -183,10 +172,7 @@ class TestEnhancedNotificationService:
 
     def test_notify_daily_report(self):
         """测试发送每日报告"""
-        from asset_lens.notification.enhanced_notification import (
-            EnhancedNotificationService,
-            NotificationConfig,
-        )
+        from asset_lens.notification.enhanced_notification import EnhancedNotificationService, NotificationConfig
 
         config = NotificationConfig(cooldown_minutes=0)
         service = EnhancedNotificationService(config)
@@ -225,10 +211,7 @@ class TestEnhancedNotificationService:
 
     def test_test_channel(self):
         """测试测试通知渠道"""
-        from asset_lens.notification.enhanced_notification import (
-            EnhancedNotificationService,
-            NotificationConfig,
-        )
+        from asset_lens.notification.enhanced_notification import EnhancedNotificationService, NotificationConfig
 
         config = NotificationConfig()
         service = EnhancedNotificationService(config)
@@ -280,9 +263,10 @@ class TestNotificationHistory:
 
     def test_history_init(self):
         """测试历史初始化"""
-        from asset_lens.notification.enhanced_notification import NotificationHistory
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
+
+        from asset_lens.notification.enhanced_notification import NotificationHistory
 
         with tempfile.TemporaryDirectory() as tmpdir:
             history = NotificationHistory(Path(tmpdir))
@@ -290,12 +274,10 @@ class TestNotificationHistory:
 
     def test_history_add(self):
         """测试历史添加"""
-        from asset_lens.notification.enhanced_notification import (
-            NotificationHistory,
-            NotificationMessage,
-        )
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
+
+        from asset_lens.notification.enhanced_notification import NotificationHistory, NotificationMessage
 
         with tempfile.TemporaryDirectory() as tmpdir:
             history = NotificationHistory(Path(tmpdir))
@@ -310,12 +292,10 @@ class TestNotificationHistory:
 
     def test_history_get_recent(self):
         """测试获取最近历史"""
-        from asset_lens.notification.enhanced_notification import (
-            NotificationHistory,
-            NotificationMessage,
-        )
-        from pathlib import Path
         import tempfile
+        from pathlib import Path
+
+        from asset_lens.notification.enhanced_notification import NotificationHistory, NotificationMessage
 
         with tempfile.TemporaryDirectory() as tmpdir:
             history = NotificationHistory(Path(tmpdir))

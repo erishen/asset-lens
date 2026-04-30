@@ -54,9 +54,9 @@ def train(model_type: str, prediction_days: int, output: str):
         stocks_price_data = {}
 
         for stock in stocks_data[:200]:
-            code = stock.get('code', '')
-            stock.get('name', '')
-            current_price = stock.get('current_price', 10)
+            code = stock.get("code", "")
+            stock.get("name", "")
+            current_price = stock.get("current_price", 10)
 
             if not code or current_price <= 0:
                 continue
@@ -65,14 +65,16 @@ def train(model_type: str, prediction_days: int, output: str):
             returns = np.random.randn(n_days) * 0.02
             prices = current_price * np.exp(np.cumsum(returns))
 
-            df = pd.DataFrame({
-                'open': prices * (1 + np.random.randn(n_days) * 0.01),
-                'high': prices * (1 + np.abs(np.random.randn(n_days) * 0.02)),
-                'low': prices * (1 - np.abs(np.random.randn(n_days) * 0.02)),
-                'close': prices,
-                'volume': np.random.randint(100000, 1000000, n_days),
-                'amount': prices * np.random.randint(100000, 1000000, n_days),
-            })
+            df = pd.DataFrame(
+                {
+                    "open": prices * (1 + np.random.randn(n_days) * 0.01),
+                    "high": prices * (1 + np.abs(np.random.randn(n_days) * 0.02)),
+                    "low": prices * (1 - np.abs(np.random.randn(n_days) * 0.02)),
+                    "close": prices,
+                    "volume": np.random.randint(100000, 1000000, n_days),
+                    "amount": prices * np.random.randint(100000, 1000000, n_days),
+                }
+            )
 
             stocks_price_data[code] = df
 
@@ -96,7 +98,7 @@ def train(model_type: str, prediction_days: int, output: str):
         trainer.save_model(output_path)
         console.print(f"✅ 模型已保存: {output_path}")
 
-        result_path = output_path.with_suffix('.json')
+        result_path = output_path.with_suffix(".json")
         trainer.save_training_result(result, result_path)
 
         console.print("\n📈 训练结果:")
@@ -123,11 +125,7 @@ def train(model_type: str, prediction_days: int, output: str):
         feature_table.add_column("占比", justify="right")
 
         for _, row in result.feature_importance.head(10).iterrows():
-            feature_table.add_row(
-                row['feature'],
-                f"{row['importance']:.4f}",
-                f"{row['importance_pct']:.2f}%"
-            )
+            feature_table.add_row(row["feature"], f"{row['importance']:.4f}", f"{row['importance_pct']:.2f}%")
 
         console.print(feature_table)
 
@@ -136,6 +134,7 @@ def train(model_type: str, prediction_days: int, output: str):
     except Exception as e:
         console.print(f"[red]❌ 训练失败: {e}[/red]")
         import traceback
+
         traceback.print_exc()
 
 
@@ -176,7 +175,7 @@ def predict(model: str, code: str):
 
         stock_info = None
         for stock in stocks_data:
-            if stock.get('code') == code:
+            if stock.get("code") == code:
                 stock_info = stock
                 break
 
@@ -195,20 +194,23 @@ def predict(model: str, code: str):
         console.print(f"  总股票数: {len(stocks_data)}")
         console.print(f"  使用天数: {n_days} 天")
 
-        current_price = stock_info.get('current_price', 10)
+        current_price = stock_info.get("current_price", 10)
         returns = np.random.randn(n_days) * 0.02
         prices = current_price * np.exp(np.cumsum(returns))
 
-        price_df = pd.DataFrame({
-            'open': prices * (1 + np.random.randn(n_days) * 0.01),
-            'high': prices * (1 + np.abs(np.random.randn(n_days) * 0.02)),
-            'low': prices * (1 - np.abs(np.random.randn(n_days) * 0.02)),
-            'close': prices,
-            'volume': np.random.randint(100000, 1000000, n_days),
-            'amount': prices * np.random.randint(100000, 1000000, n_days),
-        })
+        price_df = pd.DataFrame(
+            {
+                "open": prices * (1 + np.random.randn(n_days) * 0.01),
+                "high": prices * (1 + np.abs(np.random.randn(n_days) * 0.02)),
+                "low": prices * (1 - np.abs(np.random.randn(n_days) * 0.02)),
+                "close": prices,
+                "volume": np.random.randint(100000, 1000000, n_days),
+                "amount": prices * np.random.randint(100000, 1000000, n_days),
+            }
+        )
 
         from asset_lens.ml.features import FeatureEngineer
+
         feature_engineer = FeatureEngineer()
         feature_df = feature_engineer.calculate_all_features(price_df)
 
@@ -217,7 +219,7 @@ def predict(model: str, code: str):
         result = predictor.predict_stock(
             stock_data=latest_features,
             code=code,
-            name=stock_info.get('name', ''),
+            name=stock_info.get("name", ""),
         )
 
         console.print("\n📈 预测结果:")
@@ -239,6 +241,7 @@ def predict(model: str, code: str):
     except Exception as e:
         console.print(f"[red]❌ 预测失败: {e}[/red]")
         import traceback
+
         traceback.print_exc()
 
 
@@ -250,8 +253,8 @@ def predict_pool(model: str, limit: int):
     from rich.console import Console
     from rich.table import Table
 
-    from asset_lens.trading.stock_pool import StockPool
     from asset_lens.data.stock_history_fetcher import StockHistoryFetcher
+    from asset_lens.trading.stock_pool import StockPool
 
     console = Console()
     console.print("\n🔮 预测股票池中所有股票")
@@ -274,38 +277,43 @@ def predict_pool(model: str, limit: int):
         console.print(f"✅ 股票池中有 {len(stocks)} 只股票")
 
         from asset_lens.ml.predictor import StockPredictor
+
         predictor = StockPredictor(model_path=model_path)
-        
+
         fetcher = StockHistoryFetcher()
 
         predictions = []
         for stock in stocks[:limit]:
-            code = stock.get('code', '')
-            name = stock.get('name', '')
+            code = stock.get("code", "")
+            name = stock.get("name", "")
             try:
                 history = fetcher.fetch_history(code, days=120)
                 history_data = None
-                if history and history.get('klines'):
+                if history and history.get("klines"):
                     history_data = []
-                    for kline in history['klines']:
-                        history_data.append({
-                            'open': float(kline.get('open', 0)),
-                            'high': float(kline.get('high', 0)),
-                            'low': float(kline.get('low', 0)),
-                            'close': float(kline.get('close', 0)),
-                            'volume': float(kline.get('volume', 0)),
-                            'amount': float(kline.get('amount', 0)),
-                        })
-                
+                    for kline in history["klines"]:
+                        history_data.append(
+                            {
+                                "open": float(kline.get("open", 0)),
+                                "high": float(kline.get("high", 0)),
+                                "low": float(kline.get("low", 0)),
+                                "close": float(kline.get("close", 0)),
+                                "volume": float(kline.get("volume", 0)),
+                                "amount": float(kline.get("amount", 0)),
+                            }
+                        )
+
                 result = predictor.predict_single(code=code, name=name, history_data=history_data)
                 if result:
-                    predictions.append({
-                        'code': code,
-                        'name': name,
-                        'prediction': result.prediction,
-                        'confidence': result.confidence,
-                        'up_prob': result.up_prob,
-                    })
+                    predictions.append(
+                        {
+                            "code": code,
+                            "name": name,
+                            "prediction": result.prediction,
+                            "confidence": result.confidence,
+                            "up_prob": result.up_prob,
+                        }
+                    )
             except Exception:
                 pass
 
@@ -318,11 +326,11 @@ def predict_pool(model: str, limit: int):
             table.add_column("上涨概率", justify="right")
 
             for p in predictions:
-                pred_color = "green" if p['prediction'] == "up" else "red"
-                pred_text = "↑" if p['prediction'] == "up" else "↓"
+                pred_color = "green" if p["prediction"] == "up" else "red"
+                pred_text = "↑" if p["prediction"] == "up" else "↓"
                 table.add_row(
-                    p['code'],
-                    p['name'],
+                    p["code"],
+                    p["name"],
                     f"[{pred_color}]{pred_text}[/{pred_color}]",
                     f"{p['confidence']:.1%}",
                     f"{p['up_prob']:.1%}",
@@ -367,12 +375,7 @@ def importance(model: str):
         table.add_column("占比", justify="right")
 
         for i, (_, row) in enumerate(importance_df.head(20).iterrows(), 1):
-            table.add_row(
-                str(i),
-                row['feature'],
-                f"{row['importance']:.4f}",
-                f"{row['importance_pct']:.2f}%"
-            )
+            table.add_row(str(i), row["feature"], f"{row['importance']:.4f}", f"{row['importance_pct']:.2f}%")
 
         console.print(table)
 
@@ -391,18 +394,21 @@ def status():
 
     try:
         import lightgbm
+
         console.print(f"✅ LightGBM: {lightgbm.__version__}")
     except ImportError:
         console.print("[yellow]⚠️ LightGBM 未安装: pip install lightgbm[/yellow]")
 
     try:
         import xgboost
+
         console.print(f"✅ XGBoost: {xgboost.__version__}")
     except ImportError:
         console.print("[yellow]⚠️ XGBoost 未安装: pip install xgboost[/yellow]")
 
     try:
         import sklearn
+
         console.print(f"✅ scikit-learn: {sklearn.__version__}")
     except ImportError:
         console.print("[yellow]⚠️ scikit-learn 未安装: pip install scikit-learn[/yellow]")
@@ -411,7 +417,7 @@ def status():
     if model_path.exists():
         console.print(f"\n✅ 已训练模型: {model_path}")
 
-        result_path = model_path.with_suffix('.json')
+        result_path = model_path.with_suffix(".json")
         if result_path.exists():
             with open(result_path) as f:
                 result = json.load(f)
@@ -424,6 +430,7 @@ def status():
 
     try:
         from asset_lens.db.database import db_manager
+
         stats = db_manager.get_statistics()
         console.print("\n📊 数据库状态:")
         console.print(f"   K线数据: {stats['kline_count']:,} 条")
@@ -469,7 +476,7 @@ def train_db(model_type: str, days: int, output: str):
         trainer.save_model(output_path)
         console.print(f"✅ 模型已保存: {output_path}")
 
-        result_path = output_path.with_suffix('.json')
+        result_path = output_path.with_suffix(".json")
         trainer.save_training_result(result, result_path)
 
         console.print("\n📈 训练结果:")
@@ -494,6 +501,7 @@ def train_db(model_type: str, days: int, output: str):
     except Exception as e:
         console.print(f"[red]❌ 训练失败: {e}[/red]")
         import traceback
+
         traceback.print_exc()
 
 
@@ -531,8 +539,8 @@ def predict_db(code: str, model: str):
         pred_table.add_column("指标", style="cyan")
         pred_table.add_column("值", justify="right")
 
-        pred_color = "green" if result.get('prediction') == 1 else "red"
-        pred_text = "上涨" if result.get('prediction') == 1 else "下跌"
+        pred_color = "green" if result.get("prediction") == 1 else "red"
+        pred_text = "上涨" if result.get("prediction") == 1 else "下跌"
         pred_table.add_row("股票代码", code)
         pred_table.add_row("预测方向", f"[{pred_color}]{pred_text}[/{pred_color}]")
         pred_table.add_row("置信度", f"{result.get('confidence', 0):.2%}")
@@ -543,6 +551,7 @@ def predict_db(code: str, model: str):
     except Exception as e:
         console.print(f"[red]❌ 预测失败: {e}[/red]")
         import traceback
+
         traceback.print_exc()
 
 
@@ -574,20 +583,14 @@ def predictions(days: int):
         table.add_column("结果", style="green")
 
         for r in records[:50]:
-            pred_text = "涨" if r['prediction'] == 1 else "跌"
+            pred_text = "涨" if r["prediction"] == 1 else "跌"
             result_text = ""
-            if r.get('actual_result') is not None:
-                actual = "涨" if r['actual_result'] == 1 else "跌"
-                correct = "✓" if r.get('is_correct') else "✗"
+            if r.get("actual_result") is not None:
+                actual = "涨" if r["actual_result"] == 1 else "跌"
+                correct = "✓" if r.get("is_correct") else "✗"
                 result_text = f"{actual} {correct}"
 
-            table.add_row(
-                r['predict_date'],
-                r['code'],
-                pred_text,
-                f"{r['confidence']:.1%}",
-                result_text
-            )
+            table.add_row(r["predict_date"], r["code"], pred_text, f"{r['confidence']:.1%}", result_text)
 
         console.print(table)
 
@@ -728,10 +731,10 @@ def portfolio():
     console.print(f"  持仓市值: ¥{summary['total_market_value']:,.2f}")
     console.print(f"  总资产: ¥{summary['total_value']:,.2f}")
 
-    profit_color = "green" if summary['total_profit_rate'] >= 0 else "red"
+    profit_color = "green" if summary["total_profit_rate"] >= 0 else "red"
     console.print(f"  总收益: [{profit_color}]{summary['total_profit_rate']:+.2f}%[/{profit_color}]")
 
-    if summary['holdings']:
+    if summary["holdings"]:
         console.print(f"\n  当前持仓 ({summary['holding_count']}只):")
 
         table = Table()
@@ -743,14 +746,14 @@ def portfolio():
         table.add_column("市值", justify="right")
         table.add_column("收益%", justify="right")
 
-        for h in summary['holdings']:
-            profit_color = "green" if h['profit_rate'] >= 0 else "red"
+        for h in summary["holdings"]:
+            profit_color = "green" if h["profit_rate"] >= 0 else "red"
             table.add_row(
-                h['code'],
-                h['name'],
+                h["code"],
+                h["name"],
                 f"¥{h['buy_price']:.2f}",
                 f"¥{h['current_price']:.2f}",
-                str(h['shares']),
+                str(h["shares"]),
                 f"¥{h['market_value']:,.0f}",
                 f"[{profit_color}]{h['profit_rate']:+.2f}%[/{profit_color}]",
             )
@@ -783,26 +786,22 @@ def sector():
     console.print("  数据源: 市场股票缓存")
     console.print(f"  总股票数: {len(stocks):,}")
     if stocks:
-        up_count = len([s for s in stocks if s.get('change_percent', 0) > 0])
-        down_count = len([s for s in stocks if s.get('change_percent', 0) < 0])
-        console.print(f"  上涨股票: {up_count} ({up_count/len(stocks):.1%})")
-        console.print(f"  下跌股票: {down_count} ({down_count/len(stocks):.1%})")
+        up_count = len([s for s in stocks if s.get("change_percent", 0) > 0])
+        down_count = len([s for s in stocks if s.get("change_percent", 0) < 0])
+        console.print(f"  上涨股票: {up_count} ({up_count / len(stocks):.1%})")
+        console.print(f"  下跌股票: {down_count} ({down_count / len(stocks):.1%})")
 
     result = sector_analyzer.analyze()
 
     console.print(f"\n  市场状态: [bold]{result.market_condition.upper()}[/bold]")
     console.print(f"  轮动信号: {result.rotation_signal}")
 
-    sector_stats = sector_analyzer._calculate_sector_stats(
-        sector_analyzer.__dict__.get('_stocks', [])
-    )
+    sector_stats = sector_analyzer._calculate_sector_stats(sector_analyzer.__dict__.get("_stocks", []))
 
     if not sector_stats:
         sector_stats = sector_analyzer._calculate_sector_stats(stocks)
 
-    ml_predictions = sector_ml_predictor.predict_all_sectors(
-        sector_stats, result.market_condition
-    )
+    ml_predictions = sector_ml_predictor.predict_all_sectors(sector_stats, result.market_condition)
 
     rotation = sector_ml_predictor.get_sector_rotation_suggestion(ml_predictions)
 
@@ -862,7 +861,7 @@ def sector():
 
     console.print("\n💡 相关命令:")
     console.print("   make ml-analyze-market  # ML市场分析")
-    console.print("   make ml-fund-sector FUND=\"基金名称\"  # 分析基金板块")
+    console.print('   make ml-fund-sector FUND="基金名称"  # 分析基金板块')
 
 
 @ml.command()
@@ -887,9 +886,9 @@ def fund_sector(fund_name: str):
     console.print(f"  所属板块: {result['sector']}")
     console.print(f"  市场状态: {result.get('market_condition', '未知')}")
 
-    if result.get('is_recommended'):
+    if result.get("is_recommended"):
         console.print("  板块状态: [green]✅ 强势板块[/green]")
-    elif result.get('is_avoid'):
+    elif result.get("is_avoid"):
         console.print("  板块状态: [red]⚠️ 弱势板块[/red]")
     else:
         console.print("  板块状态: [yellow]➖ 中性板块[/yellow]")
@@ -913,4 +912,3 @@ def get_ml_command():
 
 if __name__ == "__main__":
     ml()
-

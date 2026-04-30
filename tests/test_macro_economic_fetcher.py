@@ -3,13 +3,9 @@ Tests for macro_economic_fetcher module.
 宏观经济数据获取模块测试
 """
 
-import pytest
 from unittest.mock import MagicMock, patch
 
-from asset_lens.data.macro_economic_fetcher import (
-    MacroEconomicFetcher,
-    get_macro_fetcher,
-)
+from asset_lens.data.macro_economic_fetcher import MacroEconomicFetcher, get_macro_fetcher
 
 
 class TestMacroEconomicFetcher:

@@ -59,8 +59,10 @@ class StockHistoryFetcher:
                 return None
             try:
                 import tempfile
-                os.environ['HOME'] = tempfile.gettempdir()
+
+                os.environ["HOME"] = tempfile.gettempdir()
                 import tushare as ts
+
                 ts.set_token(self._tushare_token)
                 self._tushare = ts
             except ImportError:
@@ -83,7 +85,7 @@ class StockHistoryFetcher:
                 self._akshare = ak
             except ImportError:
                 raise ImportError(
-                    "请先安装 AkShare: pip install akshare\n" "AkShare 是一个开源免费的金融数据接口，无需注册"
+                    "请先安装 AkShare: pip install akshare\nAkShare 是一个开源免费的金融数据接口，无需注册"
                 )
         return self._akshare
 
@@ -110,7 +112,6 @@ class StockHistoryFetcher:
             是否登录成功
         """
         import io
-        import sys
         from contextlib import redirect_stderr, redirect_stdout
 
         if not self.baostock:
@@ -118,7 +119,7 @@ class StockHistoryFetcher:
 
         if self._baostock_logged_in:
             return True
-        
+
         if self._baostock_failed:
             return False
 
@@ -126,7 +127,7 @@ class StockHistoryFetcher:
             try:
                 with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
                     lg = self.baostock.login()
-                
+
                 if lg.error_code == "0":
                     self._baostock_logged_in = True
                     return True
@@ -283,9 +284,7 @@ class StockHistoryFetcher:
 
             for _, row in df.head(days).iterrows():
                 try:
-                    row_dict: dict[str, Any] = (
-                        row.to_dict() if hasattr(row, "to_dict") else dict(row)
-                    )
+                    row_dict: dict[str, Any] = row.to_dict() if hasattr(row, "to_dict") else dict(row)
                     klines_list.append(
                         {
                             "date": str(row_dict.get("trade_date", "")),
@@ -293,16 +292,10 @@ class StockHistoryFetcher:
                             "close": float(row_dict.get("close", 0)),
                             "high": float(row_dict.get("high", 0)),
                             "low": float(row_dict.get("low", 0)),
-                            "volume": float(row_dict.get("vol", 0)) * 100
-                            if row_dict.get("vol")
-                            else 0,
-                            "amount": float(row_dict.get("amount", 0)) * 1000
-                            if row_dict.get("amount")
-                            else 0,
+                            "volume": float(row_dict.get("vol", 0)) * 100 if row_dict.get("vol") else 0,
+                            "amount": float(row_dict.get("amount", 0)) * 1000 if row_dict.get("amount") else 0,
                             "amplitude": 0,
-                            "change_percent": float(row_dict.get("pct_chg", 0))
-                            if row_dict.get("pct_chg")
-                            else 0,
+                            "change_percent": float(row_dict.get("pct_chg", 0)) if row_dict.get("pct_chg") else 0,
                             "change_amount": 0,
                             "turnover_rate": 0,
                         }
@@ -344,9 +337,7 @@ class StockHistoryFetcher:
 
             for _, row in df.tail(days).iterrows():
                 try:
-                    row_dict: dict[str, Any] = (
-                        row.to_dict() if hasattr(row, "to_dict") else dict(row)
-                    )
+                    row_dict: dict[str, Any] = row.to_dict() if hasattr(row, "to_dict") else dict(row)
                     close_price = float(row_dict.get("close", 0))
                     volume = float(row_dict.get("amount", 0))
                     klines_list.append(
@@ -418,9 +409,7 @@ class StockHistoryFetcher:
 
                 for _, row in df.tail(days).iterrows():
                     try:
-                        row_dict: dict[str, Any] = (
-                            row.to_dict() if hasattr(row, "to_dict") else dict(row)
-                        )
+                        row_dict: dict[str, Any] = row.to_dict() if hasattr(row, "to_dict") else dict(row)
                         klines_list.append(
                             {
                                 "date": str(row_dict.get("日期", "")),
@@ -447,7 +436,7 @@ class StockHistoryFetcher:
                     continue
                 logger.debug(f"AkShare-东方财富 获取 {code} 历史数据失败: {e}")
                 return None
-        
+
         return None
 
     def fetch_history(self, code: str, days: int = 60) -> dict[str, Any] | None:
@@ -737,7 +726,7 @@ class StockHistoryFetcher:
 
             now = datetime.now()
             weekday = now.weekday()
-            
+
             if weekday >= 5:
                 if weekday == 5 and age_hours < 72:
                     return {
@@ -893,9 +882,7 @@ class StockHistoryFetcher:
             self.save_history_cache(cached_histories)
 
         result["success_rate"] = (
-            (result["cached"] + result["updated"]) / result["total"] * 100
-            if result["total"] > 0
-            else 0
+            (result["cached"] + result["updated"]) / result["total"] * 100 if result["total"] > 0 else 0
         )
 
         return result

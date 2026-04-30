@@ -1033,10 +1033,10 @@ show-config: ## 显示当前配置
 # 测试和代码质量
 # ============================================
 .PHONY: test
-test: ## 运行测试（排除网络相关测试，避免卡住）
+test: ## 运行测试（排除 E2E 测试，避免需要 web 服务）
 	@echo "🧪 运行测试..."
 	@echo "   正在启动测试进程..."
-	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/ --tb=short
+	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/ --ignore=tests/e2e --tb=short
 
 .PHONY: test-fast
 test-fast: ## 快速测试（仅核心模块）

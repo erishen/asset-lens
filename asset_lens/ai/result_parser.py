@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ParsedResult:
     """解析后的结果"""
+
     success: bool
     summary: str = ""
     risk_assessment: str = ""
@@ -116,7 +117,7 @@ class ResultParser:
             if start_idx == -1:
                 return items
 
-            section = text[start_idx:start_idx + 500]
+            section = text[start_idx : start_idx + 500]
             lines = section.split("\n")
 
             for line in lines[1:]:

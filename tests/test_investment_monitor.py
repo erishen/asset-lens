@@ -3,17 +3,12 @@ Tests for Investment Monitor.
 投资监控系统测试
 """
 
-import pytest
+import shutil
+import tempfile
 from datetime import datetime
 from pathlib import Path
-import tempfile
-import shutil
 
-from asset_lens.monitoring.investment_monitor import (
-    InvestmentMonitor,
-    MonitorConfig,
-    Alert
-)
+from asset_lens.monitoring.investment_monitor import Alert, InvestmentMonitor, MonitorConfig
 
 
 class TestInvestmentMonitor:
@@ -26,7 +21,7 @@ class TestInvestmentMonitor:
             volatility_threshold=20.0,
             max_drawdown_threshold=10.0,
             concentration_threshold=30.0,
-            check_interval=300
+            check_interval=300,
         )
         self.monitor = InvestmentMonitor(self.config)
 
@@ -38,39 +33,30 @@ class TestInvestmentMonitor:
         assert self.monitor.config.price_threshold == 5.0
 
     def test_run_asset_lens_command(self):
-        result = self.monitor.run_asset_lens_command('version')
-        assert 'success' in result
+        result = self.monitor.run_asset_lens_command("version")
+        assert "success" in result
 
     def test_monitor_portfolio_performance(self):
         result = self.monitor.monitor_portfolio_performance()
-        assert 'status' in result
-        assert 'timestamp' in result
+        assert "status" in result
+        assert "timestamp" in result
 
     def test_monitor_stock_prices(self):
-        result = self.monitor.monitor_stock_prices(['sh600519'])
-        assert 'stocks' in result
-        assert 'timestamp' in result
+        result = self.monitor.monitor_stock_prices(["sh600519"])
+        assert "stocks" in result
+        assert "timestamp" in result
 
     def test_monitor_market_indices(self):
         result = self.monitor.monitor_market_indices()
-        assert 'indices' in result
-        assert 'timestamp' in result
+        assert "indices" in result
+        assert "timestamp" in result
 
     def test_check_price_alerts(self):
-        stock_data = {
-            'stocks': {
-                'sh600519': {
-                    'status': 'success',
-                    'data': {
-                        'change_percent': 6.0
-                    }
-                }
-            }
-        }
-        
+        stock_data = {"stocks": {"sh600519": {"status": "success", "data": {"change_percent": 6.0}}}}
+
         alerts = self.monitor.check_price_alerts(stock_data)
         assert len(alerts) > 0
-        assert alerts[0].type == 'price_change'
+        assert alerts[0].type == "price_change"
 
     def test_check_concentration_risk(self):
         portfolio_data = {}
@@ -89,21 +75,21 @@ class TestInvestmentMonitor:
 
     def test_save_alert(self):
         alert = Alert(
-            level='high',
-            type='price_change',
-            message='测试预警',
+            level="high",
+            type="price_change",
+            message="测试预警",
             timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            data={'test': 'data'}
+            data={"test": "data"},
         )
-        
+
         self.monitor.save_alert(alert)
         assert len(self.monitor.alerts) == 1
-        assert self.monitor.alerts[0].message == '测试预警'
+        assert self.monitor.alerts[0].message == "测试预警"
 
     def test_run_continuous_monitoring(self):
         self.monitor.run_continuous_monitoring()
         assert self.monitor.running is True
-        
+
         self.monitor.stop_monitoring()
         assert self.monitor.running is False
 
@@ -127,7 +113,7 @@ class TestMonitorConfig:
             max_drawdown_threshold=15.0,
             concentration_threshold=40.0,
             check_interval=600,
-            enable_alerts=False
+            enable_alerts=False,
         )
         assert config.price_threshold == 10.0
         assert config.volatility_threshold == 30.0
@@ -142,14 +128,14 @@ class TestAlert:
 
     def test_alert_creation(self):
         alert = Alert(
-            level='high',
-            type='price_change',
-            message='股票价格变动超过阈值',
+            level="high",
+            type="price_change",
+            message="股票价格变动超过阈值",
             timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            data={'code': 'sh600519', 'change_percent': 6.0}
+            data={"code": "sh600519", "change_percent": 6.0},
         )
-        
-        assert alert.level == 'high'
-        assert alert.type == 'price_change'
-        assert alert.message == '股票价格变动超过阈值'
-        assert alert.data['code'] == 'sh600519'
+
+        assert alert.level == "high"
+        assert alert.type == "price_change"
+        assert alert.message == "股票价格变动超过阈值"
+        assert alert.data["code"] == "sh600519"

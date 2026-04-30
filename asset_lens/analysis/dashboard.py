@@ -13,15 +13,16 @@ Performance Dashboard Module.
 import json
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from enum import Enum
 from pathlib import Path
 from typing import Any
-from enum import Enum
 
 from ..config import config
 
 
 class ChartType(Enum):
     """图表类型"""
+
     LINE = "line"
     BAR = "bar"
     PIE = "pie"
@@ -31,6 +32,7 @@ class ChartType(Enum):
 
 class MetricType(Enum):
     """指标类型"""
+
     RETURN = "return"
     RISK = "risk"
     SHARPE = "sharpe"
@@ -41,6 +43,7 @@ class MetricType(Enum):
 @dataclass
 class ChartData:
     """图表数据"""
+
     chart_type: ChartType
     title: str
     labels: list[str]
@@ -60,6 +63,7 @@ class ChartData:
 @dataclass
 class MetricCard:
     """指标卡片"""
+
     title: str
     value: str
     change: str
@@ -81,6 +85,7 @@ class MetricCard:
 @dataclass
 class DashboardSection:
     """看板区块"""
+
     title: str
     cards: list[MetricCard]
     charts: list[ChartData]
@@ -96,6 +101,7 @@ class DashboardSection:
 @dataclass
 class PerformanceDashboard:
     """绩效看板"""
+
     dashboard_id: str
     title: str
     sections: list[DashboardSection]
@@ -163,54 +169,65 @@ class DashboardGenerator:
         total_cost = sum(h.get("buy_price", 0) * h.get("shares", 100) for h in (holdings or []))
         total_return = (total_value - total_cost) / total_cost if total_cost > 0 else 0
 
-        cards.append(MetricCard(
-            title="总资产",
-            value=f"¥{total_value:,.0f}",
-            change=f"{total_return:+.1%}",
-            change_type="positive" if total_return >= 0 else "negative",
-            icon="💰",
-            color="blue",
-        ))
+        cards.append(
+            MetricCard(
+                title="总资产",
+                value=f"¥{total_value:,.0f}",
+                change=f"{total_return:+.1%}",
+                change_type="positive" if total_return >= 0 else "negative",
+                icon="💰",
+                color="blue",
+            )
+        )
 
         trade_count = len(trades or [])
-        cards.append(MetricCard(
-            title="交易次数",
-            value=str(trade_count),
-            change=f"本月 {trade_count} 笔",
-            change_type="neutral",
-            icon="📊",
-            color="green",
-        ))
+        cards.append(
+            MetricCard(
+                title="交易次数",
+                value=str(trade_count),
+                change=f"本月 {trade_count} 笔",
+                change_type="neutral",
+                icon="📊",
+                color="green",
+            )
+        )
 
         winning_trades = sum(1 for t in (trades or []) if t.get("profit_rate", 0) > 0)
         win_rate = winning_trades / trade_count if trade_count > 0 else 0
-        cards.append(MetricCard(
-            title="胜率",
-            value=f"{win_rate:.1%}",
-            change=f"{winning_trades}/{trade_count} 笔盈利",
-            change_type="positive" if win_rate >= 0.5 else "negative",
-            icon="🎯",
-            color="purple",
-        ))
+        cards.append(
+            MetricCard(
+                title="胜率",
+                value=f"{win_rate:.1%}",
+                change=f"{winning_trades}/{trade_count} 笔盈利",
+                change_type="positive" if win_rate >= 0.5 else "negative",
+                icon="🎯",
+                color="purple",
+            )
+        )
 
         charts: list[ChartData] = []
 
         dates = [(datetime.now() - timedelta(days=i)).strftime("%m-%d") for i in range(30, 0, -1)]
         import random
+
         values = [total_value * (1 + random.uniform(-0.1, 0.1)) for _ in range(30)]
 
-        charts.append(ChartData(
-            chart_type=ChartType.LINE,
-            title="资产曲线",
-            labels=dates,
-            datasets=[{
-                "label": "总资产",
-                "data": values,
-                "borderColor": "#3b82f6",
-                "fill": False,
-            }],
-            options={"yAxis": {"format": "currency"}},
-        ))
+        charts.append(
+            ChartData(
+                chart_type=ChartType.LINE,
+                title="资产曲线",
+                labels=dates,
+                datasets=[
+                    {
+                        "label": "总资产",
+                        "data": values,
+                        "borderColor": "#3b82f6",
+                        "fill": False,
+                    }
+                ],
+                options={"yAxis": {"format": "currency"}},
+            )
+        )
 
         return DashboardSection(
             title="📊 概览",
@@ -226,66 +243,82 @@ class DashboardGenerator:
         cards: list[MetricCard] = []
 
         holding_count = len(holdings or [])
-        cards.append(MetricCard(
-            title="持仓数量",
-            value=str(holding_count),
-            change=f"观察 {holding_count} 只",
-            change_type="neutral",
-            icon="📈",
-            color="indigo",
-        ))
+        cards.append(
+            MetricCard(
+                title="持仓数量",
+                value=str(holding_count),
+                change=f"观察 {holding_count} 只",
+                change_type="neutral",
+                icon="📈",
+                color="indigo",
+            )
+        )
 
         profit_stocks = sum(1 for h in (holdings or []) if h.get("profit_rate", 0) > 0)
-        cards.append(MetricCard(
-            title="盈利股票",
-            value=str(profit_stocks),
-            change=f"占比 {profit_stocks/holding_count:.0%}" if holding_count > 0 else "0%",
-            change_type="positive",
-            icon="🟢",
-            color="green",
-        ))
+        cards.append(
+            MetricCard(
+                title="盈利股票",
+                value=str(profit_stocks),
+                change=f"占比 {profit_stocks / holding_count:.0%}" if holding_count > 0 else "0%",
+                change_type="positive",
+                icon="🟢",
+                color="green",
+            )
+        )
 
         charts: list[ChartData] = []
 
         industry_data: dict[str, float] = {}
-        for h in (holdings or []):
+        for h in holdings or []:
             industry = h.get("industry", "未知")
             value = h.get("current_value", h.get("amount", 0))
             industry_data[industry] = industry_data.get(industry, 0) + value
 
         if industry_data:
-            charts.append(ChartData(
-                chart_type=ChartType.PIE,
-                title="行业分布",
-                labels=list(industry_data.keys()),
-                datasets=[{
-                    "data": list(industry_data.values()),
-                    "backgroundColor": [
-                        "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
-                        "#ec4899", "#06b6d4", "#84cc16", "#f97316", "#6366f1",
+            charts.append(
+                ChartData(
+                    chart_type=ChartType.PIE,
+                    title="行业分布",
+                    labels=list(industry_data.keys()),
+                    datasets=[
+                        {
+                            "data": list(industry_data.values()),
+                            "backgroundColor": [
+                                "#3b82f6",
+                                "#10b981",
+                                "#f59e0b",
+                                "#ef4444",
+                                "#8b5cf6",
+                                "#ec4899",
+                                "#06b6d4",
+                                "#84cc16",
+                                "#f97316",
+                                "#6366f1",
+                            ],
+                        }
                     ],
-                }],
-                options={},
-            ))
+                    options={},
+                )
+            )
 
-        top_stocks = sorted(
-            (holdings or []),
-            key=lambda x: x.get("profit_rate", 0),
-            reverse=True
-        )[:5]
+        top_stocks = sorted((holdings or []), key=lambda x: x.get("profit_rate", 0), reverse=True)[:5]
 
         if top_stocks:
-            charts.append(ChartData(
-                chart_type=ChartType.BAR,
-                title="TOP 5 盈利股票",
-                labels=[s.get("name", s.get("code", "")) for s in top_stocks],
-                datasets=[{
-                    "label": "收益率",
-                    "data": [s.get("profit_rate", 0) * 100 for s in top_stocks],
-                    "backgroundColor": "#10b981",
-                }],
-                options={"yAxis": {"format": "percent"}},
-            ))
+            charts.append(
+                ChartData(
+                    chart_type=ChartType.BAR,
+                    title="TOP 5 盈利股票",
+                    labels=[s.get("name", s.get("code", "")) for s in top_stocks],
+                    datasets=[
+                        {
+                            "label": "收益率",
+                            "data": [s.get("profit_rate", 0) * 100 for s in top_stocks],
+                            "backgroundColor": "#10b981",
+                        }
+                    ],
+                    options={"yAxis": {"format": "percent"}},
+                )
+            )
 
         return DashboardSection(
             title="💼 持仓分析",
@@ -301,40 +334,49 @@ class DashboardGenerator:
         cards: list[MetricCard] = []
 
         strategies = strategies or ["value", "momentum", "reversal", "dividend"]
-        cards.append(MetricCard(
-            title="活跃策略",
-            value=str(len(strategies)),
-            change=f"共 {len(strategies)} 个策略",
-            change_type="neutral",
-            icon="🎯",
-            color="orange",
-        ))
+        cards.append(
+            MetricCard(
+                title="活跃策略",
+                value=str(len(strategies)),
+                change=f"共 {len(strategies)} 个策略",
+                change_type="neutral",
+                icon="🎯",
+                color="orange",
+            )
+        )
 
         import random
+
         best_return = random.uniform(0.05, 0.2)
-        cards.append(MetricCard(
-            title="最佳策略收益",
-            value=f"{best_return:.1%}",
-            change="本周表现",
-            change_type="positive",
-            icon="🏆",
-            color="yellow",
-        ))
+        cards.append(
+            MetricCard(
+                title="最佳策略收益",
+                value=f"{best_return:.1%}",
+                change="本周表现",
+                change_type="positive",
+                icon="🏆",
+                color="yellow",
+            )
+        )
 
         charts: list[ChartData] = []
 
         strategy_returns = {s: random.uniform(-0.05, 0.2) for s in strategies}
-        charts.append(ChartData(
-            chart_type=ChartType.BAR,
-            title="策略收益对比",
-            labels=list(strategy_returns.keys()),
-            datasets=[{
-                "label": "收益率",
-                "data": [r * 100 for r in strategy_returns.values()],
-                "backgroundColor": ["#10b981" if r > 0 else "#ef4444" for r in strategy_returns.values()],
-            }],
-            options={"yAxis": {"format": "percent"}},
-        ))
+        charts.append(
+            ChartData(
+                chart_type=ChartType.BAR,
+                title="策略收益对比",
+                labels=list(strategy_returns.keys()),
+                datasets=[
+                    {
+                        "label": "收益率",
+                        "data": [r * 100 for r in strategy_returns.values()],
+                        "backgroundColor": ["#10b981" if r > 0 else "#ef4444" for r in strategy_returns.values()],
+                    }
+                ],
+                options={"yAxis": {"format": "percent"}},
+            )
+        )
 
         return DashboardSection(
             title="🎯 策略表现",
@@ -350,54 +392,65 @@ class DashboardGenerator:
         cards: list[MetricCard] = []
 
         import random
+
         max_drawdown = random.uniform(0.05, 0.15)
-        cards.append(MetricCard(
-            title="最大回撤",
-            value=f"{max_drawdown:.1%}",
-            change="风险可控" if max_drawdown < 0.1 else "风险较高",
-            change_type="positive" if max_drawdown < 0.1 else "negative",
-            icon="📉",
-            color="red",
-        ))
+        cards.append(
+            MetricCard(
+                title="最大回撤",
+                value=f"{max_drawdown:.1%}",
+                change="风险可控" if max_drawdown < 0.1 else "风险较高",
+                change_type="positive" if max_drawdown < 0.1 else "negative",
+                icon="📉",
+                color="red",
+            )
+        )
 
         sharpe = random.uniform(0.5, 2.0)
-        cards.append(MetricCard(
-            title="夏普比率",
-            value=f"{sharpe:.2f}",
-            change="优秀" if sharpe > 1.5 else ("良好" if sharpe > 1 else "一般"),
-            change_type="positive" if sharpe > 1 else "neutral",
-            icon="⚖️",
-            color="teal",
-        ))
+        cards.append(
+            MetricCard(
+                title="夏普比率",
+                value=f"{sharpe:.2f}",
+                change="优秀" if sharpe > 1.5 else ("良好" if sharpe > 1 else "一般"),
+                change_type="positive" if sharpe > 1 else "neutral",
+                icon="⚖️",
+                color="teal",
+            )
+        )
 
         volatility = random.uniform(0.1, 0.3)
-        cards.append(MetricCard(
-            title="波动率",
-            value=f"{volatility:.1%}",
-            change="低波动" if volatility < 0.15 else ("中波动" if volatility < 0.25 else "高波动"),
-            change_type="positive" if volatility < 0.15 else ("neutral" if volatility < 0.25 else "negative"),
-            icon="📊",
-            color="amber",
-        ))
+        cards.append(
+            MetricCard(
+                title="波动率",
+                value=f"{volatility:.1%}",
+                change="低波动" if volatility < 0.15 else ("中波动" if volatility < 0.25 else "高波动"),
+                change_type="positive" if volatility < 0.15 else ("neutral" if volatility < 0.25 else "negative"),
+                icon="📊",
+                color="amber",
+            )
+        )
 
         charts: list[ChartData] = []
 
         dates = [(datetime.now() - timedelta(days=i)).strftime("%m-%d") for i in range(30, 0, -1)]
         drawdowns = [max_drawdown * (0.5 + random.uniform(0, 1)) for _ in range(30)]
 
-        charts.append(ChartData(
-            chart_type=ChartType.AREA,
-            title="回撤曲线",
-            labels=dates,
-            datasets=[{
-                "label": "回撤",
-                "data": [d * 100 for d in drawdowns],
-                "borderColor": "#ef4444",
-                "fill": True,
-                "backgroundColor": "rgba(239, 68, 68, 0.1)",
-            }],
-            options={"yAxis": {"format": "percent"}},
-        ))
+        charts.append(
+            ChartData(
+                chart_type=ChartType.AREA,
+                title="回撤曲线",
+                labels=dates,
+                datasets=[
+                    {
+                        "label": "回撤",
+                        "data": [d * 100 for d in drawdowns],
+                        "borderColor": "#ef4444",
+                        "fill": True,
+                        "backgroundColor": "rgba(239, 68, 68, 0.1)",
+                    }
+                ],
+                options={"yAxis": {"format": "percent"}},
+            )
+        )
 
         return DashboardSection(
             title="⚠️ 风险指标",
@@ -446,11 +499,13 @@ class DashboardGenerator:
                 )
                 for c in s.get("charts", [])
             ]
-            sections.append(DashboardSection(
-                title=s["title"],
-                cards=cards,
-                charts=charts,
-            ))
+            sections.append(
+                DashboardSection(
+                    title=s["title"],
+                    cards=cards,
+                    charts=charts,
+                )
+            )
 
         return PerformanceDashboard(
             dashboard_id=data["dashboard_id"],
@@ -473,7 +528,9 @@ class DashboardGenerator:
             lines.append("-" * 50)
 
             for card in section.cards:
-                change_symbol = "🔺" if card.change_type == "positive" else ("🔻" if card.change_type == "negative" else "➡️")
+                change_symbol = (
+                    "🔺" if card.change_type == "positive" else ("🔻" if card.change_type == "negative" else "➡️")
+                )
                 lines.append(f"  {card.icon} {card.title}: {card.value} {change_symbol} {card.change}")
 
             for chart in section.charts:

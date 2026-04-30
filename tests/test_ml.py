@@ -3,10 +3,6 @@ Tests for ML Module.
 ML 模块测试
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
-import numpy as np
-
 
 class TestMLTrainer:
     """ML 训练器测试"""
@@ -14,6 +10,7 @@ class TestMLTrainer:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.ml.trainer import ModelTrainer, TrainingConfig, TrainingResult
+
         assert ModelTrainer is not None
         assert TrainingConfig is not None
         assert TrainingResult is not None
@@ -31,7 +28,8 @@ class TestMLPredictor:
 
     def test_module_import(self):
         """测试模块导入"""
-        from asset_lens.ml.predictor import StockPredictor, PredictionResult
+        from asset_lens.ml.predictor import PredictionResult, StockPredictor
+
         assert StockPredictor is not None
         assert PredictionResult is not None
 
@@ -57,7 +55,8 @@ class TestMLFeatures:
 
     def test_module_import(self):
         """测试模块导入"""
-        from asset_lens.ml.features import FeatureEngineer, FeatureConfig
+        from asset_lens.ml.features import FeatureConfig, FeatureEngineer
+
         assert FeatureEngineer is not None
         assert FeatureConfig is not None
 
@@ -81,7 +80,8 @@ class TestMLAITrader:
 
     def test_module_import(self):
         """测试模块导入"""
-        from asset_lens.ml.ai_trader import AISimulatedTrader, TradeSignal, TradeRecord
+        from asset_lens.ml.ai_trader import AISimulatedTrader, TradeRecord, TradeSignal
+
         assert AISimulatedTrader is not None
         assert TradeSignal is not None
         assert TradeRecord is not None
@@ -110,6 +110,7 @@ class TestSectorML:
     def test_module_import(self):
         """测试模块导入"""
         from asset_lens.ml.sector_ml import SectorMLPredictor, SectorPrediction
+
         assert SectorMLPredictor is not None
         assert SectorPrediction is not None
 
@@ -119,7 +120,8 @@ class TestSectorRotation:
 
     def test_module_import(self):
         """测试模块导入"""
-        from asset_lens.ml.sector_rotation import SectorRotationAnalyzer, SectorInfo, SectorRotationResult
+        from asset_lens.ml.sector_rotation import SectorInfo, SectorRotationAnalyzer, SectorRotationResult
+
         assert SectorRotationAnalyzer is not None
         assert SectorInfo is not None
         assert SectorRotationResult is not None
@@ -147,7 +149,8 @@ class TestAdaptiveTrainer:
 
     def test_module_import(self):
         """测试模块导入"""
-        from asset_lens.ml.adaptive_trainer import AIMarketAnalyzer, AdaptiveMLTrainer, MarketAnalysis
+        from asset_lens.ml.adaptive_trainer import AdaptiveMLTrainer, AIMarketAnalyzer, MarketAnalysis
+
         assert AIMarketAnalyzer is not None
         assert AdaptiveMLTrainer is not None
         assert MarketAnalysis is not None

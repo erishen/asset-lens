@@ -25,6 +25,7 @@ def register_strategy_commands(cli: click.Group) -> None:
 
         try:
             from asset_lens.strategy.engine import StrategyEngine
+
             engine = StrategyEngine()
 
             if strategy_name:
@@ -51,6 +52,7 @@ def register_strategy_commands(cli: click.Group) -> None:
 
         try:
             from asset_lens.strategy.backtester import Backtester
+
             Backtester()
 
             click.echo("\n📈 回测配置:")
@@ -88,12 +90,14 @@ def register_strategy_commands(cli: click.Group) -> None:
             click.echo(f"\n📈 筛选结果 ({len(result) if result else 0} 只股票):")
             if result:
                 for stock in result[:limit]:
-                    code = stock.get('code', stock.get('symbol', 'N/A'))
-                    name = stock.get('name', 'N/A')
-                    score = stock.get('strategy_score', stock.get('score', 0))
-                    change_percent = stock.get('change_percent', 0)
-                    current_price = stock.get('current_price', 0)
-                    click.echo(f"  {code} - {name} (得分: {score:.1f}, 涨幅: {change_percent:+.2f}%, 价格: {current_price:.2f})")
+                    code = stock.get("code", stock.get("symbol", "N/A"))
+                    name = stock.get("name", "N/A")
+                    score = stock.get("strategy_score", stock.get("score", 0))
+                    change_percent = stock.get("change_percent", 0)
+                    current_price = stock.get("current_price", 0)
+                    click.echo(
+                        f"  {code} - {name} (得分: {score:.1f}, 涨幅: {change_percent:+.2f}%, 价格: {current_price:.2f})"
+                    )
 
             click.echo("\n✅ 筛选完成！")
 
@@ -149,9 +153,9 @@ def register_strategy_commands(cli: click.Group) -> None:
             click.echo(f"\n📈 筛选结果 ({len(result) if result else 0} 只股票):")
             if result:
                 for stock in result[:limit]:
-                    code = stock.get('code', 'N/A')
-                    name = stock.get('name', 'N/A')
-                    volume_ratio = stock.get('volume_ratio', 0)
+                    code = stock.get("code", "N/A")
+                    name = stock.get("name", "N/A")
+                    volume_ratio = stock.get("volume_ratio", 0)
                     click.echo(f"  {code} - {name} (成交量比率: {volume_ratio:.2f})")
 
             click.echo("\n✅ 筛选完成！")
@@ -202,9 +206,9 @@ def register_strategy_commands(cli: click.Group) -> None:
             click.echo(f"\n📈 筛选结果 ({len(result) if result else 0} 只股票):")
             if result:
                 for stock in result[:limit]:
-                    code = stock.get('code', stock.get('symbol', 'N/A'))
-                    name = stock.get('name', 'N/A')
-                    score = stock.get('strategy_score', stock.get('score', 0))
+                    code = stock.get("code", stock.get("symbol", "N/A"))
+                    name = stock.get("name", "N/A")
+                    score = stock.get("strategy_score", stock.get("score", 0))
                     click.echo(f"  {code} - {name} (得分: {score:.2f})")
 
                 if add_to_pool:
@@ -213,16 +217,16 @@ def register_strategy_commands(cli: click.Group) -> None:
                     added = 0
                     skipped = 1
                     for stock in result[:limit]:
-                        code = stock.get('code', stock.get('symbol', ''))
-                        name = stock.get('name', '')
-                        score = stock.get('strategy_score', stock.get('score', 0))
+                        code = stock.get("code", stock.get("symbol", ""))
+                        name = stock.get("name", "")
+                        score = stock.get("strategy_score", stock.get("score", 0))
                         if code:
                             success, msg = pool.add_stock(
                                 code=code,
                                 name=name,
                                 price=0.0,
                                 status="watching",
-                                notes=f"动量策略选入，得分: {score:.2f}"
+                                notes=f"动量策略选入，得分: {score:.2f}",
                             )
                             if success:
                                 click.echo(f"✅ {msg}")
@@ -250,6 +254,7 @@ def register_strategy_commands(cli: click.Group) -> None:
 
         try:
             from asset_lens.strategy.engine import StrategyEngine
+
             StrategyEngine()
 
             click.echo("\n📈 可用优化方法:")
@@ -260,9 +265,10 @@ def register_strategy_commands(cli: click.Group) -> None:
         except Exception as e:
             click.echo(f"❌ 优化失败: {e}", err=True)
 
-
     @cli.command("auto-trade")
-    @click.option("--strategy-name", type=click.Choice(["value", "momentum", "reversal"]), default="momentum", help="策略名称")
+    @click.option(
+        "--strategy-name", type=click.Choice(["value", "momentum", "reversal"]), default="momentum", help="策略名称"
+    )
     @click.option("--max-buy", type=int, default=5, help="单次最大买入数量")
     @click.option("--max-sell", type=int, default=10, help="单次最大卖出数量")
     @click.option("--dry-run", is_flag=True, help="仅显示信号，不执行交易")
@@ -273,9 +279,19 @@ def register_strategy_commands(cli: click.Group) -> None:
     @click.option("--auto-screen", is_flag=True, default=True, help="股票池为空时自动选股入池")
     @click.option("--use-ai", is_flag=True, default=False, help="启用 AI 分析辅助决策")
     @click.option("--use-ml", is_flag=True, default=False, help="启用 ML 模型预测辅助决策")
-    def auto_trade(strategy_name: str, max_buy: int, max_sell: int, dry_run: bool,
-                   max_daily_buy: int, max_amount: float, max_position: float, max_industry: int,
-                   auto_screen: bool, use_ai: bool, use_ml: bool):
+    def auto_trade(
+        strategy_name: str,
+        max_buy: int,
+        max_sell: int,
+        dry_run: bool,
+        max_daily_buy: int,
+        max_amount: float,
+        max_position: float,
+        max_industry: int,
+        auto_screen: bool,
+        use_ai: bool,
+        use_ml: bool,
+    ):
         """自动交易 - 根据策略信号自动买入卖出（增强版，支持 AI/ML 分析）"""
         from datetime import datetime
 
@@ -298,6 +314,7 @@ def register_strategy_commands(cli: click.Group) -> None:
             if use_ai:
                 try:
                     from asset_lens.strategy.ai_analyzer import ai_trading_advisor
+
                     ai_advisor = ai_trading_advisor
                     if ai_advisor.analyzer.enabled:
                         click.echo("✅ AI 分析器已加载")
@@ -313,8 +330,10 @@ def register_strategy_commands(cli: click.Group) -> None:
             if use_ml:
                 try:
                     from pathlib import Path
-                    from asset_lens.ml.predictor import StockPredictor
+
                     from asset_lens.data.stock_history_fetcher import StockHistoryFetcher
+                    from asset_lens.ml.predictor import StockPredictor
+
                     model_path = Path("cache/ml/model.pkl")
                     if model_path.exists():
                         ml_predictor = StockPredictor(model_path=model_path)
@@ -333,6 +352,7 @@ def register_strategy_commands(cli: click.Group) -> None:
             market_data = None
             try:
                 from asset_lens.data.enhanced_market_data_fetcher import enhanced_market_data_fetcher
+
                 result = enhanced_market_data_fetcher.fetch_all_domestic_indexes()
                 if result and "指数数据" in result:
                     for name, data in result["指数数据"].items():
@@ -343,7 +363,7 @@ def register_strategy_commands(cli: click.Group) -> None:
                             market_data = {
                                 "index_name": name,
                                 "index_change": change,
-                                "sentiment": "乐观" if change > 1 else ("悲观" if change < -1 else "中性")
+                                "sentiment": "乐观" if change > 1 else ("悲观" if change < -1 else "中性"),
                             }
                             break
             except Exception:
@@ -363,17 +383,16 @@ def register_strategy_commands(cli: click.Group) -> None:
                 click.echo(f"  更新后观察股票: {len(watching_stocks)}")
 
             today = datetime.now().strftime("%Y-%m-%d")
-            today_bought = [s for s in holding_stocks if s.get('buy_date') == today]
+            today_bought = [s for s in holding_stocks if s.get("buy_date") == today]
             click.echo(f"  今日已买入: {len(today_bought)}")
 
-            total_position = sum(s.get('buy_price', 0) * s.get('shares', 100) for s in holding_stocks)
+            total_position = sum(s.get("buy_price", 0) * s.get("shares", 100) for s in holding_stocks)
             current_market_value = sum(
-                s.get('current_price', s.get('buy_price', 0)) * s.get('shares', 100) 
-                for s in holding_stocks
+                s.get("current_price", s.get("buy_price", 0)) * s.get("shares", 100) for s in holding_stocks
             )
             unrealized_pnl = current_market_value - total_position
             unrealized_pnl_pct = (unrealized_pnl / total_position * 100) if total_position > 0 else 0
-            
+
             click.echo(f"  总持仓金额: ¥{total_position:,.2f} (买入成本)")
             click.echo(f"  当前市值: ¥{current_market_value:,.2f} (实时估值)")
             pnl_emoji = "🟢" if unrealized_pnl >= 0 else "🔴"
@@ -385,10 +404,12 @@ def register_strategy_commands(cli: click.Group) -> None:
             click.echo(f"  剩余仓位: ¥{remaining_position:,.2f}")
 
             for s in holding_stocks[:5]:
-                buy_price = s.get('buy_price', 0)
-                current_price = s.get('current_price', buy_price)
+                buy_price = s.get("buy_price", 0)
+                current_price = s.get("current_price", buy_price)
                 profit_rate = ((current_price - buy_price) / buy_price * 100) if buy_price > 0 else 0
-                click.echo(f"  {s['code']} - {s['name']} (买入价: {buy_price:.2f}, 现价: {current_price:.2f}, 收益率: {profit_rate:+.2f}%)")
+                click.echo(
+                    f"  {s['code']} - {s['name']} (买入价: {buy_price:.2f}, 现价: {current_price:.2f}, 收益率: {profit_rate:+.2f}%)"
+                )
 
             if remaining_buy <= 0 and not dry_run:
                 click.echo("\n⚠️ 今日买入数量已达上限，跳过买入操作")
@@ -399,10 +420,10 @@ def register_strategy_commands(cli: click.Group) -> None:
             click.echo("\n📈 分析卖出信号...")
             sell_signals = []
             for stock in holding_stocks:
-                buy_price = stock.get('buy_price', 0)
-                current_price = stock.get('current_price', buy_price)
+                buy_price = stock.get("buy_price", 0)
+                current_price = stock.get("current_price", buy_price)
                 profit_rate = ((current_price - buy_price) / buy_price * 100) if buy_price > 0 else 0
-                buy_date = stock.get('buy_date', '')
+                buy_date = stock.get("buy_date", "")
                 holding_days = 0
                 if buy_date:
                     try:
@@ -424,7 +445,7 @@ def register_strategy_commands(cli: click.Group) -> None:
                         "profit_rate": profit_rate,
                         "change_percent": stock.get("change_percent", 0),
                     },
-                    strategy_name
+                    strategy_name,
                 )
 
                 for detail in evaluation.get("details", []):
@@ -464,7 +485,7 @@ def register_strategy_commands(cli: click.Group) -> None:
                             history = history_fetcher.fetch_history(stock["code"], days=60)
                             if history and "klines" in history:
                                 history_data = history["klines"]
-                        
+
                         ml_result = ml_predictor.predict_single(
                             code=stock["code"],
                             name=stock["name"],
@@ -503,45 +524,49 @@ def register_strategy_commands(cli: click.Group) -> None:
                         final_reason = f"{strategy_reason} (AI建议持有观望)"
 
                 if should_sell:
-                    sell_signals.append({
-                        "code": stock["code"],
-                        "name": stock["name"],
-                        "current_price": current_price,
-                        "buy_price": buy_price,
-                        "profit_rate": profit_rate,
-                        "holding_days": holding_days,
-                        "score": evaluation["score"],
-                        "reason": final_reason,
-                        "ai_confidence": ai_decision.get("ai_confidence", 0) if ai_decision else 0,
-                        "ml_down_prob": ml_down_prob,
-                        "is_stop_loss": is_stop_loss,
-                        "is_take_profit": is_take_profit,
-                    })
+                    sell_signals.append(
+                        {
+                            "code": stock["code"],
+                            "name": stock["name"],
+                            "current_price": current_price,
+                            "buy_price": buy_price,
+                            "profit_rate": profit_rate,
+                            "holding_days": holding_days,
+                            "score": evaluation["score"],
+                            "reason": final_reason,
+                            "ai_confidence": ai_decision.get("ai_confidence", 0) if ai_decision else 0,
+                            "ml_down_prob": ml_down_prob,
+                            "is_stop_loss": is_stop_loss,
+                            "is_take_profit": is_take_profit,
+                        }
+                    )
 
             if sell_signals:
-                stop_loss_signals = [s for s in sell_signals if s.get('is_stop_loss')]
-                take_profit_signals = [s for s in sell_signals if s.get('is_take_profit') and not s.get('is_stop_loss')]
-                other_signals = [s for s in sell_signals if not s.get('is_stop_loss') and not s.get('is_take_profit')]
+                stop_loss_signals = [s for s in sell_signals if s.get("is_stop_loss")]
+                take_profit_signals = [s for s in sell_signals if s.get("is_take_profit") and not s.get("is_stop_loss")]
+                other_signals = [s for s in sell_signals if not s.get("is_stop_loss") and not s.get("is_take_profit")]
 
                 click.echo(f"\n📉 卖出信号 ({len(sell_signals)}):")
                 for signal in sell_signals:
-                    signal_type = "🔴止损" if signal.get('is_stop_loss') else ("🟢止盈" if signal.get('is_take_profit') else "📊趋势")
+                    signal_type = (
+                        "🔴止损"
+                        if signal.get("is_stop_loss")
+                        else ("🟢止盈" if signal.get("is_take_profit") else "📊趋势")
+                    )
                     click.echo(f"  {signal['code']} - {signal['name']} [{signal_type}]")
                     click.echo(f"    收益率: {signal['profit_rate']:+.2f}%, 持仓: {signal['holding_days']}天")
                     click.echo(f"    理由: {signal['reason']}")
-                    if signal.get('ml_down_prob', 0) > 0:
+                    if signal.get("ml_down_prob", 0) > 0:
                         click.echo(f"    🔮 ML预测下跌概率: {signal['ml_down_prob']:.1%}")
-                    if signal['ai_confidence'] > 0:
+                    if signal["ai_confidence"] > 0:
                         click.echo(f"    🧠 AI信心: {signal['ai_confidence']:.0f}%")
 
                 if not dry_run:
                     click.echo("\n💰 执行卖出操作...")
-                    
+
                     for signal in stop_loss_signals[:max_sell]:
                         success, msg = pool.sell_stock(
-                            code=signal["code"],
-                            price=signal["current_price"],
-                            notes=f"止损卖出: {signal['reason']}"
+                            code=signal["code"], price=signal["current_price"], notes=f"止损卖出: {signal['reason']}"
                         )
                         if success:
                             click.echo(f"🔴 止损卖出: {msg}")
@@ -550,11 +575,11 @@ def register_strategy_commands(cli: click.Group) -> None:
 
                     if take_profit_signals:
                         if market_ok:
-                            for signal in take_profit_signals[:max_sell - len(stop_loss_signals)]:
+                            for signal in take_profit_signals[: max_sell - len(stop_loss_signals)]:
                                 success, msg = pool.sell_stock(
                                     code=signal["code"],
                                     price=signal["current_price"],
-                                    notes=f"止盈卖出: {signal['reason']}"
+                                    notes=f"止盈卖出: {signal['reason']}",
                                 )
                                 if success:
                                     click.echo(f"🟢 止盈卖出: {msg}")
@@ -563,11 +588,9 @@ def register_strategy_commands(cli: click.Group) -> None:
                         else:
                             click.echo(f"⚠️ 市场环境不佳，暂缓止盈卖出 ({len(take_profit_signals)} 只)")
 
-                    for signal in other_signals[:max_sell - len(stop_loss_signals) - len(take_profit_signals)]:
+                    for signal in other_signals[: max_sell - len(stop_loss_signals) - len(take_profit_signals)]:
                         success, msg = pool.sell_stock(
-                            code=signal["code"],
-                            price=signal["current_price"],
-                            notes=f"自动卖出: {signal['reason']}"
+                            code=signal["code"], price=signal["current_price"], notes=f"自动卖出: {signal['reason']}"
                         )
                         if success:
                             click.echo(f"📊 趋势卖出: {msg}")
@@ -648,7 +671,7 @@ def register_strategy_commands(cli: click.Group) -> None:
                                 history = history_fetcher.fetch_history(stock["code"], days=60)
                                 if history and "klines" in history:
                                     history_data = history["klines"]
-                            
+
                             ml_result = ml_predictor.predict_single(
                                 code=stock["code"],
                                 name=stock["name"],
@@ -691,21 +714,25 @@ def register_strategy_commands(cli: click.Group) -> None:
                                 final_reason = f"{strategy_reason} + AI确认"
 
                     if final_action == "buy":
-                        buy_signals.append({
-                            "code": stock["code"],
-                            "name": stock["name"],
-                            "current_price": current_price,
-                            "change_percent": stock_data.get("change_percent", 0),
-                            "turnover_rate": stock_data.get("turnover_rate", 0),
-                            "market_cap": market_cap,
-                            "score": evaluation["score"],
-                            "reason": final_reason,
-                            "ai_confidence": ai_decision.get("ai_confidence", 0) if ai_decision else 0,
-                            "ml_up_prob": ml_up_prob,
-                            "risk_level": ai_decision.get("risk_level", "medium") if ai_decision else "medium",
-                            "suggested_stop_loss": ai_decision.get("suggested_stop_loss") if ai_decision else None,
-                            "suggested_take_profit": ai_decision.get("suggested_take_profit") if ai_decision else None,
-                        })
+                        buy_signals.append(
+                            {
+                                "code": stock["code"],
+                                "name": stock["name"],
+                                "current_price": current_price,
+                                "change_percent": stock_data.get("change_percent", 0),
+                                "turnover_rate": stock_data.get("turnover_rate", 0),
+                                "market_cap": market_cap,
+                                "score": evaluation["score"],
+                                "reason": final_reason,
+                                "ai_confidence": ai_decision.get("ai_confidence", 0) if ai_decision else 0,
+                                "ml_up_prob": ml_up_prob,
+                                "risk_level": ai_decision.get("risk_level", "medium") if ai_decision else "medium",
+                                "suggested_stop_loss": ai_decision.get("suggested_stop_loss") if ai_decision else None,
+                                "suggested_take_profit": ai_decision.get("suggested_take_profit")
+                                if ai_decision
+                                else None,
+                            }
+                        )
 
             buy_signals.sort(key=lambda x: (x["ml_up_prob"], x["score"], x["ai_confidence"]), reverse=True)
 
@@ -713,16 +740,18 @@ def register_strategy_commands(cli: click.Group) -> None:
                 click.echo(f"\n📈 买入信号 ({len(buy_signals)}):")
                 for signal in buy_signals[:max_buy]:
                     click.echo(f"  {signal['code']} - {signal['name']} (得分: {signal['score']:.0f})")
-                    click.echo(f"    当前价: {signal['current_price']:.2f}, 涨幅: {signal['change_percent']:+.2f}%, 换手: {signal['turnover_rate']:.2f}%")
+                    click.echo(
+                        f"    当前价: {signal['current_price']:.2f}, 涨幅: {signal['change_percent']:+.2f}%, 换手: {signal['turnover_rate']:.2f}%"
+                    )
                     click.echo(f"    市值: {signal['market_cap']:.1f}亿, 风险: {signal['risk_level']}")
                     click.echo(f"    理由: {signal['reason']}")
-                    if signal.get('ml_up_prob', 0) > 0:
+                    if signal.get("ml_up_prob", 0) > 0:
                         click.echo(f"    🔮 ML预测上涨概率: {signal['ml_up_prob']:.1%}")
-                    if signal['ai_confidence'] > 0:
+                    if signal["ai_confidence"] > 0:
                         click.echo(f"    🧠 AI信心: {signal['ai_confidence']:.0f}%")
-                    if signal.get('suggested_stop_loss'):
+                    if signal.get("suggested_stop_loss"):
                         click.echo(f"    建议止损: {signal['suggested_stop_loss']:.2f}")
-                    if signal.get('suggested_take_profit'):
+                    if signal.get("suggested_take_profit"):
                         click.echo(f"    建议止盈: {signal['suggested_take_profit']:.2f}")
 
                 if not dry_run and remaining_buy > 0 and remaining_position > 0 and market_ok:
@@ -747,17 +776,12 @@ def register_strategy_commands(cli: click.Group) -> None:
                                 continue
 
                         notes = f"自动买入: {signal['reason']}"
-                        if signal.get('suggested_stop_loss'):
+                        if signal.get("suggested_stop_loss"):
                             notes += f", 止损: {signal['suggested_stop_loss']:.2f}"
-                        if signal.get('suggested_take_profit'):
+                        if signal.get("suggested_take_profit"):
                             notes += f", 止盈: {signal['suggested_take_profit']:.2f}"
 
-                        success, msg = pool.buy_stock(
-                            code=signal["code"],
-                            price=price,
-                            shares=shares,
-                            notes=notes
-                        )
+                        success, msg = pool.buy_stock(code=signal["code"], price=price, shares=shares, notes=notes)
                         if success:
                             click.echo(f"✅ {msg}")
                             bought += 1
@@ -817,6 +841,7 @@ def register_strategy_commands(cli: click.Group) -> None:
 
         except Exception as e:
             import traceback
+
             click.echo(f"❌ 自动交易失败: {e}", err=True)
             click.echo(traceback.format_exc(), err=True)
 
@@ -838,7 +863,7 @@ def register_strategy_commands(cli: click.Group) -> None:
                 while True:
                     try:
                         user_input = click.prompt("你的问题", type=str, default="")
-                        if user_input.lower() in ['quit', 'exit', 'q', '退出']:
+                        if user_input.lower() in ["quit", "exit", "q", "退出"]:
                             click.echo("👋 再见！")
                             break
 
@@ -848,7 +873,7 @@ def register_strategy_commands(cli: click.Group) -> None:
                         response = ai_qa_engine.answer_question(user_input)
 
                         click.echo(f"\n📝 问题类型: {response.question_type.value}")
-                        click.echo(f"💡 回答:")
+                        click.echo("💡 回答:")
                         click.echo(f"   {response.answer}")
                         click.echo(f"\n📊 置信度: {response.confidence:.0%}")
 
@@ -856,12 +881,12 @@ def register_strategy_commands(cli: click.Group) -> None:
                             click.echo(f"📚 来源: {', '.join(response.sources)}")
 
                         if response.suggestions:
-                            click.echo(f"💡 建议:")
+                            click.echo("💡 建议:")
                             for sug in response.suggestions:
                                 click.echo(f"   - {sug}")
 
                         if response.related_questions:
-                            click.echo(f"❓ 相关问题:")
+                            click.echo("❓ 相关问题:")
                             for rq in response.related_questions:
                                 click.echo(f"   - {rq}")
 
@@ -874,7 +899,7 @@ def register_strategy_commands(cli: click.Group) -> None:
                 response = ai_qa_engine.answer_question(question)
 
                 click.echo(f"\n📝 问题类型: {response.question_type.value}")
-                click.echo(f"💡 回答:")
+                click.echo("💡 回答:")
                 click.echo(f"   {response.answer}")
                 click.echo(f"\n📊 置信度: {response.confidence:.0%}")
 
@@ -882,12 +907,12 @@ def register_strategy_commands(cli: click.Group) -> None:
                     click.echo(f"📚 来源: {', '.join(response.sources)}")
 
                 if response.suggestions:
-                    click.echo(f"💡 建议:")
+                    click.echo("💡 建议:")
                     for sug in response.suggestions:
                         click.echo(f"   - {sug}")
 
                 if response.related_questions:
-                    click.echo(f"❓ 相关问题:")
+                    click.echo("❓ 相关问题:")
                     for rq in response.related_questions:
                         click.echo(f"   - {rq}")
 
@@ -986,7 +1011,9 @@ def register_strategy_commands(cli: click.Group) -> None:
             for direction, stats in analysis.by_direction.items():
                 total = stats["correct"] + stats["wrong"] + stats["pending"]
                 if total > 0:
-                    click.echo(f"  {direction}: 正确 {stats['correct']}, 错误 {stats['wrong']}, 待验证 {stats['pending']}")
+                    click.echo(
+                        f"  {direction}: 正确 {stats['correct']}, 错误 {stats['wrong']}, 待验证 {stats['pending']}"
+                    )
 
             click.echo("\n📊 置信度分析:")
             for level, stats in analysis.by_confidence.items():
@@ -1026,17 +1053,17 @@ def _auto_screen_and_add_to_pool(pool, strategy_name: str, max_stocks: int = 50)
 
         added = 0
         for stock in result[:max_stocks]:
-            code = stock.get('code', '')
-            name = stock.get('name', '')
-            score = stock.get('strategy_score', stock.get('score', 0))
+            code = stock.get("code", "")
+            name = stock.get("name", "")
+            score = stock.get("strategy_score", stock.get("score", 0))
 
             if code:
                 success, msg = pool.add_stock(
                     code=code,
                     name=name,
-                    price=stock.get('current_price', 0),
+                    price=stock.get("current_price", 0),
                     status="watching",
-                    notes=f"自动选股入池，得分: {score:.0f}"
+                    notes=f"自动选股入池，得分: {score:.0f}",
                 )
                 if success:
                     added += 1
@@ -1115,7 +1142,7 @@ def register_enhanced_commands(cli: click.Group) -> None:
             result = model_retrainer.retrain_model(force=force)
 
             if result.success:
-                click.echo(f"\n✅ 重训练成功!")
+                click.echo("\n✅ 重训练成功!")
                 click.echo(f"  旧版本: {result.old_version}")
                 click.echo(f"  新版本: {result.new_version}")
                 click.echo(f"  准确率变化: {result.old_accuracy:.2%} → {result.new_accuracy:.2%}")
@@ -1147,7 +1174,7 @@ def register_enhanced_commands(cli: click.Group) -> None:
     @click.option("--period", type=click.Choice(["daily", "weekly", "monthly"]), default="weekly", help="报告周期")
     def backtest_report(period: str):
         """策略回测报告 - 定期评估"""
-        from asset_lens.analysis.backtest_reporter import backtest_reporter, ReportPeriod
+        from asset_lens.analysis.backtest_reporter import ReportPeriod, backtest_reporter
 
         click.echo("\n📊 策略回测报告")
         click.echo("=" * 60)

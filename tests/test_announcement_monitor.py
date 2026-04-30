@@ -3,19 +3,13 @@ Tests for Announcement Monitor.
 公告提醒模块测试
 """
 
-import json
-from datetime import datetime
-from pathlib import Path
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import patch
 
 from asset_lens.analysis.announcement_monitor import (
+    Announcement,
     AnnouncementMonitor,
     AnnouncementType,
     ImpactLevel,
-    Announcement,
-    AnnouncementAlert,
     announcement_monitor,
 )
 

@@ -10,37 +10,39 @@ Portfolio Analysis Module.
 5. 调仓建议
 """
 
-import json
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from typing import Any
-from enum import Enum
 
 from ..config import config
 
 
 class HealthLevel(Enum):
     """健康度等级"""
+
     EXCELLENT = "excellent"  # 优秀 (>80)
-    GOOD = "good"           # 良好 (60-80)
-    FAIR = "fair"           # 一般 (40-60)
-    POOR = "poor"           # 较差 (20-40)
-    CRITICAL = "critical"   # 危险 (<20)
+    GOOD = "good"  # 良好 (60-80)
+    FAIR = "fair"  # 一般 (40-60)
+    POOR = "poor"  # 较差 (20-40)
+    CRITICAL = "critical"  # 危险 (<20)
 
 
 class TrendDirection(Enum):
     """趋势方向"""
-    STRONG_UP = "strong_up"     # 强势上涨
-    UP = "up"                   # 上涨
-    SIDEWAYS = "sideways"       # 横盘
-    DOWN = "down"               # 下跌
-    STRONG_DOWN = "strong_down" # 强势下跌
+
+    STRONG_UP = "strong_up"  # 强势上涨
+    UP = "up"  # 上涨
+    SIDEWAYS = "sideways"  # 横盘
+    DOWN = "down"  # 下跌
+    STRONG_DOWN = "strong_down"  # 强势下跌
 
 
 @dataclass
 class Position:
     """持仓"""
+
     code: str
     name: str
     shares: float
@@ -57,6 +59,7 @@ class Position:
 @dataclass
 class StockDiagnosis:
     """个股诊断"""
+
     code: str
     name: str
     current_price: float
@@ -81,6 +84,7 @@ class StockDiagnosis:
 @dataclass
 class PortfolioHealth:
     """持仓健康度"""
+
     total_value: float
     total_profit_loss: float
     total_profit_loss_percent: float
@@ -89,8 +93,8 @@ class PortfolioHealth:
     health_level: HealthLevel
 
     diversification_score: float  # 分散度
-    concentration_risk: float     # 集中度风险
-    sector_balance: float         # 行业平衡度
+    concentration_risk: float  # 集中度风险
+    sector_balance: float  # 行业平衡度
 
     top_positions: list[Position]
     risk_positions: list[Position]
@@ -101,6 +105,7 @@ class PortfolioHealth:
 @dataclass
 class SectorAllocation:
     """行业配置"""
+
     sector: str
     weight: float
     profit_loss: float
@@ -126,11 +131,7 @@ class PortfolioAnalyzer:
         fundamental_score = self._calculate_fundamental_score(position, fundamental_data)
         sentiment_score = self._calculate_sentiment_score(position)
 
-        health_score = (
-            technical_score * 0.4 +
-            fundamental_score * 0.35 +
-            sentiment_score * 0.25
-        )
+        health_score = technical_score * 0.4 + fundamental_score * 0.35 + sentiment_score * 0.25
 
         trend = self._determine_trend(position, technical_data)
 
@@ -184,19 +185,16 @@ class PortfolioAnalyzer:
         sector_balance = self._calculate_sector_balance(positions)
 
         health_score = (
-            diversification_score * 0.3 +
-            (100 - concentration_risk) * 0.3 +
-            sector_balance * 0.2 +
-            max(0, 50 + total_profit_loss_percent) * 0.2
+            diversification_score * 0.3
+            + (100 - concentration_risk) * 0.3
+            + sector_balance * 0.2
+            + max(0, 50 + total_profit_loss_percent) * 0.2
         )
 
         sorted_positions = sorted(positions, key=lambda p: p.market_value, reverse=True)
         top_positions = sorted_positions[:5]
 
-        risk_positions = [
-            p for p in positions
-            if p.profit_loss_percent < -10 or p.weight > 20
-        ]
+        risk_positions = [p for p in positions if p.profit_loss_percent < -10 or p.weight > 20]
 
         suggestions = self._generate_portfolio_suggestions(
             positions,
@@ -240,13 +238,15 @@ class PortfolioAnalyzer:
             weight = (sector_value / total_value * 100) if total_value > 0 else 0
             profit_percent = (sector_profit / sector_cost * 100) if sector_cost > 0 else 0
 
-            allocations.append(SectorAllocation(
-                sector=sector,
-                weight=weight,
-                profit_loss=sector_profit,
-                profit_loss_percent=profit_percent,
-                positions=sector_positions,
-            ))
+            allocations.append(
+                SectorAllocation(
+                    sector=sector,
+                    weight=weight,
+                    profit_loss=sector_profit,
+                    profit_loss_percent=profit_percent,
+                    positions=sector_positions,
+                )
+            )
 
         return sorted(allocations, key=lambda a: a.weight, reverse=True)
 
@@ -438,7 +438,7 @@ class PortfolioAnalyzer:
             suggestions.append("趋势向下，注意风险控制")
 
         if position.weight > 20:
-            suggestions.append(f"仓位过重，建议降至 15% 以内")
+            suggestions.append("仓位过重，建议降至 15% 以内")
 
         if position.profit_loss_percent > 20:
             suggestions.append("盈利较多，考虑部分止盈")
@@ -519,7 +519,7 @@ class PortfolioAnalyzer:
             return 0
 
         weights = [p.market_value / total_value for p in positions]
-        hhi = sum(w ** 2 for w in weights)
+        hhi = sum(w**2 for w in weights)
 
         return hhi * 100
 

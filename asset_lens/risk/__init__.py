@@ -30,6 +30,7 @@ if TYPE_CHECKING:
 @dataclass
 class RiskSummary:
     """风险摘要"""
+
     risk_score: float
     risk_level: str
     total_position: float
@@ -54,6 +55,7 @@ class RiskService:
         """获取风险管理器（仓位、止损止盈）"""
         if self._manager is None:
             from asset_lens.trading.risk_manager import RiskManager
+
             self._manager = RiskManager()
         return self._manager
 
@@ -62,6 +64,7 @@ class RiskService:
         """获取风险分析器（指标计算）"""
         if self._analyzer is None:
             from asset_lens.monitoring.risk_analyzer import RiskAnalyzer
+
             self._analyzer = RiskAnalyzer()
         return self._analyzer
 
@@ -183,7 +186,6 @@ class RiskService:
         Returns:
             市场环境类型 (bull/bear/sideways/crisis)
         """
-        from asset_lens.monitoring.risk_analyzer import MarketRegime
         regime = self.analyzer.detect_market_regime(index_returns)
         return regime.value
 
@@ -214,6 +216,7 @@ class RiskService:
             市场环境描述
         """
         from asset_lens.monitoring.risk_analyzer import MarketRegime
+
         regime_enum = MarketRegime(regime)
         return self.analyzer.get_regime_description(regime_enum)
 

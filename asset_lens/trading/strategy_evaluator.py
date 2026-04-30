@@ -21,6 +21,7 @@ from typing import Any
 
 class MarketStyle(Enum):
     """市场风格"""
+
     BULL = "bull"
     BEAR = "bear"
     SIDEWAYS = "sideways"
@@ -29,6 +30,7 @@ class MarketStyle(Enum):
 
 class StrategyUsability(Enum):
     """策略可用性"""
+
     EXCELLENT = "excellent"
     GOOD = "good"
     MODERATE = "moderate"
@@ -39,6 +41,7 @@ class StrategyUsability(Enum):
 @dataclass
 class FactorContribution:
     """因子贡献"""
+
     factor_name: str
     category: str
     total_profit: float
@@ -64,6 +67,7 @@ class FactorContribution:
 @dataclass
 class StyleSensitivity:
     """风格敏感度"""
+
     style: MarketStyle
     return_rate: float
     win_rate: float
@@ -83,6 +87,7 @@ class StyleSensitivity:
 @dataclass
 class FailureAnalysis:
     """失效分析"""
+
     period: str
     market_style: MarketStyle
     return_rate: float
@@ -102,6 +107,7 @@ class FailureAnalysis:
 @dataclass
 class OverfittingCheck:
     """过拟合检测"""
+
     is_overfitted: bool
     confidence: float
     in_sample_return: float
@@ -125,6 +131,7 @@ class OverfittingCheck:
 @dataclass
 class EvaluationResult:
     """评估结果"""
+
     strategy_name: str
     usability: StrategyUsability
     total_score: float
@@ -174,10 +181,12 @@ class StrategyEvaluator:
                 code = trade.get("code", "")
                 for fv in factor_values:
                     if fv.get("code") == code and fv.get("factor") == factor_name:
-                        factor_trades.append({
-                            **trade,
-                            "factor_value": fv.get("value"),
-                        })
+                        factor_trades.append(
+                            {
+                                **trade,
+                                "factor_value": fv.get("value"),
+                            }
+                        )
                         break
 
             if not factor_trades:
@@ -189,16 +198,18 @@ class StrategyEvaluator:
 
             contribution_pct = (total_profit / total_all_profit * 100) if total_all_profit != 0 else 0.0
 
-            contributions.append(FactorContribution(
-                factor_name=factor_name,
-                category=factor_values[0].get("category", "unknown") if factor_values else "unknown",
-                total_profit=total_profit,
-                contribution_pct=contribution_pct,
-                win_rate=len(win_trades) / len(factor_trades) * 100 if factor_trades else 0,
-                avg_return=avg_return * 100,
-                correlation=0.0,
-                importance_rank=0,
-            ))
+            contributions.append(
+                FactorContribution(
+                    factor_name=factor_name,
+                    category=factor_values[0].get("category", "unknown") if factor_values else "unknown",
+                    total_profit=total_profit,
+                    contribution_pct=contribution_pct,
+                    win_rate=len(win_trades) / len(factor_trades) * 100 if factor_trades else 0,
+                    avg_return=avg_return * 100,
+                    correlation=0.0,
+                    importance_rank=0,
+                )
+            )
 
         contributions.sort(key=lambda x: x.total_profit, reverse=True)
         for i, c in enumerate(contributions):
@@ -250,13 +261,15 @@ class StrategyEvaluator:
 
             avg_holding = sum(holding_days) / len(holding_days) if holding_days else 0
 
-            sensitivities.append(StyleSensitivity(
-                style=style,
-                return_rate=total_return / len(style_trade_list) * 100 if style_trade_list else 0,
-                win_rate=len(win_trades) / len(style_trade_list) * 100 if style_trade_list else 0,
-                trade_count=len(style_trade_list),
-                avg_holding_days=avg_holding,
-            ))
+            sensitivities.append(
+                StyleSensitivity(
+                    style=style,
+                    return_rate=total_return / len(style_trade_list) * 100 if style_trade_list else 0,
+                    win_rate=len(win_trades) / len(style_trade_list) * 100 if style_trade_list else 0,
+                    trade_count=len(style_trade_list),
+                    avg_holding_days=avg_holding,
+                )
+            )
 
         return sensitivities
 
@@ -278,13 +291,15 @@ class StrategyEvaluator:
                         style = MarketStyle(ms.get("style", "sideways"))
                         break
 
-                failures.append(FailureAnalysis(
-                    period=date,
-                    market_style=style,
-                    return_rate=dv.get("daily_return", 0) * 100,
-                    failure_reasons=["市场下跌", "策略不适应"],
-                    affected_factors=["技术面", "情绪面"],
-                ))
+                failures.append(
+                    FailureAnalysis(
+                        period=date,
+                        market_style=style,
+                        return_rate=dv.get("daily_return", 0) * 100,
+                        failure_reasons=["市场下跌", "策略不适应"],
+                        affected_factors=["技术面", "情绪面"],
+                    )
+                )
 
         return failures
 
@@ -497,10 +512,10 @@ class StrategyEvaluator:
         recommendations = self.generate_recommendations(usability, factor_contributions, style_sensitivities)
 
         total_score = (
-            simulation_result.get("total_return", 0) * 0.3 +
-            simulation_result.get("sharpe_ratio", 0) * 20 +
-            (100 - simulation_result.get("max_drawdown", 0)) * 0.3 +
-            simulation_result.get("win_rate", 0) * 0.2
+            simulation_result.get("total_return", 0) * 0.3
+            + simulation_result.get("sharpe_ratio", 0) * 20
+            + (100 - simulation_result.get("max_drawdown", 0)) * 0.3
+            + simulation_result.get("win_rate", 0) * 0.2
         )
 
         return EvaluationResult(

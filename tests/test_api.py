@@ -5,7 +5,6 @@ REST API 测试
 
 import pytest
 from fastapi.testclient import TestClient
-from datetime import datetime
 
 from asset_lens.api.main import app
 
@@ -19,9 +18,7 @@ def client():
 @pytest.fixture
 def api_headers():
     """API请求头"""
-    return {
-        "Authorization": "Bearer demo_key"
-    }
+    return {"Authorization": "Bearer demo_key"}
 
 
 class TestRootEndpoint:
@@ -44,10 +41,7 @@ class TestStockEndpoints:
 
     def test_get_stock_quote(self, client, api_headers):
         """测试获取股票行情"""
-        response = client.get(
-            "/api/v1/stocks/sh600519",
-            headers=api_headers
-        )
+        response = client.get("/api/v1/stocks/sh600519", headers=api_headers)
         assert response.status_code in [200, 404, 500]
 
     def test_get_stock_quote_unauthorized(self, client):
@@ -57,10 +51,7 @@ class TestStockEndpoints:
 
     def test_screen_stocks(self, client, api_headers):
         """测试股票筛选"""
-        response = client.post(
-            "/api/v1/stocks/screen?strategy=momentum&limit=10",
-            headers=api_headers
-        )
+        response = client.post("/api/v1/stocks/screen?strategy=momentum&limit=10", headers=api_headers)
         assert response.status_code in [200, 404, 500]
 
 
@@ -69,10 +60,7 @@ class TestFundEndpoints:
 
     def test_get_fund_nav(self, client, api_headers):
         """测试获取基金净值"""
-        response = client.get(
-            "/api/v1/funds/000001",
-            headers=api_headers
-        )
+        response = client.get("/api/v1/funds/000001", headers=api_headers)
         assert response.status_code in [200, 404, 500]
 
 
@@ -81,10 +69,7 @@ class TestPortfolioEndpoints:
 
     def test_get_portfolio_analysis(self, client, api_headers):
         """测试获取投资组合分析"""
-        response = client.get(
-            "/api/v1/portfolio/analysis",
-            headers=api_headers
-        )
+        response = client.get("/api/v1/portfolio/analysis", headers=api_headers)
         assert response.status_code in [200, 404, 500]
 
 
@@ -93,10 +78,7 @@ class TestRiskEndpoints:
 
     def test_get_risk_metrics(self, client, api_headers):
         """测试获取风险指标"""
-        response = client.get(
-            "/api/risk/summary",
-            headers=api_headers
-        )
+        response = client.get("/api/risk/summary", headers=api_headers)
         assert response.status_code in [200, 404, 500]
 
 
@@ -105,18 +87,12 @@ class TestMonitorEndpoints:
 
     def test_get_monitor_report_daily(self, client, api_headers):
         """测试获取每日监控报告"""
-        response = client.get(
-            "/api/v1/monitor/report?report_type=daily",
-            headers=api_headers
-        )
+        response = client.get("/api/v1/monitor/report?report_type=daily", headers=api_headers)
         assert response.status_code in [200, 404, 500]
 
     def test_get_monitor_report_weekly(self, client, api_headers):
         """测试获取每周监控报告"""
-        response = client.get(
-            "/api/v1/monitor/report?report_type=weekly",
-            headers=api_headers
-        )
+        response = client.get("/api/v1/monitor/report?report_type=weekly", headers=api_headers)
         assert response.status_code in [200, 404, 500]
 
 
@@ -125,10 +101,7 @@ class TestMarketEndpoints:
 
     def test_get_market_indices(self, client, api_headers):
         """测试获取市场指数"""
-        response = client.get(
-            "/api/v1/market/indices",
-            headers=api_headers
-        )
+        response = client.get("/api/v1/market/indices", headers=api_headers)
         assert response.status_code in [200, 404, 500]
 
 
@@ -138,10 +111,7 @@ class TestAuthentication:
     def test_invalid_api_key(self, client):
         """测试无效的API Key"""
         headers = {"Authorization": "Bearer invalid_key"}
-        response = client.get(
-            "/api/v1/stocks/sh600519",
-            headers=headers
-        )
+        response = client.get("/api/v1/stocks/sh600519", headers=headers)
         assert response.status_code == 401
 
     def test_missing_api_key(self, client):
@@ -156,15 +126,13 @@ class TestRateLimit:
     def test_rate_limit_exceeded(self, client):
         """测试超过速率限制 - 跳过，因为需要大量请求"""
         import pytest
+
         pytest.skip("速率限制测试需要大量请求，跳过以加快测试速度")
 
     def test_rate_limit_headers(self, client):
         """测试速率限制头信息"""
         headers = {"Authorization": "Bearer demo_key"}
-        response = client.get(
-            "/api/v1/stocks/sh600519",
-            headers=headers
-        )
+        response = client.get("/api/v1/stocks/sh600519", headers=headers)
         assert response.status_code in [200, 404, 429, 500]
         if response.status_code == 200:
             assert "X-RateLimit-Limit" in response.headers or True
@@ -175,17 +143,11 @@ class TestErrorHandling:
 
     def test_404_error(self, client, api_headers):
         """测试404错误"""
-        response = client.get(
-            "/api/v1/nonexistent",
-            headers=api_headers
-        )
+        response = client.get("/api/v1/nonexistent", headers=api_headers)
         assert response.status_code == 404
 
     def test_500_error_simulation(self, client, api_headers):
         """测试错误处理"""
         # 测试一个不存在的 API 端点
-        response = client.get(
-            "/api/v1/nonexistent_endpoint",
-            headers=api_headers
-        )
+        response = client.get("/api/v1/nonexistent_endpoint", headers=api_headers)
         assert response.status_code in [404, 405, 500]

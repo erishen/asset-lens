@@ -2,7 +2,6 @@
 Strategy Routes - 策略相关 API
 """
 
-
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -11,6 +10,7 @@ router = APIRouter(prefix="/api/strategies", tags=["strategy"])
 
 class StrategyInfo(BaseModel):
     """策略信息模型"""
+
     name: str
     description: str = ""
     buy_conditions: int = 0
@@ -36,16 +36,18 @@ async def list_strategies():
         buy_count = buy_cond if isinstance(buy_cond, int) else len(buy_cond)
         sell_count = sell_cond if isinstance(sell_cond, int) else len(sell_cond)
 
-        result.append(StrategyInfo(
-            name=s.get("name", ""),
-            description=s.get("description", ""),
-            buy_conditions=buy_count,
-            sell_conditions=sell_count,
-            position_size=s.get("position_size", 0),
-            max_positions=s.get("max_positions", 0),
-            stop_loss=s.get("stop_loss", 0),
-            take_profit=s.get("take_profit", 0),
-        ))
+        result.append(
+            StrategyInfo(
+                name=s.get("name", ""),
+                description=s.get("description", ""),
+                buy_conditions=buy_count,
+                sell_conditions=sell_count,
+                position_size=s.get("position_size", 0),
+                max_positions=s.get("max_positions", 0),
+                stop_loss=s.get("stop_loss", 0),
+                take_profit=s.get("take_profit", 0),
+            )
+        )
 
     return result
 
@@ -63,14 +65,8 @@ async def get_strategy(strategy_name: str):
     return {
         "name": strategy.name,
         "description": strategy.description,
-        "buy_conditions": [
-            {"name": c.name, "weight": c.weight, "value": c.value}
-            for c in strategy.buy_conditions
-        ],
-        "sell_conditions": [
-            {"name": c.name, "weight": c.weight, "value": c.value}
-            for c in strategy.sell_conditions
-        ],
+        "buy_conditions": [{"name": c.name, "weight": c.weight, "value": c.value} for c in strategy.buy_conditions],
+        "sell_conditions": [{"name": c.name, "weight": c.weight, "value": c.value} for c in strategy.sell_conditions],
         "position_size": strategy.position_size,
         "max_positions": strategy.max_positions,
         "stop_loss": strategy.stop_loss,

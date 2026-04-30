@@ -3,7 +3,6 @@ Stock Pool CLI commands for asset-lens.
 股票池命令模块 - 包含 stock-pool, track-stocks, investment-status, investment-report
 """
 
-
 import click
 
 
@@ -11,7 +10,9 @@ def register_stock_pool_commands(cli: click.Group) -> None:
     """注册股票池命令到 CLI 组"""
 
     @cli.command("stock-pool")
-    @click.option("--action", type=click.Choice(["list", "add", "remove", "update", "clear"]), default="list", help="操作类型")
+    @click.option(
+        "--action", type=click.Choice(["list", "add", "remove", "update", "clear"]), default="list", help="操作类型"
+    )
     @click.option("--code", type=str, help="股票代码")
     @click.option("--name", type=str, help="股票名称")
     @click.option("--force", is_flag=True, help="强制清空，无需确认")
@@ -31,9 +32,9 @@ def register_stock_pool_commands(cli: click.Group) -> None:
 
                 console = Console()
                 stocks = pool.list_stocks()
-                holding = [s for s in stocks if s.get('status') == 'holding']
-                watching = [s for s in stocks if s.get('status') == 'watching']
-                sold = [s for s in stocks if s.get('status') == 'sold']
+                holding = [s for s in stocks if s.get("status") == "holding"]
+                watching = [s for s in stocks if s.get("status") == "watching"]
+                sold = [s for s in stocks if s.get("status") == "sold"]
 
                 console.print(f"\n[bold cyan]📊 股票池总览[/bold cyan] ([cyan]{len(stocks)}[/cyan] 只股票)\n")
 
@@ -48,22 +49,15 @@ def register_stock_pool_commands(cli: click.Group) -> None:
 
                     total_amount = 0
                     for stock in holding:
-                        code = stock.get('code', '')
-                        name = stock.get('name', '')
-                        buy_price = stock.get('buy_price', 0)
-                        buy_date = stock.get('buy_date', '')
-                        shares = stock.get('shares', 0)
+                        code = stock.get("code", "")
+                        name = stock.get("name", "")
+                        buy_price = stock.get("buy_price", 0)
+                        buy_date = stock.get("buy_date", "")
+                        shares = stock.get("shares", 0)
                         amount = buy_price * shares
                         total_amount += amount
 
-                        table.add_row(
-                            code,
-                            name,
-                            f"¥{buy_price:.2f}",
-                            str(shares),
-                            f"¥{amount:,.2f}",
-                            buy_date
-                        )
+                        table.add_row(code, name, f"¥{buy_price:.2f}", str(shares), f"¥{amount:,.2f}", buy_date)
 
                     console.print(table)
                     console.print(f"[bold green]持仓总金额: ¥{total_amount:,.2f}[/bold green]\n")
@@ -76,10 +70,10 @@ def register_stock_pool_commands(cli: click.Group) -> None:
                     table.add_column("入选日期", style="dim")
 
                     for stock in watching[:15]:
-                        code = stock.get('code', '')
-                        name = stock.get('name', '')
-                        count = stock.get('selected_count', 1)
-                        first_date = stock.get('first_selected_date', '')
+                        code = stock.get("code", "")
+                        name = stock.get("name", "")
+                        count = stock.get("selected_count", 1)
+                        first_date = stock.get("first_selected_date", "")
 
                         table.add_row(code, name, str(count), first_date)
 
@@ -96,12 +90,12 @@ def register_stock_pool_commands(cli: click.Group) -> None:
                     table.add_column("卖出日期", style="dim")
 
                     for stock in sold[:10]:
-                        code = stock.get('code', '')
-                        name = stock.get('name', '')
-                        buy_price = stock.get('buy_price', 0)
-                        sell_price = stock.get('sell_price', 0)
+                        code = stock.get("code", "")
+                        name = stock.get("name", "")
+                        buy_price = stock.get("buy_price", 0)
+                        sell_price = stock.get("sell_price", 0)
                         profit_rate = ((sell_price - buy_price) / buy_price * 100) if buy_price > 0 else 0
-                        sell_date = stock.get('sell_date', '')
+                        sell_date = stock.get("sell_date", "")
 
                         profit_str = f"{profit_rate:+.2f}%"
                         if profit_rate > 0:
@@ -140,8 +134,8 @@ def register_stock_pool_commands(cli: click.Group) -> None:
                     click.echo("⚠️ 股票池已为空")
                     return
 
-                holding = [s for s in stocks if s.get('status') == 'holding']
-                watching = [s for s in stocks if s.get('status') == 'watching']
+                holding = [s for s in stocks if s.get("status") == "holding"]
+                watching = [s for s in stocks if s.get("status") == "watching"]
 
                 click.echo("\n当前股票池状态:")
                 click.echo(f"  持仓股票: {len(holding)} 只")
@@ -163,6 +157,7 @@ def register_stock_pool_commands(cli: click.Group) -> None:
 
         except Exception as e:
             import traceback
+
             click.echo(f"❌ 操作失败: {e}", err=True)
             click.echo(traceback.format_exc(), err=True)
 
@@ -246,16 +241,18 @@ def register_stock_pool_commands(cli: click.Group) -> None:
             report = investment_report_generator.generate_pool_report()
 
             summary = report.get("summary", {})
-            console.print(Panel(
-                f"[bold]股票总数:[/bold] {summary.get('total_stocks', 0)}\n"
-                f"[bold]关注中:[/bold] {summary.get('watching_count', 0)}\n"
-                f"[bold]持有中:[/bold] {summary.get('holding_count', 0)}\n"
-                f"[bold]已卖出:[/bold] {summary.get('sold_count', 0)}\n"
-                f"[bold]总盈亏:[/bold] ¥{summary.get('total_profit', 0):.2f}\n"
-                f"[bold]总收益率:[/bold] {summary.get('total_profit_rate', 0):.2f}%",
-                title="📈 投资概况",
-                border_style="cyan"
-            ))
+            console.print(
+                Panel(
+                    f"[bold]股票总数:[/bold] {summary.get('total_stocks', 0)}\n"
+                    f"[bold]关注中:[/bold] {summary.get('watching_count', 0)}\n"
+                    f"[bold]持有中:[/bold] {summary.get('holding_count', 0)}\n"
+                    f"[bold]已卖出:[/bold] {summary.get('sold_count', 0)}\n"
+                    f"[bold]总盈亏:[/bold] ¥{summary.get('total_profit', 0):.2f}\n"
+                    f"[bold]总收益率:[/bold] {summary.get('total_profit_rate', 0):.2f}%",
+                    title="📈 投资概况",
+                    border_style="cyan",
+                )
+            )
 
             positions = report.get("positions", [])
             if positions:
@@ -284,34 +281,40 @@ def register_stock_pool_commands(cli: click.Group) -> None:
                             f"{buy_price:.2f}",
                             f"{current_price:.2f}",
                             f"[green]{profit_str}[/green]" if profit >= 0 else f"[red]{profit_str}[/red]",
-                            f"[green]{profit_rate_str}[/green]" if profit_rate >= 0 else f"[red]{profit_rate_str}[/red]"
+                            f"[green]{profit_rate_str}[/green]"
+                            if profit_rate >= 0
+                            else f"[red]{profit_rate_str}[/red]",
                         )
 
                     console.print(table)
 
             performance = report.get("performance", {})
             if performance:
-                console.print(Panel(
-                    f"[bold]胜率:[/bold] {performance.get('win_rate', 0):.1f}%\n"
-                    f"[bold]平均收益率:[/bold] {performance.get('avg_profit_rate', 0):.2f}%\n"
-                    f"[bold]最大盈利:[/bold] ¥{performance.get('max_profit', 0):.2f}\n"
-                    f"[bold]最大亏损:[/bold] ¥{performance.get('max_loss', 0):.2f}",
-                    title="📊 绩效分析",
-                    border_style="yellow"
-                ))
+                console.print(
+                    Panel(
+                        f"[bold]胜率:[/bold] {performance.get('win_rate', 0):.1f}%\n"
+                        f"[bold]平均收益率:[/bold] {performance.get('avg_profit_rate', 0):.2f}%\n"
+                        f"[bold]最大盈利:[/bold] ¥{performance.get('max_profit', 0):.2f}\n"
+                        f"[bold]最大亏损:[/bold] ¥{performance.get('max_loss', 0):.2f}",
+                        title="📊 绩效分析",
+                        border_style="yellow",
+                    )
+                )
 
             risk = report.get("risk_analysis", {})
             if risk:
                 risk_level = risk.get("risk_level", "unknown")
                 risk_color = {"low": "green", "medium": "yellow", "high": "red"}.get(risk_level, "white")
-                console.print(Panel(
-                    f"[bold]风险等级:[/bold] [{risk_color}]{risk_level.upper()}[/{risk_color}]\n"
-                    f"[bold]风险提示:[/bold] {risk.get('message', '')}\n"
-                    f"[bold]最大持仓权重:[/bold] {risk.get('max_position_weight', 0)*100:.1f}%\n"
-                    f"[bold]持仓数量:[/bold] {risk.get('position_count', 0)}",
-                    title="⚠️ 风险分析",
-                    border_style="red"
-                ))
+                console.print(
+                    Panel(
+                        f"[bold]风险等级:[/bold] [{risk_color}]{risk_level.upper()}[/{risk_color}]\n"
+                        f"[bold]风险提示:[/bold] {risk.get('message', '')}\n"
+                        f"[bold]最大持仓权重:[/bold] {risk.get('max_position_weight', 0) * 100:.1f}%\n"
+                        f"[bold]持仓数量:[/bold] {risk.get('position_count', 0)}",
+                        title="⚠️ 风险分析",
+                        border_style="red",
+                    )
+                )
 
             console.print(f"\n[green]✅ 报告已保存到: {report.get('report_file', '')}[/green]")
 

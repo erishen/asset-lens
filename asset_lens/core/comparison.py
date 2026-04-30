@@ -106,23 +106,15 @@ class ComparisonAnalyzer:
 
             # 获取金额
             amount_before = (
-                product_before.current_amount
-                if product_before and product_before.current_amount
-                else Decimal("0")
+                product_before.current_amount if product_before and product_before.current_amount else Decimal("0")
             )
             amount_after = (
-                product_after.current_amount
-                if product_after and product_after.current_amount
-                else Decimal("0")
+                product_after.current_amount if product_after and product_after.current_amount else Decimal("0")
             )
 
             # 计算变化
             amount_change = amount_after - amount_before
-            return_rate = (
-                (amount_change / amount_before * Decimal("100"))
-                if amount_before != 0
-                else Decimal("0")
-            )
+            return_rate = (amount_change / amount_before * Decimal("100")) if amount_before != 0 else Decimal("0")
 
             # 计算投资天数
             investment_days = 0
@@ -169,9 +161,7 @@ class ComparisonAnalyzer:
         # 计算总体趋势
         total_change = total_amount_after - total_amount_before
         total_return_rate = (
-            (total_change / total_amount_before * Decimal("100"))
-            if total_amount_before != 0
-            else Decimal("0")
+            (total_change / total_amount_before * Decimal("100")) if total_amount_before != 0 else Decimal("0")
         )
 
         trend = TrendAnalysis(
@@ -282,12 +272,8 @@ class ComparisonAnalyzer:
             "inflow": inflow,
             "outflow": outflow,
             "net_flow": net_flow,
-            "inflow_rate": (inflow / total_initial * Decimal("100"))
-            if total_initial > 0
-            else Decimal("0"),
-            "outflow_rate": (outflow / total_initial * Decimal("100"))
-            if total_initial > 0
-            else Decimal("0"),
+            "inflow_rate": (inflow / total_initial * Decimal("100")) if total_initial > 0 else Decimal("0"),
+            "outflow_rate": (outflow / total_initial * Decimal("100")) if total_initial > 0 else Decimal("0"),
         }
 
     def generate_comparison_report(

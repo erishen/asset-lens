@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CacheEntry:
     """缓存条目"""
+
     data: dict[str, Any]
     timestamp: float
     ttl: int = 3600  # 默认1小时过期
@@ -38,6 +39,7 @@ class CacheEntry:
 @dataclass
 class DataSource:
     """数据源配置"""
+
     name: str
     priority: int = 0
     enabled: bool = True
@@ -109,11 +111,11 @@ class EnhancedMarketDataFetcher:
         if self._akshare is None:
             try:
                 import akshare as ak
+
                 self._akshare = ak
             except ImportError:
                 raise ImportError(
-                    "请先安装 AkShare: pip install akshare\n"
-                    "AkShare 是一个开源免费的金融数据接口，无需注册"
+                    "请先安装 AkShare: pip install akshare\nAkShare 是一个开源免费的金融数据接口，无需注册"
                 )
         return self._akshare
 
@@ -243,17 +245,17 @@ class EnhancedMarketDataFetcher:
                 return None
 
             url = f"http://hq.sinajs.cn/list={sina_code}"
-            headers = {'Referer': 'http://finance.sina.com.cn'}
+            headers = {"Referer": "http://finance.sina.com.cn"}
             response = self._http_client.get(url, headers=headers, timeout=10)
 
             if response is None:
                 return None
 
             text = response.text
-            if not text or 'var hq_str_' not in text:
+            if not text or "var hq_str_" not in text:
                 return None
 
-            parts = text.split('"')[1].split(',')
+            parts = text.split('"')[1].split(",")
             if len(parts) < 4:
                 return None
 
@@ -304,10 +306,10 @@ class EnhancedMarketDataFetcher:
                 return None
 
             text = response.text
-            if not text or 'v_' not in text:
+            if not text or "v_" not in text:
                 return None
 
-            parts = text.split('~')
+            parts = text.split("~")
             if len(parts) < 35:
                 return None
 
@@ -488,7 +490,7 @@ class EnhancedMarketDataFetcher:
             }
 
             response = requests.get(url, headers=headers, timeout=15)
-            response.encoding = 'gbk'
+            response.encoding = "gbk"
             content = response.text
 
             pattern = f'var hq_str_{sina_code}="'
@@ -624,15 +626,16 @@ class EnhancedMarketDataFetcher:
         """从 Alpha Vantage 获取"""
         try:
             import subprocess
+
             api_key = config.alphavantage_api_key or "demo"
 
             # Alpha Vantage 使用股票代码，不是指数代码
             symbol_map = {
                 "^GSPC": "SPY",  # 标普500 ETF
-                "^DJI": "DIA",   # 道琼斯 ETF
+                "^DJI": "DIA",  # 道琼斯 ETF
                 "^IXIC": "QQQ",  # 纳斯达克 ETF
                 "^N225": "EWJ",  # 日本 ETF
-                "^HSI": "EWH",   # 香港 ETF
+                "^HSI": "EWH",  # 香港 ETF
             }
 
             av_symbol = symbol_map.get(symbol, symbol.replace("^", ""))
@@ -750,10 +753,7 @@ class EnhancedMarketDataFetcher:
         indexes = {}
 
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            future_to_code = {
-                executor.submit(self.fetch_domestic_index, code): code
-                for code in self.DOMESTIC_INDEXES
-            }
+            future_to_code = {executor.submit(self.fetch_domestic_index, code): code for code in self.DOMESTIC_INDEXES}
 
             for future in as_completed(future_to_code):
                 code = future_to_code[future]
@@ -798,23 +798,21 @@ class EnhancedMarketDataFetcher:
         if key_indexes is None:
             key_indexes = ["sh000001", "sh000300", "sz399006"]
 
-        from datetime import timedelta
-
         now = datetime.now()
         is_weekend = now.weekday() >= 5
 
         if self.domestic_cache_file.exists():
             try:
-                with open(self.domestic_cache_file, "r", encoding="utf-8") as f:
+                with open(self.domestic_cache_file, encoding="utf-8") as f:
                     cached = json.load(f)
-                
+
                 cache_time = datetime.strptime(cached.get("更新时间", ""), "%Y-%m-%d %H:%M:%S")
                 cache_age = (now - cache_time).total_seconds()
-                
+
                 cache_data_valid = cached.get("指数数据") and any(
                     v.get("最新价", 0) > 0 for v in cached["指数数据"].values()
                 )
-                
+
                 if cache_data_valid:
                     if is_weekend:
                         if cache_age < 72 * 3600:
@@ -877,8 +875,7 @@ class EnhancedMarketDataFetcher:
 
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             future_to_symbol = {
-                executor.submit(self.fetch_foreign_index, symbol): symbol
-                for symbol in self.FOREIGN_INDEXES
+                executor.submit(self.fetch_foreign_index, symbol): symbol for symbol in self.FOREIGN_INDEXES
             }
 
             for future in as_completed(future_to_symbol):

@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CollectedData:
     """收集的数据"""
+
     timestamp: str
     data: dict[str, Any]
     source: str
@@ -52,19 +53,13 @@ class ReportDataCollector:
             total_amount += amount
             total_cost += cost
 
-            ptype = str(
-                getattr(product, "investment_type", "其他")
-                or "其他"
-            )
+            ptype = str(getattr(product, "investment_type", "其他") or "其他")
             if ptype not in by_type:
                 by_type[ptype] = {"amount": Decimal("0"), "cost": Decimal("0")}
             by_type[ptype]["amount"] += amount
             by_type[ptype]["cost"] += cost
 
-            platform = str(
-                getattr(product, "platform", "未知")
-                or "未知"
-            )
+            platform = str(getattr(product, "platform", "未知") or "未知")
             if platform not in by_platform:
                 by_platform[platform] = {"amount": Decimal("0"), "cost": Decimal("0")}
             by_platform[platform]["amount"] += amount
@@ -78,13 +73,9 @@ class ReportDataCollector:
             "total_cost": float(total_cost),
             "total_profit": float(profit),
             "profit_rate": float(profit_rate),
-            "by_type": {
-                k: {"amount": float(v["amount"]), "cost": float(v["cost"])}
-                for k, v in by_type.items()
-            },
+            "by_type": {k: {"amount": float(v["amount"]), "cost": float(v["cost"])} for k, v in by_type.items()},
             "by_platform": {
-                k: {"amount": float(v["amount"]), "cost": float(v["cost"])}
-                for k, v in by_platform.items()
+                k: {"amount": float(v["amount"]), "cost": float(v["cost"])} for k, v in by_platform.items()
             },
             "product_count": len(products),
         }
@@ -139,10 +130,7 @@ class ReportDataCollector:
         if not performance_history:
             return {"history": [], "summary": {}}
 
-        total_profit = sum(
-            item.get("profit", 0)
-            for item in performance_history
-        )
+        total_profit = sum(item.get("profit", 0) for item in performance_history)
         avg_profit = total_profit / len(performance_history) if performance_history else 0
 
         data = {
@@ -182,10 +170,7 @@ class ReportDataCollector:
         Returns:
             所有数据字典
         """
-        return {
-            key: item.data
-            for key, item in self.collected.items()
-        }
+        return {key: item.data for key, item in self.collected.items()}
 
     def clear(self):
         """清除已收集的数据"""

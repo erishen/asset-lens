@@ -32,6 +32,7 @@ def handle_errors(func: Callable) -> Callable:
         def my_command():
             ...
     """
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         try:
@@ -39,6 +40,7 @@ def handle_errors(func: Callable) -> Callable:
         except Exception as e:
             click.echo(f"❌ 操作失败: {e}", err=True)
             return None
+
     return wrapper
 
 
@@ -199,9 +201,7 @@ def print_info(message: str) -> None:
 
 
 def check_data_freshness(
-    file_path: Path,
-    max_age_hours: int = 1,
-    time_key: str = "update_time"
+    file_path: Path, max_age_hours: int = 1, time_key: str = "update_time"
 ) -> tuple[bool, str | None]:
     """
     检查数据文件的新鲜度
@@ -288,11 +288,7 @@ def prompt_input(message: str, default: str | None = None) -> str | None:
     return str(result) if result is not None else None
 
 
-def calculate_profit_metrics(
-    principal: float,
-    current: float,
-    days: int = 365
-) -> dict[str, float]:
+def calculate_profit_metrics(principal: float, current: float, days: int = 365) -> dict[str, float]:
     """
     计算收益指标
 

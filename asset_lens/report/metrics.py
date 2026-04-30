@@ -20,18 +20,14 @@ def calculate_average_return(portfolio: Portfolio) -> Decimal:
     """计算平均收益率"""
     if not portfolio.products:
         return Decimal("0")
-    total_return = sum(
-        float(p.annualized_return_irr or 0) for p in portfolio.products
-    )
+    total_return = sum(float(p.annualized_return_irr or 0) for p in portfolio.products)
     return Decimal(str(total_return / len(portfolio.products)))
 
 
 def calculate_positive_avg_return(portfolio: Portfolio) -> str:
     """计算正收益产品的平均收益率"""
     positive_returns = [
-        float(p.annualized_return_irr or 0)
-        for p in portfolio.products
-        if (p.annualized_return_irr or 0) > 0
+        float(p.annualized_return_irr or 0) for p in portfolio.products if (p.annualized_return_irr or 0) > 0
     ]
 
     if not positive_returns:
@@ -65,13 +61,8 @@ def calculate_investment_efficiency(portfolio: Portfolio) -> dict[str, Any]:
             "avg_holding_days": 0,
         }
 
-    profit_products = sum(
-        1 for p in portfolio.products
-        if (p.annualized_return_irr or 0) > 0
-    )
-    total_holding_days = sum(
-        p.investment_days or 0 for p in portfolio.products
-    )
+    profit_products = sum(1 for p in portfolio.products if (p.annualized_return_irr or 0) > 0)
+    total_holding_days = sum(p.investment_days or 0 for p in portfolio.products)
 
     return {
         "efficiency_score": (profit_products / total_products * 100) if total_products > 0 else 0,
@@ -83,10 +74,10 @@ def calculate_investment_efficiency(portfolio: Portfolio) -> dict[str, Any]:
 def get_return_distribution(portfolio: Portfolio) -> dict[str, int]:
     """获取收益率分布"""
     distribution = {
-        "high_return": 0,      # > 10%
-        "medium_return": 0,    # 0% - 10%
-        "low_return": 0,       # -10% - 0%
-        "loss": 0,             # < -10%
+        "high_return": 0,  # > 10%
+        "medium_return": 0,  # 0% - 10%
+        "low_return": 0,  # -10% - 0%
+        "loss": 0,  # < -10%
     }
 
     for product in portfolio.products:
@@ -116,8 +107,8 @@ def calculate_risk_score(portfolio: Portfolio) -> float:
 
     total_score = 0
     for product in portfolio.products:
-        risk_level = getattr(product, 'risk_level', 'medium')
-        if hasattr(risk_level, 'value'):
+        risk_level = getattr(product, "risk_level", "medium")
+        if hasattr(risk_level, "value"):
             risk_level = risk_level.value
         total_score += risk_weights.get(str(risk_level).lower(), 2)
 
@@ -130,8 +121,8 @@ def get_type_distribution(portfolio: Portfolio) -> dict[str, Any]:
 
     for product in portfolio.products:
         ptype = product.investment_type
-        if hasattr(ptype, 'value'):
-            ptype = getattr(ptype, 'value', ptype)
+        if hasattr(ptype, "value"):
+            ptype = getattr(ptype, "value", ptype)
         type_name = str(ptype) if ptype else "其他"
 
         if type_name not in distribution:
@@ -161,8 +152,8 @@ def get_risk_distribution(portfolio: Portfolio) -> dict[str, Any]:
     distribution: dict[str, int] = {}
 
     for product in portfolio.products:
-        risk_level = getattr(product, 'risk_level', 'medium')
-        if hasattr(risk_level, 'value'):
+        risk_level = getattr(product, "risk_level", "medium")
+        if hasattr(risk_level, "value"):
             risk_level = risk_level.value
         risk_name = str(risk_level) if risk_level else "中"
 

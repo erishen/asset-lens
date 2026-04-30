@@ -287,11 +287,11 @@ class AIAnalyzer:
                 low_risk_ratio = ratio
 
         if high_risk_ratio > 0.5:
-            return f"您的投资组合风险较高，高风险产品占比 {high_risk_ratio*100:.1f}%，建议适当降低高风险产品比例。"
+            return f"您的投资组合风险较高，高风险产品占比 {high_risk_ratio * 100:.1f}%，建议适当降低高风险产品比例。"
         elif high_risk_ratio > 0.3:
-            return f"您的投资组合风险适中，高风险产品占比 {high_risk_ratio*100:.1f}%，整体配置较为合理。"
+            return f"您的投资组合风险适中，高风险产品占比 {high_risk_ratio * 100:.1f}%，整体配置较为合理。"
         else:
-            return f"您的投资组合风险较低，低风险产品占比 {low_risk_ratio*100:.1f}%，适合稳健型投资者。"
+            return f"您的投资组合风险较低，低风险产品占比 {low_risk_ratio * 100:.1f}%，适合稳健型投资者。"
 
     def _generate_suggestions(self, data: dict[str, Any]) -> list[str]:
         """生成投资建议"""
@@ -301,18 +301,14 @@ class AIAnalyzer:
         if len(low_returns) > 5:
             suggestions.append(f"发现 {len(low_returns)} 个低收益产品，建议考虑调整或赎回。")
 
-        loss_products = [
-            p for p in data.get("products", []) if float(p.get("profit_amount", 0)) < 0
-        ]
+        loss_products = [p for p in data.get("products", []) if float(p.get("profit_amount", 0)) < 0]
         if loss_products:
             suggestions.append(f"发现 {len(loss_products)} 个亏损产品，建议评估是否继续持有。")
 
         type_dist = data.get("type_distribution", {})
         if type_dist:
             max_type = max(type_dist.items(), key=lambda x: float(x[1].get("total_value", 0)))
-            max_ratio = (
-                float(max_type[1].get("total_value", 0)) / float(data.get("total_value", 1)) * 100
-            )
+            max_ratio = float(max_type[1].get("total_value", 0)) / float(data.get("total_value", 1)) * 100
             if max_ratio > 50:
                 suggestions.append(f"{max_type[0]} 类产品占比 {max_ratio:.1f}%，建议分散投资降低风险。")
 
@@ -381,7 +377,7 @@ class AIAnalyzer:
         try:
             amount = float(value)
             if amount >= 10000:
-                return f"{amount/10000:.2f}万"
+                return f"{amount / 10000:.2f}万"
             return f"{amount:.2f}"
         except (ValueError, TypeError):
             return "0.00"

@@ -22,15 +22,17 @@ logger = logging.getLogger(__name__)
 
 class MarketCondition(Enum):
     """市场行情状态"""
-    BULL = "bull"           # 牛市
-    BEAR = "bear"           # 熊市
-    SIDEWAYS = "sideways"   # 震荡市
-    VOLATILE = "volatile"   # 高波动
+
+    BULL = "bull"  # 牛市
+    BEAR = "bear"  # 熊市
+    SIDEWAYS = "sideways"  # 震荡市
+    VOLATILE = "volatile"  # 高波动
 
 
 @dataclass
 class MarketAnalysis:
     """市场分析结果"""
+
     condition: MarketCondition
     confidence: float
     indicators: dict[str, Any]
@@ -265,7 +267,9 @@ class AdaptiveMLTrainer:
         console.print("\n📋 第二步: 调整策略参数...")
         console.print(f"  策略: {strategy_config['description']}")
         console.print(f"  预测天数: {strategy_config['prediction_days']}天")
-        console.print(f"  涨跌阈值: {strategy_config['positive_threshold']:.1%} / {strategy_config['negative_threshold']:.1%}")
+        console.print(
+            f"  涨跌阈值: {strategy_config['positive_threshold']:.1%} / {strategy_config['negative_threshold']:.1%}"
+        )
 
         console.print("\n🎯 第三步: 筛选股票池...")
         stock_pool = self._select_stock_pool(strategy_config)
@@ -284,10 +288,10 @@ class AdaptiveMLTrainer:
         result_table.add_column("值", justify="right")
 
         result_table.add_row("市场状态", analysis.condition.value.upper())
-        result_table.add_row("策略类型", strategy_config['description'][:20])
+        result_table.add_row("策略类型", strategy_config["description"][:20])
         result_table.add_row("准确率", f"{result.get('accuracy', 0):.2%}")
         result_table.add_row("AUC", f"{result.get('auc', 0):.2%}")
-        result_table.add_row("训练样本", str(result.get('train_samples', 0)))
+        result_table.add_row("训练样本", str(result.get("train_samples", 0)))
 
         console.print(result_table)
 
@@ -336,6 +340,7 @@ class AdaptiveMLTrainer:
         """获取默认股票池"""
         try:
             from ..db.database import db_manager
+
             return db_manager.get_stock_codes()[:100]
         except Exception:
             return ["sh600519", "sh601318", "sh600036", "sz000001", "sz000002"]

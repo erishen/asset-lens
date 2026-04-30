@@ -9,11 +9,7 @@ from unittest.mock import patch
 
 import pytest
 
-from asset_lens.data.stock_activity_analyzer import (
-    ActivityMetrics,
-    ETFPrediction,
-    StockActivityAnalyzer,
-)
+from asset_lens.data.stock_activity_analyzer import ActivityMetrics, ETFPrediction, StockActivityAnalyzer
 
 
 class TestActivityMetrics:
@@ -87,7 +83,7 @@ class TestStockActivityAnalyzer:
     @pytest.fixture
     def analyzer(self, temp_cache_path):
         """创建测试实例"""
-        with patch('asset_lens.data.stock_activity_analyzer.config') as mock_config:
+        with patch("asset_lens.data.stock_activity_analyzer.config") as mock_config:
             mock_config.cache_path = temp_cache_path
             analyzer = StockActivityAnalyzer()
             yield analyzer

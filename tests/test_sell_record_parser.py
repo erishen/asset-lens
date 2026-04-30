@@ -2,15 +2,16 @@
 Tests for sell record parser module.
 """
 
-import pytest
+import tempfile
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
-import tempfile
 
+import pytest
+
+from asset_lens.data.models import RiskLevel
+from asset_lens.data.parser_utils import parse_date, parse_decimal
 from asset_lens.data.sell_record_parser import SellRecordParser
-from asset_lens.data.parser_utils import parse_decimal, parse_date
-from asset_lens.data.models import SellRecord, RiskLevel
 
 
 class TestParserUtils:

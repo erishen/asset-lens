@@ -32,6 +32,7 @@ try:
         roc_auc_score,
     )
     from sklearn.model_selection import TimeSeriesSplit, cross_val_score, train_test_split
+
     HAS_SKLEARN = True
 except ImportError:
     HAS_SKLEARN = False
@@ -44,6 +45,7 @@ from .predictor import StockPredictor
 @dataclass
 class TrainingConfig:
     """训练配置"""
+
     prediction_days: int = 5
     positive_threshold: float = 0.02
     negative_threshold: float = -0.02
@@ -55,6 +57,7 @@ class TrainingConfig:
 @dataclass
 class TrainingResult:
     """训练结果"""
+
     model_type: str
     accuracy: float
     precision: float
@@ -70,18 +73,18 @@ class TrainingResult:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            'model_type': self.model_type,
-            'accuracy': round(self.accuracy, 4),
-            'precision': round(self.precision, 4),
-            'recall': round(self.recall, 4),
-            'f1_score': round(self.f1_score, 4),
-            'auc': round(self.auc, 4),
-            'cv_scores': [round(s, 4) for s in self.cv_scores],
-            'feature_importance': self.feature_importance.head(10).to_dict('records'),
-            'training_samples': self.training_samples,
-            'test_samples': self.test_samples,
-            'training_time': round(self.training_time, 2),
-            'timestamp': self.timestamp,
+            "model_type": self.model_type,
+            "accuracy": round(self.accuracy, 4),
+            "precision": round(self.precision, 4),
+            "recall": round(self.recall, 4),
+            "f1_score": round(self.f1_score, 4),
+            "auc": round(self.auc, 4),
+            "cv_scores": [round(s, 4) for s in self.cv_scores],
+            "feature_importance": self.feature_importance.head(10).to_dict("records"),
+            "training_samples": self.training_samples,
+            "test_samples": self.test_samples,
+            "training_time": round(self.training_time, 2),
+            "timestamp": self.timestamp,
         }
 
 
@@ -116,7 +119,7 @@ class ModelTrainer:
         """
         df = self.feature_engineer.calculate_all_features(price_data)
 
-        future_return = df['close'].shift(-self.config.prediction_days) / df['close'] - 1
+        future_return = df["close"].shift(-self.config.prediction_days) / df["close"] - 1
 
         def label_return(r):
             if pd.isna(r):
@@ -178,12 +181,7 @@ class ModelTrainer:
 
         return X, y
 
-    def train(
-        self,
-        X: pd.DataFrame,
-        y: pd.Series,
-        **kwargs
-    ) -> TrainingResult:
+    def train(self, X: pd.DataFrame, y: pd.Series, **kwargs) -> TrainingResult:
         """
         训练模型
 
@@ -195,20 +193,14 @@ class ModelTrainer:
             训练结果
         """
         import time
+
         start_time = time.time()
 
         X_train, X_test, y_train, y_test = train_test_split(
-            X, y,
-            test_size=self.config.test_size,
-            random_state=self.config.random_state,
-            stratify=y
+            X, y, test_size=self.config.test_size, random_state=self.config.random_state, stratify=y
         )
 
-        self.predictor.fit(
-            X_train, y_train,
-            feature_names=list(X.columns),
-            **kwargs
-        )
+        self.predictor.fit(X_train, y_train, feature_names=list(X.columns), **kwargs)
 
         y_pred = self.predictor.predict(X_test)
         y_proba = self.predictor.predict_proba(X_test)[:, 1]
@@ -227,10 +219,7 @@ class ModelTrainer:
             cv_scores = [accuracy]
         else:
             tscv = TimeSeriesSplit(n_splits=self.config.cv_folds)
-            cv_scores = cross_val_score(
-                self.predictor.model, X, y,
-                cv=tscv, scoring='accuracy'
-            )
+            cv_scores = cross_val_score(self.predictor.model, X, y, cv=tscv, scoring="accuracy")
 
         feature_importance = self.predictor.get_feature_importance()
 
@@ -254,11 +243,7 @@ class ModelTrainer:
 
         return result
 
-    def train_with_market_data(
-        self,
-        stocks_data: dict[str, pd.DataFrame],
-        **kwargs
-    ) -> TrainingResult:
+    def train_with_market_data(self, stocks_data: dict[str, pd.DataFrame], **kwargs) -> TrainingResult:
         """
         使用市场数据训练模型
 
@@ -296,32 +281,32 @@ class ModelTrainer:
         predictions = self.predictor.predict(X)
         probas = self.predictor.predict_proba(X)[:, 1]
 
-        df['prediction'] = predictions
-        df['up_prob'] = probas
-        df['position'] = 0
+        df["prediction"] = predictions
+        df["up_prob"] = probas
+        df["position"] = 0
 
-        df.loc[(df['prediction'] == 1) & (df['up_prob'] > 0.6), 'position'] = 1
+        df.loc[(df["prediction"] == 1) & (df["up_prob"] > 0.6), "position"] = 1
 
-        df['returns'] = df['close'].pct_change()
-        df['strategy_returns'] = df['position'].shift(1) * df['returns']
+        df["returns"] = df["close"].pct_change()
+        df["strategy_returns"] = df["position"].shift(1) * df["returns"]
 
-        df['capital'] = initial_capital * (1 + df['strategy_returns']).cumprod()
+        df["capital"] = initial_capital * (1 + df["strategy_returns"]).cumprod()
 
-        total_return = (df['capital'].iloc[-1] / initial_capital - 1) * 100
-        max_drawdown = (df['capital'] / df['capital'].cummax() - 1).min() * 100
-        sharpe_ratio = df['strategy_returns'].mean() / df['strategy_returns'].std() * np.sqrt(252)
+        total_return = (df["capital"].iloc[-1] / initial_capital - 1) * 100
+        max_drawdown = (df["capital"] / df["capital"].cummax() - 1).min() * 100
+        sharpe_ratio = df["strategy_returns"].mean() / df["strategy_returns"].std() * np.sqrt(252)
 
-        win_trades = (df['strategy_returns'] > 0).sum()
-        total_trades = (df['position'] == 1).sum()
+        win_trades = (df["strategy_returns"] > 0).sum()
+        total_trades = (df["position"] == 1).sum()
         win_rate = win_trades / total_trades * 100 if total_trades > 0 else 0
 
         return {
-            'total_return': round(total_return, 2),
-            'max_drawdown': round(max_drawdown, 2),
-            'sharpe_ratio': round(sharpe_ratio, 2),
-            'win_rate': round(win_rate, 2),
-            'total_trades': total_trades,
-            'final_capital': round(df['capital'].iloc[-1], 2),
+            "total_return": round(total_return, 2),
+            "max_drawdown": round(max_drawdown, 2),
+            "sharpe_ratio": round(sharpe_ratio, 2),
+            "win_rate": round(win_rate, 2),
+            "total_trades": total_trades,
+            "final_capital": round(df["capital"].iloc[-1], 2),
         }
 
     def save_model(self, path: Path) -> None:
@@ -338,17 +323,12 @@ class ModelTrainer:
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(path, 'w', encoding='utf-8') as f:
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(result.to_dict(), f, indent=2, ensure_ascii=False)
 
         logger.info(f"训练结果已保存: {path}")
 
-    def train_from_database(
-        self,
-        codes: list[str] | None = None,
-        days: int = 250,
-        **kwargs
-    ) -> TrainingResult:
+    def train_from_database(self, codes: list[str] | None = None, days: int = 250, **kwargs) -> TrainingResult:
         """
         从数据库读取数据并训练模型
 
@@ -374,12 +354,12 @@ class ModelTrainer:
                 continue
 
             df = pd.DataFrame(klines)
-            df['date'] = pd.to_datetime(df['date'])
-            df = df.sort_values('date').reset_index(drop=True)
+            df["date"] = pd.to_datetime(df["date"])
+            df = df.sort_values("date").reset_index(drop=True)
 
-            for col in ['open', 'close', 'high', 'low', 'volume', 'amount']:
+            for col in ["open", "close", "high", "low", "volume", "amount"]:
                 if col in df.columns:
-                    df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+                    df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
             stocks_data[code] = df
 
@@ -394,19 +374,19 @@ class ModelTrainer:
             from ..db.database import db_manager
 
             fi_df = result.feature_importance.head(20)
-            feature_importance_dict = dict(zip(fi_df['feature'], fi_df['importance'], strict=False))
+            feature_importance_dict = dict(zip(fi_df["feature"], fi_df["importance"], strict=False))
 
             model_id = db_manager.save_ml_model(
                 name="stock_predictor",
                 model_type=self.model_type,
-                params=self.predictor.model.get_params() if hasattr(self.predictor.model, 'get_params') else {},
+                params=self.predictor.model.get_params() if hasattr(self.predictor.model, "get_params") else {},
                 feature_importance=feature_importance_dict,
                 metrics={
-                    'accuracy': result.accuracy,
-                    'precision': result.precision,
-                    'recall': result.recall,
-                    'f1_score': result.f1_score,
-                    'auc': result.auc,
+                    "accuracy": result.accuracy,
+                    "precision": result.precision,
+                    "recall": result.recall,
+                    "f1_score": result.f1_score,
+                    "auc": result.auc,
                 },
                 train_samples=result.training_samples,
                 train_features=len(self.feature_engineer.feature_names),
@@ -440,25 +420,25 @@ class ModelTrainer:
             return {"error": "数据不足", "code": code}
 
         df = pd.DataFrame(klines)
-        df['date'] = pd.to_datetime(df['date'])
-        df = df.sort_values('date').reset_index(drop=True)
+        df["date"] = pd.to_datetime(df["date"])
+        df = df.sort_values("date").reset_index(drop=True)
 
-        for col in ['open', 'close', 'high', 'low', 'volume', 'amount']:
+        for col in ["open", "close", "high", "low", "volume", "amount"]:
             if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
-        result = self.predictor.predict_stock(df.to_dict('records')[0] if not df.empty else {}, code=code)
+        result = self.predictor.predict_stock(df.to_dict("records")[0] if not df.empty else {}, code=code)
 
         if save_to_db:
             try:
                 model_info = db_manager.get_latest_model("stock_predictor")
                 if model_info:
                     db_manager.save_prediction(
-                        model_id=model_info['id'],
+                        model_id=model_info["id"],
                         code=code,
                         prediction=1 if result.prediction == "up" else 0,
                         confidence=result.confidence,
-                        features={'latest_close': float(df['close'].iloc[-1])},
+                        features={"latest_close": float(df["close"].iloc[-1])},
                     )
             except Exception as e:
                 logger.warning(f"保存预测记录失败: {e}")

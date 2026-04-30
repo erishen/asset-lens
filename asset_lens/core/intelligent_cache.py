@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CacheEntry:
     """缓存条目"""
+
     key: str
     value: Any
     created_at: float
@@ -42,12 +43,7 @@ class CacheEntry:
 class IntelligentCache:
     """智能缓存系统"""
 
-    def __init__(
-        self,
-        max_size: int = 1000,
-        default_ttl: int = 3600,
-        enable_stats: bool = True
-    ):
+    def __init__(self, max_size: int = 1000, default_ttl: int = 3600, enable_stats: bool = True):
         """
         初始化智能缓存
 
@@ -64,13 +60,7 @@ class IntelligentCache:
         self._lock = threading.RLock()
 
         # 统计信息
-        self._stats = {
-            "hits": 0,
-            "misses": 0,
-            "evictions": 0,
-            "expirations": 0,
-            "total_requests": 0
-        }
+        self._stats = {"hits": 0, "misses": 0, "evictions": 0, "expirations": 0, "total_requests": 0}
 
         # 缓存预热数据
         self._warmup_data: dict[str, Any] = {}
@@ -80,12 +70,7 @@ class IntelligentCache:
         key_data = json.dumps({"args": args, "kwargs": kwargs}, sort_keys=True)
         return hashlib.md5(key_data.encode()).hexdigest()
 
-    def get(
-        self,
-        key: str,
-        default: Any = None,
-        refresh_on_hit: bool = False
-    ) -> Any:
+    def get(self, key: str, default: Any = None, refresh_on_hit: bool = False) -> Any:
         """
         获取缓存值
 
@@ -126,12 +111,7 @@ class IntelligentCache:
             self._stats["hits"] += 1
             return entry.value
 
-    def set(
-        self,
-        key: str,
-        value: Any,
-        ttl: int | None = None
-    ) -> bool:
+    def set(self, key: str, value: Any, ttl: int | None = None) -> bool:
         """
         设置缓存值
 
@@ -150,10 +130,7 @@ class IntelligentCache:
 
             # 创建缓存条目
             entry = CacheEntry(
-                key=key,
-                value=value,
-                created_at=time.time(),
-                ttl=ttl if ttl is not None else self.default_ttl
+                key=key, value=value, created_at=time.time(), ttl=ttl if ttl is not None else self.default_ttl
             )
 
             # 如果键已存在，先删除
@@ -203,10 +180,7 @@ class IntelligentCache:
             清理的数量
         """
         with self._lock:
-            expired_keys = [
-                key for key, entry in self._cache.items()
-                if entry.is_expired()
-            ]
+            expired_keys = [key for key, entry in self._cache.items() if entry.is_expired()]
 
             for key in expired_keys:
                 del self._cache[key]
@@ -222,18 +196,14 @@ class IntelligentCache:
             统计信息
         """
         with self._lock:
-            hit_rate = (
-                self._stats["hits"] / self._stats["total_requests"]
-                if self._stats["total_requests"] > 0
-                else 0
-            )
+            hit_rate = self._stats["hits"] / self._stats["total_requests"] if self._stats["total_requests"] > 0 else 0
 
             return {
                 **self._stats,
                 "size": len(self._cache),
                 "max_size": self.max_size,
                 "hit_rate": f"{hit_rate:.2%}",
-                "usage": f"{len(self._cache) / self.max_size:.2%}"
+                "usage": f"{len(self._cache) / self.max_size:.2%}",
             }
 
     def warmup(self, data: dict[str, Any], ttl: int | None = None):
@@ -250,12 +220,7 @@ class IntelligentCache:
 
         logger.info(f"缓存预热完成: {len(data)} 个条目")
 
-    def get_or_set(
-        self,
-        key: str,
-        factory: Callable[[], Any],
-        ttl: int | None = None
-    ) -> Any:
+    def get_or_set(self, key: str, factory: Callable[[], Any], ttl: int | None = None) -> Any:
         """
         获取或设置缓存
 
@@ -275,10 +240,7 @@ class IntelligentCache:
         self.set(key, value, ttl)
         return value
 
-    def memoize(
-        self,
-        ttl: int | None = None
-    ) -> Callable:
+    def memoize(self, ttl: int | None = None) -> Callable:
         """
         缓存装饰器
 
@@ -288,11 +250,14 @@ class IntelligentCache:
         Returns:
             装饰器函数
         """
+
         def decorator(func: Callable) -> Callable:
             def wrapper(*args, **kwargs):
                 key = self._generate_key(func.__name__, *args, **kwargs)
                 return self.get_or_set(key, lambda: func(*args, **kwargs), ttl)
+
             return wrapper
+
         return decorator
 
     def save_to_file(self, file_path: Path):
@@ -308,13 +273,13 @@ class IntelligentCache:
                     "value": entry.value,
                     "created_at": entry.created_at,
                     "ttl": entry.ttl,
-                    "access_count": entry.access_count
+                    "access_count": entry.access_count,
                 }
                 for key, entry in self._cache.items()
                 if not entry.is_expired()
             }
 
-            with open(file_path, 'w', encoding='utf-8') as f:
+            with open(file_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
 
     def load_from_file(self, file_path: Path):
@@ -327,7 +292,7 @@ class IntelligentCache:
         if not file_path.exists():
             return
 
-        with open(file_path, encoding='utf-8') as f:
+        with open(file_path, encoding="utf-8") as f:
             data = json.load(f)
 
         with self._lock:
@@ -337,7 +302,7 @@ class IntelligentCache:
                     value=item["value"],
                     created_at=item["created_at"],
                     ttl=item["ttl"],
-                    access_count=item.get("access_count", 0)
+                    access_count=item.get("access_count", 0),
                 )
 
                 if not entry.is_expired():
@@ -345,11 +310,7 @@ class IntelligentCache:
 
 
 # 全局缓存实例
-intelligent_cache = IntelligentCache(
-    max_size=1000,
-    default_ttl=3600,
-    enable_stats=True
-)
+intelligent_cache = IntelligentCache(max_size=1000, default_ttl=3600, enable_stats=True)
 
 
 def cached(ttl: int | None = None):
