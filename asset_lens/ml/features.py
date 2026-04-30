@@ -54,23 +54,28 @@ class FeatureEngineer:
         """
         df = df.copy()
 
-        df = self._add_price_features(df)
-        df = self._add_ma_features(df)
-        df = self._add_macd_features(df)
-        df = self._add_rsi_features(df)
-        df = self._add_boll_features(df)
-        df = self._add_kdj_features(df)
-        df = self._add_volume_features(df)
-        df = self._add_momentum_features(df)
-        df = self._add_volatility_features(df)
-        df = self._add_trend_features(df)
-        df = self._add_pattern_features(df)
-        df = self._add_statistical_features(df)
-        df = self._add_williams_r(df)
-        df = self._add_cci(df)
-        df = self._add_obv(df)
-        df = self._add_adx(df)
-        df = self._add_mfi(df)
+        all_features = []
+        
+        all_features.append(self._calc_price_features(df))
+        all_features.append(self._calc_ma_features(df))
+        all_features.append(self._calc_macd_features(df))
+        all_features.append(self._calc_rsi_features(df))
+        all_features.append(self._calc_boll_features(df))
+        all_features.append(self._calc_kdj_features(df))
+        all_features.append(self._calc_volume_features(df))
+        all_features.append(self._calc_momentum_features(df))
+        all_features.append(self._calc_volatility_features(df))
+        all_features.append(self._calc_trend_features(df))
+        all_features.append(self._calc_pattern_features(df))
+        all_features.append(self._calc_statistical_features(df))
+        all_features.append(self._calc_williams_r(df))
+        all_features.append(self._calc_cci(df))
+        all_features.append(self._calc_obv(df))
+        all_features.append(self._calc_adx(df))
+        all_features.append(self._calc_mfi(df))
+
+        feature_df = pd.concat(all_features, axis=1)
+        df = pd.concat([df, feature_df], axis=1)
 
         self.feature_names = [
             col
@@ -94,217 +99,239 @@ class FeatureEngineer:
 
         return df
 
-    def _add_price_features(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calc_price_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """价格相关特征"""
-        df["pct_change"] = df["close"].pct_change()
-        df["pct_change_5d"] = df["close"].pct_change(5)
-        df["pct_change_10d"] = df["close"].pct_change(10)
-        df["pct_change_20d"] = df["close"].pct_change(20)
+        features = {}
+        features["pct_change"] = df["close"].pct_change()
+        features["pct_change_5d"] = df["close"].pct_change(5)
+        features["pct_change_10d"] = df["close"].pct_change(10)
+        features["pct_change_20d"] = df["close"].pct_change(20)
+        features["high_low_ratio"] = df["high"] / df["low"]
+        features["close_open_ratio"] = df["close"] / df["open"]
+        features["upper_shadow"] = (df["high"] - df[["open", "close"]].max(axis=1)) / df["close"]
+        features["lower_shadow"] = (df[["open", "close"]].min(axis=1) - df["low"]) / df["close"]
+        return pd.DataFrame(features)
 
-        df["high_low_ratio"] = df["high"] / df["low"]
-        df["close_open_ratio"] = df["close"] / df["open"]
-        df["upper_shadow"] = (df["high"] - df[["open", "close"]].max(axis=1)) / df["close"]
-        df["lower_shadow"] = (df[["open", "close"]].min(axis=1) - df["low"]) / df["close"]
-
-        return df
-
-    def _add_ma_features(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calc_ma_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """均线特征"""
+        features = {}
         for period in self.config.ma_periods:
-            df[f"ma{period}"] = df["close"].rolling(window=period).mean()
-            df[f"close_ma{period}_ratio"] = df["close"] / df[f"ma{period}"]
+            features[f"ma{period}"] = df["close"].rolling(window=period).mean()
+            features[f"close_ma{period}_ratio"] = df["close"] / features[f"ma{period}"]
 
-        if "ma5" in df.columns and "ma20" in df.columns:
-            df["ma5_ma20_ratio"] = df["ma5"] / df["ma20"]
-            df["ma_cross_signal"] = (df["ma5"] > df["ma20"]).astype(int)
+        if f"ma{self.config.ma_periods[0]}" in features and f"ma{self.config.ma_periods[2]}" in features:
+            ma5 = features["ma5"]
+            ma20 = features["ma20"]
+            features["ma5_ma20_ratio"] = ma5 / ma20
+            features["ma_cross_signal"] = (ma5 > ma20).astype(int)
 
-        return df
+        return pd.DataFrame(features)
 
-    def _add_macd_features(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calc_macd_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """MACD 特征"""
+        features = {}
         exp1 = df["close"].ewm(span=self.config.macd_fast, adjust=False).mean()
         exp2 = df["close"].ewm(span=self.config.macd_slow, adjust=False).mean()
 
-        df["macd"] = exp1 - exp2
-        df["macd_signal"] = df["macd"].ewm(span=self.config.macd_signal, adjust=False).mean()
-        df["macd_hist"] = df["macd"] - df["macd_signal"]
-        df["macd_cross"] = (
-            (df["macd"] > df["macd_signal"]) & (df["macd"].shift(1) <= df["macd_signal"].shift(1))
+        features["macd"] = exp1 - exp2
+        features["macd_signal"] = features["macd"].ewm(span=self.config.macd_signal, adjust=False).mean()
+        features["macd_hist"] = features["macd"] - features["macd_signal"]
+        features["macd_cross"] = (
+            (features["macd"] > features["macd_signal"]) 
+            & (features["macd"].shift(1) <= features["macd_signal"].shift(1))
         ).astype(int)
 
-        return df
+        return pd.DataFrame(features)
 
-    def _add_rsi_features(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calc_rsi_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """RSI 特征"""
+        features = {}
         delta = df["close"].diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=self.config.rsi_period).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(window=self.config.rsi_period).mean()
 
         rs = gain / loss
-        df["rsi"] = 100 - (100 / (1 + rs))
+        features["rsi"] = 100 - (100 / (1 + rs))
+        features["rsi_oversold"] = (features["rsi"] < 30).astype(int)
+        features["rsi_overbought"] = (features["rsi"] > 70).astype(int)
 
-        df["rsi_oversold"] = (df["rsi"] < 30).astype(int)
-        df["rsi_overbought"] = (df["rsi"] > 70).astype(int)
+        return pd.DataFrame(features)
 
-        return df
-
-    def _add_boll_features(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calc_boll_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """布林带特征"""
+        features = {}
         period = self.config.boll_period
         std_mult = self.config.boll_std
 
-        df["boll_mid"] = df["close"].rolling(window=period).mean()
-        df["boll_std"] = df["close"].rolling(window=period).std()
-        df["boll_upper"] = df["boll_mid"] + std_mult * df["boll_std"]
-        df["boll_lower"] = df["boll_mid"] - std_mult * df["boll_std"]
+        features["boll_mid"] = df["close"].rolling(window=period).mean()
+        features["boll_std"] = df["close"].rolling(window=period).std()
+        features["boll_upper"] = features["boll_mid"] + std_mult * features["boll_std"]
+        features["boll_lower"] = features["boll_mid"] - std_mult * features["boll_std"]
+        features["boll_width"] = (features["boll_upper"] - features["boll_lower"]) / features["boll_mid"]
+        features["boll_position"] = (df["close"] - features["boll_lower"]) / (features["boll_upper"] - features["boll_lower"])
 
-        df["boll_width"] = (df["boll_upper"] - df["boll_lower"]) / df["boll_mid"]
-        df["boll_position"] = (df["close"] - df["boll_lower"]) / (df["boll_upper"] - df["boll_lower"])
+        return pd.DataFrame(features)
 
-        return df
-
-    def _add_kdj_features(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calc_kdj_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """KDJ 特征"""
+        features = {}
         low_min = df["low"].rolling(window=9).min()
         high_max = df["high"].rolling(window=9).max()
 
-        df["kdj_rsv"] = (df["close"] - low_min) / (high_max - low_min) * 100
-        df["kdj_k"] = df["kdj_rsv"].ewm(alpha=1 / 3, adjust=False).mean()
-        df["kdj_d"] = df["kdj_k"].ewm(alpha=1 / 3, adjust=False).mean()
-        df["kdj_j"] = 3 * df["kdj_k"] - 2 * df["kdj_d"]
+        features["kdj_rsv"] = (df["close"] - low_min) / (high_max - low_min) * 100
+        features["kdj_k"] = features["kdj_rsv"].ewm(alpha=1 / 3, adjust=False).mean()
+        features["kdj_d"] = features["kdj_k"].ewm(alpha=1 / 3, adjust=False).mean()
+        features["kdj_j"] = 3 * features["kdj_k"] - 2 * features["kdj_d"]
+        features["kdj_cross"] = (
+            (features["kdj_k"] > features["kdj_d"]) 
+            & (features["kdj_k"].shift(1) <= features["kdj_d"].shift(1))
+        ).astype(int)
 
-        df["kdj_cross"] = ((df["kdj_k"] > df["kdj_d"]) & (df["kdj_k"].shift(1) <= df["kdj_d"].shift(1))).astype(int)
+        return pd.DataFrame(features)
 
-        return df
-
-    def _add_volume_features(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calc_volume_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """成交量特征"""
+        features = {}
         for period in self.config.volume_ma_periods:
-            df[f"volume_ma{period}"] = df["volume"].rolling(window=period).mean()
-            df[f"volume_ratio_{period}"] = df["volume"] / df[f"volume_ma{period}"]
+            features[f"volume_ma{period}"] = df["volume"].rolling(window=period).mean()
+            features[f"volume_ratio_{period}"] = df["volume"] / features[f"volume_ma{period}"]
 
-        df["volume_change"] = df["volume"].pct_change()
-        df["volume_price_trend"] = df["volume_change"] * df["pct_change"]
+        features["volume_change"] = df["volume"].pct_change()
+        pct_change = df["close"].pct_change()
+        features["volume_price_trend"] = features["volume_change"] * pct_change
 
-        if "amount" not in df.columns or df["amount"].isna().all():
-            df["amount"] = df["volume"] * df["close"]
-
-        df["amount"] = df["amount"].fillna(df["volume"] * df["close"])
+        amount = df.get("amount", df["volume"] * df["close"])
+        if amount.isna().all():
+            amount = df["volume"] * df["close"]
 
         for period in [5, 10, 20]:
-            df[f"amount_ma{period}"] = df["amount"].rolling(window=period).mean()
-            df[f"amount_ratio_{period}"] = df["amount"] / df[f"amount_ma{period}"]
+            features[f"amount_ma{period}"] = amount.rolling(window=period).mean()
+            features[f"amount_ratio_{period}"] = amount / features[f"amount_ma{period}"]
 
-        return df
+        return pd.DataFrame(features)
 
-    def _add_momentum_features(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calc_momentum_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """动量特征"""
-        df["momentum_5d"] = df["close"] / df["close"].shift(5) - 1
-        df["momentum_10d"] = df["close"] / df["close"].shift(10) - 1
-        df["momentum_20d"] = df["close"] / df["close"].shift(20) - 1
+        features = {}
+        features["momentum_5d"] = df["close"] / df["close"].shift(5) - 1
+        features["momentum_10d"] = df["close"] / df["close"].shift(10) - 1
+        features["momentum_20d"] = df["close"] / df["close"].shift(20) - 1
+        features["roc_10"] = (df["close"] - df["close"].shift(10)) / df["close"].shift(10) * 100
+        features["roc_20"] = (df["close"] - df["close"].shift(20)) / df["close"].shift(20) * 100
 
-        df["roc_10"] = (df["close"] - df["close"].shift(10)) / df["close"].shift(10) * 100
-        df["roc_20"] = (df["close"] - df["close"].shift(20)) / df["close"].shift(20) * 100
+        return pd.DataFrame(features)
 
-        return df
-
-    def _add_volatility_features(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calc_volatility_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """波动率特征"""
-        df["volatility_5d"] = df["pct_change"].rolling(window=5).std()
-        df["volatility_10d"] = df["pct_change"].rolling(window=10).std()
-        df["volatility_20d"] = df["pct_change"].rolling(window=20).std()
+        features = {}
+        pct_change = df["close"].pct_change()
+        features["volatility_5d"] = pct_change.rolling(window=5).std()
+        features["volatility_10d"] = pct_change.rolling(window=10).std()
+        features["volatility_20d"] = pct_change.rolling(window=20).std()
 
-        df["atr"] = self._calculate_atr(df, period=14)
-        df["atr_ratio"] = df["atr"] / df["close"]
+        features["atr"] = self._calculate_atr(df, period=14)
+        features["atr_ratio"] = features["atr"] / df["close"]
+        features["volatility_ratio"] = features["volatility_5d"] / features["volatility_20d"]
 
-        df["volatility_ratio"] = df["volatility_5d"] / df["volatility_20d"]
+        return pd.DataFrame(features)
 
-        return df
-
-    def _add_trend_features(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calc_trend_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """趋势特征"""
-        df["trend_strength"] = (df["close"] - df["close"].shift(20)) / df["close"].shift(20)
-        df["trend_consistency"] = (df["pct_change"] > 0).rolling(window=10).mean()
-        df["trend_acceleration"] = df["momentum_5d"] - df["momentum_5d"].shift(5)
+        features = {}
+        pct_change = df["close"].pct_change()
+        momentum_5d = df["close"] / df["close"].shift(5) - 1
+        
+        features["trend_strength"] = (df["close"] - df["close"].shift(20)) / df["close"].shift(20)
+        features["trend_consistency"] = (pct_change > 0).rolling(window=10).mean()
+        features["trend_acceleration"] = momentum_5d - momentum_5d.shift(5)
+        features["higher_high"] = (df["high"] > df["high"].shift(1)).astype(int)
+        features["lower_low"] = (df["low"] < df["low"].shift(1)).astype(int)
+        features["higher_low"] = (df["low"] > df["low"].shift(1)).astype(int)
+        features["lower_high"] = (df["high"] < df["high"].shift(1)).astype(int)
 
-        df["higher_high"] = (df["high"] > df["high"].shift(1)).astype(int)
-        df["lower_low"] = (df["low"] < df["low"].shift(1)).astype(int)
-        df["higher_low"] = (df["low"] > df["low"].shift(1)).astype(int)
-        df["lower_high"] = (df["high"] < df["high"].shift(1)).astype(int)
+        return pd.DataFrame(features)
 
-        return df
-
-    def _add_pattern_features(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calc_pattern_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """K线形态特征"""
-        df["doji"] = (abs(df["close"] - df["open"]) / (df["high"] - df["low"]) < 0.1).astype(int)
-        df["bullish_engulfing"] = (
+        features = {}
+        features["doji"] = (abs(df["close"] - df["open"]) / (df["high"] - df["low"]) < 0.1).astype(int)
+        features["bullish_engulfing"] = (
             (df["close"] > df["open"])
             & (df["close"].shift(1) < df["open"].shift(1))
             & (df["close"] > df["open"].shift(1))
             & (df["open"] < df["close"].shift(1))
         ).astype(int)
-        df["bearish_engulfing"] = (
+        features["bearish_engulfing"] = (
             (df["close"] < df["open"])
             & (df["close"].shift(1) > df["open"].shift(1))
             & (df["close"] < df["open"].shift(1))
             & (df["open"] > df["close"].shift(1))
         ).astype(int)
-        df["hammer"] = (
-            (df["lower_shadow"] > 2 * abs(df["close"] - df["open"]))
-            & (df["upper_shadow"] < 0.1 * (df["high"] - df["low"]))
+        lower_shadow = (df[["open", "close"]].min(axis=1) - df["low"]) / df["close"]
+        upper_shadow = (df["high"] - df[["open", "close"]].max(axis=1)) / df["close"]
+        features["hammer"] = (
+            (lower_shadow > 2 * abs(df["close"] - df["open"]))
+            & (upper_shadow < 0.1 * (df["high"] - df["low"]))
         ).astype(int)
 
-        return df
+        return pd.DataFrame(features)
 
-    def _add_statistical_features(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calc_statistical_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """统计特征"""
+        features = {}
+        pct_change = df["close"].pct_change()
+        
         for period in [10, 20]:
-            df[f"return_skew_{period}"] = df["pct_change"].rolling(window=period).skew()
-            df[f"return_kurt_{period}"] = df["pct_change"].rolling(window=period).kurt()
-            df[f"price_range_{period}"] = (
+            features[f"return_skew_{period}"] = pct_change.rolling(window=period).skew()
+            features[f"return_kurt_{period}"] = pct_change.rolling(window=period).kurt()
+            features[f"price_range_{period}"] = (
                 df["high"].rolling(window=period).max() / df["low"].rolling(window=period).min()
             )
 
-        df["price_zscore_20"] = (df["close"] - df["close"].rolling(window=20).mean()) / df["close"].rolling(
+        features["price_zscore_20"] = (df["close"] - df["close"].rolling(window=20).mean()) / df["close"].rolling(
             window=20
         ).std()
-        df["volume_zscore_20"] = (df["volume"] - df["volume"].rolling(window=20).mean()) / df["volume"].rolling(
+        features["volume_zscore_20"] = (df["volume"] - df["volume"].rolling(window=20).mean()) / df["volume"].rolling(
             window=20
         ).std()
 
-        return df
+        return pd.DataFrame(features)
 
-    def _add_williams_r(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calc_williams_r(self, df: pd.DataFrame) -> pd.DataFrame:
         """威廉指标 Williams %R"""
+        features = {}
         period = 14
         high_max = df["high"].rolling(window=period).max()
         low_min = df["low"].rolling(window=period).min()
-        df["williams_r"] = (high_max - df["close"]) / (high_max - low_min) * -100
-        df["williams_oversold"] = (df["williams_r"] < -80).astype(int)
-        df["williams_overbought"] = (df["williams_r"] > -20).astype(int)
-        return df
+        features["williams_r"] = (high_max - df["close"]) / (high_max - low_min) * -100
+        features["williams_oversold"] = (features["williams_r"] < -80).astype(int)
+        features["williams_overbought"] = (features["williams_r"] > -20).astype(int)
+        return pd.DataFrame(features)
 
-    def _add_cci(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calc_cci(self, df: pd.DataFrame) -> pd.DataFrame:
         """CCI指标"""
+        features = {}
         period = 20
         tp = (df["high"] + df["low"] + df["close"]) / 3
         ma = tp.rolling(window=period).mean()
         md = tp.rolling(window=period).apply(lambda x: abs(x - x.mean()).mean())
-        df["cci"] = (tp - ma) / (0.015 * md)
-        df["cci_oversold"] = (df["cci"] < -100).astype(int)
-        df["cci_overbought"] = (df["cci"] > 100).astype(int)
-        return df
+        features["cci"] = (tp - ma) / (0.015 * md)
+        features["cci_oversold"] = (features["cci"] < -100).astype(int)
+        features["cci_overbought"] = (features["cci"] > 100).astype(int)
+        return pd.DataFrame(features)
 
-    def _add_obv(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calc_obv(self, df: pd.DataFrame) -> pd.DataFrame:
         """OBV指标"""
-        df["obv"] = (np.sign(df["close"].diff()) * df["volume"]).fillna(0).cumsum()
-        df["obv_ma10"] = df["obv"].rolling(window=10).mean()
-        df["obv_ma20"] = df["obv"].rolling(window=20).mean()
-        df["obv_signal"] = (df["obv"] > df["obv_ma10"]).astype(int)
-        return df
+        features = {}
+        features["obv"] = (np.sign(df["close"].diff()) * df["volume"]).fillna(0).cumsum()
+        features["obv_ma10"] = features["obv"].rolling(window=10).mean()
+        features["obv_ma20"] = features["obv"].rolling(window=20).mean()
+        features["obv_signal"] = (features["obv"] > features["obv_ma10"]).astype(int)
+        return pd.DataFrame(features)
 
-    def _add_adx(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calc_adx(self, df: pd.DataFrame) -> pd.DataFrame:
         """ADX指标"""
+        features = {}
         period = 14
         high = df["high"]
         low = df["low"]
@@ -322,15 +349,16 @@ class FeatureEngineer:
         minus_di = 100 * (abs(minus_dm).rolling(window=period).mean() / atr)
 
         dx = 100 * abs(plus_di - minus_di) / (plus_di + minus_di)
-        df["adx"] = dx.rolling(window=period).mean()
-        df["plus_di"] = plus_di
-        df["minus_di"] = minus_di
-        df["trend_strength_adx"] = (df["adx"] > 25).astype(int)
+        features["adx"] = dx.rolling(window=period).mean()
+        features["plus_di"] = plus_di
+        features["minus_di"] = minus_di
+        features["trend_strength_adx"] = (features["adx"] > 25).astype(int)
 
-        return df
+        return pd.DataFrame(features)
 
-    def _add_mfi(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _calc_mfi(self, df: pd.DataFrame) -> pd.DataFrame:
         """MFI指标"""
+        features = {}
         period = 14
         tp = (df["high"] + df["low"] + df["close"]) / 3
         mf = tp * df["volume"]
@@ -342,11 +370,11 @@ class FeatureEngineer:
         negative_sum = negative_mf.rolling(window=period).sum()
 
         mfi_ratio = positive_sum / negative_sum.replace(0, np.inf)
-        df["mfi"] = 100 - (100 / (1 + mfi_ratio))
-        df["mfi_oversold"] = (df["mfi"] < 20).astype(int)
-        df["mfi_overbought"] = (df["mfi"] > 80).astype(int)
+        features["mfi"] = 100 - (100 / (1 + mfi_ratio))
+        features["mfi_oversold"] = (features["mfi"] < 20).astype(int)
+        features["mfi_overbought"] = (features["mfi"] > 80).astype(int)
 
-        return df
+        return pd.DataFrame(features)
 
     def _calculate_atr(self, df: pd.DataFrame, period: int = 14) -> pd.Series:
         """计算 ATR"""

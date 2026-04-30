@@ -514,5 +514,60 @@ class DatabaseManager:
         finally:
             session.close()
 
+    def auto_sync_history(
+        self,
+        fast: bool = False,
+        days: int = 250,
+        daily_limit: int = 100,
+    ) -> dict[str, Any]:
+        """自动同步股票历史数据
+
+        Args:
+            fast: 是否快速模式（减少延迟）
+            days: 历史天数
+            daily_limit: 每日同步数量限制
+
+        Returns:
+            同步结果统计
+        """
+        from ..data.market_stock_fetcher import MarketStockFetcher
+        from .migration import DataMigration
+
+        fetcher = MarketStockFetcher()
+        stocks_data = fetcher.get_cached_market_stocks()
+
+        if not stocks_data:
+            stocks_data = fetcher.fetch_all_cn_stocks(max_pages=3)
+            if stocks_data:
+                fetcher.save_market_stocks(stocks_data)
+
+        if not stocks_data:
+            return {"synced": 0, "success": 0, "failed": 0, "message": "无法获取股票列表"}
+
+        existing_codes = self.get_stock_codes_with_klines()
+        all_codes = [s.get("code", "") for s in stocks_data if s.get("code")]
+        need_sync = [c for c in all_codes if c and c not in existing_codes]
+
+        if daily_limit > 0:
+            need_sync = need_sync[:daily_limit]
+
+        if not need_sync:
+            return {"synced": 0, "success": 0, "failed": 0, "message": "所有股票已同步"}
+
+        migration = DataMigration()
+        delay = 0.1 if fast else 0.3
+        result = migration.fetch_and_store_history(
+            codes=need_sync,
+            days=days,
+            delay=delay,
+        )
+
+        return {
+            "synced": result.get("success", 0),
+            "success": result.get("success", 0),
+            "failed": result.get("failed", 0),
+            "total": len(need_sync),
+        }
+
 
 db_manager = DatabaseManager()

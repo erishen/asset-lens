@@ -45,7 +45,7 @@ def _get_cny_amount(product) -> float:
     inv_type = product.investment_type.value if product.investment_type else ""
     global_usd, global_hkd = _get_global_rates()
 
-    if inv_type in ["美股", "美元基金（美元）"]:
+    if inv_type in ["美股", "美元基金", "美元基金（美元）"]:
         usd_rate = float(product.usd_rate) if product.usd_rate else global_usd
         return amount * usd_rate
     elif inv_type in ["港股", "现金（港元）", "股息基金（港元）"]:
@@ -53,6 +53,36 @@ def _get_cny_amount(product) -> float:
         return amount * hkd_rate
 
     return amount
+
+
+def _get_initial_cny_amount(product) -> float:
+    """获取产品初始金额的人民币值（考虑汇率转换）"""
+    amount = float(product.initial_amount or 0)
+    if amount == 0:
+        return 0
+
+    inv_type = product.investment_type.value if product.investment_type else ""
+    global_usd, global_hkd = _get_global_rates()
+
+    if inv_type in ["美股", "美元基金", "美元基金（美元）"]:
+        usd_rate = float(product.usd_rate) if product.usd_rate else global_usd
+        return amount * usd_rate
+    elif inv_type in ["港股", "现金（港元）", "股息基金（港元）"]:
+        hkd_rate = float(product.hkd_rate) if product.hkd_rate else global_hkd
+        return amount * hkd_rate
+
+    return amount
+
+
+def _get_profit_cny_amount(product) -> float:
+    """获取产品收益的人民币值（考虑汇率转换）
+
+    对于没有初始金额的产品（如货币基金），收益为0
+    """
+    initial = _get_initial_cny_amount(product)
+    if initial == 0:
+        return 0
+    return _get_cny_amount(product) - initial
 
 
 def _format_amount(product) -> str:
@@ -64,7 +94,7 @@ def _format_amount(product) -> str:
     inv_type = product.investment_type.value if product.investment_type else ""
     global_usd, global_hkd = _get_global_rates()
 
-    if inv_type in ["美股", "美元基金（美元）"]:
+    if inv_type in ["美股", "美元基金", "美元基金（美元）"]:
         usd_rate = float(product.usd_rate) if product.usd_rate else global_usd
         cny_amount = amount * usd_rate
         return f"${amount:,.0f} (¥{cny_amount:,.0f})"
@@ -118,7 +148,7 @@ def register_report_commands(cli: click.Group) -> None:
 
             # 2. 投资组合概览
             total_amount = sum(_get_cny_amount(p) for p in products)
-            total_profit = sum(_get_cny_amount(p) - float(p.initial_amount or 0) for p in products)
+            total_profit = sum(_get_profit_cny_amount(p) for p in products)
             profit_rate = (total_profit / total_amount * 100) if total_amount > 0 else 0
 
             # Console 输出概览
@@ -458,7 +488,7 @@ def register_report_commands(cli: click.Group) -> None:
             )
 
             total_amount = sum(_get_cny_amount(p) for p in products)
-            total_profit = sum(_get_cny_amount(p) - float(p.initial_amount or 0) for p in products)
+            total_profit = sum(_get_profit_cny_amount(p) for p in products)
             profit_rate = (total_profit / total_amount * 100) if total_amount > 0 else 0
 
             console.print("\n[bold]📈 月度投资组合概览[/bold]")
@@ -822,8 +852,8 @@ def register_report_commands(cli: click.Group) -> None:
                 products = load_products()
 
                 if products:
-                    total_amount = sum(float(p.current_amount or 0) for p in products)
-                    total_profit = sum(float(p.current_amount or 0) - float(p.initial_amount or 0) for p in products)
+                    total_amount = sum(_get_cny_amount(p) for p in products)
+                    total_profit = sum(_get_profit_cny_amount(p) for p in products)
                     profit_rate = (total_profit / total_amount * 100) if total_amount > 0 else 0
 
                     summary = f"""
@@ -880,8 +910,18 @@ def _train_model_if_needed(model_path, prediction_days: int, max_age_days: int =
         stocks_data = fetcher.get_cached_market_stocks()
 
         if not stocks_data:
-            print("❌ 无缓存数据，请先运行 make update-market-data-fast")
-            return False
+            print("⚠️ 无缓存数据，正在自动获取市场股票数据...")
+            try:
+                stocks_data = fetcher.fetch_all_cn_stocks(max_pages=3)
+                if stocks_data:
+                    fetcher.save_market_stocks(stocks_data)
+                    print(f"✅ 已获取 {len(stocks_data)} 只股票数据")
+                else:
+                    print("❌ 获取市场数据失败")
+                    return False
+            except Exception as fetch_error:
+                print(f"❌ 获取市场数据失败: {fetch_error}")
+                return False
 
         print(f"✅ 加载 {len(stocks_data)} 只股票数据")
 

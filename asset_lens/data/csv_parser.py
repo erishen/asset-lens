@@ -233,6 +233,7 @@ class CSVParser:
             "股息基金（港元）": InvestmentType.HK_DIVIDEND_FUND,
             "个人养老金": InvestmentType.PENSION,
             "ETF": InvestmentType.ETF,
+            "美元基金": InvestmentType.USD_FUND,
             "美元基金（美元）": InvestmentType.USD_FUND,
         }
 
