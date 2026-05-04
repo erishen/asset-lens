@@ -55,7 +55,7 @@ class FeatureEngineer:
         df = df.copy()
 
         all_features = []
-        
+
         all_features.append(self._calc_price_features(df))
         all_features.append(self._calc_ma_features(df))
         all_features.append(self._calc_macd_features(df))
@@ -137,7 +137,7 @@ class FeatureEngineer:
         features["macd_signal"] = features["macd"].ewm(span=self.config.macd_signal, adjust=False).mean()
         features["macd_hist"] = features["macd"] - features["macd_signal"]
         features["macd_cross"] = (
-            (features["macd"] > features["macd_signal"]) 
+            (features["macd"] > features["macd_signal"])
             & (features["macd"].shift(1) <= features["macd_signal"].shift(1))
         ).astype(int)
 
@@ -183,7 +183,7 @@ class FeatureEngineer:
         features["kdj_d"] = features["kdj_k"].ewm(alpha=1 / 3, adjust=False).mean()
         features["kdj_j"] = 3 * features["kdj_k"] - 2 * features["kdj_d"]
         features["kdj_cross"] = (
-            (features["kdj_k"] > features["kdj_d"]) 
+            (features["kdj_k"] > features["kdj_d"])
             & (features["kdj_k"].shift(1) <= features["kdj_d"].shift(1))
         ).astype(int)
 
@@ -240,7 +240,7 @@ class FeatureEngineer:
         features = {}
         pct_change = df["close"].pct_change()
         momentum_5d = df["close"] / df["close"].shift(5) - 1
-        
+
         features["trend_strength"] = (df["close"] - df["close"].shift(20)) / df["close"].shift(20)
         features["trend_consistency"] = (pct_change > 0).rolling(window=10).mean()
         features["trend_acceleration"] = momentum_5d - momentum_5d.shift(5)
@@ -280,7 +280,7 @@ class FeatureEngineer:
         """统计特征"""
         features = {}
         pct_change = df["close"].pct_change()
-        
+
         for period in [10, 20]:
             features[f"return_skew_{period}"] = pct_change.rolling(window=period).skew()
             features[f"return_kurt_{period}"] = pct_change.rolling(window=period).kurt()
