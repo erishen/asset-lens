@@ -338,27 +338,46 @@ class Config:
         """
         获取最新的数据目录（用于 real 模式）
         获取格式：data/real/money_csv_YYYYMMDD 或 data/real/money_YYYYMMDD
+        或 ../ts-demo/data/money_csv_YYYYMMDD
         """
         if not self.is_real_mode:
             return self.data_path
 
+        # 首先检查 real_data_path 是否已经是一个 money_csv_* 目录
+        if self.real_data_path and (
+            self.real_data_path.name.startswith("money_csv_") or
+            self.real_data_path.name.startswith("money_")
+        ):
+            if self.real_data_path.exists():
+                return self.real_data_path
+
+        # 其次尝试在 real_data_path 中查找 money_csv_* 目录
+        if self.real_data_path and self.real_data_path.exists() and self.real_data_path.is_dir():
+            dirs = [
+                d
+                for d in self.real_data_path.iterdir()
+                if d.is_dir() and (d.name.startswith("money_csv_") or d.name.startswith("money_"))
+            ]
+
+            if dirs:
+                # 按名称排序，返回最新的
+                dirs.sort(key=lambda x: x.name, reverse=True)
+                return dirs[0]
+
+        # 最后尝试 data/real 目录（向后兼容）
         data_dir = self.project_root / "data" / "real"
-        if not data_dir.exists():
-            return None
+        if data_dir.exists():
+            dirs = [
+                d
+                for d in data_dir.iterdir()
+                if d.is_dir() and (d.name.startswith("money_csv_") or d.name.startswith("money_"))
+            ]
 
-        # 查找所有 money_csv_* 或 money_* 目录
-        dirs = [
-            d
-            for d in data_dir.iterdir()
-            if d.is_dir() and (d.name.startswith("money_csv_") or d.name.startswith("money_"))
-        ]
+            if dirs:
+                dirs.sort(key=lambda x: x.name, reverse=True)
+                return dirs[0]
 
-        if not dirs:
-            return None
-
-        # 按名称排序，返回最新的
-        dirs.sort(key=lambda x: x.name, reverse=True)
-        return dirs[0]
+        return None
 
     def __str__(self) -> str:
         return f"Config(data_mode={self.data_mode}, data_path={self.data_path}, output_path={self.output_path})"
