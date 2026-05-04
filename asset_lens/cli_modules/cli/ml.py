@@ -297,7 +297,7 @@ def predict(model: str, code: str, auto_train: bool):
         pred_table.add_column("指标", style="cyan")
         pred_table.add_column("值", justify="right")
 
-        pred_color = "green" if pred_result.prediction == "up" else "red"
+        pred_color = "red" if pred_result.prediction == "up" else "green"
         pred_table.add_row("股票代码", pred_result.code)
         pred_table.add_row("股票名称", pred_result.name)
         pred_table.add_row("预测方向", f"[{pred_color}]{pred_result.prediction}[/{pred_color}]")
@@ -456,7 +456,7 @@ def predict_pool(model: str, limit: int, auto_train: bool):
             table.add_column("上涨概率", justify="right")
 
             for p in predictions:
-                pred_color = "green" if p["prediction"] == "up" else "red"
+                pred_color = "red" if p["prediction"] == "up" else "green"
                 pred_text = "↑" if p["prediction"] == "up" else "↓"
                 table.add_row(
                     p["code"],
@@ -686,7 +686,7 @@ def predict_db(code: str, model: str):
         pred_table.add_column("指标", style="cyan")
         pred_table.add_column("值", justify="right")
 
-        pred_color = "green" if result.get("prediction") == 1 else "red"
+        pred_color = "red" if result.get("prediction") == 1 else "green"
         pred_text = "上涨" if result.get("prediction") == 1 else "下跌"
         pred_table.add_row("股票代码", code)
         pred_table.add_row("预测方向", f"[{pred_color}]{pred_text}[/{pred_color}]")
@@ -965,9 +965,9 @@ def sector():
 
     for pred in ml_predictions[:5]:
         if pred.predicted_direction == 1:
-            direction = "[green]↑ 上涨[/green]"
+            direction = "[red]↑ 上涨[/red]"
         else:
-            direction = "[red]↓ 下跌[/red]"
+            direction = "[green]↓ 下跌[/green]"
 
         strong_table.add_row(
             pred.sector_name,
@@ -989,9 +989,9 @@ def sector():
 
     for pred in ml_predictions[-5:]:
         if pred.predicted_direction == 1:
-            direction = "[green]↑ 上涨[/green]"
+            direction = "[red]↑ 上涨[/red]"
         else:
-            direction = "[red]↓ 下跌[/red]"
+            direction = "[green]↓ 下跌[/green]"
 
         weak_table.add_row(
             pred.sector_name,
