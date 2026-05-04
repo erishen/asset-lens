@@ -184,11 +184,11 @@ body {
 }
 
 .positive {
-  color: #00c853;
+  color: #ff5252;
 }
 
 .negative {
-  color: #ff5252;
+  color: #00c853;
 }
 
 .chart-container {

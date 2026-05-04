@@ -261,8 +261,8 @@ ENHANCED_DASHBOARD_HTML = """
             --text-secondary: #888;
             --border-color: rgba(255,255,255,0.1);
             --accent-gradient: linear-gradient(90deg, #00d2ff, #3a7bd5);
-            --positive: #00c853;
-            --negative: #ff5252;
+            --positive: #ff5252;
+            --negative: #00c853;
         }
 
         [data-theme="light"] {

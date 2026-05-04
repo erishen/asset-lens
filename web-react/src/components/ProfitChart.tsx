@@ -39,7 +39,7 @@ export function ProfitChart({ items }: ProfitChartProps) {
         largeThreshold: 500,
         data: profitData.map((d) => ({
           value: d.profit,
-          itemStyle: { color: d.profit >= 0 ? '#00c853' : '#ff5252' },
+          itemStyle: { color: d.profit >= 0 ? '#ff5252' : '#00c853' },
         })),
         animationDelay: (idx: number) => idx * 10,
       },
