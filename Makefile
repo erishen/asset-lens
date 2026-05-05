@@ -1,6 +1,12 @@
 # Makefile for asset-lens
 # 个人资产操作系统 - Make 命令集成
 
+# 加载 .env 文件中的环境变量
+ifneq (,$(wildcard .env))
+  include .env
+  export
+endif
+
 # 代理设置（解决网络连接问题）
 export HTTP_PROXY := http://127.0.0.1:7890
 export HTTPS_PROXY := http://127.0.0.1:7890
@@ -18,8 +24,8 @@ UV := $(CONDA) uv
 PROJECT_DIR := $(shell pwd)
 VERSION := 1.0.0
 
-# 直接使用 conda 环境中的 Python（避免 conda run 不传递环境变量的问题）
-CONDA_PYTHON := $(CONDA_PYTHON)
+# 直接使用 conda 环境中的 Python（优先从 .env 读取，否则自动检测）
+CONDA_PYTHON ?= $(shell conda info --base 2>/dev/null)/envs/$(CONDA_ENV)/bin/python
 
 # Python 命令（使用 conda 环境）
 PY := $(CONDA_PYTHON) -m asset_lens
@@ -1158,15 +1164,15 @@ test-collect: ## 收集测试用例（诊断用）
 .PHONY: lint
 lint: ## 运行代码检查（并行执行）
 	@echo "🔍 运行代码检查（并行执行）..."
-	@python -m pylint asset_lens/ --disable=all --enable=E,F --exit-zero -j 0; \
-	 python -m mypy asset_lens/ --no-error-summary || true
+	@$(CONDA_PYTHON) -m pylint asset_lens/ --disable=all --enable=E,F --exit-zero -j 0; \
+	 $(CONDA_PYTHON) -m mypy asset_lens/ --no-error-summary || true
 	@echo "✅ 代码检查完成"
 
 .PHONY: format
 format: ## 格式化代码
 	@echo "✨ 格式化代码..."
-	python -m black asset_lens/ --line-length 100
-	python -m isort asset_lens/ --profile black
+	$(CONDA_PYTHON) -m black asset_lens/ --line-length 100
+	$(CONDA_PYTHON) -m isort asset_lens/ --profile black
 	@echo "✅ 代码格式化完成"
 
 .PHONY: ci

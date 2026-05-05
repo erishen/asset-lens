@@ -25,6 +25,8 @@ class Settings(BaseSettings):
 
     data_mode: str = Field(default="sample", description="数据模式: sample 或 real")
 
+    conda_python: str | None = Field(default=None, description="Conda Python 路径")
+
     finnhub_api_key: str | None = Field(default=None, description="Finnhub API 密钥")
     alphavantage_api_key: str | None = Field(default=None, description="Alpha Vantage API 密钥")
     tushare_token: str | None = Field(default=None, description="Tushare Token")
