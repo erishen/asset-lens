@@ -551,21 +551,42 @@ def auto_sync(days, daily_limit, update_limit, delay, fast):
             console.print(f"   K线总数: {result['total_klines']}")
 
         else:
-            cutoff_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+            today = datetime.now()
+            today_str = today.strftime("%Y-%m-%d")
+            weekday = today.weekday()
+            is_weekend = weekday >= 5
+
+            stale_days = 7
+            stale_date = (today - timedelta(days=stale_days)).strftime("%Y-%m-%d")
+
+            min_data_ratio = 0.3
+            min_data_count = int(days * min_data_ratio)
 
             stocks_with_data = (
                 session.query(
                     StockKline.code,
                     sql_func.max(StockKline.date).label("latest_date"),
-                    sql_func.count(StockKline.id).label("count"),  # pylint: disable=not-callable
+                    sql_func.count(StockKline.id).label("count"),
                 )
                 .group_by(StockKline.code)
                 .all()
             )
 
             stocks_to_update = []
+            skipped_stale = 0
+            skipped_insufficient = 0
+
             for stock in stocks_with_data:
-                if stock.latest_date < cutoff_date:
+                if stock.latest_date >= stale_date:
+                    continue
+
+                stock_count = int(getattr(stock, "count", 0) or 0)
+
+                if stock.latest_date < stale_date:
+                    if is_weekend and stock.latest_date >= (today - timedelta(days=3)).strftime("%Y-%m-%d"):
+                        skipped_stale += 1
+                        continue
+
                     stocks_to_update.append(
                         {
                             "code": stock.code,
@@ -573,14 +594,22 @@ def auto_sync(days, daily_limit, update_limit, delay, fast):
                             "latest_date": stock.latest_date,
                         }
                     )
-                elif stock.count < days * 0.5:
-                    stocks_to_update.append(
-                        {
-                            "code": stock.code,
-                            "reason": "数据不足",
-                            "latest_date": stock.latest_date,
-                        }
-                    )
+                elif stock_count < min_data_count:
+                    if stock_count < 10:
+                        stocks_to_update.append(
+                            {
+                                "code": stock.code,
+                                "reason": "数据严重不足",
+                                "latest_date": stock.latest_date,
+                            }
+                        )
+                    else:
+                        skipped_insufficient += 1
+
+            if skipped_stale > 0:
+                console.print(f"\n[dim]⏭️ 跳过 {skipped_stale} 只股票（周末数据仍有效）[/dim]")
+            if skipped_insufficient > 0:
+                console.print(f"[dim]⏭️ 跳过 {skipped_insufficient} 只股票（数据量可接受）[/dim]")
 
             if stocks_to_update:
                 stocks_to_update.sort(key=lambda x: x["latest_date"])
