@@ -19,7 +19,7 @@ PROJECT_DIR := $(shell pwd)
 VERSION := 1.0.0
 
 # 直接使用 conda 环境中的 Python（避免 conda run 不传递环境变量的问题）
-CONDA_PYTHON := /opt/anaconda3/envs/asset-lens/bin/python
+CONDA_PYTHON := $(CONDA_PYTHON)
 
 # Python 命令（使用 conda 环境）
 PY := $(CONDA_PYTHON) -m asset_lens
@@ -877,27 +877,27 @@ ml-optimize-all: ## 优化所有模型超参数
 .PHONY: fundamental-status
 fundamental-status: ## 查看基本面数据更新状态
 	@echo "📊 查看基本面数据更新状态..."
-	PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m asset_lens.data.update_fundamental_data --mode status
+	PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m asset_lens.data.update_fundamental_data --mode status
 
 .PHONY: fundamental-update
 fundamental-update: ## 每日更新基本面数据（资金流向）
 	@echo "📊 每日更新基本面数据..."
-	PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m asset_lens.data.update_fundamental_data --mode daily
+	PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m asset_lens.data.update_fundamental_data --mode daily
 
 .PHONY: fundamental-update-full
 fundamental-update-full: ## 全量更新基本面数据（PE/PB/ROE+资金流向）
 	@echo "📊 全量更新基本面数据..."
-	PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m asset_lens.data.update_fundamental_data --mode full
+	PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m asset_lens.data.update_fundamental_data --mode full
 
 .PHONY: fundamental-update-incremental
 fundamental-update-incremental: ## 增量更新基本面数据
 	@echo "📊 增量更新基本面数据..."
-	PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m asset_lens.data.update_fundamental_data --mode incremental
+	PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m asset_lens.data.update_fundamental_data --mode incremental
 
 .PHONY: fundamental-cleanup
 fundamental-cleanup: ## 清理过期的基本面数据缓存
 	@echo "🧹 清理过期的基本面数据缓存..."
-	PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m asset_lens.data.update_fundamental_data --mode cleanup --days 30
+	PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m asset_lens.data.update_fundamental_data --mode cleanup --days 30
 
 # ============================================
 # 数据库管理
@@ -1042,102 +1042,102 @@ show-config: ## 显示当前配置
 test: ## 运行测试（排除 E2E 测试，避免需要 web 服务）
 	@echo "🧪 运行测试..."
 	@echo "   正在启动测试进程..."
-	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/ --ignore=tests/e2e --tb=short
+	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/ --ignore=tests/e2e --tb=short
 
 .PHONY: test-fast
 test-fast: ## 快速测试（仅核心模块）
 	@echo "🧪 快速测试..."
-	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/test_cli.py tests/test_cli_registration.py tests/test_market_stock_fetcher.py tests/test_report_analyzer.py
+	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/test_cli.py tests/test_cli_registration.py tests/test_market_stock_fetcher.py tests/test_report_analyzer.py
 
 .PHONY: test-all
 test-all: ## 运行所有测试（包括网络测试，可能较慢）
 	@echo "🧪 运行所有测试..."
-	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/ --ignore=
+	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/ --ignore=
 
 .PHONY: test-cov
 test-cov: ## 运行测试并生成覆盖率报告
 	@echo "🧪 运行测试并生成覆盖率报告..."
-	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/ --cov=asset_lens --cov-report=html --cov-report=term
+	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/ --cov=asset_lens --cov-report=html --cov-report=term
 	@echo "✅ 测试完成，覆盖率报告已生成: htmlcov/index.html"
 
 .PHONY: test-verbose
 test-verbose: ## 运行测试（详细输出）
 	@echo "🧪 运行测试（详细模式）..."
-	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/ -v --tb=long
+	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/ -v --tb=long
 
 .PHONY: test-failed
 test-failed: ## 只运行上次失败的测试
 	@echo "🧪 运行上次失败的测试..."
-	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/ --lf
+	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/ --lf
 
 .PHONY: test-e2e
 test-e2e: ## 运行 E2E 测试（需要先启动 web 服务）
 	@echo "🧪 运行 E2E 测试..."
 	@echo "   请确保 web 服务已启动: make web"
-	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/ -v --tb=short
+	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/e2e/ -v --tb=short
 
 .PHONY: test-e2e-fast
 test-e2e-fast: ## 运行 E2E 测试（快速模式，跳过慢速测试）
 	@echo "⚡ 运行 E2E 测试（快速模式）..."
-	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/ -v --tb=line -m "not slow"
+	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/e2e/ -v --tb=line -m "not slow"
 
 .PHONY: test-e2e-parallel
 test-e2e-parallel: ## 运行 E2E 测试（并行模式，CI 推荐）
 	@echo "🚀 运行 E2E 测试（并行模式）..."
-	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/ -v --tb=line -n auto
+	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/e2e/ -v --tb=line -n auto
 
 .PHONY: test-e2e-optimized
 test-e2e-optimized: ## 运行优化的 E2E 测试（合并后的测试）
 	@echo "⚡ 运行优化的 E2E 测试..."
-	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/test_api_optimized.py tests/e2e/test_dashboard_optimized.py -v --tb=short
+	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/e2e/test_api_optimized.py tests/e2e/test_dashboard_optimized.py -v --tb=short
 
 .PHONY: test-e2e-slow
 test-e2e-slow: ## 仅运行慢速 E2E 测试
 	@echo "🐌 运行慢速 E2E 测试..."
-	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/ -v --tb=short -m "slow"
+	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/e2e/ -v --tb=short -m "slow"
 
 .PHONY: test-e2e-ui
 test-e2e-ui: ## 运行 E2E 测试（带 UI 界面）
 	@echo "🧪 运行 E2E 测试（UI 模式）..."
 	@echo "   请确保 web 服务已启动: make web"
-	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/ -v --tb=short --headed
+	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/e2e/ -v --tb=short --headed
 
 .PHONY: test-e2e-debug
 test-e2e-debug: ## 运行 E2E 测试（调试模式，慢动作）
 	@echo "🧪 运行 E2E 测试（调试模式）..."
-	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/ -v -s --tb=long --headed --slowmo=500
+	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/e2e/ -v -s --tb=long --headed --slowmo=500
 
 .PHONY: test-e2e-demo
 test-e2e-demo: ## 运行 E2E 演示测试（完整流程演示）
 	@echo "🎬 运行 E2E 演示测试..."
-	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/test_demo.py -v -s --tb=short --headed --slowmo=300
+	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/e2e/test_demo.py -v -s --tb=short --headed --slowmo=300
 
 .PHONY: test-e2e-video
 test-e2e-video: ## 运行 E2E 测试（录制视频）
 	@echo "🎥 运行 E2E 测试（录制视频）..."
 	@echo "   视频将保存到 test-results/videos/"
-	@RECORD_VIDEO=1 PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/ -v --tb=short --headed
+	@RECORD_VIDEO=1 PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/e2e/ -v --tb=short --headed
 
 .PHONY: test-e2e-report
 test-e2e-report: ## 运行 E2E 测试并生成 HTML 报告
 	@echo "📊 运行 E2E 测试并生成报告..."
-	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/ -v --tb=short --html=test-results/e2e-report.html --self-contained-html
+	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/e2e/ -v --tb=short --html=test-results/e2e-report.html --self-contained-html
 	@echo "📄 报告已生成: test-results/e2e-report.html"
 
 .PHONY: test-e2e-api
 test-e2e-api: ## 运行 E2E API 测试（仅 API 相关测试）
 	@echo "🧪 运行 E2E API 测试..."
-	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/test_api_optimized.py -v --tb=short
+	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/e2e/test_api_optimized.py -v --tb=short
 
 .PHONY: test-e2e-dashboard
 test-e2e-dashboard: ## 运行 E2E Dashboard 测试
 	@echo "🧪 运行 E2E Dashboard 测试..."
-	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/test_dashboard_optimized.py -v --tb=short
+	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/e2e/test_dashboard_optimized.py -v --tb=short
 
 .PHONY: test-e2e-failed
 test-e2e-failed: ## 运行上次失败的 E2E 测试
 	@echo "🔄 运行上次失败的 E2E 测试..."
-	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/e2e/ -v --tb=short --lf
+	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/e2e/ -v --tb=short --lf
 
 .PHONY: test-e2e-clean
 test-e2e-clean: ## 清理 E2E 测试结果
@@ -1148,12 +1148,12 @@ test-e2e-clean: ## 清理 E2E 测试结果
 .PHONY: playwright-install
 playwright-install: ## 安装 Playwright 浏览器
 	@echo "📦 安装 Playwright 浏览器..."
-	/opt/anaconda3/envs/asset-lens/bin/python -m playwright install chromium
+	$(CONDA_PYTHON) -m playwright install chromium
 
 .PHONY: test-collect
 test-collect: ## 收集测试用例（诊断用）
 	@echo "📋 收集测试用例..."
-	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore -m pytest tests/ --collect-only
+	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/ --collect-only
 
 .PHONY: lint
 lint: ## 运行代码检查（并行执行）
@@ -1530,17 +1530,17 @@ sentiment: ## 分析市场风向
 .PHONY: fund-holding
 fund-holding: ## 分析高仓位基金持仓汇总（股票仓位>=20%，排除债券类型）
 	@echo "📊 分析高仓位基金持仓..."
-	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore scripts/fund_holding_analysis.py --analyze
+	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore scripts/fund_holding_analysis.py --analyze
 
 .PHONY: fund-holding-all
 fund-holding-all: ## 分析所有基金持仓（包括低仓位和债券基金）
 	@echo "📊 分析所有基金持仓..."
-	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore scripts/fund_holding_analysis.py --all
+	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore scripts/fund_holding_analysis.py --all
 
 .PHONY: fund-holding-bond
 fund-holding-bond: ## 分析债券类型基金持仓
 	@echo "📊 分析债券类型基金持仓..."
-	@PYTHONWARNINGS=ignore /opt/anaconda3/envs/asset-lens/bin/python -W ignore scripts/fund_holding_analysis.py --include-bond
+	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore scripts/fund_holding_analysis.py --include-bond
 
 .PHONY: fund-list
 fund-list: ## 列出所有投资的基金
