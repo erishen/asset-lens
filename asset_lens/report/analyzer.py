@@ -948,7 +948,7 @@ class ReportGenerator:
         try:
             amount = float(value)
             return f"{amount / 10000:.2f}万"
-        except:
+        except Exception:
             return value
 
     def _format_money(self, value: str) -> str:
@@ -958,7 +958,7 @@ class ReportGenerator:
                 return f"{amount / 10000:.2f}万"
             else:
                 return f"{amount:,.0f}"
-        except:
+        except Exception:
             return value
 
     def save_csv_report(self, report: dict[str, Any], output_path: Path | None) -> Path | None:

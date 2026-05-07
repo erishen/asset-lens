@@ -502,7 +502,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                                 try:
                                     sold_initial += Decimal(row[19]) if row[19] else Decimal("0")
                                     sold_profit += Decimal(row[20]) if row[20] else Decimal("0")
-                                except:
+                                except Exception:
                                     pass
 
             # 3. 总计
@@ -523,7 +523,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                                 dt = datetime.strptime(r["date"], "%Y-%m-%d")
                                 if start_date is None or dt.date() < start_date:
                                     start_date = dt.date()
-                            except:
+                            except Exception:
                                 pass
                         if isinstance(r, dict) and r.get("type") == "buy":
                             initial += Decimal(str(r.get("amount", 0)))
@@ -532,7 +532,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                     try:
                         start_date = datetime.strptime(str(p.start_date), "%Y-%m-%d").date()
                         initial = p.initial_amount or Decimal("0")
-                    except:
+                    except Exception:
                         pass
 
                 if start_date:
@@ -632,7 +632,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                                     tx_date = datetime.strptime(date_str, "%Y-%m-%d").date()
                                     if base_date is None or tx_date < base_date:
                                         base_date = tx_date
-                                except:
+                                except Exception:
                                     pass
                     # 从开始日期找最早日期（缺失交易记录的产品）
                     if p.start_date:
@@ -660,7 +660,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                                             elif tx_type == "sell":
                                                 all_cashflows.append({"amount": amount, "days": days})
                                                 tx_count += 1
-                                        except:
+                                        except Exception:
                                             pass
                                 if p.current_amount:
                                     total_current_value += p.current_amount
