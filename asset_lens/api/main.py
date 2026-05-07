@@ -1,44 +1,27 @@
 """
 Asset-Lens REST API.
-基于 FastAPI 的 REST API 实现
+基于 FastAPI 的 REST API 实现 - 带 API Key 认证和限流
+
+此模块提供带认证的 API 路由，挂载到 web.api 的主应用上
 """
 
 import os
 from datetime import datetime
 from typing import Any
 
-from fastapi import Depends, FastAPI, HTTPException, Query, Request, status
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
 from asset_lens.api.response import ERROR_CODES, create_error_response, create_success_response
 
-app = FastAPI(
-    title="Asset-Lens API",
-    description="Personal Asset Operating System API",
-    version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
-)
-
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8080").split(",")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+router = APIRouter(prefix="/api/v1", tags=["API v1"])
 
 security = HTTPBearer()
 
 
 class StockQuote(BaseModel):
-    """股票行情模型"""
-
     code: str
     name: str
     current_price: float
@@ -49,8 +32,6 @@ class StockQuote(BaseModel):
 
 
 class FundNav(BaseModel):
-    """基金净值模型"""
-
     code: str
     name: str
     nav: float
@@ -59,8 +40,6 @@ class FundNav(BaseModel):
 
 
 class PortfolioAnalysis(BaseModel):
-    """投资组合分析模型"""
-
     total_assets: float
     total_profit: float
     profit_rate: float
@@ -70,8 +49,6 @@ class PortfolioAnalysis(BaseModel):
 
 
 class RiskMetrics(BaseModel):
-    """风险指标模型"""
-
     volatility: float
     max_drawdown: float
     sharpe_ratio: float
@@ -80,8 +57,6 @@ class RiskMetrics(BaseModel):
 
 
 class MonitorReport(BaseModel):
-    """监控报告模型"""
-
     report_type: str
     timestamp: str
     content: str
@@ -89,7 +64,6 @@ class MonitorReport(BaseModel):
 
 
 def _load_api_keys() -> dict[str, dict[str, Any]]:
-    """从环境变量加载 API Keys"""
     api_keys_str = os.getenv("API_KEYS", "")
     if api_keys_str:
         import json
@@ -130,7 +104,6 @@ def _increment_request_count(user: str) -> None:
 
 
 async def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """验证 API Key"""
     token = credentials.credentials
     if token not in API_KEYS:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
@@ -138,7 +111,6 @@ async def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(sec
 
 
 async def check_rate_limit(api_info: dict = Depends(verify_api_key)):
-    """检查速率限制"""
     user = api_info["user"]
     rate_limit = api_info["rate_limit"]
 
@@ -149,201 +121,139 @@ async def check_rate_limit(api_info: dict = Depends(verify_api_key)):
     return api_info
 
 
-@app.get("/")
-async def root():
-    """根路径"""
-    return create_success_response({"message": "Welcome to Asset-Lens API", "version": "1.0.0", "docs": "/docs"})
-
-
-@app.get("/api/v1/stocks/{code}", response_model=StockQuote)
+@router.get("/stocks/{code}", response_model=StockQuote)
 async def get_stock_quote(code: str, api_info: dict = Depends(check_rate_limit)):
-    """
-    获取股票实时行情
-
-    Args:
-        code: 股票代码（如 sh600519, sz000001）
-
-    Returns:
-        股票行情数据
-    """
     try:
-        import subprocess
+        from asset_lens.data.stock_fetcher import StockDataFetcher
 
-        result = subprocess.run(
-            ["python", "-m", "asset_lens", "data", "fetch-stock", "--codes", code], capture_output=True, text=True
-        )
-
-        if result.returncode != 0:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Stock not found: {code}")
-
-        return StockQuote(
-            code=code,
-            name="示例股票",
-            current_price=100.0,
-            change_percent=1.5,
-            volume=1000000,
-            turnover=100000000.0,
-            update_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        )
+        fetcher = StockDataFetcher()
+        quote = fetcher.fetch_stock_quote_akshare(code)
+        if quote:
+            return StockQuote(
+                code=code,
+                name=quote.get("name", ""),
+                current_price=float(quote.get("current_price", 0)),
+                change_percent=float(quote.get("change_percent", 0)),
+                volume=int(quote.get("volume", 0)),
+                turnover=float(quote.get("amount", 0)),
+                update_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Stock not found: {code}")
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
-@app.get("/api/v1/funds/{code}", response_model=FundNav)
+@router.get("/funds/{code}", response_model=FundNav)
 async def get_fund_nav(code: str, api_info: dict = Depends(check_rate_limit)):
-    """
-    获取基金净值
-
-    Args:
-        code: 基金代码
-
-    Returns:
-        基金净值数据
-    """
     try:
-        return FundNav(
-            code=code, name="示例基金", nav=1.5, accumulated_nav=2.0, update_date=datetime.now().strftime("%Y-%m-%d")
-        )
+        from asset_lens.data.fund_fetcher import FundDataFetcher
+
+        fetcher = FundDataFetcher()
+        nav_data = fetcher.fetch_fund_info(code)
+        if nav_data:
+            return FundNav(
+                code=code,
+                name=nav_data.get("name", ""),
+                nav=float(nav_data.get("nav", 0)),
+                accumulated_nav=float(nav_data.get("accumulated_nav", 0)),
+                update_date=nav_data.get("date", ""),
+            )
+        return FundNav(code=code, name="", nav=0.0, accumulated_nav=0.0, update_date="")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
-@app.get("/api/v1/portfolio/analysis", response_model=PortfolioAnalysis)
+@router.get("/portfolio/analysis", response_model=PortfolioAnalysis)
 async def get_portfolio_analysis(api_info: dict = Depends(check_rate_limit)):
-    """
-    获取投资组合分析
-
-    Returns:
-        投资组合分析数据
-    """
     try:
+        from asset_lens.config import config
+        from asset_lens.core.analyzer import PortfolioAnalyzer
+
+        analyzer = PortfolioAnalyzer(config)
+        summary = analyzer.get_summary()
         return PortfolioAnalysis(
-            total_assets=1000000.0,
-            total_profit=50000.0,
-            profit_rate=5.0,
-            annual_return=10.0,
-            risk_level="中等",
+            total_assets=summary.get("total_assets", 0),
+            total_profit=summary.get("total_profit", 0),
+            profit_rate=summary.get("profit_rate", 0),
+            annual_return=summary.get("annual_return", 0),
+            risk_level=summary.get("risk_level", "未知"),
             update_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
-@app.get("/api/v1/risk/metrics", response_model=RiskMetrics)
+@router.get("/risk/metrics", response_model=RiskMetrics)
 async def get_risk_metrics(api_info: dict = Depends(check_rate_limit)):
-    """
-    获取风险指标
-
-    Returns:
-        风险指标数据
-    """
     try:
-        return RiskMetrics(volatility=15.0, max_drawdown=8.0, sharpe_ratio=1.2, beta=0.8, var_95=3.5)
+        return RiskMetrics(volatility=0.0, max_drawdown=0.0, sharpe_ratio=0.0, beta=0.0, var_95=0.0)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
-@app.get("/api/v1/monitor/report", response_model=MonitorReport)
+@router.get("/monitor/report", response_model=MonitorReport)
 async def get_monitor_report(
     report_type: str = Query("daily", description="报告类型: daily, weekly, monthly"),
     api_info: dict = Depends(check_rate_limit),
 ):
-    """
-    获取监控报告
-
-    Args:
-        report_type: 报告类型
-
-    Returns:
-        监控报告数据
-    """
     try:
         return MonitorReport(
             report_type=report_type,
             timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            content="示例监控报告内容",
-            alerts=[{"level": "medium", "type": "price_change", "message": "股票价格变动超过5%"}],
+            content="",
+            alerts=[],
         )
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
-@app.post("/api/v1/stocks/screen")
+@router.post("/stocks/screen")
 async def screen_stocks(
     strategy: str = Query("momentum", description="策略类型"),
     limit: int = Query(10, description="返回数量"),
     api_info: dict = Depends(check_rate_limit),
 ):
-    """
-    股票筛选
-
-    Args:
-        strategy: 策略类型
-        limit: 返回数量
-
-    Returns:
-        筛选结果
-    """
     try:
         return create_success_response(
-            {
-                "strategy": strategy,
-                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "stocks": [{"code": "sh600519", "name": "贵州茅台", "score": 95, "rank": 1}],
-            }
+            {"strategy": strategy, "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "stocks": []}
         )
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
-@app.get("/api/v1/market/indices")
+@router.get("/market/indices")
 async def get_market_indices(api_info: dict = Depends(check_rate_limit)):
-    """
-    获取市场指数
-
-    Returns:
-        市场指数数据
-    """
     try:
         return create_success_response(
-            {
-                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "indices": [
-                    {"code": "sh000300", "name": "沪深300", "price": 4000.0, "change_percent": 1.5},
-                    {"code": "sz399006", "name": "创业板指", "price": 3000.0, "change_percent": 2.0},
-                ],
-            }
+            {"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "indices": []}
         )
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
-    """HTTP 异常处理"""
-    error_code = "INTERNAL_ERROR"
-    for code, info in ERROR_CODES.items():
-        if info["status_code"] == exc.status_code:
-            error_code = code
-            break
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=create_error_response(error_code, exc.detail),
-    )
+@router.get("/")
+async def api_root():
+    return create_success_response({"message": "Asset-Lens API v1", "docs": "/docs"})
 
 
-@app.exception_handler(Exception)
-async def generic_exception_handler(request: Request, exc: Exception):
-    """通用异常处理"""
-    return JSONResponse(
-        status_code=500,
-        content=create_error_response("INTERNAL_ERROR", str(exc)),
-    )
+def register_exception_handlers(app):
+    @app.exception_handler(HTTPException)
+    async def http_exception_handler(request: Request, exc: HTTPException):
+        error_code = "INTERNAL_ERROR"
+        for code, info in ERROR_CODES.items():
+            if info["status_code"] == exc.status_code:
+                error_code = code
+                break
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=create_error_response(error_code, exc.detail),
+        )
 
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    @app.exception_handler(Exception)
+    async def generic_exception_handler(request: Request, exc: Exception):
+        return JSONResponse(
+            status_code=500,
+            content=create_error_response("INTERNAL_ERROR", str(exc)),
+        )
