@@ -161,7 +161,7 @@ class DatabaseOptimizer:
 
         for idx_name, table, columns in indexes:
             try:
-                check_sql = text(f"SELECT name FROM sqlite_master WHERE type='index' AND name='{idx_name}'")
+                check_sql = text("SELECT name FROM sqlite_master WHERE type='index' AND name=:idx_name").bindparams(idx_name=idx_name)
                 existing = session.execute(check_sql).fetchone()
 
                 if existing:
@@ -299,7 +299,7 @@ class DatabaseOptimizer:
 
         for table in tables:
             try:
-                result = session.execute(text(f"SELECT COUNT(*) FROM {table}"))
+                result = session.execute(text("SELECT COUNT(*) FROM " + table))
                 row = result.fetchone()
                 count = row[0] if row else 0
                 stats[table] = {"row_count": count}

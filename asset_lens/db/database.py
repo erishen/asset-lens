@@ -59,7 +59,7 @@ class DatabaseManager:
         data_source: str = "Unknown",
     ) -> int:
         """
-        保存K线数据
+        保存K线数据（批量优化版本）
 
         Args:
             code: 股票代码
@@ -71,13 +71,22 @@ class DatabaseManager:
         """
         session = self.get_session()
         try:
-            saved_count = 0
-            for kline in klines:
-                date = kline.get("date", "")
-                if not date:
-                    continue
+            valid_klines = [k for k in klines if k.get("date")]
+            if not valid_klines:
+                return 0
 
-                existing = session.query(StockKline).filter(StockKline.code == code, StockKline.date == date).first()
+            dates = [k["date"] for k in valid_klines]
+            existing_map = {}
+            for row in session.query(StockKline).filter(
+                StockKline.code == code, StockKline.date.in_(dates)
+            ).all():
+                existing_map[row.date] = row
+
+            saved_count = 0
+            now = datetime.now()
+            for kline in valid_klines:
+                date = kline["date"]
+                existing = existing_map.get(date)
 
                 if existing:
                     existing.open = kline.get("open", 0)
@@ -91,7 +100,7 @@ class DatabaseManager:
                     existing.change_amount = kline.get("change_amount", 0)
                     existing.turnover_rate = kline.get("turnover_rate", 0)
                     existing.data_source = data_source
-                    existing.updated_at = datetime.now()
+                    existing.updated_at = now
                 else:
                     record = StockKline(
                         code=code,
