@@ -17,6 +17,7 @@ from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
 
 from .models import DataSyncLog, MLModel, PredictionRecord, StockInfo, StockKline, init_database
+from investkit_utils.db.paths import ensure_data_dir, get_asset_lens_db_path
 
 
 class DatabaseManager:
@@ -24,9 +25,8 @@ class DatabaseManager:
 
     def __init__(self, db_path: str | None = None):
         if db_path is None:
-            data_dir = Path(__file__).parent.parent.parent / "data"
-            data_dir.mkdir(parents=True, exist_ok=True)
-            db_path = f"sqlite:///{data_dir}/asset_lens.db"
+            data_dir = ensure_data_dir()
+            db_path = f"sqlite:///{get_asset_lens_db_path()}"
 
         self.db_url = db_path
         self.engine, self.SessionLocal = init_database(db_path)
