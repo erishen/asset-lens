@@ -22,9 +22,9 @@ class DatabaseOptimizer:
 
     def __init__(self, db_path: str | None = None):
         if db_path is None:
-            data_dir = Path(__file__).parent.parent.parent / "data"
-            data_dir.mkdir(parents=True, exist_ok=True)
-            db_path = str(data_dir / "asset_lens.db")
+            from investkit_utils.db.paths import ensure_data_dir, get_asset_lens_db_path
+            ensure_data_dir()
+            db_path = str(get_asset_lens_db_path())
 
         self.db_path = db_path
         self._optimization_log: list[dict[str, Any]] = []
