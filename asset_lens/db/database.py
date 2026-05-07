@@ -69,8 +69,7 @@ class DatabaseManager:
         Returns:
             保存的记录数
         """
-        session = self.get_session()
-        try:
+        with self.session_scope() as session:
             valid_klines = [k for k in klines if k.get("date")]
             if not valid_klines:
                 return 0
@@ -120,13 +119,7 @@ class DatabaseManager:
                     session.add(record)
                     saved_count += 1
 
-            session.commit()
             return saved_count
-        except Exception as e:
-            session.rollback()
-            raise e
-        finally:
-            session.close()
 
     def get_stock_codes_with_klines(self) -> set[str]:
         """
@@ -135,14 +128,11 @@ class DatabaseManager:
         Returns:
             股票代码集合
         """
-        session = self.get_session()
-        try:
+        with self.session_scope() as session:
             from sqlalchemy import distinct
 
             results = session.query(distinct(StockKline.code)).all()
             return {r[0] for r in results}
-        finally:
-            session.close()
 
     def get_klines(
         self,
@@ -163,8 +153,7 @@ class DatabaseManager:
         Returns:
             K线数据列表
         """
-        session = self.get_session()
-        try:
+        with self.session_scope() as session:
             query = session.query(StockKline).filter(StockKline.code == code)
 
             if start_date:
@@ -177,8 +166,6 @@ class DatabaseManager:
             results = query.all()
             klines = [r.to_dict() for r in reversed(results)]
             return klines
-        finally:
-            session.close()
 
     def get_klines_for_ml(
         self,
@@ -195,8 +182,7 @@ class DatabaseManager:
         Returns:
             股票代码到K线数据的映射
         """
-        session = self.get_session()
-        try:
+        with self.session_scope() as session:
             start_date = (datetime.now() - timedelta(days=days + 30)).strftime("%Y-%m-%d")
 
             query = session.query(StockKline).filter(StockKline.date >= start_date)
@@ -215,33 +201,24 @@ class DatabaseManager:
                 data[record.code].append(record.to_dict())
 
             return data
-        finally:
-            session.close()
 
     def get_stock_codes(self) -> list[str]:
         """获取所有有K线数据的股票代码"""
-        session = self.get_session()
-        try:
+        with self.session_scope() as session:
             results = session.query(StockKline.code).distinct().all()
             return [r[0] for r in results]
-        finally:
-            session.close()
 
     def get_kline_count(self, code: str | None = None) -> int:
         """获取K线数据数量"""
-        session = self.get_session()
-        try:
+        with self.session_scope() as session:
             query = session.query(func.count(StockKline.id))
             if code:
                 query = query.filter(StockKline.code == code)
             return query.scalar() or 0
-        finally:
-            session.close()
 
     def save_stock_info(self, info: dict[str, Any]) -> bool:
         """保存股票基本信息"""
-        session = self.get_session()
-        try:
+        with self.session_scope() as session:
             code = info.get("code", "")
             if not code:
                 return False
@@ -257,18 +234,11 @@ class DatabaseManager:
                 record = StockInfo(**info)
                 session.add(record)
 
-            session.commit()
             return True
-        except Exception as e:
-            session.rollback()
-            raise e
-        finally:
-            session.close()
 
     def get_stock_info(self, code: str) -> dict[str, Any] | None:
         """获取股票基本信息"""
-        session = self.get_session()
-        try:
+        with self.session_scope() as session:
             record = session.query(StockInfo).filter(StockInfo.code == code).first()
             if record:
                 return {
@@ -284,8 +254,6 @@ class DatabaseManager:
                     "is_active": record.is_active,
                 }
             return None
-        finally:
-            session.close()
 
     def save_ml_model(
         self,
@@ -304,8 +272,7 @@ class DatabaseManager:
         Returns:
             模型ID
         """
-        session = self.get_session()
-        try:
+        with self.session_scope() as session:
             record = MLModel(
                 name=name,
                 model_type=model_type,
@@ -319,18 +286,12 @@ class DatabaseManager:
                 train_date_end="",
             )
             session.add(record)
-            session.commit()
+            session.flush()
             return record.id
-        except Exception as e:
-            session.rollback()
-            raise e
-        finally:
-            session.close()
 
     def get_latest_model(self, name: str = "stock_predictor") -> dict[str, Any] | None:
         """获取最新的ML模型"""
-        session = self.get_session()
-        try:
+        with self.session_scope() as session:
             record = (
                 session.query(MLModel)
                 .filter(MLModel.name == name, MLModel.is_active)
@@ -351,8 +312,6 @@ class DatabaseManager:
                     "created_at": record.created_at.strftime("%Y-%m-%d %H:%M:%S"),
                 }
             return None
-        finally:
-            session.close()
 
     def save_prediction(
         self,
@@ -363,8 +322,7 @@ class DatabaseManager:
         features: dict[str, Any] | None = None,
     ) -> int:
         """保存预测记录"""
-        session = self.get_session()
-        try:
+        with self.session_scope() as session:
             record = PredictionRecord(
                 model_id=model_id,
                 code=code,
@@ -374,13 +332,8 @@ class DatabaseManager:
                 features=json.dumps(features or {}),
             )
             session.add(record)
-            session.commit()
+            session.flush()
             return record.id
-        except Exception as e:
-            session.rollback()
-            raise e
-        finally:
-            session.close()
 
     def get_predictions(
         self,
@@ -389,8 +342,7 @@ class DatabaseManager:
         days: int = 30,
     ) -> list[dict[str, Any]]:
         """获取预测记录"""
-        session = self.get_session()
-        try:
+        with self.session_scope() as session:
             start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
 
             query = session.query(PredictionRecord).filter(PredictionRecord.predict_date >= start_date)
@@ -417,8 +369,6 @@ class DatabaseManager:
                 }
                 for r in results
             ]
-        finally:
-            session.close()
 
     def log_sync(
         self,
@@ -431,8 +381,7 @@ class DatabaseManager:
         error_message: str = "",
     ) -> int:
         """记录数据同步日志"""
-        session = self.get_session()
-        try:
+        with self.session_scope() as session:
             record = DataSyncLog(
                 data_type=data_type,
                 data_source=data_source,
@@ -444,13 +393,8 @@ class DatabaseManager:
                 error_message=error_message,
             )
             session.add(record)
-            session.commit()
+            session.flush()
             return record.id
-        except Exception as e:
-            session.rollback()
-            raise e
-        finally:
-            session.close()
 
     def update_sync_log(
         self,
@@ -461,8 +405,7 @@ class DatabaseManager:
         error_message: str = "",
     ):
         """更新同步日志"""
-        session = self.get_session()
-        try:
+        with self.session_scope() as session:
             record = session.query(DataSyncLog).filter(DataSyncLog.id == log_id).first()
             if record:
                 record.sync_end = datetime.now()
@@ -470,17 +413,10 @@ class DatabaseManager:
                 record.records_failed = records_failed
                 record.status = status
                 record.error_message = error_message
-                session.commit()
-        except Exception as e:
-            session.rollback()
-            raise e
-        finally:
-            session.close()
 
     def get_statistics(self) -> dict[str, Any]:
         """获取数据库统计信息"""
-        session = self.get_session()
-        try:
+        with self.session_scope() as session:
             kline_count = session.query(func.count(StockKline.id)).scalar() or 0
             stock_count = session.query(func.count(func.distinct(StockKline.code))).scalar() or 0
             model_count = session.query(func.count(MLModel.id)).scalar() or 0
@@ -506,22 +442,13 @@ class DatabaseManager:
                 "latest_date": latest_date,
                 "data_sources": {ds: count for ds, count in data_sources if ds},
             }
-        finally:
-            session.close()
 
     def clear_old_data(self, days: int = 365) -> int:
         """清理旧数据"""
-        session = self.get_session()
-        try:
+        with self.session_scope() as session:
             cutoff_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
             deleted = session.query(StockKline).filter(StockKline.date < cutoff_date).delete()
-            session.commit()
             return deleted
-        except Exception as e:
-            session.rollback()
-            raise e
-        finally:
-            session.close()
 
     def auto_sync_history(
         self,
