@@ -217,6 +217,17 @@ data/*.db-shm
 data/*.db-wal
 # Database recovery files
 data/asset_lens_recovered.sql
+
+# ML model files (training artifacts)
+models/*.joblib
+models/*.pkl
+models/*.h5
+models/*.json
+!models/.gitkeep
+
+# Optimization results (runtime artifacts)
+results/
+!results/.gitkeep
 data/asset_lens.db.corrupted*
 data/*.sql
 

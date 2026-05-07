@@ -104,7 +104,29 @@ def _load_api_keys() -> dict[str, dict[str, Any]]:
 
 API_KEYS = _load_api_keys()
 
-request_counts: dict[str, int] = {}
+from collections import defaultdict
+from threading import Lock
+import time
+
+_request_counts_lock = Lock()
+_request_counts: dict[str, int] = defaultdict(int)
+_request_counts_reset_time: float = time.time()
+_REQUEST_COUNTS_RESET_INTERVAL = 3600
+
+
+def _get_request_count(user: str) -> int:
+    global _request_counts_reset_time
+    with _request_counts_lock:
+        now = time.time()
+        if now - _request_counts_reset_time > _REQUEST_COUNTS_RESET_INTERVAL:
+            _request_counts.clear()
+            _request_counts_reset_time = now
+        return _request_counts[user]
+
+
+def _increment_request_count(user: str) -> None:
+    with _request_counts_lock:
+        _request_counts[user] += 1
 
 
 async def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -120,13 +142,10 @@ async def check_rate_limit(api_info: dict = Depends(verify_api_key)):
     user = api_info["user"]
     rate_limit = api_info["rate_limit"]
 
-    if user not in request_counts:
-        request_counts[user] = 0
-
-    if request_counts[user] >= rate_limit:
+    if _get_request_count(user) >= rate_limit:
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Rate limit exceeded")
 
-    request_counts[user] += 1
+    _increment_request_count(user)
     return api_info
 
 
