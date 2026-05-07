@@ -35,22 +35,15 @@ class AssetLensClient:
             股票行情数据
         """
         try:
-            import subprocess
+            from asset_lens.data.stock_fetcher import StockDataFetcher
 
-            result = subprocess.run(["python", "-m", "asset_lens", "fetch-stock", code], capture_output=True, text=True)
-
-            if result.returncode == 0:
-                return {
-                    "success": True,
-                    "data": result.stdout,
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                }
-            else:
-                return {
-                    "success": False,
-                    "error": result.stderr,
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                }
+            fetcher = StockDataFetcher()
+            data = fetcher.fetch_stock_quote_akshare(code)
+            return {
+                "success": True,
+                "data": data,
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            }
         except Exception as e:
             logger.error(f"获取股票行情失败: {code}, {e}")
             return {"success": False, "error": str(e), "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
@@ -66,22 +59,15 @@ class AssetLensClient:
             基金净值数据
         """
         try:
-            import subprocess
+            from asset_lens.data.fund_fetcher import FundDataFetcher
 
-            result = subprocess.run(["python", "-m", "asset_lens", "fetch-fund", code], capture_output=True, text=True)
-
-            if result.returncode == 0:
-                return {
-                    "success": True,
-                    "data": result.stdout,
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                }
-            else:
-                return {
-                    "success": False,
-                    "error": result.stderr,
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                }
+            fetcher = FundDataFetcher()
+            data = fetcher.fetch_fund_info(code)
+            return {
+                "success": True,
+                "data": data,
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            }
         except Exception as e:
             logger.error(f"获取基金净值失败: {code}, {e}")
             return {"success": False, "error": str(e), "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
@@ -94,22 +80,16 @@ class AssetLensClient:
             投资组合分析数据
         """
         try:
-            import subprocess
+            from asset_lens.config import config
+            from asset_lens.core.analyzer import PortfolioAnalyzer
 
-            result = subprocess.run(["python", "-m", "asset_lens", "analyze"], capture_output=True, text=True)
-
-            if result.returncode == 0:
-                return {
-                    "success": True,
-                    "data": result.stdout,
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                }
-            else:
-                return {
-                    "success": False,
-                    "error": result.stderr,
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                }
+            analyzer = PortfolioAnalyzer(config)
+            data = analyzer.get_summary()
+            return {
+                "success": True,
+                "data": data,
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            }
         except Exception as e:
             logger.error(f"分析投资组合失败: {e}")
             return {"success": False, "error": str(e), "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
@@ -126,24 +106,15 @@ class AssetLensClient:
             筛选结果
         """
         try:
-            import subprocess
+            from asset_lens.strategy.screening import StockScreener
 
-            result = subprocess.run(
-                ["python", "-m", "asset_lens", "strategy-screen", "NAME", strategy], capture_output=True, text=True
-            )
-
-            if result.returncode == 0:
-                return {
-                    "success": True,
-                    "data": result.stdout,
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                }
-            else:
-                return {
-                    "success": False,
-                    "error": result.stderr,
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                }
+            screener = StockScreener()
+            data = screener.screen(strategy=strategy, limit=limit)
+            return {
+                "success": True,
+                "data": data,
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            }
         except Exception as e:
             logger.error(f"股票筛选失败: {strategy}, {e}")
             return {"success": False, "error": str(e), "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
@@ -238,26 +209,14 @@ class AssetLensClient:
             操作结果
         """
         try:
-            import subprocess
+            from asset_lens.db.database import db_manager
 
-            result = subprocess.run(
-                ["asset-lens", "stock-pool", "add", "--code", code, "--name", name, "--price", str(price)],
-                capture_output=True,
-                text=True,
-            )
-
-            if result.returncode == 0:
-                return {
-                    "success": True,
-                    "message": f"股票 {code} 已添加到股票池",
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                }
-            else:
-                return {
-                    "success": False,
-                    "error": result.stderr,
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                }
+            db_manager.save_stock_info({"code": code, "name": name, "current_price": price})
+            return {
+                "success": True,
+                "message": f"股票 {code} 已添加到股票池",
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            }
         except Exception as e:
             logger.error(f"添加股票到股票池失败: {code}, {e}")
             return {"success": False, "error": str(e), "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
@@ -270,22 +229,15 @@ class AssetLensClient:
             股票池状态数据
         """
         try:
-            import subprocess
+            from asset_lens.db.database import db_manager
 
-            result = subprocess.run(["python", "-m", "asset_lens", "stock-pool-status"], capture_output=True, text=True)
-
-            if result.returncode == 0:
-                return {
-                    "success": True,
-                    "data": result.stdout,
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                }
-            else:
-                return {
-                    "success": False,
-                    "error": result.stderr,
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                }
+            codes = db_manager.get_stock_codes()
+            stats = db_manager.get_statistics()
+            return {
+                "success": True,
+                "data": {"codes": codes, "statistics": stats},
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            }
         except Exception as e:
             logger.error(f"获取股票池状态失败: {e}")
             return {"success": False, "error": str(e), "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
