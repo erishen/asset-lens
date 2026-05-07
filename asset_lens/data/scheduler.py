@@ -13,15 +13,15 @@ from typing import Any
 from ..config import config
 
 
-class TimeoutError(Exception):
-    """超时错误"""
+class SchedulerTimeoutError(Exception):
+    """调度器超时错误"""
 
     pass
 
 
 def run_with_timeout(func, timeout_seconds: int, task_name: str = "任务") -> Any:
     """
-    带超时执行函数
+    带超时执行函数（使用 concurrent.futures 实现跨平台超时）
 
     Args:
         func: 要执行的函数
@@ -31,26 +31,16 @@ def run_with_timeout(func, timeout_seconds: int, task_name: str = "任务") -> A
     Returns:
         函数执行结果或超时错误
     """
-    result = {"error": "timeout", "task": task_name}
-    exception_occurred = False
+    from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 
-    def timer_handler():
-        nonlocal exception_occurred
-        exception_occurred = True
-        raise TimeoutError(f"{task_name} 超时 ({timeout_seconds}秒)")
-
-    timer = threading.Timer(timeout_seconds, timer_handler)
     try:
-        result = func()
-    except TimeoutError:
-        pass
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(func)
+            return future.result(timeout=timeout_seconds)
+    except FuturesTimeoutError:
+        return {"error": "timeout", "task": task_name}
     except Exception as e:
-        result = {"error": str(e), "task": task_name}
-    finally:
-        timer.cancel()
-        if exception_occurred:
-            return result
-        return result
+        return {"error": str(e), "task": task_name}
 
 
 class TaskScheduler:

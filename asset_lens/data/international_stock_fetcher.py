@@ -19,35 +19,7 @@ from typing import Any
 import requests
 
 from ..config import config
-
-
-def with_retry(max_retries: int = 3, retry_delay: float = 2.0):
-    """
-    重试装饰器
-
-    Args:
-        max_retries: 最大重试次数
-        retry_delay: 重试间隔（秒）
-    """
-
-    def decorator(func: Callable) -> Callable:
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            last_exception = None
-            for attempt in range(max_retries):
-                try:
-                    return func(*args, **kwargs)
-                except Exception as e:
-                    last_exception = e
-                    if attempt < max_retries - 1:
-                        print(f"{func.__name__} 失败 (尝试 {attempt + 1}/{max_retries}): {e}")
-                        time.sleep(retry_delay)
-            print(f"{func.__name__} 所有重试失败: {last_exception}")
-            return None
-
-        return wrapper
-
-    return decorator
+from ..utils.http_client import with_retry
 
 
 class InternationalStockFetcher:

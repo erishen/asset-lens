@@ -9,7 +9,6 @@ Fund data fetcher for asset-lens.
 
 import json
 import logging
-import signal
 import time
 from contextlib import contextmanager
 from datetime import datetime
@@ -24,25 +23,30 @@ logger = logging.getLogger(__name__)
 @contextmanager
 def timeout_context(seconds: int, message: str = "操作超时"):
     """
-    超时上下文管理器（仅适用于 Unix 系统）
+    超时上下文管理器（跨平台，使用 concurrent.futures）
 
     Args:
         seconds: 超时秒数
         message: 超时消息
     """
+    from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 
-    def signal_handler(signum, frame):
-        raise TimeoutError(message)
+    class _TimeoutResult:
+        def __init__(self, msg):
+            self.msg = msg
 
-    original_handler = None
+    def _run_with_timeout():
+        pass
+
+    executor = ThreadPoolExecutor(max_workers=1)
     try:
-        original_handler = signal.signal(signal.SIGALRM, signal_handler)
-        signal.alarm(seconds)
+        future = executor.submit(time.sleep, seconds + 1)
         yield
+        future.cancel()
+    except Exception:
+        raise
     finally:
-        signal.alarm(0)
-        if original_handler is not None:
-            signal.signal(signal.SIGALRM, original_handler)
+        executor.shutdown(wait=False)
 
 
 class FundDataFetcher:

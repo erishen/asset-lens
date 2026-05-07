@@ -7,6 +7,7 @@ Database models for asset-lens.
 
 import warnings
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import Boolean, Column, DateTime, Float, Index, Integer, String, Text, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
@@ -157,15 +158,21 @@ def init_database(db_url: str = "sqlite:///./data/asset_lens.db"):
     Returns:
         engine, Session
     """
-    engine = create_engine(
-        db_url,
-        echo=False,
-        pool_pre_ping=True,
-        pool_size=10,
-        max_overflow=20,
-        pool_recycle=3600,
-        pool_timeout=30,
-    )
+    engine_kwargs: dict[str, Any] = {"echo": False}
+
+    if db_url.startswith("sqlite"):
+        from sqlalchemy.pool import StaticPool
+
+        engine_kwargs["connect_args"] = {"check_same_thread": False}
+        engine_kwargs["poolclass"] = StaticPool
+    else:
+        engine_kwargs["pool_pre_ping"] = True
+        engine_kwargs["pool_size"] = 10
+        engine_kwargs["max_overflow"] = 20
+        engine_kwargs["pool_recycle"] = 3600
+        engine_kwargs["pool_timeout"] = 30
+
+    engine = create_engine(db_url, **engine_kwargs)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     return engine, Session
@@ -173,7 +180,7 @@ def init_database(db_url: str = "sqlite:///./data/asset_lens.db"):
 
 def get_session(db_url: str = "sqlite:///./data/asset_lens.db"):
     """
-    获取数据库会话
+    获取数据库会话（已废弃，请使用 DatabaseManager.session_scope）
 
     Args:
         db_url: 数据库连接URL
@@ -181,5 +188,9 @@ def get_session(db_url: str = "sqlite:///./data/asset_lens.db"):
     Returns:
         Session实例
     """
-    engine, Session = init_database(db_url)
-    return Session()
+    import warnings
+
+    warnings.warn("get_session() is deprecated, use DatabaseManager.session_scope()", DeprecationWarning, stacklevel=2)
+    from .database import db_manager
+
+    return db_manager.get_session()
