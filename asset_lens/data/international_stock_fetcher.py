@@ -9,6 +9,7 @@ Hong Kong and US stock data fetcher for asset-lens.
 """
 
 import json
+import os
 import time
 from collections.abc import Callable
 from datetime import datetime
@@ -112,7 +113,7 @@ class InternationalStockFetcher:
                 import requests
 
                 # 从环境变量获取 API Key
-                api_key = "O5NA4NQDO6NSH97X"  # 使用配置文件中的 API Key
+                api_key = os.getenv("ALPHAVANTAGE_API_KEY", "")
 
                 # 构建 AlphaVantage API 请求
                 url = "https://www.alphavantage.co/query"
@@ -223,7 +224,7 @@ class InternationalStockFetcher:
                 # 使用 AlphaVantage API 服务获取美股数据
 
                 # 从环境变量获取 API Key
-                api_key = "O5NA4NQDO6NSH97X"  # 使用配置文件中的 API Key
+                api_key = os.getenv("ALPHAVANTAGE_API_KEY", "")
 
                 # 构建 AlphaVantage API 请求
                 url = "https://www.alphavantage.co/query"

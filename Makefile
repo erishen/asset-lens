@@ -7,11 +7,13 @@ ifneq (,$(wildcard .env))
   export
 endif
 
-# 代理设置（解决网络连接问题）
-export HTTP_PROXY := http://127.0.0.1:7890
-export HTTPS_PROXY := http://127.0.0.1:7890
-export http_proxy := http://127.0.0.1:7890
-export https_proxy := http://127.0.0.1:7890
+# 代理设置（从 .env 或环境变量读取，不强制设置）
+ifdef HTTP_PROXY_VALUE
+export HTTP_PROXY := $(HTTP_PROXY_VALUE)
+export HTTPS_PROXY := $(HTTP_PROXY_VALUE)
+export http_proxy := $(HTTP_PROXY_VALUE)
+export https_proxy := $(HTTP_PROXY_VALUE)
+endif
 
 # Playwright 浏览器路径（解决沙盒环境问题）
 export PLAYWRIGHT_BROWSERS_PATH := $(HOME)/Library/Caches/ms-playwright
@@ -982,12 +984,12 @@ db-clean-old-confirm: ## 确认执行清理旧数据
 .PHONY: db-batch-fetch
 db-batch-fetch: ## 批量获取股票历史数据（make db-batch-fetch LIMIT=100 DAYS=250）
 	@echo "📦 批量获取股票历史数据..."
-	python scripts/batch_fetch_history.py --limit $(or $(LIMIT),0) --days $(or $(DAYS),250)
+	$(CONDA_PYTHON) scripts/batch_fetch_history.py --limit $(or $(LIMIT),0) --days $(or $(DAYS),250)
 
 .PHONY: db-batch-fetch-all
 db-batch-fetch-all: ## 获取所有股票历史数据（耗时较长）
 	@echo "📦 获取所有股票历史数据..."
-	python scripts/batch_fetch_history.py --days 250
+	$(CONDA_PYTHON) scripts/batch_fetch_history.py --days 250
 
 # ============================================
 # 股票跟踪监控
@@ -1262,17 +1264,17 @@ backup: ## 备份数据文件
 .PHONY: sync-data
 sync-data: ## 同步 ts-demo 真实数据到 asset-lens
 	@echo "🔄 同步 ts-demo 数据..."
-	python scripts/sync_data.py
+	$(CONDA_PYTHON) scripts/sync_data.py
 
 .PHONY: sync-data-latest
 sync-data-latest: ## 只同步最新的 ts-demo 数据
 	@echo "🔄 同步最新 ts-demo 数据..."
-	python scripts/sync_data.py --latest
+	$(CONDA_PYTHON) scripts/sync_data.py --latest
 
 .PHONY: sync-data-preview
 sync-data-preview: ## 预览同步内容（不实际执行）
 	@echo "🔄 预览同步内容..."
-	python scripts/sync_data.py --dry-run
+	$(CONDA_PYTHON) scripts/sync_data.py --dry-run
 
 # ============================================
 # 快捷命令
@@ -1287,7 +1289,7 @@ sample: init-sample analyze ## 初始化并运行示例
 dev: install-dev format lint test ## 开发流程：安装依赖、格式化、检查、测试
 
 .PHONY: quick
-quick: update-market-data-fast estimate-pnl ## 快速查看：更新数据+估算盈亏
+quick: update-market-data-fast pnl ## 快速查看：更新数据+估算盈亏
 
 # ============================================
 # Web Dashboard
@@ -1551,7 +1553,7 @@ fund-holding-bond: ## 分析债券类型基金持仓
 .PHONY: fund-list
 fund-list: ## 列出所有投资的基金
 	@echo "📋 列出所有基金..."
-	@python scripts/fund_holding_analysis.py --list
+	@$(CONDA_PYTHON) scripts/fund_holding_analysis.py --list
 
 .PHONY: fund-detail
 fund-detail: ## 查看单只基金持仓明细（make fund-detail CODE=020220）
@@ -1566,7 +1568,7 @@ ifndef CODE
 	@exit 1
 endif
 	@echo "📊 查看基金持仓明细..."
-	@python scripts/fund_holding_analysis.py --detail $(CODE)
+	@$(CONDA_PYTHON) scripts/fund_holding_analysis.py --detail $(CODE)
 
 # ============================================
 # 数据库优化
