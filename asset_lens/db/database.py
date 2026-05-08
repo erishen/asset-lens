@@ -13,11 +13,11 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from investkit_utils.db.paths import ensure_data_dir, get_asset_lens_db_path
 from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
 
 from .models import DataSyncLog, MLModel, PredictionRecord, StockInfo, StockKline, init_database
-from investkit_utils.db.paths import ensure_data_dir, get_asset_lens_db_path
 
 
 class DatabaseManager:
@@ -25,7 +25,7 @@ class DatabaseManager:
 
     def __init__(self, db_path: str | None = None):
         if db_path is None:
-            data_dir = ensure_data_dir()
+            ensure_data_dir()
             db_path = f"sqlite:///{get_asset_lens_db_path()}"
 
         self.db_url = db_path

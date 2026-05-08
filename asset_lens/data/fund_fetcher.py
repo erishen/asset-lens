@@ -23,30 +23,32 @@ logger = logging.getLogger(__name__)
 @contextmanager
 def timeout_context(seconds: int, message: str = "操作超时"):
     """
-    超时上下文管理器（跨平台，使用 concurrent.futures）
+    超时上下文管理器（跨平台，使用 threading）
 
     Args:
         seconds: 超时秒数
         message: 超时消息
     """
-    from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
+    import threading
 
-    class _TimeoutResult:
-        def __init__(self, msg):
-            self.msg = msg
+    timer_expired = threading.Event()
 
-    def _run_with_timeout():
-        pass
+    def _timeout_handler():
+        timer_expired.set()
 
-    executor = ThreadPoolExecutor(max_workers=1)
+    timer = threading.Timer(seconds, _timeout_handler)
+    timer.daemon = True
     try:
-        future = executor.submit(time.sleep, seconds + 1)
+        timer.start()
         yield
-        future.cancel()
+        if timer_expired.is_set():
+            raise TimeoutError(message)
+    except TimeoutError:
+        raise
     except Exception:
         raise
     finally:
-        executor.shutdown(wait=False)
+        timer.cancel()
 
 
 class FundDataFetcher:

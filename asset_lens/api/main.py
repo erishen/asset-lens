@@ -78,9 +78,9 @@ def _load_api_keys() -> dict[str, dict[str, Any]]:
 
 API_KEYS = _load_api_keys()
 
+import time
 from collections import defaultdict
 from threading import Lock
-import time
 
 _request_counts_lock = Lock()
 _request_counts: dict[str, int] = defaultdict(int)

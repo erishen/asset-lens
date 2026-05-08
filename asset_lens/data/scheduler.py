@@ -31,7 +31,8 @@ def run_with_timeout(func, timeout_seconds: int, task_name: str = "任务") -> A
     Returns:
         函数执行结果或超时错误
     """
-    from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
+    from concurrent.futures import ThreadPoolExecutor
+    from concurrent.futures import TimeoutError as FuturesTimeoutError
 
     try:
         with ThreadPoolExecutor(max_workers=1) as executor:
