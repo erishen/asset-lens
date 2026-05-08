@@ -552,7 +552,6 @@ def auto_sync(days, daily_limit, update_limit, delay, fast):
 
         else:
             today = datetime.now()
-            today_str = today.strftime("%Y-%m-%d")
             weekday = today.weekday()
             is_weekend = weekday >= 5
 

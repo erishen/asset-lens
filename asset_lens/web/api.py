@@ -78,7 +78,8 @@ app.include_router(dashboard_router)
 app.include_router(ml_router)
 app.include_router(chat_router)
 
-from asset_lens.api.main import register_exception_handlers, router as api_v1_router
+from asset_lens.api.main import register_exception_handlers
+from asset_lens.api.main import router as api_v1_router
 
 app.include_router(api_v1_router)
 register_exception_handlers(app)
