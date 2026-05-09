@@ -10,15 +10,15 @@ Futures data fetcher for asset-lens.
 
 import time
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, ClassVar
 
 
 class FuturesFetcher:
     """期货数据获取器"""
 
-    CACHE_DURATION = 60  # 1分钟缓存
+    CACHE_DURATION: ClassVar[int] = 60  # 1分钟缓存
 
-    DOMESTIC_FUTURES = {
+    DOMESTIC_FUTURES: ClassVar[dict[str, dict[str, str]]] = {
         "AU0": {"name": "黄金", "exchange": "SHFE", "unit": "克/人民币"},
         "AG0": {"name": "白银", "exchange": "SHFE", "unit": "千克/人民币"},
         "CU0": {"name": "铜", "exchange": "SHFE", "unit": "吨/人民币"},
@@ -49,7 +49,7 @@ class FuturesFetcher:
         "IM0": {"name": "中证1000", "exchange": "CFFEX", "unit": "点"},
     }
 
-    INTERNATIONAL_FUTURES = {
+    INTERNATIONAL_FUTURES: ClassVar[dict[str, dict[str, str]]] = {
         "XAUUSD": {"name": "黄金", "exchange": "COMEX", "unit": "盎司/美元"},
         "XAGUSD": {"name": "白银", "exchange": "COMEX", "unit": "盎司/美元"},
         "CL": {"name": "原油", "exchange": "NYMEX", "unit": "桶/美元"},
