@@ -9,7 +9,7 @@ import logging
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from ..config import config
 from ..data.models import InvestmentProduct, InvestmentType, RiskLevel
@@ -27,7 +27,7 @@ class CSVParser:
     """CSV 数据解析器"""
 
     # CSV 列名映射
-    COLUMN_MAPPING = {
+    COLUMN_MAPPING: ClassVar[dict[str, str]] = {
         "类型": "investment_type",
         "名称": "name",
         "风险": "risk_level",
