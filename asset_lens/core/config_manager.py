@@ -7,7 +7,7 @@ import json
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ class AlertConfig:
 class ConfigManager:
     """配置管理器"""
 
-    DEFAULT_CONFIG = {
+    DEFAULT_CONFIG: ClassVar[dict[str, Any]] = {
         "version": "1.0.0",
         "environment": "development",
         "data_sources": {
