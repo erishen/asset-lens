@@ -234,9 +234,8 @@ class TestSimpleProgressBar:
         from asset_lens.utils.enhanced_cli import ProgressBarConfig, SimpleProgressBar
 
         config = ProgressBarConfig(description="Test", total=10)
-        with patch("builtins.print"):
-            with SimpleProgressBar(config) as bar:
-                assert bar.current == 0
+        with patch("builtins.print"), SimpleProgressBar(config) as bar:
+            assert bar.current == 0
 
     def test_update(self):
         """测试更新进度"""

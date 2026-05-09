@@ -10,7 +10,6 @@ import json
 from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-from pathlib import Path
 from typing import Any
 
 from investkit_utils.db.paths import ensure_data_dir, get_asset_lens_db_path

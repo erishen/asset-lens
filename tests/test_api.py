@@ -37,6 +37,7 @@ class TestRootEndpoint:
 class TestStockEndpoints:
     """测试股票相关API"""
 
+    @pytest.mark.network
     def test_get_stock_quote(self, client, api_headers):
         """测试获取股票行情"""
         response = client.get("/api/v1/stocks/sh600519", headers=api_headers)
@@ -47,6 +48,7 @@ class TestStockEndpoints:
         response = client.get("/api/v1/stocks/sh600519")
         assert response.status_code in [401, 403, 404]
 
+    @pytest.mark.network
     def test_screen_stocks(self, client, api_headers):
         """测试股票筛选"""
         response = client.post("/api/v1/stocks/screen?strategy=momentum&limit=10", headers=api_headers)
@@ -56,6 +58,7 @@ class TestStockEndpoints:
 class TestFundEndpoints:
     """测试基金相关API"""
 
+    @pytest.mark.network
     def test_get_fund_nav(self, client, api_headers):
         """测试获取基金净值"""
         response = client.get("/api/v1/funds/000001", headers=api_headers)
@@ -127,13 +130,14 @@ class TestRateLimit:
 
         pytest.skip("速率限制测试需要大量请求，跳过以加快测试速度")
 
+    @pytest.mark.network
     def test_rate_limit_headers(self, client):
         """测试速率限制头信息"""
         headers = {"Authorization": "Bearer demo_key"}
         response = client.get("/api/v1/stocks/sh600519", headers=headers)
         assert response.status_code in [200, 404, 429, 500]
         if response.status_code == 200:
-            assert "X-RateLimit-Limit" in response.headers or True
+            assert True
 
 
 class TestErrorHandling:

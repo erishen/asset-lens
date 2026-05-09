@@ -8,7 +8,7 @@ from .portfolio_analyzer import PortfolioAnalyzer
 from .risk_analyzer import RiskAnalyzer
 
 __all__ = [
+    "EvaluationAnalyzer",
     "PortfolioAnalyzer",
     "RiskAnalyzer",
-    "EvaluationAnalyzer",
 ]

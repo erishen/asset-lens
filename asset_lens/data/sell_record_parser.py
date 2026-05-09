@@ -125,7 +125,7 @@ class SellRecordParser:
         except Exception as e:
             from ..core.exceptions import DataLoadError
 
-            raise DataLoadError(f"读取卖出记录 CSV 文件失败: {e}", file_path=str(csv_path))
+            raise DataLoadError(f"读取卖出记录 CSV 文件失败: {e}", file_path=str(csv_path)) from e
 
         return records
 

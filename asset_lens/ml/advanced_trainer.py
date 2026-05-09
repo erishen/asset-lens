@@ -163,10 +163,7 @@ class AdvancedMLTrainer:
             logger.warning("sklearn 未安装，跳过特征选择")
             return X
 
-        if method == "mutual_info":
-            score_func = mutual_info_classif
-        else:
-            score_func = f_classif
+        score_func = mutual_info_classif if method == "mutual_info" else f_classif
 
         self._feature_selector = SelectKBest(score_func=score_func, k=min(k, X.shape[1]))
         X_selected = self._feature_selector.fit_transform(X.fillna(0), y)
@@ -423,10 +420,7 @@ class AdvancedMLTrainer:
             return {}
 
         try:
-            if hasattr(model, "predict_proba"):
-                explainer = shap.TreeExplainer(model)
-            else:
-                explainer = shap.Explainer(model, X)
+            explainer = shap.TreeExplainer(model) if hasattr(model, "predict_proba") else shap.Explainer(model, X)
 
             shap_vals = explainer.shap_values(X)
 

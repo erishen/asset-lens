@@ -95,7 +95,7 @@ async def get_stock_quote(code: str):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取股票行情失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"获取股票行情失败: {e!s}") from e
 
 
 @router.get("/search")
@@ -145,7 +145,7 @@ async def get_stock_kline(
         kline_data = await _get_kline_tencent(code, ktype, count)
         return {"code": code, "ktype": ktype, "count": len(kline_data), "data": kline_data}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取K线数据失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"获取K线数据失败: {e!s}") from e
 
 
 async def _get_kline_tencent(code: str, ktype: str, count: int) -> list[dict]:

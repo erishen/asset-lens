@@ -116,7 +116,7 @@ class EnhancedMarketDataFetcher:
             except ImportError:
                 raise ImportError(
                     "请先安装 AkShare: pip install akshare\nAkShare 是一个开源免费的金融数据接口，无需注册"
-                )
+                ) from None
         return self._akshare
 
     def _init_sources(self):

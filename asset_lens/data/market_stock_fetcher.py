@@ -84,7 +84,7 @@ class MarketStockFetcher:
                     "请先安装 AkShare: pip install akshare\n"
                     "AkShare 是一个开源免费的金融数据接口，无需注册\n"
                     "GitHub: https://github.com/akfamily/akshare"
-                )
+                ) from None
         return self._akshare
 
     def infer_industry(self, name: str, code: str = "") -> str:
@@ -583,9 +583,7 @@ class MarketStockFetcher:
             codes = []
             for stock in stocks:
                 code = stock.get("code", "")
-                if code.startswith("sh"):
-                    codes.append(code)
-                elif code.startswith("sz"):
+                if code.startswith("sh") or code.startswith("sz"):
                     codes.append(code)
 
             all_prices = {}
@@ -961,32 +959,24 @@ class MarketStockFetcher:
                         friday = now - timedelta(days=1)
                         friday_15pm = friday.replace(hour=15, minute=0, second=0, microsecond=0)
                         cache_from_friday = update_time >= friday_15pm - timedelta(hours=2)
-                        if cache_from_friday:
-                            if age_hours < 72:
-                                print(f"📅 周六使用周五缓存数据 (缓存时间: {age_hours:.1f}小时)")
-                                return False
+                        if cache_from_friday and age_hours < 72:
+                            print(f"📅 周六使用周五缓存数据 (缓存时间: {age_hours:.1f}小时)")
+                            return False
                     elif weekday == 6:
                         friday = now - timedelta(days=2)
                         friday_15pm = friday.replace(hour=15, minute=0, second=0, microsecond=0)
                         cache_from_friday = update_time >= friday_15pm - timedelta(hours=2)
-                        if cache_from_friday:
-                            if age_hours < 96:
-                                print(f"📅 周日使用周五缓存数据 (缓存时间: {age_hours:.1f}小时)")
-                                return False
+                        if cache_from_friday and age_hours < 96:
+                            print(f"📅 周日使用周五缓存数据 (缓存时间: {age_hours:.1f}小时)")
+                            return False
 
                 if age_hours > max_age_hours:
-                    if age_hours < 48:
-                        age_str = f"{age_hours:.1f}小时"
-                    else:
-                        age_str = f"{age_hours / 24:.1f}天"
+                    age_str = f"{age_hours:.1f}小时" if age_hours < 48 else f"{age_hours / 24:.1f}天"
                     print(f"⚠️ 缓存已过期: 缓存时间 {age_str}，有效期 {max_age_hours}小时")
                     return True
                 else:
                     remaining = max_age_hours - age_hours
-                    if remaining < 1:
-                        remaining_str = f"{remaining * 60:.0f}分钟"
-                    else:
-                        remaining_str = f"{remaining:.1f}小时"
+                    remaining_str = f"{remaining * 60:.0f}分钟" if remaining < 1 else f"{remaining:.1f}小时"
                     print(f"✅ 缓存有效: 剩余有效期 {remaining_str}")
                     return False
         except Exception as e:

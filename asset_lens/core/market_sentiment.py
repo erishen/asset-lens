@@ -185,7 +185,7 @@ class MarketSentimentAnalyzer:
                 name="指数趋势",
                 value=50,
                 level="neutral",
-                description=f"分析失败: {str(e)}",
+                description=f"分析失败: {e!s}",
             )
 
     def _analyze_sector_heat(self) -> SentimentIndicator:
@@ -219,8 +219,7 @@ class MarketSentimentAnalyzer:
             for pool_file in pool_files:
                 pool = StockPool(pool_file.stem.replace("_pool", ""))
                 for code, position in pool.positions.items():
-                    if position.status in ["watching", "holding"]:
-                        if not code.startswith("sh92") and not code.startswith("bj"):
+                    if position.status in ["watching", "holding"] and not code.startswith("sh92") and not code.startswith("bj"):
                             total_stocks += 1
                             profit_rate = position.return_rate if hasattr(position, "return_rate") else 0
                             if profit_rate > 0:
@@ -263,7 +262,7 @@ class MarketSentimentAnalyzer:
                 name="板块热度",
                 value=50,
                 level="neutral",
-                description=f"分析失败: {str(e)}",
+                description=f"分析失败: {e!s}",
             )
 
     def _analyze_fund_flow(self) -> SentimentIndicator:
@@ -337,7 +336,7 @@ class MarketSentimentAnalyzer:
                 name="资金流向",
                 value=50,
                 level="neutral",
-                description=f"分析失败: {str(e)}",
+                description=f"分析失败: {e!s}",
             )
 
     def _analyze_stock_pool(self) -> SentimentIndicator:
@@ -398,7 +397,7 @@ class MarketSentimentAnalyzer:
                 name="选股效果",
                 value=50,
                 level="neutral",
-                description=f"分析失败: {str(e)}",
+                description=f"分析失败: {e!s}",
             )
 
     def _analyze_volume(self) -> SentimentIndicator:

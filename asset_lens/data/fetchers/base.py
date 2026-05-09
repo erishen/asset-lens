@@ -70,7 +70,7 @@ class BaseFetcher(ABC):
 
     def _handle_error(self, error: Exception, context: str = "") -> FetchResult:
         """错误处理"""
-        error_msg = f"{context}: {str(error)}" if context else str(error)
+        error_msg = f"{context}: {error!s}" if context else str(error)
         logger.error(f"Fetcher error: {error_msg}")
         return FetchResult(
             success=False,

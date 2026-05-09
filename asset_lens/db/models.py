@@ -10,11 +10,11 @@ from investkit_utils.db.models import (
 
 __all__ = [
     "Base",
-    "StockKline",
-    "StockInfo",
+    "DataSyncLog",
     "MLModel",
     "PredictionRecord",
-    "DataSyncLog",
+    "StockInfo",
+    "StockKline",
     "init_database",
 ]
 

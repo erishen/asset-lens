@@ -75,7 +75,7 @@ class Backtester:
     ) -> list[str]:
         """获取交易日列表"""
         all_dates_set = set()
-        for _, data_list in historical_data.items():
+        for data_list in historical_data.values():
             for data in data_list:
                 all_dates_set.add(data.get("date", ""))
 

@@ -32,7 +32,7 @@ class TestDCAParserParseInvestmentType:
 
     def test_fixed_amount_with_spaces(self):
         """Test parsing fixed amount with spaces"""
-        invest_type, base, max_amt = DCAParser.parse_investment_type("  200  ")
+        invest_type, base, _max_amt = DCAParser.parse_investment_type("  200  ")
         assert invest_type == DCAInvestmentType.FIXED
         assert base == Decimal("200")
 
@@ -80,7 +80,7 @@ class TestDCAParserParseInvestmentType:
 
     def test_invalid_range(self):
         """Test parsing invalid range"""
-        invest_type, base, max_amt = DCAParser.parse_investment_type("abc~def")
+        invest_type, base, _max_amt = DCAParser.parse_investment_type("abc~def")
         # Should fall back to fixed (which will fail and return 0)
         assert invest_type == DCAInvestmentType.FIXED
         assert base == Decimal("0")

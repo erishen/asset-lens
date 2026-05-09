@@ -470,24 +470,23 @@ class RiskManager:
             new_warnings.append(warning)
 
         for pos in pool.positions.values():
-            if pos.status == "holding" and pos.buy_price > 0:
-                if pos.current_price > 0:
-                    profit_rate = (pos.current_price - pos.buy_price) / pos.buy_price
+            if pos.status == "holding" and pos.buy_price > 0 and pos.current_price > 0:
+                profit_rate = (pos.current_price - pos.buy_price) / pos.buy_price
 
-                    if profit_rate <= self.config.stop_loss_default:
-                        warning = RiskWarning(
-                            warning_type="stop_loss",
-                            level="critical",
-                            message=f"{pos.name} 触及止损线 ({profit_rate:.2%})",
-                            code=pos.code,
-                            timestamp=now,
-                            details={
-                                "buy_price": pos.buy_price,
-                                "current_price": pos.current_price,
-                                "profit_rate": profit_rate,
-                            },
-                        )
-                        new_warnings.append(warning)
+                if profit_rate <= self.config.stop_loss_default:
+                    warning = RiskWarning(
+                        warning_type="stop_loss",
+                        level="critical",
+                        message=f"{pos.name} 触及止损线 ({profit_rate:.2%})",
+                        code=pos.code,
+                        timestamp=now,
+                        details={
+                            "buy_price": pos.buy_price,
+                            "current_price": pos.current_price,
+                            "profit_rate": profit_rate,
+                        },
+                    )
+                    new_warnings.append(warning)
 
         self.warnings.extend(new_warnings)
         self._save_warnings()

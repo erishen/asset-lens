@@ -210,9 +210,7 @@ class StockTracker:
         """
         count = 0
         for stock in stocks_data:
-            if stock.get("code") in self.stock_pool.positions:
-                # record_daily 会检查重复，只有新增时才返回 True
-                if self.record_daily(stock):
+            if stock.get("code") in self.stock_pool.positions and self.record_daily(stock):
                     count += 1
 
         self._save_tracker()
@@ -393,9 +391,8 @@ class StockTracker:
             return None
 
         changes = [r.change_percent for r in records[:3]]
-        if all(c > 0 for c in changes):
-            if changes[0] > changes[1] > changes[2]:
-                return changes[0] - changes[2]
+        if all(c > 0 for c in changes) and changes[0] > changes[1] > changes[2]:
+            return changes[0] - changes[2]
         return None
 
     def _check_new_high(self, records: list[DailyRecord]) -> float | None:

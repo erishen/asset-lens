@@ -3,6 +3,7 @@ CSV data parser for asset-lens.
 CSV 数据读取和解析模块
 """
 
+import contextlib
 import csv
 import logging
 from datetime import date, datetime
@@ -19,7 +20,7 @@ from .parsers.investment_calculator import days360
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["CSVParser", "days360", "ExchangeRateCache", "exchange_rate_cache"]
+__all__ = ["CSVParser", "ExchangeRateCache", "days360", "exchange_rate_cache"]
 
 
 class CSVParser:
@@ -344,10 +345,8 @@ class CSVParser:
             # 解析默认顺序
             default_order = None
             if row.get("默认顺序", "").strip():
-                try:
+                with contextlib.suppress(ValueError):
                     default_order = int(row.get("默认顺序", "").strip())
-                except ValueError:
-                    pass
 
             # 解析汇率
             usd_rate = cls.parse_decimal(row.get("美元汇率", ""))
@@ -760,7 +759,7 @@ class CSVParser:
                 # 使用 csv.DictReader 读取
                 reader = csv.DictReader(f)
 
-                for row_num, row in enumerate(reader, start=2):  # 从第2行开始计数
+                for _row_num, row in enumerate(reader, start=2):  # 从第2行开始计数
                     product = cls.parse_row(row, reference_date)
                     if product:
                         products.append(product)
@@ -769,7 +768,7 @@ class CSVParser:
         except Exception as e:
             from ..core.exceptions import DataLoadError
 
-            raise DataLoadError(f"读取 CSV 文件失败: {e}", file_path=str(csv_path))
+            raise DataLoadError(f"读取 CSV 文件失败: {e}", file_path=str(csv_path)) from e
 
         return products
 
@@ -920,7 +919,7 @@ class CSVParser:
             raise FileNotFoundError(f"数据目录不存在: {data_dir}")
 
         # 获取汇率
-        usd_rate, hkd_rate = cls.get_exchange_rates(data_dir)
+        _usd_rate, _hkd_rate = cls.get_exchange_rates(data_dir)
 
         # 查找 CSV 文件
         patterns = [

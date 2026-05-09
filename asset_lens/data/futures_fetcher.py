@@ -73,7 +73,7 @@ class FuturesFetcher:
 
                 self._akshare = ak
             except ImportError:
-                raise ImportError("请先安装 AkShare: pip install akshare")
+                raise ImportError("请先安装 AkShare: pip install akshare") from None
         return self._akshare
 
     def _is_cache_valid(self, cache_key: str) -> bool:

@@ -204,7 +204,7 @@ class SoldInvestmentAnalyzer:
             risk_stats[risk_key]["total_profit"] += detail.profit_amount
 
         # 计算平均收益率
-        for risk_key, stats in risk_stats.items():
+        for stats in risk_stats.values():
             stats["return_rate"] = calculate_return_rate(stats)
 
         # 按总初始投资排序

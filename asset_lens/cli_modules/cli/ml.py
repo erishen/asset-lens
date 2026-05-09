@@ -964,10 +964,7 @@ def sector():
     strong_table.add_column("建议", style="green")
 
     for pred in ml_predictions[:5]:
-        if pred.predicted_direction == 1:
-            direction = "[red]↑ 上涨[/red]"
-        else:
-            direction = "[green]↓ 下跌[/green]"
+        direction = "[red]↑ 上涨[/red]" if pred.predicted_direction == 1 else "[green]↓ 下跌[/green]"
 
         strong_table.add_row(
             pred.sector_name,
@@ -988,10 +985,7 @@ def sector():
     weak_table.add_column("建议", style="red")
 
     for pred in ml_predictions[-5:]:
-        if pred.predicted_direction == 1:
-            direction = "[red]↑ 上涨[/red]"
-        else:
-            direction = "[green]↓ 下跌[/green]"
+        direction = "[red]↑ 上涨[/red]" if pred.predicted_direction == 1 else "[green]↓ 下跌[/green]"
 
         weak_table.add_row(
             pred.sector_name,

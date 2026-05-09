@@ -367,9 +367,9 @@ stock_pool_builder = StockPoolBuilder()
 
 
 __all__ = [
+    "EntryReason",
     "FactorCategory",
     "FilterCondition",
-    "EntryReason",
     "StockEntryMatrix",
     "StockPoolBuilder",
     "stock_pool_builder",

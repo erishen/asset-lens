@@ -3,6 +3,7 @@ Data models for asset-lens.
 数据模型定义，包括投资产品、交易记录、投资组合等
 """
 
+import contextlib
 from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal, InvalidOperation
@@ -218,10 +219,8 @@ class InvestmentProduct:
                     for i, part in enumerate(parts):
                         if part == "买入" and i + 1 < len(parts):
                             amount_str = parts[i + 1].replace("¥", "").replace(",", "")
-                            try:
+                            with contextlib.suppress(ValueError, InvalidOperation):
                                 total += Decimal(amount_str)
-                            except (ValueError, InvalidOperation):
-                                pass
             return str(total) if total > 0 else None
         except (ValueError, InvalidOperation, AttributeError):
             return None
@@ -238,10 +237,8 @@ class InvestmentProduct:
                     for i, part in enumerate(parts):
                         if part == "卖出" and i + 1 < len(parts):
                             amount_str = parts[i + 1].replace("¥", "").replace(",", "")
-                            try:
+                            with contextlib.suppress(ValueError, InvalidOperation):
                                 total += Decimal(amount_str)
-                            except (ValueError, InvalidOperation):
-                                pass
             return str(total) if total > 0 else None
         except (ValueError, InvalidOperation, AttributeError):
             return None

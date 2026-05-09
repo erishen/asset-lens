@@ -167,10 +167,7 @@ class Config:
     def _resolve_path(self, path_str: str) -> Path:
         """解析路径，支持相对路径和绝对路径，自动选择最新数据目录"""
         path = Path(path_str)
-        if path.is_absolute():
-            resolved = path
-        else:
-            resolved = self.project_root / path
+        resolved = path if path.is_absolute() else self.project_root / path
 
         if resolved.exists() and resolved.is_dir():
             money_dirs = sorted(
@@ -350,9 +347,8 @@ class Config:
         if self.real_data_path and (
             self.real_data_path.name.startswith("money_csv_") or
             self.real_data_path.name.startswith("money_")
-        ):
-            if self.real_data_path.exists():
-                return self.real_data_path
+        ) and self.real_data_path.exists():
+            return self.real_data_path
 
         # 其次尝试在 real_data_path 中查找 money_csv_* 目录
         if self.real_data_path and self.real_data_path.exists() and self.real_data_path.is_dir():

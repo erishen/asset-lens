@@ -1092,7 +1092,7 @@ def _auto_screen_and_add_to_pool(pool, strategy_name: str, max_stocks: int = 50)
             score = stock.get("strategy_score", stock.get("score", 0))
 
             if code:
-                success, msg = pool.add_stock(
+                success, _msg = pool.add_stock(
                     code=code,
                     name=name,
                     price=stock.get("current_price", 0),
@@ -1146,10 +1146,11 @@ def _check_market_environment() -> tuple:
 
 def _generate_buy_reason(evaluation: dict) -> str:
     """生成买入理由"""
-    reasons = []
-    for detail in evaluation.get("details", []):
-        if detail.get("matched"):
-            reasons.append(f"{detail.get('condition', '')}")
+    reasons = [
+        f"{detail.get('condition', '')}"
+        for detail in evaluation.get("details", [])
+        if detail.get("matched")
+    ]
     return ", ".join(reasons) if reasons else "策略匹配"
 
 

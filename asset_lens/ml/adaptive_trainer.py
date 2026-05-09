@@ -327,8 +327,7 @@ class AdaptiveMLTrainer:
                 market_cap = stock.get("market_cap", 0)
                 turnover = stock.get("turnover_rate", 0)
 
-                if config["min_market_cap"] <= market_cap <= config["max_market_cap"]:
-                    if config["min_turnover"] <= turnover <= config["max_turnover"]:
+                if config["min_market_cap"] <= market_cap <= config["max_market_cap"] and config["min_turnover"] <= turnover <= config["max_turnover"]:
                         selected.append(code)
 
             return selected[:200]

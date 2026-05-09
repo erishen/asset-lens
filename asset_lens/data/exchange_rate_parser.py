@@ -59,6 +59,6 @@ class ExchangeRateParser:
                         print(f"警告: 第 {row_num} 行汇率历史数据解析失败")
 
         except Exception as e:
-            raise Exception(f"读取汇率历史 CSV 文件失败: {e}")
+            raise Exception(f"读取汇率历史 CSV 文件失败: {e}") from e
 
         return rates

@@ -266,10 +266,7 @@ class TestPortfolioMetrics:
         risk_free_rate = 0.02
         volatility = 0.15
 
-        if volatility > 0:
-            sharpe = (returns - risk_free_rate) / volatility
-        else:
-            sharpe = 0
+        sharpe = (returns - risk_free_rate) / volatility if volatility > 0 else 0
 
         assert isinstance(sharpe, float)
 
@@ -296,10 +293,7 @@ class TestPortfolioMetrics:
 
         returns = [0.01, 0.02, -0.01, 0.03, -0.02]
 
-        if len(returns) > 1:
-            vol = statistics.stdev(returns)
-        else:
-            vol = 0
+        vol = statistics.stdev(returns) if len(returns) > 1 else 0
 
         assert isinstance(vol, float)
         assert vol >= 0

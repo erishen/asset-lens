@@ -66,9 +66,7 @@ class DateParser:
     @classmethod
     def format_date(cls, dt: datetime | date, fmt: str = "%Y-%m-%d") -> str:
         """格式化日期"""
-        if isinstance(dt, datetime):
-            return dt.strftime(fmt)
-        elif isinstance(dt, date):
+        if isinstance(dt, (datetime, date)):
             return dt.strftime(fmt)
         return str(dt)
 

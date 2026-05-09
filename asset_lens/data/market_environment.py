@@ -259,13 +259,11 @@ class MarketEnvironmentAnalyzer:
             recommendations.append("value")
             recommendations.append("dividend")
 
-        if volatility > 3:
-            if "reversal" not in recommendations:
-                recommendations.append("reversal")
+        if volatility > 3 and "reversal" not in recommendations:
+            recommendations.append("reversal")
 
-        if sentiment == "pessimistic":
-            if "dividend" not in recommendations:
-                recommendations.insert(0, "dividend")
+        if sentiment == "pessimistic" and "dividend" not in recommendations:
+            recommendations.insert(0, "dividend")
 
         return recommendations[:3]
 

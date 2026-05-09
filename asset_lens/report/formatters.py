@@ -80,9 +80,7 @@ def format_date(
     Returns:
         格式化后的日期字符串
     """
-    if isinstance(value, datetime):
-        return value.strftime(fmt)
-    elif isinstance(value, date):
+    if isinstance(value, (datetime, date)):
         return value.strftime(fmt)
     elif isinstance(value, str):
         return value

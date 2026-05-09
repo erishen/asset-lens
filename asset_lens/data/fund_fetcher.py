@@ -80,7 +80,7 @@ class FundDataFetcher:
                     "请先安装 AkShare: pip install akshare\n"
                     "AkShare 是一个开源免费的金融数据接口，无需注册\n"
                     "GitHub: https://github.com/akfamily/akshare"
-                )
+                ) from None
         return self._akshare
 
     def _load_fund_codes_config(self) -> dict[str, str]:

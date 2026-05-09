@@ -256,7 +256,7 @@ __all__ = [
     "Gauge",
     "Histogram",
     "MetricsRegistry",
+    "async_timer",
     "metrics_registry",
     "timer",
-    "async_timer",
 ]

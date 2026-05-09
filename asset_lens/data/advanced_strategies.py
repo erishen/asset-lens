@@ -155,20 +155,17 @@ class AdvancedStrategies:
         scores = []
         reasons = []
 
-        if pe_ratio is not None and pe_ratio > 0:
-            if pe_ratio < max_pe:
-                scores.append(1 - pe_ratio / max_pe)
-                reasons.append(f"PE={pe_ratio:.1f} < {max_pe}")
+        if pe_ratio is not None and pe_ratio > 0 and pe_ratio < max_pe:
+            scores.append(1 - pe_ratio / max_pe)
+            reasons.append(f"PE={pe_ratio:.1f} < {max_pe}")
 
-        if pb_ratio is not None and pb_ratio > 0:
-            if pb_ratio < max_pb:
-                scores.append(1 - pb_ratio / max_pb)
-                reasons.append(f"PB={pb_ratio:.1f} < {max_pb}")
+        if pb_ratio is not None and pb_ratio > 0 and pb_ratio < max_pb:
+            scores.append(1 - pb_ratio / max_pb)
+            reasons.append(f"PB={pb_ratio:.1f} < {max_pb}")
 
-        if dividend_yield is not None:
-            if dividend_yield > min_dividend:
-                scores.append(dividend_yield / min_dividend - 1)
-                reasons.append(f"股息率={dividend_yield * 100:.1f}% > {min_dividend * 100:.0f}%")
+        if dividend_yield is not None and dividend_yield > min_dividend:
+            scores.append(dividend_yield / min_dividend - 1)
+            reasons.append(f"股息率={dividend_yield * 100:.1f}% > {min_dividend * 100:.0f}%")
 
         passed = len(scores) >= 2
         score = sum(scores) / len(scores) if scores else 0
@@ -196,15 +193,13 @@ class AdvancedStrategies:
         scores = []
         reasons = []
 
-        if revenue_growth is not None:
-            if revenue_growth > min_revenue_growth:
-                scores.append(revenue_growth / min_revenue_growth)
-                reasons.append(f"营收增长={revenue_growth * 100:.1f}%")
+        if revenue_growth is not None and revenue_growth > min_revenue_growth:
+            scores.append(revenue_growth / min_revenue_growth)
+            reasons.append(f"营收增长={revenue_growth * 100:.1f}%")
 
-        if profit_growth is not None:
-            if profit_growth > min_profit_growth:
-                scores.append(profit_growth / min_profit_growth)
-                reasons.append(f"利润增长={profit_growth * 100:.1f}%")
+        if profit_growth is not None and profit_growth > min_profit_growth:
+            scores.append(profit_growth / min_profit_growth)
+            reasons.append(f"利润增长={profit_growth * 100:.1f}%")
 
         passed = len(scores) >= 1
         score = sum(scores) / len(scores) if scores else 0
@@ -235,20 +230,17 @@ class AdvancedStrategies:
         scores = []
         reasons = []
 
-        if roe is not None and roe > 0:
-            if roe > min_roe:
-                scores.append(roe / min_roe)
-                reasons.append(f"ROE={roe * 100:.1f}%")
+        if roe is not None and roe > 0 and roe > min_roe:
+            scores.append(roe / min_roe)
+            reasons.append(f"ROE={roe * 100:.1f}%")
 
-        if debt_ratio is not None:
-            if debt_ratio < max_debt:
-                scores.append(1 - debt_ratio / max_debt)
-                reasons.append(f"负债率={debt_ratio * 100:.1f}%")
+        if debt_ratio is not None and debt_ratio < max_debt:
+            scores.append(1 - debt_ratio / max_debt)
+            reasons.append(f"负债率={debt_ratio * 100:.1f}%")
 
-        if current_ratio is not None:
-            if current_ratio > min_current:
-                scores.append(current_ratio / min_current)
-                reasons.append(f"流动比率={current_ratio:.1f}")
+        if current_ratio is not None and current_ratio > min_current:
+            scores.append(current_ratio / min_current)
+            reasons.append(f"流动比率={current_ratio:.1f}")
 
         passed = len(scores) >= 2
         score = sum(scores) / len(scores) if scores else 0
@@ -284,15 +276,13 @@ class AdvancedStrategies:
                 scores.append((rsi - 70) / 30)
                 reasons.append(f"RSI={rsi:.1f} 超买")
 
-        if macd_signal is not None:
-            if macd_signal == "golden_cross":
-                scores.append(1.0)
-                reasons.append("MACD 金叉")
+        if macd_signal is not None and macd_signal == "golden_cross":
+            scores.append(1.0)
+            reasons.append("MACD 金叉")
 
-        if boll_position is not None:
-            if boll_position == "lower":
-                scores.append(1.0)
-                reasons.append("触及布林下轨")
+        if boll_position is not None and boll_position == "lower":
+            scores.append(1.0)
+            reasons.append("触及布林下轨")
 
         passed = len(scores) >= 1
         score = sum(scores) / len(scores) if scores else 0

@@ -55,7 +55,7 @@ class CryptoFetcher:
                     "CCXT 是一个统一的加密货币交易 API 库\n"
                     "支持 100+ 交易所: Binance, OKX, Coinbase, Kraken 等\n"
                     "GitHub: https://github.com/ccxt/ccxt"
-                )
+                ) from None
         return self._exchange
 
     def _is_cache_valid(self, cache_key: str) -> bool:

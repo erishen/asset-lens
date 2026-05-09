@@ -82,11 +82,7 @@ def is_holiday(d: date) -> bool:
 
     date_str = _format_date(d)
 
-    for holiday in config.holidays:
-        if holiday["start"] <= date_str <= holiday["end"]:
-            return True
-
-    return False
+    return any(holiday["start"] <= date_str <= holiday["end"] for holiday in config.holidays)
 
 
 def _is_fixed_holiday(d: date) -> bool:
@@ -95,9 +91,7 @@ def _is_fixed_holiday(d: date) -> bool:
         return True
     if month == 5 and day in (1, 2, 3, 4, 5):
         return True
-    if month == 10 and day in (1, 2, 3, 4, 5, 6, 7, 8):
-        return True
-    return False
+    return bool(month == 10 and day in (1, 2, 3, 4, 5, 6, 7, 8))
 
 
 def is_working_day(d: date) -> bool:
@@ -112,10 +106,7 @@ def is_working_day(d: date) -> bool:
     if weekday >= 5:
         return False
 
-    if is_holiday(d):
-        return False
-
-    return True
+    return not is_holiday(d)
 
 
 def get_last_working_day(d: date) -> date:
@@ -158,10 +149,7 @@ def is_fund_trading_day(d: date) -> bool:
     if is_holiday(d):
         return False
 
-    if is_post_holiday_trading_suspension(d):
-        return False
-
-    return True
+    return not is_post_holiday_trading_suspension(d)
 
 
 def calculate_working_days(

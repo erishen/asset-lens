@@ -268,8 +268,7 @@ class AIStockAdvisor:
 
                 else:
                     avoid_score += 20
-                    for issue in validation.get("issues", []):
-                        reasons.append(issue)
+                    reasons.extend(validation.get("issues", []))
 
             except Exception as e:
                 avoid_score += 10
@@ -283,10 +282,9 @@ class AIStockAdvisor:
                 if "momentum" in strategy_lower or "动量" in strategy_lower:
                     use_score += 20
                     reasons.append("适合牛市环境")
-            elif market_type == "熊市":
-                if "value" in strategy_lower or "价值" in strategy_lower:
-                    use_score += 20
-                    reasons.append("适合熊市环境")
+            elif market_type == "熊市" and ("value" in strategy_lower or "价值" in strategy_lower):
+                use_score += 20
+                reasons.append("适合熊市环境")
 
         if strategy.stop_loss and strategy.stop_loss < -0.15:
             avoid_score += 10

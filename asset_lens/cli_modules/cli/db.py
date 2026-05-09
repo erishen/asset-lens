@@ -125,10 +125,7 @@ def migrate(cache_file):
 
     migration = DataMigration()
 
-    if cache_file:
-        result = migration.migrate_history_cache(Path(cache_file))
-    else:
-        result = migration.migrate_history_cache()
+    result = migration.migrate_history_cache(Path(cache_file)) if cache_file else migration.migrate_history_cache()
 
     if result.get("status") == "success":
         console.print("[green]迁移成功![/green]")

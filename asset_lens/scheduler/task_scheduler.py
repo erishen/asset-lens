@@ -243,9 +243,7 @@ class TaskScheduler:
         elif config.schedule_type == ScheduleType.DAILY:
             hour, minute = config.schedule_value
             scheduled_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
-            if scheduled_time > last_run and now >= scheduled_time:
-                return True
-            return False
+            return bool(scheduled_time > last_run and now >= scheduled_time)
 
         elif config.schedule_type == ScheduleType.WEEKLY:
             weekday, hour, minute = config.schedule_value

@@ -111,7 +111,9 @@ async def export_report():
             content=html_content,
             media_type="text/html; charset=utf-8",
             headers={
-                "Content-Disposition": f"attachment; filename=investment_report_{datetime.now().strftime('%Y%m%d')}.html"
+                "Content-Disposition": (
+                    f"attachment; filename=investment_report_{datetime.now().strftime('%Y%m%d')}.html"
+                )
             },
         )
 

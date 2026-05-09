@@ -102,7 +102,7 @@ class HTMLReportGenerator:
             warnings = analysis_result.get("warnings", [])
 
             suggestions_html = ""
-            for i, suggestion in enumerate(suggestions, 1):
+            for _i, suggestion in enumerate(suggestions, 1):
                 suggestions_html += f"<li>{suggestion}</li>\n"
 
             warnings_html = ""

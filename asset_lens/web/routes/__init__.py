@@ -17,17 +17,17 @@ from .strategy import router as strategy_router
 from .system import router as system_router
 
 __all__ = [
-    "stock_router",
-    "portfolio_router",
-    "strategy_router",
-    "market_router",
-    "compare_router",
-    "risk_router",
-    "system_router",
     "backup_router",
-    "recommendation_router",
-    "stock_pool_router",
-    "report_router",
-    "ml_router",
     "chat_router",
+    "compare_router",
+    "market_router",
+    "ml_router",
+    "portfolio_router",
+    "recommendation_router",
+    "report_router",
+    "risk_router",
+    "stock_pool_router",
+    "stock_router",
+    "strategy_router",
+    "system_router",
 ]

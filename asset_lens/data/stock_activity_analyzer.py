@@ -236,10 +236,7 @@ class StockActivityAnalyzer:
 
         change_score = min(abs(avg_change) * 3, 20)
 
-        if total > 0:
-            direction_score = abs(up_count - down_count) / total * 30
-        else:
-            direction_score = 0
+        direction_score = abs(up_count - down_count) / total * 30 if total > 0 else 0
 
         participation_score = min((up_count + down_count) / total * 20 if total > 0 else 0, 20)
 
