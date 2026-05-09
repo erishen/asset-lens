@@ -5,6 +5,7 @@ Configuration validator for asset-lens.
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import ClassVar
 
 
 @dataclass
@@ -22,9 +23,9 @@ class ValidationResult:
 class ConfigValidator:
     """配置验证器"""
 
-    REQUIRED_ENV_VARS: list[str] = []
-    OPTIONAL_ENV_VARS: list[str] = []
-    DEFAULT_VALUES: dict[str, str] = {
+    REQUIRED_ENV_VARS: ClassVar[list[str]] = []
+    OPTIONAL_ENV_VARS: ClassVar[list[str]] = []
+    DEFAULT_VALUES: ClassVar[dict[str, str]] = {
         "data_mode": "sample",
         "output_path": "output",
         "default_usd_rate": "7.25",
