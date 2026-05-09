@@ -10,13 +10,13 @@ Cryptocurrency data fetcher for asset-lens.
 
 import time
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar
 
 
 class CryptoFetcher:
     """加密货币数据获取器 - 使用 CCXT 库"""
 
-    SUPPORTED_EXCHANGES = [
+    SUPPORTED_EXCHANGES: ClassVar[list[str]] = [
         "binance",
         "okx",
         "coinbase",
@@ -26,7 +26,7 @@ class CryptoFetcher:
         "bybit",
     ]
 
-    DEFAULT_EXCHANGE = "binance"
+    DEFAULT_EXCHANGE: ClassVar[str] = "binance"
 
     CACHE_DURATION = 300  # 5分钟缓存
 
