@@ -5,7 +5,7 @@ Platform configuration loader.
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import ClassVar, Optional
 
 
 @dataclass
@@ -31,8 +31,8 @@ class PlatformLoader:
     """Load and manage platform configurations"""
 
     _instance: Optional["PlatformLoader"] = None
-    _platforms: dict[str, PlatformConfig] = {}
-    _platform_types: dict[str, str] = {}
+    _platforms: ClassVar[dict[str, PlatformConfig]] = {}
+    _platform_types: ClassVar[dict[str, str]] = {}
     _loaded: bool = False
 
     def __new__(cls):
