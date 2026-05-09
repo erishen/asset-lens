@@ -15,7 +15,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, ClassVar
+from typing import Any
 
 from ..config import config
 from ..utils.http_client import HTTPClient
