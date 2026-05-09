@@ -11,7 +11,7 @@ Macro economic data fetcher for asset-lens.
 
 import time
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar
 
 from ..config import config
 
@@ -19,12 +19,12 @@ from ..config import config
 class MacroEconomicFetcher:
     """宏观经济数据获取器"""
 
-    CACHE_DURATION = 3600  # 1小时缓存
+    CACHE_DURATION: ClassVar[int] = 3600  # 1小时缓存
 
-    FRED_BASE_URL = "https://api.stlouisfed.org/fred"
-    WORLD_BANK_BASE_URL = "https://api.worldbank.org/v2"
+    FRED_BASE_URL: ClassVar[str] = "https://api.stlouisfed.org/fred"
+    WORLD_BANK_BASE_URL: ClassVar[str] = "https://api.worldbank.org/v2"
 
-    INDICATORS = {
+    INDICATORS: ClassVar[dict[str, dict[str, str]]] = {
         "us_gdp": {
             "name": "美国GDP",
             "fred_id": "GDP",

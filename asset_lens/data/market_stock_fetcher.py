@@ -13,7 +13,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from ..config import config
 
@@ -39,7 +39,7 @@ def _disable_proxy() -> Generator[None, None, None]:
 class MarketStockFetcher:
     """市场股票列表获取器 - 使用 AkShare 开源库"""
 
-    INDUSTRY_KEYWORDS: dict[str, list[str]] = {
+    INDUSTRY_KEYWORDS: ClassVar[dict[str, list[str]]] = {
         "新能源": ["新能源", "锂电", "光伏", "风电", "储能", "宁德", "比亚迪", "亿纬", "隆基", "通威", "天齐", "赣锋"],
         "半导体": ["半导体", "芯片", "集成电路", "中芯", "华虹", "北方华创", "韦尔", "兆易", "紫光", "长电", "通富"],
         "医药": ["医药", "生物", "医疗", "制药", "药明", "恒瑞", "片仔癀", "云南白药", "长春高新", "智飞", "沃森"],
