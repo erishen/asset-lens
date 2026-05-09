@@ -269,10 +269,7 @@ def register_data_commands(cli: click.Group) -> None:
 
         from asset_lens.data.providers import provider_registry
 
-        if provider_name:
-            health_data = provider_registry.get_health(provider_name)
-        else:
-            health_data = provider_registry.get_health()
+        health_data = provider_registry.get_health(provider_name) if provider_name else provider_registry.get_health()
 
         if not health_data:
             click.echo("\n⚠️ 没有注册的数据源")

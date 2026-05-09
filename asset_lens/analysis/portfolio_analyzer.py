@@ -334,14 +334,14 @@ class PortfolioAnalyzer:
 
         if technical_data:
             ma_trend = technical_data.get("ma_trend", "neutral")
-            if ma_trend == "strong_up":
-                return TrendDirection.STRONG_UP
-            elif ma_trend == "up":
-                return TrendDirection.UP
-            elif ma_trend == "down":
-                return TrendDirection.DOWN
-            elif ma_trend == "strong_down":
-                return TrendDirection.STRONG_DOWN
+            trend_map = {
+                "strong_up": TrendDirection.STRONG_UP,
+                "up": TrendDirection.UP,
+                "down": TrendDirection.DOWN,
+                "strong_down": TrendDirection.STRONG_DOWN,
+            }
+            if ma_trend in trend_map:
+                return trend_map[ma_trend]
 
         if change > 20:
             return TrendDirection.STRONG_UP

@@ -467,8 +467,7 @@ class PortfolioRebalancer:
 
         if health.issues:
             lines.append("⚠️ 问题:")
-            for issue in health.issues:
-                lines.append(f"  - {issue}")
+            lines.extend(f"  - {issue}" for issue in health.issues)
             lines.append("")
 
         if report.rebalance_suggestions:

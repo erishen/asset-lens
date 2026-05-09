@@ -268,10 +268,7 @@ class ProviderCache:
 
         key = self._get_cache_key(data_type, provider_name, symbol, **kwargs)
 
-        if cache_config.backend == "memory":
-            entry = self._memory_cache.get(key)
-        else:
-            entry = self._file_cache.get(key)
+        entry = self._memory_cache.get(key) if cache_config.backend == "memory" else self._file_cache.get(key)
 
         return entry.value if entry else None
 
@@ -351,12 +348,12 @@ provider_cache = ProviderCache()
 
 
 __all__ = [
-    "CacheLevel",
+    "DEFAULT_CACHE_CONFIG",
     "CacheConfig",
     "CacheEntry",
-    "MemoryCache",
+    "CacheLevel",
     "FileCache",
+    "MemoryCache",
     "ProviderCache",
     "provider_cache",
-    "DEFAULT_CACHE_CONFIG",
 ]

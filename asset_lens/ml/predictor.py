@@ -196,38 +196,36 @@ class StockPredictor:
         """创建集成模型"""
         models = {}
 
-        if HAS_LIGHTGBM:
-            if task == "classification":
-                models["lightgbm"] = lgb.LGBMClassifier(
-                    n_estimators=300,
-                    max_depth=8,
-                    learning_rate=0.03,
-                    num_leaves=127,
-                    min_child_samples=5,
-                    subsample=0.8,
-                    colsample_bytree=0.8,
-                    reg_alpha=0.05,
-                    reg_lambda=0.05,
-                    min_split_gain=0.01,
-                    random_state=42,
-                    verbose=-1,
-                )
+        if HAS_LIGHTGBM and task == "classification":
+            models["lightgbm"] = lgb.LGBMClassifier(
+                n_estimators=300,
+                max_depth=8,
+                learning_rate=0.03,
+                num_leaves=127,
+                min_child_samples=5,
+                subsample=0.8,
+                colsample_bytree=0.8,
+                reg_alpha=0.05,
+                reg_lambda=0.05,
+                min_split_gain=0.01,
+                random_state=42,
+                verbose=-1,
+            )
 
-        if HAS_XGBOOST:
-            if task == "classification":
-                models["xgboost"] = xgb.XGBClassifier(
-                    n_estimators=300,
-                    max_depth=8,
-                    learning_rate=0.03,
-                    subsample=0.8,
-                    colsample_bytree=0.8,
-                    reg_alpha=0.05,
-                    reg_lambda=0.05,
-                    min_child_weight=3,
-                    gamma=0.01,
-                    random_state=42,
-                    eval_metric="logloss",
-                )
+        if HAS_XGBOOST and task == "classification":
+            models["xgboost"] = xgb.XGBClassifier(
+                n_estimators=300,
+                max_depth=8,
+                learning_rate=0.03,
+                subsample=0.8,
+                colsample_bytree=0.8,
+                reg_alpha=0.05,
+                reg_lambda=0.05,
+                min_child_weight=3,
+                gamma=0.01,
+                random_state=42,
+                eval_metric="logloss",
+            )
 
         return models
 
@@ -410,9 +408,7 @@ class StockPredictor:
             for name, model in self.model.items():
                 proba = model.predict_proba(X)
                 probas.append(proba)
-                if name == "lightgbm":
-                    weights_list.append(0.5)
-                elif name == "xgboost":
+                if name == "lightgbm" or name == "xgboost":
                     weights_list.append(0.5)
             weights_arr = np.array(weights_list) / sum(weights_list)
             weighted_proba = np.zeros_like(probas[0])
@@ -587,7 +583,7 @@ class StockPredictor:
 
         if self.model_type == "ensemble" and isinstance(self.model, dict):
             importances = []
-            for name, model in self.model.items():
+            for model in self.model.values():
                 if hasattr(model, "feature_importances_"):
                     importances.append(model.feature_importances_)
                 elif hasattr(model, "get_score"):
@@ -603,16 +599,10 @@ class StockPredictor:
         elif hasattr(self.model, "estimators_") and self.model_type == "stacking":
             importances = []
             for estimator_item in self.model.estimators_:
-                if hasattr(estimator_item, "estimator"):
-                    estimator = estimator_item.estimator
-                else:
-                    estimator = estimator_item
+                estimator = estimator_item.estimator if hasattr(estimator_item, "estimator") else estimator_item
                 if hasattr(estimator, "feature_importances_"):
                     importances.append(estimator.feature_importances_)
-            if importances:
-                importance = np.mean(importances, axis=0)
-            else:
-                importance = np.zeros(len(self.feature_names))
+            importance = np.mean(importances, axis=0) if importances else np.zeros(len(self.feature_names))
         else:
             importance = np.zeros(len(self.feature_names))
 

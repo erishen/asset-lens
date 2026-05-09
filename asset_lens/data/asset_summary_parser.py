@@ -90,6 +90,6 @@ class AssetSummaryParser:
                         print(f"警告: 第 {row_num} 行资产汇总数据解析失败")
 
         except Exception as e:
-            raise Exception(f"读取资产汇总 CSV 文件失败: {e}")
+            raise Exception(f"读取资产汇总 CSV 文件失败: {e}") from e
 
         return summaries

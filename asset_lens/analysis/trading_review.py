@@ -329,8 +329,7 @@ class TradingReview:
             suggestions.append("最大亏损过大，建议加强风险控制")
 
         if attribution.top_losers:
-            for p in attribution.top_losers:
-                suggestions.append(f"避免在类似 {p.code} 的情况下交易")
+            suggestions.extend(f"避免在类似 {p.code} 的情况下交易" for p in attribution.top_losers)
 
         if not suggestions:
             suggestions.append("策略表现良好，继续保持")
@@ -434,29 +433,24 @@ class TradingReview:
 
         if report.attribution.top_winners:
             lines.append("🏆 盈利 TOP 3:")
-            for pos in report.attribution.top_winners[:3]:
-                lines.append(f"   {pos.code} {pos.name}: +{pos.profit_loss_percent:.1f}%")
+            lines.extend(f"   {pos.code} {pos.name}: +{pos.profit_loss_percent:.1f}%" for pos in report.attribution.top_winners[:3])
             lines.append("")
 
         if report.attribution.top_losers:
             lines.append("📉 亏损 TOP 3:")
-            for pos in report.attribution.top_losers[:3]:
-                lines.append(f"   {pos.code} {pos.name}: {pos.profit_loss_percent:.1f}%")
+            lines.extend(f"   {pos.code} {pos.name}: {pos.profit_loss_percent:.1f}%" for pos in report.attribution.top_losers[:3])
             lines.append("")
 
         lines.append("💡 改进建议:")
-        for s in report.suggestions:
-            lines.append(f"   • {s}")
+        lines.extend(f"   • {s}" for s in report.suggestions)
         lines.append("")
 
         lines.append("📝 经验教训:")
-        for l in report.lessons_learned:
-            lines.append(f"   • {l}")
+        lines.extend(f"   • {l}" for l in report.lessons_learned)
         lines.append("")
 
         lines.append("📋 下期计划:")
-        for plan in report.next_period_plan:
-            lines.append(f"   • {plan}")
+        lines.extend(f"   • {plan}" for plan in report.next_period_plan)
         lines.append("")
 
         lines.append("=" * 60)

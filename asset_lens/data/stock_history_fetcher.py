@@ -86,7 +86,7 @@ class StockHistoryFetcher:
             except ImportError:
                 raise ImportError(
                     "请先安装 AkShare: pip install akshare\nAkShare 是一个开源免费的金融数据接口，无需注册"
-                )
+                ) from None
         return self._akshare
 
     @property
@@ -912,7 +912,7 @@ class StockHistoryFetcher:
             total_klines = 0
             data_sources: dict[str, int] = {}
 
-            for code, history in data.items():
+            for history in data.values():
                 klines: list[dict[str, Any]] = history.get("klines", [])
                 total_klines += len(klines)
                 source = history.get("data_source", "Unknown")

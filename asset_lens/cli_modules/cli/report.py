@@ -218,8 +218,10 @@ def register_report_commands(cli: click.Group) -> None:
                 ]
             )
 
-            for p in sorted_up:
-                report_lines.append(f"| {p.name} | +{float(p.return_rate or 0):.2f}% | {_format_amount(p)} |")
+            report_lines.extend(
+                f"| {p.name} | +{float(p.return_rate or 0):.2f}% | {_format_amount(p)} |"
+                for p in sorted_up
+            )
 
             report_lines.extend(
                 [
@@ -231,8 +233,10 @@ def register_report_commands(cli: click.Group) -> None:
                 ]
             )
 
-            for p in sorted_down:
-                report_lines.append(f"| {p.name} | {float(p.return_rate or 0):.2f}% | {_format_amount(p)} |")
+            report_lines.extend(
+                f"| {p.name} | {float(p.return_rate or 0):.2f}% | {_format_amount(p)} |"
+                for p in sorted_down
+            )
 
             # 4. 基金持仓分析（1万以上）
             console.print("\n[bold]💰 基金持仓分析（1万以上）[/bold]")
@@ -339,8 +343,10 @@ def register_report_commands(cli: click.Group) -> None:
                                 "|------|------|----------|------|",
                             ]
                         )
-                        for r in ml_results.get("bullish", [])[:10]:
-                            report_lines.append(f"| {r['code']} | {r['name']} | {r['prob']:.1f}% | ↑ |")
+                        report_lines.extend(
+                            f"| {r['code']} | {r['name']} | {r['prob']:.1f}% | ↑ |"
+                            for r in ml_results.get("bullish", [])[:10]
+                        )
 
                         report_lines.extend(
                             [
@@ -351,8 +357,10 @@ def register_report_commands(cli: click.Group) -> None:
                                 "|------|------|----------|------|",
                             ]
                         )
-                        for r in ml_results.get("bearish", [])[:10]:
-                            report_lines.append(f"| {r['code']} | {r['name']} | {r['prob']:.1f}% | ↓ |")
+                        report_lines.extend(
+                            f"| {r['code']} | {r['name']} | {r['prob']:.1f}% | ↓ |"
+                            for r in ml_results.get("bearish", [])[:10]
+                        )
                 except Exception as e:
                     console.print(f"[yellow]⚠️ ML预测失败: {e}[/yellow]")
 
@@ -410,8 +418,7 @@ def register_report_commands(cli: click.Group) -> None:
                         "",
                     ]
                 )
-                for warning in risk_warnings:
-                    report_lines.append(f"- {warning}")
+                report_lines.extend(f"- {warning}" for warning in risk_warnings)
 
             # 8. 投资建议
             console.print("\n[bold green]💡 下周投资建议[/bold green]")
@@ -425,8 +432,7 @@ def register_report_commands(cli: click.Group) -> None:
                     "",
                 ]
             )
-            for suggestion in suggestions:
-                report_lines.append(f"- {suggestion}")
+            report_lines.extend(f"- {suggestion}" for suggestion in suggestions)
 
             # 9. 总结
             report_lines.extend(
@@ -551,8 +557,10 @@ def register_report_commands(cli: click.Group) -> None:
                     "|----------|--------|------|",
                 ]
             )
-            for p in sorted_by_return[:10]:
-                report_lines.append(f"| {p.name} | {float(p.return_rate or 0):+.2f}% | {_format_amount(p)} |")
+            report_lines.extend(
+                f"| {p.name} | {float(p.return_rate or 0):+.2f}% | {_format_amount(p)} |"
+                for p in sorted_by_return[:10]
+            )
 
             if loss_products:
                 report_lines.extend(
@@ -564,8 +572,10 @@ def register_report_commands(cli: click.Group) -> None:
                         "|----------|--------|------|",
                     ]
                 )
-                for p in loss_products[:10]:
-                    report_lines.append(f"| {p.name} | {float(p.return_rate or 0):.2f}% | {_format_amount(p)} |")
+                report_lines.extend(
+                    f"| {p.name} | {float(p.return_rate or 0):.2f}% | {_format_amount(p)} |"
+                    for p in loss_products[:10]
+                )
 
             funds = [p for p in products if p.investment_type and "基金" in p.investment_type.value]
             large_funds = [f for f in funds if _get_cny_amount(f) >= 10000]
@@ -695,8 +705,10 @@ def register_report_commands(cli: click.Group) -> None:
                                 "|------|------|----------|------|",
                             ]
                         )
-                        for r in ml_results.get("bullish", [])[:10]:
-                            report_lines.append(f"| {r['code']} | {r['name']} | {r['prob']:.1f}% | ↑ |")
+                        report_lines.extend(
+                            f"| {r['code']} | {r['name']} | {r['prob']:.1f}% | ↑ |"
+                            for r in ml_results.get("bullish", [])[:10]
+                        )
 
                         report_lines.extend(
                             [
@@ -707,8 +719,10 @@ def register_report_commands(cli: click.Group) -> None:
                                 "|------|------|----------|------|",
                             ]
                         )
-                        for r in ml_results.get("bearish", [])[:10]:
-                            report_lines.append(f"| {r['code']} | {r['name']} | {r['prob']:.1f}% | ↓ |")
+                        report_lines.extend(
+                            f"| {r['code']} | {r['name']} | {r['prob']:.1f}% | ↓ |"
+                            for r in ml_results.get("bearish", [])[:10]
+                        )
                     else:
                         console.print("  ⚠️ 暂无有效预测结果")
                 except Exception as e:
@@ -726,8 +740,7 @@ def register_report_commands(cli: click.Group) -> None:
                         "",
                     ]
                 )
-                for warning in risk_warnings:
-                    report_lines.append(f"- {warning}")
+                report_lines.extend(f"- {warning}" for warning in risk_warnings)
 
             console.print("\n[bold green]💡 下月投资建议[/bold green]")
             suggestions = []
@@ -800,8 +813,7 @@ def register_report_commands(cli: click.Group) -> None:
                     "",
                 ]
             )
-            for suggestion in suggestions:
-                report_lines.append(suggestion)
+            report_lines.extend(suggestions)
 
             report_lines.extend(
                 [
@@ -811,15 +823,6 @@ def register_report_commands(cli: click.Group) -> None:
                     f"*报告生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*",
                 ]
             )
-
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            output_path.write_text("\n".join(report_lines), encoding="utf-8")
-
-            console.print(f"\n✅ 月报已生成: [cyan]{output_path}[/cyan]")
-
-        except Exception as e:
-            console.print(f"[red]❌ 月报生成失败: {e}[/red]")
-            raise
 
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text("\n".join(report_lines), encoding="utf-8")
@@ -1037,9 +1040,8 @@ def _get_ml_predictions_for_model(
 
     model_path_obj = Path(model_path)
 
-    if not model_path_obj.exists():
-        if not _train_model_if_needed(model_path_obj, prediction_days=prediction_days):
-            return {"bullish": [], "bearish": [], "prediction_days": prediction_days, "label": label}
+    if not model_path_obj.exists() and not _train_model_if_needed(model_path_obj, prediction_days=prediction_days):
+        return {"bullish": [], "bearish": [], "prediction_days": prediction_days, "label": label}
 
     try:
         predictor = StockPredictor(model_path=model_path_obj)
@@ -1135,9 +1137,8 @@ def _check_risks(products: list) -> list:
     # 检查单一产品集中度
     for p in products:
         cny_amount = _get_cny_amount(p)
-        if cny_amount > 0 and total_amount > 0:
-            if cny_amount / total_amount > 0.2:
-                warnings.append(f"⚠️ {p.name} 占比 {cny_amount / total_amount * 100:.1f}%，集中度较高")
+        if cny_amount > 0 and total_amount > 0 and cny_amount / total_amount > 0.2:
+            warnings.append(f"⚠️ {p.name} 占比 {cny_amount / total_amount * 100:.1f}%，集中度较高")
 
     return warnings
 
@@ -1203,10 +1204,9 @@ def _evaluate_fund(fund, north_flow_trend: str = "neutral") -> dict:
         if threshold["type"] in ["股票型", "混合型", "指数型"]:
             score += 10
             reasons.append("北向资金流入利好")
-    elif north_flow_trend == "bearish":
-        if threshold["type"] in ["股票型", "混合型", "指数型"]:
-            score -= 10
-            reasons.append("北向资金流出不利")
+    elif north_flow_trend == "bearish" and threshold["type"] in ["股票型", "混合型", "指数型"]:
+        score -= 10
+        reasons.append("北向资金流出不利")
 
     return_rate = float(fund.return_rate or 0)
     if return_rate < -10:
@@ -1349,10 +1349,9 @@ def _evaluate_fund_with_peers(fund, peer_funds: list, north_flow_trend: str = "n
         if threshold["type"] in ["股票型", "混合型", "指数型"]:
             score += 10
             reasons.append("北向资金流入利好")
-    elif north_flow_trend == "bearish":
-        if threshold["type"] in ["股票型", "混合型", "指数型"]:
-            score -= 10
-            reasons.append("北向资金流出不利")
+    elif north_flow_trend == "bearish" and threshold["type"] in ["股票型", "混合型", "指数型"]:
+        score -= 10
+        reasons.append("北向资金流出不利")
 
     # 5. 累计收益
     return_rate = float(fund.return_rate or 0)
@@ -1467,10 +1466,11 @@ def _generate_suggestions(products: list, funds: list) -> list:
     platform_products = _get_platform_products(products)
 
     # 先按类别分组所有基金（跨平台同类比较）
-    all_funds = []
-    for p in products:
-        if p.investment_type and p.investment_type.value in ["基金", "定投基金", "ETF", "QDII"]:
-            all_funds.append(p)
+    all_funds = [
+        p
+        for p in products
+        if p.investment_type and p.investment_type.value in ["基金", "定投基金", "ETF", "QDII"]
+    ]
 
     category_funds_global: dict[str, list] = {}
     for f in all_funds:

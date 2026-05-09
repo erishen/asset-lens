@@ -218,7 +218,7 @@ class ComparisonAnalyzer:
             type_stats[type_key]["products"].append(product.name)
 
         # 计算收益率
-        for type_key, stats in type_stats.items():
+        for stats in type_stats.values():
             stats["return_rate"] = calculate_return_rate(stats)
 
         # 按总金额排序

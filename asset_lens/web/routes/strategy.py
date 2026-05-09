@@ -93,7 +93,7 @@ async def evaluate_stock(strategy_name: str, code: str):
             "result": result,
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"评估失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"评估失败: {e!s}") from e
 
 
 @router.get("/recommendations/stocks")
@@ -118,4 +118,4 @@ async def recommend_stocks(
             "recommendations": stocks[:limit],
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取推荐失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"获取推荐失败: {e!s}") from e

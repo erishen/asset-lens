@@ -13,13 +13,11 @@ import os
 import time
 from collections.abc import Callable
 from datetime import datetime
-from functools import wraps
 from typing import Any
 
 import requests
 
 from ..config import config
-from ..utils.http_client import with_retry
 
 
 class InternationalStockFetcher:

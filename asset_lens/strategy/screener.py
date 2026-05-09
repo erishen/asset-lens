@@ -325,10 +325,7 @@ class StockScreener:
         if cfg.price_above_ma20 and current < ma20:
             return False
 
-        if cfg.price_above_ma60 and current < ma60:
-            return False
-
-        return True
+        return not (cfg.price_above_ma60 and current < ma60)
 
     def calculate_comprehensive_score(self, stock: dict[str, Any]) -> dict[str, Any]:
         """

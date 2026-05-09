@@ -64,14 +64,11 @@ def register_analyze_commands(cli: click.Group) -> None:
 
         print("\n📊 正在加载数据...")
         try:
-            if data_path:
-                products = CSVParser.load_data(Path(data_path))
-            else:
-                products = CSVParser.load_data()
+            products = CSVParser.load_data(Path(data_path)) if data_path else CSVParser.load_data()
             print(f"✅ 成功加载 {len(products)} 个投资产品")
         except Exception as e:
             click.echo(f"❌ 加载数据失败: {e}", err=True)
-            raise click.Abort()
+            raise click.Abort() from None
 
         data_dir = _get_data_dir(config.data_mode)
         try:
@@ -173,7 +170,7 @@ def register_analyze_commands(cli: click.Group) -> None:
             print(f"✅ 成功加载 {len(products)} 个投资产品")
         except Exception as e:
             click.echo(f"❌ 加载数据失败: {e}", err=True)
-            raise click.Abort()
+            raise click.Abort() from None
 
         data_dir = _get_data_dir(config.data_mode)
         try:
@@ -303,7 +300,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                 if moves:
                     total_change = Decimal("0")
                     count = 0
-                    for key, value in moves.items():
+                    for value in moves.values():
                         total_change += Decimal(str(value))
                         count += 1
                     if count > 0:
@@ -635,9 +632,8 @@ def register_analyze_commands(cli: click.Group) -> None:
                                 except Exception:
                                     pass
                     # 从开始日期找最早日期（缺失交易记录的产品）
-                    if p.start_date:
-                        if base_date is None or p.start_date < base_date:
-                            base_date = p.start_date
+                    if p.start_date and (base_date is None or p.start_date < base_date):
+                        base_date = p.start_date
 
                 if base_date:
                     tx_count = 0
@@ -809,9 +805,8 @@ def register_analyze_commands(cli: click.Group) -> None:
                                     base_date = tx_date
                             except Exception:
                                 pass
-                if p.start_date:
-                    if base_date is None or p.start_date < base_date:
-                        base_date = p.start_date
+                if p.start_date and (base_date is None or p.start_date < base_date):
+                    base_date = p.start_date
 
             if base_date is None:
                 base_date = date(2024, 11, 1)

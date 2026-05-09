@@ -355,8 +355,7 @@ class BlackSwanMonitor:
 
         lines.append("")
         lines.append("💡 操作建议:")
-        for rec in assessment.recommendations:
-            lines.append(f"  {rec}")
+        lines.extend(f"  {rec}" for rec in assessment.recommendations)
 
         return "\n".join(lines)
 

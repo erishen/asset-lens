@@ -9,7 +9,7 @@ from .prompt_builder import PromptBuilder
 from .result_parser import ResultParser
 
 __all__ = [
+    "AICacheManager",
     "PromptBuilder",
     "ResultParser",
-    "AICacheManager",
 ]

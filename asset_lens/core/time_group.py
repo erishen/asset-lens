@@ -131,7 +131,7 @@ class TimeGroupAnalyzer:
 
         # 计算平均收益率和平均持有天数
         result_groups = []
-        for group_key, group_data in groups.items():
+        for group_data in groups.values():
             if group_data["products"]:
                 avg_return_rate = Decimal("0")
                 if group_data["total_initial"] > 0:
@@ -215,7 +215,7 @@ class TimeGroupAnalyzer:
 
         # 计算平均收益率
         result_groups = []
-        for year, group_data in year_groups.items():
+        for group_data in year_groups.values():
             avg_return_rate = Decimal("0")
             if group_data["total_initial"] > 0:
                 avg_return_rate = group_data["total_profit"] / group_data["total_initial"] * Decimal("100")

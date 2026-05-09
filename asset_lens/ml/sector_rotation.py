@@ -176,7 +176,7 @@ class SectorRotationAnalyzer:
             elif change < 0:
                 stats["down_count"] += 1
 
-        for sector_name, stats in sector_stats.items():
+        for stats in sector_stats.values():
             if stats["count"] > 0:
                 stats["avg_change"] = stats["total_change"] / stats["count"]
                 stats["avg_turnover"] = stats["total_turnover"] / stats["count"]

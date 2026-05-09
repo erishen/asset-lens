@@ -148,9 +148,8 @@ class SectorMLPredictor:
         if market_condition == "bull":
             if current_strength > 0:
                 prediction_score += 1.0
-        elif market_condition == "bear":
-            if current_strength < 0:
-                prediction_score -= 1.0
+        elif market_condition == "bear" and current_strength < 0:
+            prediction_score -= 1.0
 
         predicted_direction = 1 if prediction_score > 0 else 0
         predicted_change = avg_change * (1 + prediction_score * 0.1)
@@ -195,7 +194,7 @@ class SectorMLPredictor:
         """
         predictions = []
 
-        for sector_name in sector_stats.keys():
+        for sector_name in sector_stats:
             pred = self.predict_sector(sector_name, sector_stats, market_condition)
             predictions.append(pred)
 

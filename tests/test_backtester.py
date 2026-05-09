@@ -292,7 +292,7 @@ class TestBacktester:
                 ]
             }
 
-            best_name, best_result = backtester.get_best_strategy(["test_strategy"], historical_data)
+            best_name, _best_result = backtester.get_best_strategy(["test_strategy"], historical_data)
             assert best_name == "test_strategy"
 
     def test_get_best_strategy_all_fail(self, backtester):

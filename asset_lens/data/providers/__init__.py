@@ -4,10 +4,10 @@ Data Provider Registry for asset-lens.
 """
 
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
+from typing import Any, Optional, Protocol, runtime_checkable
 
 
 class ProviderType(Enum):
@@ -162,10 +162,7 @@ class ProviderRegistry:
         provider_name = provider.name
         self._all_providers[provider_name] = provider
 
-        if data_type is not None:
-            data_types = [data_type]
-        else:
-            data_types = provider.supported_data_types
+        data_types = [data_type] if data_type is not None else provider.supported_data_types
 
         actual_priority = priority if priority is not None else provider.priority
 
@@ -369,7 +366,7 @@ class ProviderRegistry:
         result: dict[str, ProviderHealth] = {}
 
         provider_infos: dict[str, list[ProviderInfo]] = {}
-        for _, providers in self._providers.items():
+        for providers in self._providers.values():
             for info in providers:
                 name = info.provider.name
                 if name not in provider_infos:
@@ -467,16 +464,16 @@ def register_default_providers() -> None:
     provider_registry.register(ccxt_provider)
 
 
-from .cache import provider_cache  # noqa: E402
+from .cache import provider_cache
 
 __all__ = [
-    "ProviderType",
-    "DataType",
     "DataProvider",
-    "ProviderInfo",
+    "DataType",
     "ProviderHealth",
+    "ProviderInfo",
     "ProviderRegistry",
+    "ProviderType",
+    "provider_cache",
     "provider_registry",
     "register_default_providers",
-    "provider_cache",
 ]

@@ -8,6 +8,8 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
+import pytest
+
 from asset_lens.monitoring.investment_monitor import Alert, InvestmentMonitor, MonitorConfig
 
 
@@ -32,20 +34,24 @@ class TestInvestmentMonitor:
         assert self.monitor.config is not None
         assert self.monitor.config.price_threshold == 5.0
 
+    @pytest.mark.slow
     def test_run_asset_lens_command(self):
         result = self.monitor.run_asset_lens_command("version")
         assert "success" in result
 
+    @pytest.mark.slow
     def test_monitor_portfolio_performance(self):
         result = self.monitor.monitor_portfolio_performance()
         assert "status" in result
         assert "timestamp" in result
 
+    @pytest.mark.slow
     def test_monitor_stock_prices(self):
         result = self.monitor.monitor_stock_prices(["sh600519"])
         assert "stocks" in result
         assert "timestamp" in result
 
+    @pytest.mark.slow
     def test_monitor_market_indices(self):
         result = self.monitor.monitor_market_indices()
         assert "indices" in result
@@ -63,11 +69,13 @@ class TestInvestmentMonitor:
         alert = self.monitor.check_concentration_risk(portfolio_data)
         assert alert is None or isinstance(alert, Alert)
 
+    @pytest.mark.slow
     def test_generate_daily_report(self):
         report = self.monitor.generate_daily_report()
         assert "投资监控每日报告" in report
         assert datetime.now().strftime("%Y-%m-%d") in report
 
+    @pytest.mark.slow
     def test_generate_weekly_report(self):
         report = self.monitor.generate_weekly_report()
         assert "投资监控周度报告" in report

@@ -17,25 +17,25 @@ from .scheduler import TaskScheduler, task_scheduler
 from .stock_tracker import StockTracker, stock_tracker
 
 __all__ = [
+    "ChartGenerator",
+    "Currency",
     # 数据模型
     "InvestmentProduct",
-    "Transaction",
-    "Portfolio",
-    "InvestmentType",
-    "RiskLevel",
-    "Platform",
-    "Currency",
     # 数据处理
     "InvestmentSystem",
-    "investment_system",
-    "StockTracker",
-    "stock_tracker",
+    "InvestmentType",
     "MarketEnvironmentAnalyzer",
-    "market_environment_analyzer",
     "PersonalDataIntegrator",
-    "personal_data_integrator",
+    "Platform",
+    "Portfolio",
+    "RiskLevel",
+    "StockTracker",
     "TaskScheduler",
-    "task_scheduler",
-    "ChartGenerator",
+    "Transaction",
     "chart_generator",
+    "investment_system",
+    "market_environment_analyzer",
+    "personal_data_integrator",
+    "stock_tracker",
+    "task_scheduler",
 ]

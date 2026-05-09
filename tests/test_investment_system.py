@@ -151,7 +151,7 @@ class TestInvestmentSystem:
             system.set_strategy = MagicMock(return_value=True)
 
             historical_data = {"sh600519": [{"close": 1800}]}
-            name, result = system.optimize_strategy(historical_data)
+            name, _result = system.optimize_strategy(historical_data)
 
             assert name == "momentum"
 

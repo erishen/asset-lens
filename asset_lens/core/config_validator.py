@@ -57,9 +57,8 @@ class ConfigValidator:
                     key = key.strip()
                     value = value.strip()
 
-                    if key in cls.REQUIRED_ENV_VARS:
-                        if not value:
-                            errors.append(f"缺少必需的环境变量: {key}")
+                    if key in cls.REQUIRED_ENV_VARS and not value:
+                        errors.append(f"缺少必需的环境变量: {key}")
 
                     if key in cls.OPTIONAL_ENV_VARS and not value:
                         warnings.append(f"可选环境变量 {key} 未设置")

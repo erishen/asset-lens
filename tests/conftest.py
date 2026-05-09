@@ -19,7 +19,7 @@ def disable_proxy():
     original_http_proxy_lower = os.environ.get("http_proxy")
     original_https_proxy_lower = os.environ.get("https_proxy")
     original_all_proxy = os.environ.get("ALL_PROXY")
-    original_all_proxy_lower = os.environ.get("all_proxy")
+    original_all_proxy_lower = os.environ.get("all_proxy")  # noqa: SIM112
 
     os.environ.pop("HTTP_PROXY", None)
     os.environ.pop("HTTPS_PROXY", None)
@@ -44,7 +44,22 @@ def disable_proxy():
     if original_all_proxy is not None:
         os.environ["ALL_PROXY"] = original_all_proxy
     if original_all_proxy_lower is not None:
-        os.environ["all_proxy"] = original_all_proxy_lower
+        os.environ["ALL_PROXY"] = original_all_proxy_lower
 
     os.environ.pop("NO_PROXY", None)
     os.environ.pop("no_proxy", None)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def disable_litellm_remote_fetch():
+    """
+    禁用 litellm 远程获取模型成本映射
+
+    litellm 在导入时会从远程 URL 获取模型成本映射，这可能导致网络超时
+    设置环境变量 LITELLM_LOCAL_MODEL_COST_MAP=True 来禁用远程获取
+    """
+    os.environ["LITELLM_LOCAL_MODEL_COST_MAP"] = "True"
+
+    yield
+
+    os.environ.pop("LITELLM_LOCAL_MODEL_COST_MAP", None)

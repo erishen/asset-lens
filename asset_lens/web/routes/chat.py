@@ -3,6 +3,7 @@ Chat API Router for Invest Assistant.
 投资助手 API - 整合多个数据源
 """
 
+import contextlib
 import logging
 from typing import Any
 
@@ -162,7 +163,7 @@ async def chat_qa(request: ChatRequest):
 
     except Exception as e:
         logger.error(f"Chat QA error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 def _generate_suggestions(question: str) -> list[str]:
@@ -237,7 +238,7 @@ def _generate_fallback_answer(question: str, rag_results: list) -> str:
                 contents.append(content)
 
         answer = "📚 **根据知识库检索结果：**\n\n"
-        for i, content in enumerate(contents[:2], 1):
+        for _i, content in enumerate(contents[:2], 1):
             answer += f"{content}\n\n"
 
         if sources:
@@ -348,7 +349,7 @@ async def get_portfolio_analysis():
         return {
             "success": False,
             "error": str(e),
-            "summary": f"分析失败: {str(e)}",
+            "summary": f"分析失败: {e!s}",
             "risk_assessment": "",
             "suggestions": [],
             "warnings": [],
@@ -389,10 +390,8 @@ async def get_signals(request: SignalsRequest):
 
         signal_type = None
         if request.signal_type:
-            try:
+            with contextlib.suppress(ValueError):
                 signal_type = SignalType(request.signal_type)
-            except ValueError:
-                pass
 
         result = run_scan(
             db_path=db_path,
@@ -492,7 +491,7 @@ async def query_rag(request: RAGRequest):
 
     except Exception as e:
         logger.error(f"RAG query error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 async def _query_rag(query: str, k: int = 5) -> list[dict[str, Any]]:
@@ -587,4 +586,4 @@ async def get_config():
 
     except Exception as e:
         logger.error(f"Config error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

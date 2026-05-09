@@ -266,7 +266,9 @@ async def _get_stock_quotes(codes: list[str]):
                             if len(parts) >= 32:
                                 current_price = float(parts[3]) if parts[3] else 0
                                 prev_close = float(parts[2]) if parts[2] else 0
-                                change_percent = ((current_price - prev_close) / prev_close * 100) if prev_close > 0 else 0
+                                change_percent = (
+                                    ((current_price - prev_close) / prev_close * 100) if prev_close > 0 else 0
+                                )
 
                                 quotes.append(
                                     {

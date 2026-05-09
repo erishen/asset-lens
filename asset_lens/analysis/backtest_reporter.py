@@ -220,7 +220,7 @@ class BacktestReporter:
         import random
 
         total_return = random.uniform(-0.1, 0.3)
-        annual_return = total_return * 52 if total_return > 0 else total_return * 52
+        annual_return = total_return * 52
         max_drawdown = random.uniform(0.05, 0.2)
         sharpe_ratio = random.uniform(0.5, 2.5)
         win_rate = random.uniform(0.4, 0.7)
@@ -370,9 +370,11 @@ class BacktestReporter:
                 f"建议停用 {worst.strategy_name} 策略 (亏损 {abs(worst.current_metrics.total_return):.1%})"
             )
 
-        for comp in comparisons:
-            if comp.improvement.get("total_return", 0) < -0.05:
-                recommendations.append(f"{comp.strategy_name} 策略表现下降，需要优化")
+        recommendations.extend(
+            f"{comp.strategy_name} 策略表现下降，需要优化"
+            for comp in comparisons
+            if comp.improvement.get("total_return", 0) < -0.05
+        )
 
         return recommendations
 
@@ -429,8 +431,7 @@ class BacktestReporter:
 
         lines.append("")
         lines.append("💡 建议:")
-        for rec in report.recommendations:
-            lines.append(f"  - {rec}")
+        lines.extend(f"  - {rec}" for rec in report.recommendations)
 
         return "\n".join(lines)
 

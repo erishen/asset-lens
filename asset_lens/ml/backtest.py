@@ -381,10 +381,7 @@ class BacktestEngine:
 
             if date:
                 day_data = df[df["date"] == date] if "date" in df.columns else df[df.index == date]
-                if not day_data.empty:
-                    last_price = float(day_data["close"].iloc[0])
-                else:
-                    last_price = float(df["close"].iloc[-1])
+                last_price = float(day_data["close"].iloc[0]) if not day_data.empty else float(df["close"].iloc[-1])
             else:
                 last_price = float(df["close"].iloc[-1])
 

@@ -9,6 +9,7 @@ Personal data integrator for asset-lens.
 4. 整合到市场环境分析中
 """
 
+import contextlib
 import csv
 import json
 from dataclasses import dataclass
@@ -266,15 +267,11 @@ class PersonalDataIntegrator:
 
                 if last_row:
                     if usd_idx is not None and usd_idx < len(last_row):
-                        try:
+                        with contextlib.suppress(ValueError):
                             rates["usd_rate"] = float(last_row[usd_idx])
-                        except ValueError:
-                            pass
                     if hkd_idx and hkd_idx < len(last_row):
-                        try:
+                        with contextlib.suppress(ValueError):
                             rates["hkd_rate"] = float(last_row[hkd_idx])
-                        except ValueError:
-                            pass
 
         except Exception as e:
             print(f"解析资产文件失败 {file_path}: {e}")
@@ -292,11 +289,11 @@ class PersonalDataIntegrator:
             [(日期, 数值), ...]
         """
         key = self.INDEX_MAPPING.get(index_name, index_name)
-        history = []
-
-        for record in self.weekly_records[-days:]:
-            if key in record.indices:
-                history.append((record.date, record.indices[key]))
+        history = [
+            (record.date, record.indices[key])
+            for record in self.weekly_records[-days:]
+            if key in record.indices
+        ]
 
         return history
 
@@ -312,11 +309,11 @@ class PersonalDataIntegrator:
             [(日期, 数值), ...]
         """
         key = self.ETF_MAPPING.get(etf_name, etf_name.lower())
-        history = []
-
-        for record in self.weekly_records[-days:]:
-            if key in record.etfs:
-                history.append((record.date, record.etfs[key]))
+        history = [
+            (record.date, record.etfs[key])
+            for record in self.weekly_records[-days:]
+            if key in record.etfs
+        ]
 
         return history
 
@@ -332,11 +329,11 @@ class PersonalDataIntegrator:
             [(日期, 数值), ...]
         """
         key = self.RATE_MAPPING.get(rate_name, rate_name.lower())
-        history = []
-
-        for record in self.weekly_records[-days:]:
-            if key in record.rates:
-                history.append((record.date, record.rates[key]))
+        history = [
+            (record.date, record.rates[key])
+            for record in self.weekly_records[-days:]
+            if key in record.rates
+        ]
 
         return history
 
@@ -430,10 +427,7 @@ class PersonalDataIntegrator:
                 current = latest_with_indices.indices.get(key, 0)
                 prev_val = previous_with_indices.indices.get(key, 0) if previous_with_indices else 0
 
-                if current and prev_val:
-                    change_pct = ((current - prev_val) / prev_val) * 100
-                else:
-                    change_pct = 0
+                change_pct = (current - prev_val) / prev_val * 100 if current and prev_val else 0
 
                 indices_dict[name] = {
                     "value": current,
@@ -445,10 +439,7 @@ class PersonalDataIntegrator:
                 current = latest_with_etfs.etfs.get(key, 0)
                 prev_val = previous_with_etfs.etfs.get(key, 0) if previous_with_etfs else 0
 
-                if current and prev_val:
-                    change_pct = ((current - prev_val) / prev_val) * 100
-                else:
-                    change_pct = 0
+                change_pct = (current - prev_val) / prev_val * 100 if current and prev_val else 0
 
                 etfs_dict[name] = {
                     "value": current,

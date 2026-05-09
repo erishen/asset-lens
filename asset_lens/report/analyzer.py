@@ -662,10 +662,7 @@ class ReportGenerator:
                 weighted_annual_return += product.annual_return * weight
                 total_weight += weight
 
-        if total_weight > Decimal("0"):
-            weighted_annual_return = weighted_annual_return / total_weight
-        else:
-            weighted_annual_return = Decimal("0")
+        weighted_annual_return = weighted_annual_return / total_weight if total_weight > Decimal("0") else Decimal("0")
 
         avg_investment_days = Decimal("0")
         products_with_days = [p for p in portfolio.products if p.investment_days]
@@ -722,10 +719,7 @@ class ReportGenerator:
         total_value = portfolio.total_value or Decimal("0")
         total_initial = portfolio.total_initial or Decimal("0")
 
-        if total_initial > Decimal("0"):
-            capital_efficiency = (total_value / total_initial) * 100
-        else:
-            capital_efficiency = Decimal("100")
+        capital_efficiency = total_value / total_initial * 100 if total_initial > Decimal("0") else Decimal("100")
 
         avg_investment_days = Decimal("0")
         products_with_days = [p for p in portfolio.products if p.investment_days]

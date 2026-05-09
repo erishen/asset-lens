@@ -84,12 +84,9 @@ class InvestmentMonitor:
             }
 
             # 如果命令在映射中，使用新的命令路径
-            if command in command_mapping:
-                cmd_parts = command_mapping[command]
-            else:
-                cmd_parts = [command]
+            cmd_parts = command_mapping.get(command, [command])
 
-            cmd = ["python", "-m", "asset_lens"] + cmd_parts
+            cmd = ["python", "-m", "asset_lens", *cmd_parts]
             if args:
                 cmd.extend(args)
 

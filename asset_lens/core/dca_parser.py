@@ -182,7 +182,7 @@ class DCAParser:
             if start_date > end_date:
                 continue
 
-            dca_type, base_amount, max_amount = cls.parse_investment_type(amount_str)
+            dca_type, base_amount, _max_amount = cls.parse_investment_type(amount_str)
 
             is_qdii = False
             if product_name and "QDII" in product_name:

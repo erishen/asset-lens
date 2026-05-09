@@ -39,11 +39,11 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 __version__ = "1.0.0"
 __author__ = "Asset Lens Team"
 __all__ = [
-    "config",
     "cli",
-    "data",
+    "config",
     "core",
+    "data",
     "report",
-    "web",
     "utils",
+    "web",
 ]

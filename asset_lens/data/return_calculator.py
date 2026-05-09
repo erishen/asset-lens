@@ -181,9 +181,7 @@ class ReturnCalculator:
         """判断是否为债券类产品"""
         if product.investment_type.value and "债" in product.investment_type.value:
             return True
-        if product.name and "分红" in product.name:
-            return True
-        return False
+        return bool(product.name and "分红" in product.name)
 
     @staticmethod
     def _is_dca_product(product: InvestmentProduct) -> bool:

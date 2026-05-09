@@ -202,8 +202,7 @@ class AISimulatedTrader:
             if price <= 0:
                 continue
 
-            if config["min_market_cap"] <= market_cap <= config["max_market_cap"]:
-                if config["min_turnover"] <= turnover <= config["max_turnover"]:
+            if config["min_market_cap"] <= market_cap <= config["max_market_cap"] and config["min_turnover"] <= turnover <= config["max_turnover"]:
                     candidates.append(
                         {
                             "code": code,
@@ -370,20 +369,19 @@ class AISimulatedTrader:
                         )
                     )
 
-            elif self.market_condition == "sideways":
-                if -2 < change < 2 and turnover > 2:
-                    signals.append(
-                        TradeSignal(
-                            code=code,
-                            name=name,
-                            action="buy",
-                            confidence=0.55,
-                            price=price,
-                            reason="震荡市策略: 横盘整理后可能突破",
-                            market_condition=self.market_condition,
-                            strategy=self.current_strategy,
-                        )
+            elif self.market_condition == "sideways" and -2 < change < 2 and turnover > 2:
+                signals.append(
+                    TradeSignal(
+                        code=code,
+                        name=name,
+                        action="buy",
+                        confidence=0.55,
+                        price=price,
+                        reason="震荡市策略: 横盘整理后可能突破",
+                        market_condition=self.market_condition,
+                        strategy=self.current_strategy,
                     )
+                )
 
         return signals[:10]
 

@@ -209,10 +209,7 @@ class AIQAEngine:
         context: QAContext | None,
     ) -> str:
         """生成答案"""
-        if knowledge:
-            base_answer = knowledge[0].content
-        else:
-            base_answer = self._get_default_answer(q_type)
+        base_answer = knowledge[0].content if knowledge else self._get_default_answer(q_type)
 
         context_info = ""
         if context and context.user_holdings:

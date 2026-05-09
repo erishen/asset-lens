@@ -9,10 +9,10 @@ from .data_collectors import ReportDataCollector
 from .formatters import format_currency, format_date, format_number, format_percentage
 
 __all__ = [
-    "format_currency",
-    "format_percentage",
-    "format_date",
-    "format_number",
     "ChartGenerator",
     "ReportDataCollector",
+    "format_currency",
+    "format_date",
+    "format_number",
+    "format_percentage",
 ]

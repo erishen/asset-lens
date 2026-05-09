@@ -25,9 +25,8 @@ class TestTimeoutContext:
         """测试超时"""
         import time
 
-        with pytest.raises(TimeoutError):
-            with timeout_context(1, "测试超时"):
-                time.sleep(2)
+        with pytest.raises(TimeoutError), timeout_context(1, "测试超时"):
+            time.sleep(2)
 
 
 class TestFundDataFetcher:

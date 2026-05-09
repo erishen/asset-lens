@@ -11,7 +11,6 @@ import json
 import logging
 import time
 from datetime import datetime
-from functools import wraps
 from pathlib import Path
 from typing import Any
 
@@ -52,7 +51,7 @@ class StockDataFetcher:
                     "请先安装 AkShare: pip install akshare\n"
                     "AkShare 是一个开源免费的金融数据接口，无需注册\n"
                     "GitHub: https://github.com/akfamily/akshare"
-                )
+                ) from None
         return self._akshare
 
     def _load_stock_codes_config(self) -> dict[str, str]:
@@ -307,10 +306,9 @@ class StockDataFetcher:
             股票行情数据
         """
         try:
-            from datetime import datetime, timedelta
+            from datetime import datetime
 
             import jqdatasdk as jq
-            import pandas as pd
 
             logger.info(f"正在从聚宽获取 {stock_code} 行情...")
 

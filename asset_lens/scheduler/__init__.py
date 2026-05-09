@@ -14,11 +14,11 @@ from .task_scheduler import (
 )
 
 __all__ = [
-    "TaskScheduler",
+    "ScheduleType",
     "TaskConfig",
     "TaskResult",
+    "TaskScheduler",
     "TaskStatus",
-    "ScheduleType",
-    "task_scheduler",
     "register_default_tasks",
+    "task_scheduler",
 ]

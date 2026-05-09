@@ -136,7 +136,7 @@ class APITester:
         self.page = page
         self.base_url = base_url
 
-    def get(self, endpoint: str, expected_status: list = None) -> dict:
+    def get(self, endpoint: str, expected_status: list | None = None) -> dict:
         """发送 GET 请求并验证响应"""
         url = f"{self.base_url}{endpoint}"
         response = self.page.request.get(url)
@@ -149,7 +149,7 @@ class APITester:
         except Exception:
             return {"status": response.status, "data": None}
 
-    def post(self, endpoint: str, data: dict = None, expected_status: list = None) -> dict:
+    def post(self, endpoint: str, data: dict | None = None, expected_status: list | None = None) -> dict:
         """发送 POST 请求并验证响应"""
         url = f"{self.base_url}{endpoint}"
         response = self.page.request.post(url, data=data)
@@ -193,7 +193,7 @@ class PageHelper:
         self.page.click(selector, timeout=timeout)
         self.page.wait_for_load_state("domcontentloaded")
 
-    def fill_and_submit(self, selector: str, value: str, submit_selector: str = None) -> None:
+    def fill_and_submit(self, selector: str, value: str, submit_selector: str | None = None) -> None:
         """填充表单并提交"""
         self.page.fill(selector, value)
         if submit_selector:

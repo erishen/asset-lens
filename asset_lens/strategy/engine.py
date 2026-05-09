@@ -337,9 +337,8 @@ class StrategyEngine:
                 if isinstance(target, str):
                     return target not in str(value)
                 return str(value) != str(target)
-            elif operator == "between":
-                if isinstance(target, list) and len(target) == 2:
-                    return float(target[0]) <= float(value) <= float(target[1])
+            elif operator == "between" and isinstance(target, list) and len(target) == 2:
+                return float(target[0]) <= float(value) <= float(target[1])
         except (ValueError, TypeError):
             return False
 
@@ -373,14 +372,12 @@ class StrategyEngine:
             name = stock.get("name", "")
 
             # 排除ST股票
-            if exclude_st:
-                if "ST" in name or "*ST" in name or "st" in name:
-                    continue
+            if exclude_st and ("ST" in name or "*ST" in name or "st" in name):
+                continue
 
             # 排除北交所股票（代码以 bj 或 8 开头）
-            if exclude_bj:
-                if code.startswith("bj") or code.startswith("8"):
-                    continue
+            if exclude_bj and (code.startswith("bj") or code.startswith("8")):
+                continue
 
             evaluation = self.evaluate_stock(stock, strategy_name)
 

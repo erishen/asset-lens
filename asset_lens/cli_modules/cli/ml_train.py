@@ -170,7 +170,7 @@ def backtest(
         predictions = trainer.predictor.predict(X)
         probas = trainer.predictor.predict_proba(X)[:, 1]
 
-        for i, (date, pred, prob) in enumerate(zip(df["date"], predictions, probas, strict=False)):
+        for _i, (date, pred, prob) in enumerate(zip(df["date"], predictions, probas, strict=False)):
             predictions_list.append(
                 {
                     "code": code,
@@ -387,7 +387,7 @@ def validate(
         predictions = trainer.predictor.predict(X)
         probas = trainer.predictor.predict_proba(X)[:, 1]
 
-        for i, (date, pred, prob) in enumerate(zip(df["date"], predictions, probas, strict=False)):
+        for _i, (date, pred, prob) in enumerate(zip(df["date"], predictions, probas, strict=False)):
             predictions_list.append(
                 {
                     "code": code,

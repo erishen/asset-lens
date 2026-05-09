@@ -536,13 +536,13 @@ strategy_evaluator = StrategyEvaluator()
 
 
 __all__ = [
-    "MarketStyle",
-    "StrategyUsability",
-    "FactorContribution",
-    "StyleSensitivity",
-    "FailureAnalysis",
-    "OverfittingCheck",
     "EvaluationResult",
+    "FactorContribution",
+    "FailureAnalysis",
+    "MarketStyle",
+    "OverfittingCheck",
     "StrategyEvaluator",
+    "StrategyUsability",
+    "StyleSensitivity",
     "strategy_evaluator",
 ]

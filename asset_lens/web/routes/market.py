@@ -105,7 +105,7 @@ async def get_hot_stocks(
         stocks = market_stock_fetcher.fetch_all_cn_stocks(max_pages=1)
         return {"market": market, "count": len(stocks[:limit]), "stocks": stocks[:limit]}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/north-flow")
@@ -115,7 +115,7 @@ async def get_north_flow():
         flow_data = await _get_north_flow_data()
         return flow_data
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 async def _get_north_flow_data() -> dict:
@@ -181,4 +181,4 @@ async def get_market_sentiment():
             "analysis_time": sentiment.analysis_time,
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

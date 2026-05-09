@@ -168,7 +168,7 @@ class InvestmentReportGenerator:
         positions_dict = pool.positions
         positions_list: list[dict[str, Any]] = report["positions"]
         if positions_dict:
-            for code, pos in positions_dict.items():
+            for pos in positions_dict.values():
                 positions_list.append(
                     {
                         "code": pos.code,
@@ -303,10 +303,7 @@ class InvestmentReportGenerator:
         holding_count = pool_status.get("holding_count", 0)
         total_stocks = pool_status.get("total_stocks", 0)
 
-        if total_stocks > 0:
-            concentration = holding_count / total_stocks
-        else:
-            concentration = 0
+        concentration = holding_count / total_stocks if total_stocks > 0 else 0
 
         report["risk_metrics"] = {
             "concentration": concentration,

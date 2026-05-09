@@ -603,8 +603,8 @@ class TestDays360:
         assert result >= 58
 
 
-class TestLoadData:
-    """Test load_data method"""
+class TestLoadDataExtended:
+    """Test load_data method (extended)"""
 
     def test_load_data_with_dir(self):
         """Test loading data from directory"""

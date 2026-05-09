@@ -157,9 +157,7 @@ class MLPredictionTracker:
             actual_change = stock_data.get("change_percent", 0)
             pred.actual_change = actual_change
 
-            if pred.predicted_direction == "up" and actual_change > 0:
-                pred.outcome = PredictionOutcome.CORRECT
-            elif pred.predicted_direction == "down" and actual_change < 0:
+            if (pred.predicted_direction == "up" and actual_change > 0) or (pred.predicted_direction == "down" and actual_change < 0):
                 pred.outcome = PredictionOutcome.CORRECT
             elif actual_change == 0:
                 pred.outcome = PredictionOutcome.PENDING

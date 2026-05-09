@@ -5,7 +5,6 @@ Scheduler for asset-lens.
 """
 
 import json
-import threading
 import time
 from datetime import datetime, timedelta
 from typing import Any

@@ -151,7 +151,7 @@ class AIAnalyzer:
                 return self._parse_response(content, prompt_tokens, completion_tokens, total_tokens)
 
         except Exception as e:
-            return self._default_result(f"分析异常: {str(e)}")
+            return self._default_result(f"分析异常: {e!s}")
 
     def _parse_response(
         self, content: str, prompt_tokens: int = 0, completion_tokens: int = 0, total_tokens: int = 0
@@ -401,16 +401,14 @@ class AITradingAdvisor:
         if profit_rate > 15:
             return {"action": "sell", "reason": f"触发止盈线，盈利{profit_rate:.2f}%"}
 
-        if ai_decision.decision == AIDecision.SELL:
-            if ai_decision.confidence >= 60:
-                return {"action": "sell", "reason": f"AI建议卖出: {ai_decision.reasoning[:100]}"}
+        if ai_decision.decision == AIDecision.SELL and ai_decision.confidence >= 60:
+            return {"action": "sell", "reason": f"AI建议卖出: {ai_decision.reasoning[:100]}"}
 
-        if ai_decision.decision == AIDecision.WAIT and profit_rate > 5:
-            if holding_days > 10:
-                return {
-                    "action": "sell",
-                    "reason": f"持仓{holding_days}天，盈利{profit_rate:.2f}%，AI建议观望，可考虑止盈",
-                }
+        if ai_decision.decision == AIDecision.WAIT and profit_rate > 5 and holding_days > 10:
+            return {
+                "action": "sell",
+                "reason": f"持仓{holding_days}天，盈利{profit_rate:.2f}%，AI建议观望，可考虑止盈",
+            }
 
         return {"action": "hold", "reason": f"持仓{holding_days}天，盈亏{profit_rate:.2f}%，继续持有"}
 

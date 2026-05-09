@@ -135,10 +135,7 @@ class AdvancedAnalytics:
                 peak_idx = i
 
             drawdown = peak - value
-            if peak > 0:
-                drawdown_percent = (drawdown / peak) * 100
-            else:
-                drawdown_percent = Decimal("0")
+            drawdown_percent = drawdown / peak * 100 if peak > 0 else Decimal("0")
 
             if drawdown > max_drawdown:
                 max_drawdown = drawdown
@@ -268,10 +265,7 @@ class AdvancedAnalytics:
         total_initial = portfolio.total_initial or Decimal("0")
         total_profit = portfolio.total_profit or Decimal("0")
 
-        if total_initial > 0:
-            return_rate = (total_profit / total_initial) * 100
-        else:
-            return_rate = Decimal("0")
+        return_rate = total_profit / total_initial * 100 if total_initial > 0 else Decimal("0")
 
         max_drawdown = None
         sharpe_ratio = None
@@ -366,10 +360,7 @@ class AdvancedAnalytics:
         std1 = Decimal(str(float(var1) ** 0.5)) if var1 > 0 else Decimal("0")
         std2 = Decimal(str(float(var2) ** 0.5)) if var2 > 0 else Decimal("0")
 
-        if std1 > 0 and std2 > 0:
-            correlation = cov / (std1 * std2)
-        else:
-            correlation = Decimal("0")
+        correlation = cov / (std1 * std2) if std1 > 0 and std2 > 0 else Decimal("0")
 
         return correlation
 
@@ -399,10 +390,7 @@ class AdvancedAnalytics:
 
         var_market = Decimal(str(sum((float(r) - float(avg_market)) ** 2 for r in market_returns))) / Decimal(str(n))
 
-        if var_market > 0:
-            beta = cov / var_market
-        else:
-            beta = Decimal("0")
+        beta = cov / var_market if var_market > 0 else Decimal("0")
 
         return beta
 

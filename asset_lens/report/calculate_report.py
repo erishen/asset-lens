@@ -197,9 +197,7 @@ class CalculateReportGenerator:
     def _has_transactions(self, product: InvestmentProduct) -> bool:
         if product.transaction_records and product.transaction_records.strip():
             return True
-        if product.secondary_buy:
-            return True
-        return False
+        return bool(product.secondary_buy)
 
     def _is_dca_product(self, product: InvestmentProduct) -> bool:
         """判断是否为定投产品"""

@@ -85,7 +85,7 @@ class DataMigration:
         ) as progress:
             task = progress.add_task("迁移中...", total=total_stocks)
 
-            for i, (code, history) in enumerate(histories.items()):
+            for _i, (code, history) in enumerate(histories.items()):
                 try:
                     klines: list[dict[str, Any]] = history.get("klines", [])
                     data_source = history.get("data_source", "Unknown")

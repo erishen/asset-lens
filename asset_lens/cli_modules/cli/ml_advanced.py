@@ -109,7 +109,7 @@ def optimize(model, trials, timeout):
             console.print("[red]❌ Optuna 未安装，使用 pip install optuna 安装[/red]")
             return
 
-        X, y, codes, names = _prepare_training_data()
+        X, y, _codes, _names = _prepare_training_data()
 
         if X is None or len(X) < 100:
             console.print("[yellow]⚠️ 数据不足，无法进行优化[/yellow]")
@@ -172,7 +172,7 @@ def train(model, cv_splits, optimize):
     try:
         from asset_lens.ml.advanced_trainer import advanced_trainer
 
-        X, y, codes, names = _prepare_training_data()
+        X, y, _codes, _names = _prepare_training_data()
 
         if X is None or len(X) < 100:
             console.print("[yellow]⚠️ 数据不足，无法训练[/yellow]")
@@ -261,7 +261,7 @@ def explain(sample_size):
             console.print("[red]❌ SHAP 未安装，使用 pip install shap 安装[/red]")
             return
 
-        X, y, codes, names = _prepare_training_data()
+        X, _y, _codes, _names = _prepare_training_data()
 
         if X is None:
             console.print("[yellow]⚠️ 数据不足[/yellow]")
@@ -309,7 +309,7 @@ def select_features(k, method):
     try:
         from asset_lens.ml.advanced_trainer import advanced_trainer
 
-        X, y, codes, names = _prepare_training_data()
+        X, y, _codes, _names = _prepare_training_data()
 
         if X is None:
             console.print("[yellow]⚠️ 数据不足[/yellow]")
@@ -346,7 +346,7 @@ def ensemble():
     try:
         from asset_lens.ml.advanced_trainer import advanced_trainer
 
-        X, y, codes, names = _prepare_training_data()
+        X, y, _codes, _names = _prepare_training_data()
 
         if X is None or len(X) < 100:
             console.print("[yellow]⚠️ 数据不足，无法训练[/yellow]")
@@ -389,7 +389,7 @@ def compare():
     try:
         from asset_lens.ml.advanced_trainer import HAS_LIGHTGBM, HAS_XGBOOST, advanced_trainer
 
-        X, y, codes, names = _prepare_training_data()
+        X, y, _codes, _names = _prepare_training_data()
 
         if X is None or len(X) < 100:
             console.print("[yellow]⚠️ 数据不足[/yellow]")

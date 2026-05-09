@@ -92,7 +92,7 @@ def register_compare_commands(cli: click.Group) -> None:
             }
 
             type_stats: dict[str, dict[str, Decimal | int]] = {}
-            for group_name, types in type_groups.items():
+            for group_name in type_groups:
                 type_stats[group_name] = {"before": Decimal("0"), "after": Decimal("0"), "count": 0}
 
             for detail in result["comparison"]["details"]:

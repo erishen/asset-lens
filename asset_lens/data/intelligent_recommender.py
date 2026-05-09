@@ -425,9 +425,8 @@ class IntelligentRecommender:
         if sentiment == "bullish":
             if "momentum" in strategy_name:
                 score += 5
-        elif sentiment == "bearish":
-            if "value" in strategy_name or "dividend" in strategy_name:
-                score += 5
+        elif sentiment == "bearish" and ("value" in strategy_name or "dividend" in strategy_name):
+            score += 5
 
         return score
 
@@ -441,13 +440,11 @@ class IntelligentRecommender:
             elif strategy.stop_loss < -0.15:
                 risk_score += 3
 
-        if strategy.take_profit:
-            if strategy.take_profit > 0.3:
-                risk_score += 2
+        if strategy.take_profit and strategy.take_profit > 0.3:
+            risk_score += 2
 
-        if strategy.max_positions:
-            if strategy.max_positions > 10:
-                risk_score += 2
+        if strategy.max_positions and strategy.max_positions > 10:
+            risk_score += 2
 
         if risk_score >= 5:
             return "high"
