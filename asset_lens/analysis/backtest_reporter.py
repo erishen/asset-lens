@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from ..config import config
 
@@ -131,7 +131,7 @@ class BacktestReporter:
     """回测报告器"""
 
     REPORTS_FILE = "backtest_reports.json"
-    STRATEGIES = ["value", "momentum", "reversal", "dividend"]
+    STRATEGIES: ClassVar[list[str]] = ["value", "momentum", "reversal", "dividend"]
 
     def __init__(self, cache_path: Path | None = None):
         self.cache_path = cache_path or config.cache_path

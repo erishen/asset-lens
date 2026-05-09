@@ -10,7 +10,7 @@ import os
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from dotenv import load_dotenv
 
@@ -34,7 +34,7 @@ class AIAnalysisResult:
 class AIAnalyzer:
     """AI 分析器 - 使用 LiteLLM 支持多种 AI 后端"""
 
-    SUPPORTED_MODELS = {
+    SUPPORTED_MODELS: ClassVar[dict[str, str]] = {
         "deepseek": "deepseek/deepseek-chat",
         "deepseek-reasoner": "deepseek/deepseek-reasoner",
         "qwen": "qwen/qwen-turbo",

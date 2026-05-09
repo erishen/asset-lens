@@ -15,7 +15,7 @@ import json
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from ..config import config
 
@@ -43,7 +43,7 @@ class PersonalDataConfig:
 class PersonalDataIntegrator:
     """个人数据整合器"""
 
-    INDEX_MAPPING = {
+    INDEX_MAPPING: ClassVar[dict[str, str]] = {
         "沪深300": "hs300",
         "中证500": "zz500",
         "科创50": "kc50",
@@ -58,14 +58,14 @@ class PersonalDataIntegrator:
         "创业板指": "cybz",
     }
 
-    ETF_MAPPING = {
+    ETF_MAPPING: ClassVar[dict[str, str]] = {
         "QQQ": "qqq",
         "SPY": "spy",
         "GLD": "gld",
         "VXX": "vxx",
     }
 
-    RATE_MAPPING = {
+    RATE_MAPPING: ClassVar[dict[str, str]] = {
         "美元汇率": "usd_rate",
         "港元汇率": "hkd_rate",
     }

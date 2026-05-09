@@ -8,13 +8,13 @@ import os
 import sys
 from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
 from pathlib import Path
-from typing import Literal
+from typing import ClassVar, Literal
 
 
 class SensitiveInfoFilter(logging.Filter):
     """过滤敏感信息的日志过滤器"""
 
-    SENSITIVE_PATTERNS = [
+    SENSITIVE_PATTERNS: ClassVar[list[str]] = [
         "api_key",
         "password",
         "secret",
@@ -37,14 +37,14 @@ class SensitiveInfoFilter(logging.Filter):
 class ColoredFormatter(logging.Formatter):
     """彩色日志格式化器"""
 
-    COLORS = {
+    COLORS: ClassVar[dict[str, str]] = {
         "DEBUG": "\033[36m",
         "INFO": "\033[32m",
         "WARNING": "\033[33m",
         "ERROR": "\033[31m",
         "CRITICAL": "\033[35m",
     }
-    RESET = "\033[0m"
+    RESET: ClassVar[str] = "\033[0m"
 
     def format(self, record: logging.LogRecord) -> str:
         """格式化日志记录，添加颜色"""
