@@ -446,25 +446,9 @@ class CSVParser:
                             "diff_days": diff_days,
                         },
                     )
-                    # 数据不一致时，使用 CSV 初始金额计算收益率（与 ts-demo 保持一致）
-                    current_value = float(product.current_amount or 0)
-                    initial_value = float(product.initial_amount)
-                    if product.profit_amount is not None and product.profit_amount != 0:
-                        simple_return = float(product.profit_amount) / initial_value
-                    else:
-                        simple_return = (current_value - initial_value) / initial_value
-                    product.return_rate = Decimal(str(round(simple_return * 100, 2)))
-                    
-                    # 计算年化收益率
-                    total_days = product.investment_days or 0
-                    if total_days > 0:
-                        simple_annualized = (1 + simple_return) ** (360 / total_days) - 1
-                        product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
-                    
-                    skip_irr_calculation = True  # 跳过后续的 IRR 计算
-            
-            if skip_irr_calculation:
-                continue  # 跳过后续的 IRR 计算
+                    # 数据不一致时，使用交易记录计算收益率（交易记录更准确）
+                    # 不跳过后续的 IRR 计算，让系统使用交易记录计算
+
             
             if total_buy > 0:
                 current_value = float(product.current_amount or 0)
