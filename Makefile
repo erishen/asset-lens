@@ -241,21 +241,45 @@ env-remove: ## 删除 conda 环境 asset-lens
 # 依赖管理
 # ============================================
 .PHONY: install
-install: ## 安装项目依赖
+install: ## 安装项目依赖（使用 uv）
 	@echo "📥 安装项目依赖..."
-	$(CONDA) pip install -r requirements.txt
+	$(UV) sync --all-extras
 	@echo "✅ 依赖安装完成"
 
 .PHONY: install-dev
-install-dev: ## 安装开发依赖
+install-dev: ## 安装开发依赖（使用 uv）
 	@echo "📥 安装开发依赖..."
-	$(CONDA) pip install -r requirements.txt
-	$(CONDA) pip install black isort mypy pylint pytest pytest-cov
+	$(UV) sync --extra dev
+	@echo "✅ 开发依赖安装完成"
+
+.PHONY: install-data
+install-data: ## 安装数据源依赖（使用 uv）
+	@echo "📥 安装数据源依赖..."
+	$(UV) sync --extra data
+	@echo "✅ 数据源依赖安装完成"
+
+.PHONY: install-web
+install-web: ## 安装 Web 依赖（使用 uv）
+	@echo "📥 安装 Web 依赖..."
+	$(UV) sync --extra web
+	@echo "✅ Web 依赖安装完成"
+
+.PHONY: install-ai
+install-ai: ## 安装 AI 依赖（使用 uv）
+	@echo "📥 安装 AI 依赖..."
+	$(UV) sync --extra ai
+	@echo "✅ AI 依赖安装完成"
+
+.PHONY: install-all
+install-all: ## 安装所有依赖（使用 uv）
+	@echo "📥 安装所有依赖..."
+	$(UV) sync --all-extras
+	@echo "✅ 所有依赖安装完成"
 
 .PHONY: uv-install
 uv-install: ## 使用 uv 安装依赖（更快）
 	@echo "⚡ 使用 uv 安装依赖..."
-	$(UV) pip install -e .
+	$(UV) sync --all-extras
 	@echo "✅ uv 安装完成"
 
 .PHONY: uv-sync
@@ -271,9 +295,10 @@ uv-lock: ## 使用 uv 锁定依赖
 	@echo "✅ uv 锁定完成"
 
 .PHONY: update
-update: ## 更新项目依赖
+update: ## 更新项目依赖（使用 uv）
 	@echo "🔄 更新项目依赖..."
-	$(CONDA) pip install --upgrade -r requirements.txt
+	$(UV) lock --upgrade
+	$(UV) sync
 	@echo "✅ 依赖更新完成"
 
 .PHONY: list-pkgs
