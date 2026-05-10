@@ -41,24 +41,43 @@ dependencies = [
     "python-dateutil>=2.8.0",
     "requests>=2.28.0",
     "aiohttp>=3.11.0",
-    "matplotlib>=3.7.0",
-    "reportlab>=4.0.0",
-    "jinja2>=3.1.0",
     "click>=8.1.0",
     "rich>=13.0.0",
-    "scipy>=1.10.0",
     "python-dotenv>=1.0.0",
     "pydantic>=2.0.0",
-    "fastapi>=0.100.0",
-    "uvicorn>=0.23.0",
-    "websockets>=11.0",
+    "pydantic-settings>=2.14.0",
+    "typing_extensions>=4.0.0",
+    "joblib>=1.3.0",
+    "scikit-learn>=1.3.0",
+    "tenacity>=9.1.4",
+    "numpy-financial>=1.0.0",
+]
+
+[project.optional-dependencies]
+data = [
     "akshare>=1.17.0",
     "tushare>=1.3.0",
     "baostock>=0.8.9",
+    "efinance>=0.5.0",
+]
+
+viz = [
+    "matplotlib>=3.7.0",
+    "reportlab>=4.0.0",
+    "jinja2>=3.1.0",
+    "scipy>=1.10.0",
     "sqlalchemy>=2.0.0",
-    "pydantic-settings>=2.14.0",
-    "tenacity>=9.1.4",
-    "litellm>=1.50.0",
+]
+
+web = [
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+    "websockets>=11.0",
+    "csvkit>=2.0.0",
+]
+
+ai = [
+    "litellm>=1.83.0",
     "langchain>=0.3.0",
     "langchain-core>=0.3.0",
     "langchain-community>=0.3.0",
@@ -67,10 +86,8 @@ dependencies = [
     "langchain-text-splitters>=0.3.0",
     "qdrant-client>=1.9.0,<1.13.0",
     "python-magic>=0.4.27",
-    "numpy-financial>=1.0.0",
 ]
 
-[project.optional-dependencies]
 dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
@@ -85,11 +102,9 @@ dev = [
     "playwright>=1.40.0",
     "pytest-playwright>=0.4.0",
 ]
-ai = [
-    "litellm>=1.83.0",
-]
+
 all = [
-    "asset-lens[dev,ai]",
+    "asset-lens[data,viz,web,ai,dev]",
 ]
 
 [project.scripts]
