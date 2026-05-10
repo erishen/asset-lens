@@ -428,14 +428,16 @@ class CSVParser:
             total_sell = sum(t["amount"] for t in transactions if t["type"] == "sell") if transactions else 0
 
             is_dca_product = cls._is_dca_product(product)
-            if is_dca_product and product.initial_amount and product.initial_amount > 0:
-                # 检查交易记录计算的净投入与 CSV 初始金额是否一致
+            skip_irr_calculation = False  # 标志：是否跳过 IRR 计算
+            
+            # 检查交易记录计算的净投入与 CSV 初始金额是否一致（对所有产品）
+            if product.initial_amount and product.initial_amount > 0 and total_buy > 0:
                 net_invest = total_buy - total_sell
-                if net_invest > 0 and abs(net_invest - float(product.initial_amount)) > 1:
+                if abs(net_invest - float(product.initial_amount)) > 1:
                     diff = net_invest - float(product.initial_amount)
                     diff_days = abs(diff) / 100 if abs(diff) >= 100 else abs(diff) / 50
                     logger.warning(
-                        f"定投产品数据不一致: {product.name}",
+                        f"产品数据不一致: {product.name}",
                         extra={
                             "product_name": product.name,
                             "csv_amount": float(product.initial_amount),
@@ -444,15 +446,27 @@ class CSVParser:
                             "diff_days": diff_days,
                         },
                     )
-
-                current_value = float(product.current_amount or 0)
-                initial_value = float(product.initial_amount)
-                if product.profit_amount is not None and product.profit_amount != 0:
-                    simple_return = float(product.profit_amount) / initial_value
-                else:
-                    simple_return = (current_value - initial_value) / initial_value
-                product.return_rate = Decimal(str(round(simple_return * 100, 2)))
-            elif total_buy > 0:
+                    # 数据不一致时，使用 CSV 初始金额计算收益率（与 ts-demo 保持一致）
+                    current_value = float(product.current_amount or 0)
+                    initial_value = float(product.initial_amount)
+                    if product.profit_amount is not None and product.profit_amount != 0:
+                        simple_return = float(product.profit_amount) / initial_value
+                    else:
+                        simple_return = (current_value - initial_value) / initial_value
+                    product.return_rate = Decimal(str(round(simple_return * 100, 2)))
+                    
+                    # 计算年化收益率
+                    total_days = product.investment_days or 0
+                    if total_days > 0:
+                        simple_annualized = (1 + simple_return) ** (360 / total_days) - 1
+                        product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
+                    
+                    skip_irr_calculation = True  # 跳过后续的 IRR 计算
+            
+            if skip_irr_calculation:
+                continue  # 跳过后续的 IRR 计算
+            
+            if total_buy > 0:
                 current_value = float(product.current_amount or 0)
                 if product.profit_amount is not None and product.profit_amount != 0 and product.initial_amount:
                     simple_return = float(product.profit_amount) / float(product.initial_amount)
@@ -902,7 +916,14 @@ class CSVParser:
         else:
             csv_path = data_path
 
-        return cls.parse_csv_file(csv_path)
+        products = cls.parse_csv_file(csv_path)
+        
+        # 对所有产品调用 IRR 计算（与 ts-demo 保持一致）
+        from datetime import datetime
+        reference_date = datetime.now()
+        products = cls._calculate_irr_for_products(products, reference_date)
+        
+        return products
 
     @classmethod
     def load_data_from_dir(cls, data_dir: Path) -> list[InvestmentProduct]:
