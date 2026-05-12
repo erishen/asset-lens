@@ -409,7 +409,7 @@ def register_strategy_commands(cli: click.Group) -> None:
 
             click.echo(f"  总持仓金额: ¥{total_position:,.2f} (买入成本)")
             click.echo(f"  当前市值: ¥{current_market_value:,.2f} (实时估值)")
-            pnl_emoji = "🟢" if unrealized_pnl >= 0 else "🔴"
+            pnl_emoji = "🔴" if unrealized_pnl >= 0 else "🟢"
             click.echo(f"  浮盈浮亏: {pnl_emoji} ¥{unrealized_pnl:+,.2f} ({unrealized_pnl_pct:+.2f}%)")
 
             remaining_buy = max(0, max_daily_buy - len(today_bought))
@@ -825,7 +825,7 @@ def register_strategy_commands(cli: click.Group) -> None:
             click.echo(f"  今日已买入: {len(today_bought)}")
             click.echo(f"  总持仓金额: ¥{total_position:,.2f} (买入成本)")
             click.echo(f"  当前市值: ¥{current_market_value:,.2f} (实时估值)")
-            pnl_emoji = "🟢" if unrealized_pnl >= 0 else "🔴"
+            pnl_emoji = "🔴" if unrealized_pnl >= 0 else "🟢"
             click.echo(f"  浮盈浮亏: {pnl_emoji} ¥{unrealized_pnl:+,.2f} ({unrealized_pnl_pct:+.2f}%)")
             if dry_run:
                 click.echo("  模式: 仅显示信号（未执行）")

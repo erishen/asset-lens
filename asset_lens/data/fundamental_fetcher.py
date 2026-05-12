@@ -392,13 +392,254 @@ class MoneyFlowFetcher:
                 )
 
             df = pd.DataFrame(records)
+            df = df.sort_values("date", ascending=False)
             logger.info(f"成功解析 {len(df)} 条北向资金记录")
-            return df.tail(days)
+            return df.head(days)
 
         except Exception as e:
             logger.warning(f"解析北向资金数据失败: {e}")
             logger.debug(f"解析北向资金数据失败: {e}")
             return None
+
+    def get_north_flow_by_industry(self, use_cache: bool = True) -> pd.DataFrame:
+        """获取北向资金行业流向数据
+        
+        使用AkShare的北向资金持股数据,按行业聚合计算流向
+        
+        Args:
+            use_cache: 是否使用缓存(默认True,缓存有效期1小时)
+        
+        Returns:
+            DataFrame包含行业流向数据
+        """
+        cache_file = self.cache_path / "north_industry_flow_cache.json"
+        
+        if use_cache:
+            cached_df = self._load_industry_cache(cache_file)
+            if cached_df is not None and not cached_df.empty:
+                logger.info(f"使用缓存的行业流向数据(缓存时间: {cached_df['cache_time'].iloc[0]})")
+                return cached_df.drop(columns=['cache_time'])
+        
+        try:
+            logger.info("使用AkShare获取北向资金持股数据...")
+            df = self._fetch_industry_flow_from_akshare()
+            
+            if df is not None and not df.empty:
+                if self._validate_industry_data(df):
+                    self._save_industry_cache(cache_file, df)
+                    logger.info(f"✅ 成功获取并缓存 {len(df)} 个行业的北向资金流向数据")
+                    return df
+                else:
+                    logger.warning(f"数据验证失败")
+                    return pd.DataFrame()
+            else:
+                logger.warning(f"未获取到数据")
+                return pd.DataFrame()
+                
+        except Exception as e:
+            logger.error(f"获取北向资金行业流向数据失败: {e}")
+            import traceback
+            traceback.print_exc()
+            return pd.DataFrame()
+    
+    def _fetch_industry_flow_from_akshare(self) -> pd.DataFrame | None:
+        """从AkShare获取北向资金持股数据并按行业聚合"""
+        if not self.akshare:
+            logger.warning("AkShare 未安装")
+            return None
+        
+        try:
+            import time
+            start_time = time.time()
+            
+            logger.info("正在获取北向资金持股数据(可能需要10-30秒)...")
+            df = self.akshare.stock_hsgt_hold_stock_em(market="北向")
+            
+            fetch_time = time.time() - start_time
+            logger.info(f"✅ 数据获取完成,耗时 {fetch_time:.2f} 秒")
+            
+            if df is None or df.empty:
+                logger.warning("未获取到北向资金持股数据")
+                return None
+            
+            logger.info(f"获取到 {len(df)} 条持股数据")
+            logger.debug(f"数据列名: {df.columns.tolist()}")
+            
+            # 检查是否有"所属板块"列
+            industry_col = None
+            for col in df.columns:
+                if "板块" in col or "行业" in col:
+                    industry_col = col
+                    break
+            
+            if not industry_col:
+                logger.warning("数据中没有行业/板块相关列")
+                return None
+            
+            logger.debug(f"使用行业列: {industry_col}")
+            
+            # 查找市值相关列
+            value_cols = []
+            for col in df.columns:
+                if "市值" in col or "增持" in col:
+                    value_cols.append(col)
+            
+            if not value_cols:
+                logger.warning("数据中没有市值相关列")
+                return None
+            
+            logger.debug(f"找到市值列: {value_cols}")
+            
+            # 选择合适的列进行聚合
+            # 优先使用包含"今日"的列
+            today_col = None
+            for col in value_cols:
+                if "今日" in col:
+                    today_col = col
+                    break
+            
+            if not today_col:
+                today_col = value_cols[0]
+            
+            logger.info(f"使用市值列: {today_col}")
+            
+            # 按行业聚合
+            logger.info("正在按行业聚合数据...")
+            agg_start = time.time()
+            
+            industry_flow = df.groupby(industry_col).agg({
+                today_col: "sum"
+            }).reset_index()
+            
+            agg_time = time.time() - agg_start
+            logger.info(f"✅ 聚合完成,耗时 {agg_time:.2f} 秒")
+            
+            # 重命名列
+            industry_flow.columns = ["industry", "net_inflow"]
+            
+            # 数据单位转换: AkShare返回的是"元",需要转换为"亿"
+            # 检查数值大小判断单位
+            max_val = abs(industry_flow["net_inflow"].max())
+            if max_val > 1e9:  # 如果数值 > 10亿,说明单位是"元"
+                logger.info("检测到数据单位为'元',正在转换为'亿'...")
+                industry_flow["net_inflow"] = industry_flow["net_inflow"] / 1e8
+            elif max_val > 1e6:  # 如果数值 > 100万,说明单位是"万元"
+                logger.info("检测到数据单位为'万元',正在转换为'亿'...")
+                industry_flow["net_inflow"] = industry_flow["net_inflow"] / 1e4
+            
+            # 计算变化率(暂时设为0,因为没有历史数据)
+            industry_flow["change_rate"] = 0.0
+            
+            # 添加数据源标记
+            industry_flow["data_source"] = "AkShare(北向持股分布)"
+            
+            # 排序
+            industry_flow = industry_flow.sort_values("net_inflow", ascending=False)
+            
+            total_time = time.time() - start_time
+            logger.info(f"✅ 成功聚合 {len(industry_flow)} 个行业数据,总耗时 {total_time:.2f} 秒")
+            
+            return industry_flow
+            
+        except Exception as e:
+            logger.error(f"AkShare获取失败: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
+    
+    def _validate_industry_data(self, df: pd.DataFrame) -> bool:
+        """验证行业流向数据质量
+        
+        Args:
+            df: 待验证的DataFrame
+            
+        Returns:
+            数据是否有效
+        """
+        if df.empty:
+            logger.warning("数据为空")
+            return False
+        
+        if len(df) < 10:
+            logger.warning(f"行业数量过少: {len(df)}")
+            return False
+        
+        if df['net_inflow'].isna().any():
+            logger.warning("存在缺失的净流入数据")
+            return False
+        
+        if df['change_rate'].isna().any():
+            logger.warning("存在缺失的变化率数据")
+            return False
+        
+        total_inflow = df[df['net_inflow'] > 0]['net_inflow'].sum()
+        total_outflow = df[df['net_inflow'] < 0]['net_inflow'].sum()
+        
+        # 北向资金总规模可能在几千亿到几万亿,调整验证阈值
+        if abs(total_inflow) > 50000 or abs(total_outflow) > 50000:
+            logger.warning(f"数据异常: 总流入{total_inflow:.2f}亿, 总流出{total_outflow:.2f}亿 (超过5万亿)")
+            return False
+        
+        logger.info(f"数据验证通过: {len(df)}个行业, 总流入{total_inflow:.2f}亿, 总流出{total_outflow:.2f}亿")
+        return True
+    
+    def _load_industry_cache(self, cache_file: Path) -> pd.DataFrame | None:
+        """加载行业流向缓存
+        
+        Args:
+            cache_file: 缓存文件路径
+            
+        Returns:
+            缓存的DataFrame或None
+        """
+        if not cache_file.exists():
+            return None
+        
+        try:
+            import json
+            from datetime import datetime, timedelta
+            
+            with open(cache_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            cache_time = datetime.fromisoformat(data['cache_time'])
+            if datetime.now() - cache_time > timedelta(hours=1):
+                logger.info("缓存已过期(超过1小时)")
+                return None
+            
+            df = pd.DataFrame(data['industries'])
+            df['cache_time'] = data['cache_time']
+            return df
+            
+        except Exception as e:
+            logger.warning(f"加载缓存失败: {e}")
+            return None
+    
+    def _save_industry_cache(self, cache_file: Path, df: pd.DataFrame):
+        """保存行业流向缓存
+        
+        Args:
+            cache_file: 缓存文件路径
+            df: 待缓存的DataFrame
+        """
+        try:
+            self.cache_path.mkdir(parents=True, exist_ok=True)
+            
+            import json
+            from datetime import datetime
+            
+            data = {
+                'cache_time': datetime.now().isoformat(),
+                'industries': df.to_dict('records')
+            }
+            
+            with open(cache_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            
+            logger.info(f"缓存已保存: {cache_file}")
+            
+        except Exception as e:
+            logger.warning(f"保存缓存失败: {e}")
 
 
 class EnhancedFeatureBuilder:
