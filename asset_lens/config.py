@@ -51,6 +51,10 @@ class Settings(BaseSettings):
     min_return_threshold: float = Field(default=2.0, description="最小收益阈值")
     workday_ratio: float = Field(default=0.7, description="工作日比例")
 
+    # 个人财务配置
+    monthly_salary: float = Field(default=0.0, description="月工资（税后）")
+    annual_bonus: float = Field(default=0.0, description="年终奖")
+
     output_format: str = Field(default="console,csv", description="输出格式")
     report_language: str = Field(default="zh", description="报告语言")
 
@@ -80,6 +84,20 @@ class Settings(BaseSettings):
     def validate_hkd_rate(cls, v: float) -> float:
         if not (0.7 < v < 1.2):
             raise ValueError(f"默认港元汇率应该在 0.7-1.2 之间，当前值: {v}")
+        return v
+
+    @field_validator("monthly_salary")
+    @classmethod
+    def validate_monthly_salary(cls, v: float) -> float:
+        if v < 0:
+            raise ValueError(f"月工资不能为负数，当前值: {v}")
+        return v
+
+    @field_validator("annual_bonus")
+    @classmethod
+    def validate_annual_bonus(cls, v: float) -> float:
+        if v < 0:
+            raise ValueError(f"年终奖不能为负数，当前值: {v}")
         return v
 
     class Config:

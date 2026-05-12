@@ -190,18 +190,18 @@ def register_report_commands(cli: click.Group) -> None:
 
             # Console 输出涨跌幅
             console.print("\n[bold]📊 本周表现[/bold]")
-            perf_table = Table(show_header=True, header_style="bold cyan", title="🟢 涨幅前5")
+            perf_table = Table(show_header=True, header_style="bold cyan", title="🔴 涨幅前5")
             perf_table.add_column("产品名称", style="dim")
-            perf_table.add_column("收益率", justify="right")
+            perf_table.add_column("收益率", justify="right", style="red")
             perf_table.add_column("金额", justify="right")
             for p in sorted_up:
                 perf_table.add_row(p.name[:20], f"+{float(p.return_rate or 0):.2f}%", _format_amount(p))
             console.print(perf_table)
 
             if sorted_down:
-                down_table = Table(show_header=True, header_style="bold cyan", title="🔴 跌幅前5")
+                down_table = Table(show_header=True, header_style="bold cyan", title="🟢 跌幅前5")
                 down_table.add_column("产品名称", style="dim")
-                down_table.add_column("收益率", justify="right")
+                down_table.add_column("收益率", justify="right", style="green")
                 down_table.add_column("金额", justify="right")
                 for p in sorted_down:
                     down_table.add_row(p.name[:20], f"{float(p.return_rate or 0):.2f}%", _format_amount(p))
@@ -211,7 +211,7 @@ def register_report_commands(cli: click.Group) -> None:
                 [
                     "## 📊 本周表现",
                     "",
-                    "### 🟢 涨幅前10",
+                    "### 🔴 涨幅前10",
                     "",
                     "| 产品名称 | 收益率 | 金额 |",
                     "|----------|--------|------|",
@@ -226,7 +226,7 @@ def register_report_commands(cli: click.Group) -> None:
             report_lines.extend(
                 [
                     "",
-                    "### 🔴 跌幅前10",
+                    "### 🟢 跌幅前10",
                     "",
                     "| 产品名称 | 收益率 | 金额 |",
                     "|----------|--------|------|",
@@ -317,8 +317,8 @@ def register_report_commands(cli: click.Group) -> None:
                         if bullish:
                             ml_table = Table(show_header=True, header_style="bold cyan", title="🟢 看涨股票")
                             ml_table.add_column("代码", style="dim")
-                            ml_table.add_column("名称")
-                            ml_table.add_column("上涨概率", justify="right")
+                            ml_table.add_column("名称", style="green")
+                            ml_table.add_column("上涨概率", justify="right", style="green")
                             for r in bullish:
                                 ml_table.add_row(r["code"], r["name"], f"{r['prob']:.1f}%")
                             console.print(ml_table)
@@ -326,8 +326,8 @@ def register_report_commands(cli: click.Group) -> None:
                         if bearish:
                             ml_down_table = Table(show_header=True, header_style="bold cyan", title="🔴 看跌股票")
                             ml_down_table.add_column("代码", style="dim")
-                            ml_down_table.add_column("名称")
-                            ml_down_table.add_column("下跌概率", justify="right")
+                            ml_down_table.add_column("名称", style="red")
+                            ml_down_table.add_column("下跌概率", justify="right", style="red")
                             for r in bearish:
                                 ml_down_table.add_row(r["code"], r["name"], f"{r['prob']:.1f}%")
                             console.print(ml_down_table)
@@ -528,9 +528,9 @@ def register_report_commands(cli: click.Group) -> None:
             )
 
             console.print("\n[bold]📊 本月表现[/bold]")
-            gain_table = Table(title="🟢 涨幅前10", show_header=True, header_style="bold green")
+            gain_table = Table(title="🔴 涨幅前10", show_header=True, header_style="bold red")
             gain_table.add_column("产品名称", style="dim")
-            gain_table.add_column("收益率", justify="right")
+            gain_table.add_column("收益率", justify="right", style="red")
             gain_table.add_column("金额", justify="right")
             for p in sorted_by_return[:10]:
                 gain_table.add_row(p.name[:20], f"{float(p.return_rate or 0):+.2f}%", _format_amount(p))
@@ -538,9 +538,9 @@ def register_report_commands(cli: click.Group) -> None:
 
             loss_products = [p for p in sorted_by_return if float(p.return_rate or 0) < 0]
             if loss_products:
-                loss_table = Table(title="🔴 跌幅前10", show_header=True, header_style="bold red")
+                loss_table = Table(title="🟢 跌幅前10", show_header=True, header_style="bold green")
                 loss_table.add_column("产品名称", style="dim")
-                loss_table.add_column("收益率", justify="right")
+                loss_table.add_column("收益率", justify="right", style="green")
                 loss_table.add_column("金额", justify="right")
                 for p in loss_products[:10]:
                     loss_table.add_row(p.name[:20], f"{float(p.return_rate or 0):.2f}%", _format_amount(p))
@@ -551,7 +551,7 @@ def register_report_commands(cli: click.Group) -> None:
                     "",
                     "## 📊 本月表现",
                     "",
-                    "### 🟢 涨幅前10",
+                    "### 🔴 涨幅前10",
                     "",
                     "| 产品名称 | 收益率 | 金额 |",
                     "|----------|--------|------|",
@@ -640,13 +640,13 @@ def register_report_commands(cli: click.Group) -> None:
 
                         if total_inflow > 100:
                             north_flow_trend = "bullish"
-                            trend_str = "🟢 强势流入"
+                            trend_str = "🔴 强势流入"
                         elif total_inflow > 0:
                             north_flow_trend = "neutral"
-                            trend_str = "🟡 小幅流入"
+                            trend_str = "🔴 小幅流入"
                         else:
                             north_flow_trend = "bearish"
-                            trend_str = "🔴 净流出"
+                            trend_str = "🟢 净流出"
 
                         console.print(f"  最近30天净流入: {trend_str} {total_inflow:.2f} 亿")
                         console.print(f"  日均净流入: {avg_inflow:.2f} 亿")
@@ -677,8 +677,8 @@ def register_report_commands(cli: click.Group) -> None:
                         if bullish:
                             ml_table = Table(show_header=True, header_style="bold cyan", title="🟢 看涨股票")
                             ml_table.add_column("代码", style="dim")
-                            ml_table.add_column("名称")
-                            ml_table.add_column("上涨概率", justify="right")
+                            ml_table.add_column("名称", style="green")
+                            ml_table.add_column("上涨概率", justify="right", style="green")
                             for r in bullish:
                                 ml_table.add_row(r["code"], r["name"], f"{r['prob']:.1f}%")
                             console.print(ml_table)
@@ -686,8 +686,8 @@ def register_report_commands(cli: click.Group) -> None:
                         if bearish:
                             ml_down_table = Table(show_header=True, header_style="bold cyan", title="🔴 看跌股票")
                             ml_down_table.add_column("代码", style="dim")
-                            ml_down_table.add_column("名称")
-                            ml_down_table.add_column("下跌概率", justify="right")
+                            ml_down_table.add_column("名称", style="red")
+                            ml_down_table.add_column("下跌概率", justify="right", style="red")
                             for r in bearish:
                                 ml_down_table.add_row(r["code"], r["name"], f"{r['prob']:.1f}%")
                             console.print(ml_down_table)
@@ -777,14 +777,14 @@ def register_report_commands(cli: click.Group) -> None:
                     )
 
                     if strong_buy:
-                        suggestions.append(f"  🟢🟢 强烈加仓 ({len(strong_buy)}只):")
+                        suggestions.append(f"  🔴🔴 强烈加仓 ({len(strong_buy)}只):")
                         for item in strong_buy[:4]:
                             name = item["fund"].name[:12]
                             reasons = item["reasons"][0] if item["reasons"] else ""
                             suggestions.append(f"      • {name} ({_format_amount(item['fund'])}): {reasons}")
 
                     if consider_buy:
-                        suggestions.append(f"  🟢 考虑加仓 ({len(consider_buy)}只):")
+                        suggestions.append(f"  🔴 考虑加仓 ({len(consider_buy)}只):")
                         for item in consider_buy[:3]:
                             name = item["fund"].name[:12]
                             reasons = item["reasons"][0] if item["reasons"] else ""
@@ -1218,10 +1218,10 @@ def _evaluate_fund(fund, north_flow_trend: str = "neutral") -> dict:
 
     if score >= 50:
         suggestion = "强烈加仓"
-        emoji = "🟢🟢"
+        emoji = "🔴🔴"
     elif score >= 30:
         suggestion = "考虑加仓"
-        emoji = "🟢"
+        emoji = "🔴"
     elif score >= 10:
         suggestion = "继续持有"
         emoji = "🟡"
@@ -1369,10 +1369,10 @@ def _evaluate_fund_with_peers(fund, peer_funds: list, north_flow_trend: str = "n
     # 7. 评级
     if score >= 45:
         suggestion = "强烈加仓"
-        emoji = "🟢🟢"
+        emoji = "🔴🔴"
     elif score >= 25:
         suggestion = "考虑加仓"
-        emoji = "🟢"
+        emoji = "🔴"
     elif score >= 10:
         suggestion = "继续持有"
         emoji = "🟡"
@@ -1514,14 +1514,13 @@ def _generate_suggestions(products: list, funds: list) -> list:
         suggestions.append(f"\n📱 【{platform_name}】 (¥{platform_data['amount']:,.0f}，{len(platform_funds)}只基金)")
 
         if strong_buy:
-            suggestions.append(f"  🟢🟢 强烈加仓 ({len(strong_buy)}只):")
+            suggestions.append(f"  🔴🔴 强烈加仓 ({len(strong_buy)}只):")
             for e in strong_buy[:4]:
                 name = e["fund"].name[:12]
                 reasons = e["reasons"][0] if e["reasons"] else ""
-                suggestions.append(f"      • {name} ({_format_amount(e['fund'])}): {reasons}")
-
+                suggestions.append(f"      • {name} (¥{e['fund'].current_amount:,.0f}): {reasons}")
         if consider_buy:
-            suggestions.append(f"  🟢 考虑加仓 ({len(consider_buy)}只):")
+            suggestions.append(f"  🔴 考虑加仓 ({len(consider_buy)}只):")
             for e in consider_buy[:3]:
                 name = e["fund"].name[:12]
                 reasons = e["reasons"][0] if e["reasons"] else ""

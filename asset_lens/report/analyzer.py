@@ -656,11 +656,38 @@ class ReportGenerator:
 
         weighted_annual_return = Decimal("0")
         total_weight = Decimal("0")
+        
+        # 计算当前持有投资的加权年化收益率（使用初始金额作为权重，与 ts-demo 保持一致）
         for product in portfolio.products:
-            if product.annual_return and product.current_amount:
-                weight = product.current_amount
+            if product.annual_return and product.initial_amount:
+                weight = product.initial_amount
+                # 对外币投资应用汇率转换
+                if product.investment_type:
+                    from ..data.models import InvestmentType
+                    if product.investment_type in [
+                        InvestmentType.US_STOCK,
+                        InvestmentType.USD_FUND,
+                    ]:
+                        rate = product.usd_rate or portfolio.usd_rate
+                        weight = weight * rate
+                    elif product.investment_type in [
+                        InvestmentType.HK_STOCK,
+                        InvestmentType.HK_CASH,
+                        InvestmentType.HK_DIVIDEND_FUND,
+                    ]:
+                        rate = product.hkd_rate or portfolio.hkd_rate
+                        weight = weight * rate
+                
                 weighted_annual_return += product.annual_return * weight
                 total_weight += weight
+        
+        # 加入已卖出投资的加权年化收益率（与 ts-demo 保持一致）
+        if sell_records:
+            for record in sell_records:
+                if record.annual_return and record.initial_amount:
+                    weight = record.initial_amount
+                    weighted_annual_return += record.annual_return * weight
+                    total_weight += weight
 
         weighted_annual_return = weighted_annual_return / total_weight if total_weight > Decimal("0") else Decimal("0")
 

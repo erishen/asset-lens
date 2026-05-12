@@ -394,13 +394,15 @@ class CSVParser:
 
     @classmethod
     def _calculate_irr_for_products(
-        cls, products: list[InvestmentProduct], reference_date: datetime | None = None
+        cls, products: list[InvestmentProduct], reference_date: datetime | None = None, usd_rate: float = 7.1242, hkd_rate: float = 0.9157
     ) -> list[InvestmentProduct]:
         """
         对有交易记录的产品使用 IRR 计算年化收益率（与 ts-demo 保持一致）
         Args:
             products: 投资产品列表
             reference_date: 参考日期（数据目录日期）
+            usd_rate: 美元汇率
+            hkd_rate: 港元汇率
         Returns:
             更新后的投资产品列表
         """
@@ -411,6 +413,15 @@ class CSVParser:
         DCAParser()
 
         for product in products:
+            # 判断是否为外币投资
+            inv_type_value = product.investment_type.value if product.investment_type else ""
+            is_usd_investment = "美元" in inv_type_value
+            is_hkd_investment = "港元" in inv_type_value
+            
+            # 获取汇率（优先使用产品自身的汇率，否则使用全局汇率）
+            product_usd_rate = float(product.usd_rate) if product.usd_rate else usd_rate
+            product_hkd_rate = float(product.hkd_rate) if product.hkd_rate else hkd_rate
+            
             transactions = []
             if product.transaction_records:
                 is_dca = cls._is_dca_product(product)
@@ -424,17 +435,48 @@ class CSVParser:
                 else:
                     transactions = cls._parse_transaction_records(product.transaction_records)
 
+            # 对交易记录应用汇率转换（与 ts-demo 保持一致）
+            if is_usd_investment or is_hkd_investment:
+                rate = product_usd_rate if is_usd_investment else product_hkd_rate
+                transactions = [
+                    {
+                        "date": t["date"],
+                        "type": t["type"],
+                        "amount": round(t["amount"] * rate)
+                    }
+                    for t in transactions
+                ]
+
             total_buy = sum(t["amount"] for t in transactions if t["type"] == "buy") if transactions else 0
             total_sell = sum(t["amount"] for t in transactions if t["type"] == "sell") if transactions else 0
 
             is_dca_product = cls._is_dca_product(product)
-            skip_irr_calculation = False  # 标志：是否跳过 IRR 计算
+            skip_irr_calculation = False
+            
+            # 对金额字段应用汇率转换（与 ts-demo 保持一致）
+            current_amount_cny = float(product.current_amount or 0)
+            initial_amount_cny = float(product.initial_amount or 0)
+            profit_amount_cny = float(product.profit_amount or 0)
+            interest_payment_cny = float(product.interest_payment or 0)
+            
+            if is_usd_investment:
+                rate = product_usd_rate
+                current_amount_cny = round(current_amount_cny * rate)
+                initial_amount_cny = round(initial_amount_cny * rate)
+                profit_amount_cny = round(profit_amount_cny * rate)
+                interest_payment_cny = round(interest_payment_cny * rate)
+            elif is_hkd_investment:
+                rate = product_hkd_rate
+                current_amount_cny = round(current_amount_cny * rate)
+                initial_amount_cny = round(initial_amount_cny * rate)
+                profit_amount_cny = round(profit_amount_cny * rate)
+                interest_payment_cny = round(interest_payment_cny * rate)
             
             # 检查交易记录计算的净投入与 CSV 初始金额是否一致（对所有产品）
-            if product.initial_amount and product.initial_amount > 0 and total_buy > 0:
+            if initial_amount_cny > 0 and total_buy > 0:
                 net_invest = total_buy - total_sell
-                if abs(net_invest - float(product.initial_amount)) > 1:
-                    diff = net_invest - float(product.initial_amount)
+                if abs(net_invest - initial_amount_cny) > 1:
+                    diff = net_invest - initial_amount_cny
                     diff_days = abs(diff) / 100 if abs(diff) >= 100 else abs(diff) / 50
                     logger.warning(
                         f"产品数据不一致: {product.name}",
@@ -451,19 +493,19 @@ class CSVParser:
 
             
             if total_buy > 0:
-                current_value = float(product.current_amount or 0)
-                if product.profit_amount is not None and product.profit_amount != 0 and product.initial_amount:
-                    simple_return = float(product.profit_amount) / float(product.initial_amount)
+                current_value = current_amount_cny
+                if profit_amount_cny != 0 and initial_amount_cny > 0:
+                    simple_return = profit_amount_cny / initial_amount_cny
                 else:
                     net_gain = current_value + total_sell - total_buy
                     simple_return = net_gain / total_buy
                 product.return_rate = Decimal(str(round(simple_return * 100, 2)))
-            elif product.initial_amount and product.initial_amount > 0:
-                initial_value = float(product.initial_amount)
-                if product.profit_amount is not None and product.profit_amount != 0:
-                    simple_return = float(product.profit_amount) / initial_value
+            elif initial_amount_cny > 0:
+                initial_value = initial_amount_cny
+                if profit_amount_cny != 0:
+                    simple_return = profit_amount_cny / initial_value
                 else:
-                    current_value = float(product.current_amount or 0)
+                    current_value = current_amount_cny
                     simple_return = (current_value - initial_value) / initial_value
                 product.return_rate = Decimal(str(round(simple_return * 100, 2)))
 
@@ -476,23 +518,23 @@ class CSVParser:
                 if is_bond_product:
                     # 对于债券类产品，使用简化计算方法（与 ts-demo 保持一致）
                     # 净收益 = 当前金额 + 利息 - 初始金额
-                    if product.initial_amount and product.initial_amount > 0:
-                        current_value = float(product.current_amount or 0)
-                        interest = float(product.interest_payment or 0)
-                        initial_value = float(product.initial_amount)
+                    if initial_amount_cny > 0:
+                        current_value = current_amount_cny
+                        interest = interest_payment_cny
+                        initial_value = initial_amount_cny
                         net_gain = current_value + interest - initial_value
                         simple_return = net_gain / initial_value
                         product.return_rate = Decimal(str(round(simple_return * 100, 2)))
                         simple_annualized = (1 + simple_return) ** (360 / total_days) - 1
                         product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
-                elif is_dca_product and product.initial_amount and product.initial_amount > 0:
-                    if product.start_date and product.current_amount:
+                elif is_dca_product and initial_amount_cny > 0:
+                    if product.start_date and current_amount_cny > 0:
                         cashflows = cls._calculate_cashflows_with_days_for_dca(
                             transactions,
                             product.start_date,
-                            product.current_amount,
+                            Decimal(str(current_amount_cny)),
                             total_days,
-                            product.initial_amount,
+                            Decimal(str(initial_amount_cny)),
                         )
                     else:
                         cashflows = []
@@ -517,7 +559,7 @@ class CSVParser:
                     cashflows = cls._calculate_cashflows_with_days(
                         transactions,
                         product.start_date,
-                        product.current_amount,
+                        Decimal(str(current_amount_cny)),
                         total_days,
                     )
 
@@ -540,6 +582,12 @@ class CSVParser:
                 elif product.return_rate is not None:
                     simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
                     product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
+                
+                # 使用交易记录重新计算实际收益率（与 ts-demo 保持一致）
+                if total_buy > 0:
+                    total_value = total_sell + current_amount_cny
+                    actual_return = (total_value - total_buy) / total_buy
+                    product.return_rate = Decimal(str(round(actual_return * 100, 2)))
 
         return products
 
@@ -862,7 +910,7 @@ class CSVParser:
                             products = cls.parse_csv_file(csv_path)
                             dir_date_str = target_dir.name.split("_")[-1]
                             reference_date = datetime.strptime(dir_date_str, "%Y%m%d")
-                            products = cls._calculate_irr_for_products(products, reference_date)
+                            products = cls._calculate_irr_for_products(products, reference_date, usd_rate, hkd_rate)
                             logger.info(
                                 f"成功加载 {len(products)} 个投资产品, 美元汇率: {usd_rate}, 港元汇率: {hkd_rate}"
                             )
@@ -905,7 +953,9 @@ class CSVParser:
         # 对所有产品调用 IRR 计算（与 ts-demo 保持一致）
         from datetime import datetime
         reference_date = datetime.now()
-        products = cls._calculate_irr_for_products(products, reference_date)
+        products = cls._calculate_irr_for_products(
+            products, reference_date, float(config.default_usd_rate), float(config.default_hkd_rate)
+        )
         
         return products
 
@@ -924,7 +974,7 @@ class CSVParser:
             raise FileNotFoundError(f"数据目录不存在: {data_dir}")
 
         # 获取汇率
-        _usd_rate, _hkd_rate = cls.get_exchange_rates(data_dir)
+        usd_rate, hkd_rate = cls.get_exchange_rates(data_dir)
 
         # 查找 CSV 文件
         patterns = [
@@ -957,7 +1007,7 @@ class CSVParser:
             from datetime import datetime
 
             reference_date = datetime.strptime(dir_date_str, "%Y%m%d")
-            products = cls._calculate_irr_for_products(products, reference_date)
+            products = cls._calculate_irr_for_products(products, reference_date, usd_rate, hkd_rate)
         except ValueError:
             pass
 

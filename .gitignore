@@ -234,3 +234,8 @@ data/*.sql
 # Real investment data (privacy protection)
 data/sample_data/投资产品.csv
 data/投资产品.csv
+
+# Personal financial records (NEVER commit)
+data/bonus_records.json
+data/consumption_records.json
+data/salary_records.json

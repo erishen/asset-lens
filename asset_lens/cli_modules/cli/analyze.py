@@ -378,6 +378,8 @@ def register_analyze_commands(cli: click.Group) -> None:
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     def analyze_sold(data_mode: str | None):
         """分析已卖出产品"""
+        from datetime import date, datetime
+
         from asset_lens.cli_modules.cli.helpers import setup_data_mode
         from asset_lens.data.sell_record_parser import SellRecordParser
 
@@ -395,44 +397,107 @@ def register_analyze_commands(cli: click.Group) -> None:
 
             click.echo(f"✅ 找到 {len(sell_records)} 个已卖出产品")
 
+            # 数据验证
+            missing_data_count = 0
+            for record in sell_records:
+                if not record.initial_amount or record.initial_amount <= 0:
+                    missing_data_count += 1
+                    click.echo(f"⚠️  {record.name}: 缺少初始金额数据")
+
+            if missing_data_count > 0:
+                click.echo(f"\n⚠️  警告: {missing_data_count} 个产品数据不完整")
+
             console = Console()
             table = Table(title="\n已卖出产品明细")
-            table.add_column("产品名称", style="cyan")
-            table.add_column("风险等级", style="green")
-            table.add_column("初始金额", justify="right")
-            table.add_column("收益", justify="right")
-            table.add_column("收益率", justify="right")
+            table.add_column("产品名称", style="cyan", width=25)
+            table.add_column("风险等级", style="green", width=8)
+            table.add_column("初始金额", justify="right", width=12)
+            table.add_column("收益", justify="right", width=10)
+            table.add_column("收益率", justify="right", width=10)
+            table.add_column("持有天数", justify="right", width=8)
+            table.add_column("年化收益率", justify="right", width=10)
 
             total_initial = Decimal("0")
             total_profit = Decimal("0")
+            records_with_days = []
 
             for record in sell_records:
                 initial = float(record.initial_amount or 0)
                 profit = float(record.profit_amount or 0)
                 return_rate = float(record.return_rate or 0)
+
+                # 计算持有天数
+                days = record.investment_days or 0
+                if days == 0 and record.start_date and record.sell_date:
+                    days = (record.sell_date - record.start_date).days
+
+                # 计算年化收益率（如果没有）
+                annual_return = float(record.annual_return or 0)
+                if annual_return == 0 and days > 0 and return_rate != 0:
+                    years = days / 365
+                    if years > 0:
+                        annual_return = ((1 + return_rate / 100) ** (1 / years) - 1) * 100
+
                 total_initial += Decimal(str(initial))
                 total_profit += Decimal(str(profit))
 
+                if days > 0:
+                    records_with_days.append({
+                        "name": record.name,
+                        "days": days,
+                        "return_rate": return_rate,
+                        "annual_return": annual_return,
+                        "initial": initial,
+                    })
+
                 table.add_row(
-                    record.name,
+                    record.name[:25],
                     record.risk_level.value if record.risk_level else "未知",
                     f"¥{initial:,.0f}",
                     f"¥{profit:,.0f}",
                     f"{return_rate:.2f}%",
+                    str(days) if days > 0 else "-",
+                    f"{annual_return:.2f}%" if annual_return != 0 else "-",
                 )
 
             console.print(table)
 
+            # 汇总统计
             total_return_rate = (float(total_profit) / float(total_initial) * 100) if total_initial > 0 else 0
             click.echo("\n📊 汇总:")
             click.echo(f"   总投入: ¥{float(total_initial):,.0f}")
             click.echo(f"   总收益: ¥{float(total_profit):,.0f}")
             click.echo(f"   总收益率: {total_return_rate:.2f}%")
 
+            # 持有期分析
+            if records_with_days:
+                click.echo("\n📅 持有期分析:")
+                avg_days = sum(r["days"] for r in records_with_days) / len(records_with_days)
+                click.echo(f"   平均持有天数: {avg_days:.0f} 天")
+
+                # 按持有期分组
+                short_term = [r for r in records_with_days if r["days"] < 90]
+                mid_term = [r for r in records_with_days if 90 <= r["days"] < 365]
+                long_term = [r for r in records_with_days if r["days"] >= 365]
+
+                if short_term:
+                    avg_return = sum(r["return_rate"] for r in short_term) / len(short_term)
+                    click.echo(f"   短期投资(<90天): {len(short_term)} 个, 平均收益率 {avg_return:.2f}%")
+                if mid_term:
+                    avg_return = sum(r["return_rate"] for r in mid_term) / len(mid_term)
+                    click.echo(f"   中期投资(90-365天): {len(mid_term)} 个, 平均收益率 {avg_return:.2f}%")
+                if long_term:
+                    avg_return = sum(r["return_rate"] for r in long_term) / len(long_term)
+                    click.echo(f"   长期投资(>365天): {len(long_term)} 个, 平均收益率 {avg_return:.2f}%")
+
             click.echo("\n✅ 分析完成！")
 
+        except FileNotFoundError as e:
+            click.echo(f"❌ 文件未找到: {e}", err=True)
         except Exception as e:
             click.echo(f"❌ 分析失败: {e}", err=True)
+            import traceback
+            traceback.print_exc()
 
     @cli.command("annual-return")
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
@@ -456,6 +521,17 @@ def register_analyze_commands(cli: click.Group) -> None:
 
             products = CSVParser.load_data()
             data_dir = _get_data_dir(config.data_mode)
+
+            # 从数据目录名称中提取日期
+            end_date = date.today()
+            if data_dir:
+                dir_name = data_dir.name
+                if dir_name.startswith("money_csv_"):
+                    try:
+                        date_str = dir_name.replace("money_csv_", "")
+                        end_date = datetime.strptime(date_str, "%Y%m%d").date()
+                    except Exception:
+                        pass
 
             # 获取汇率
             usd_rate = Decimal("7.2")
@@ -555,7 +631,6 @@ def register_analyze_commands(cli: click.Group) -> None:
             if investments:
                 earliest = min(investments, key=lambda x: x["start_date"])
                 earliest_date = earliest["start_date"]
-                end_date = date(2026, 4, 25)
                 days = (end_date - earliest_date).days
                 years = days / 365
             else:
@@ -568,7 +643,7 @@ def register_analyze_commands(cli: click.Group) -> None:
             products_with_date = len(investments)
             products_without_date = total_products - products_with_date
 
-            click.echo(f"\n📅 真实投资周期: {earliest_date} ~ 2026-04-25")
+            click.echo(f"\n📅 真实投资周期: {earliest_date} ~ {end_date}")
             click.echo(f"   投资天数: {days} 天 ({years:.2f} 年)")
 
             click.echo("\n📊 产品统计:")
@@ -676,7 +751,6 @@ def register_analyze_commands(cli: click.Group) -> None:
                                 total_current_value += p.current_amount
 
                     # 添加所有产品的当前市值作为最后的正向现金流
-                    end_date = date(2026, 4, 25)
                     end_days = (end_date - base_date).days
                     all_cashflows.append({"amount": float(total_current_value), "days": end_days})
 
@@ -723,7 +797,7 @@ def register_analyze_commands(cli: click.Group) -> None:
 
                 inv_list = cast(list[dict[str, Any]], stats["investments"])
                 if inv_list:
-                    avg_days = sum((date(2026, 4, 25) - i["start_date"]).days for i in inv_list) / len(inv_list)
+                    avg_days = sum((end_date - i["start_date"]).days for i in inv_list) / len(inv_list)
                 else:
                     avg_days = 0
                 avg_years = avg_days / 365
@@ -755,13 +829,10 @@ def register_analyze_commands(cli: click.Group) -> None:
 
             traceback.print_exc()
 
-    @cli.command("personal-irr")
+    @cli.command("analyze-by-time")
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
-    @click.option("--monthly-salary", type=float, default=24000, help="月工资（税后）")
-    @click.option("--annual-bonus", type=float, default=24000, help="年终奖")
-    def personal_irr(data_mode: str | None, monthly_salary: float, annual_bonus: float):
-        """计算综合个人财务IRR（工资收入 + 消费支出 + 投资）"""
-        import csv
+    def analyze_by_time(data_mode: str | None):
+        """按投资时间分组分析"""
         from datetime import date, datetime
 
         from asset_lens.cli_modules.cli.helpers import setup_data_mode
@@ -769,16 +840,259 @@ def register_analyze_commands(cli: click.Group) -> None:
 
         setup_data_mode(data_mode)
 
-        Console()
+        console = Console()
 
-        click.echo("\n📊 综合个人财务IRR分析")
+        click.echo("\n📊 按投资时间分组分析")
         click.echo("=" * 60)
 
         try:
             from asset_lens.data.csv_parser import CSVParser
 
             products = CSVParser.load_data()
+
+            # 获取汇率
+            usd_rate = Decimal("7.2")
+            hkd_rate = Decimal("0.92")
             data_dir = _get_data_dir(config.data_mode)
+            if data_dir:
+                try:
+                    rates = CSVParser.get_exchange_rates(data_dir)
+                    usd_rate = Decimal(str(rates[0]))
+                    hkd_rate = Decimal(str(rates[1]))
+                except Exception:
+                    pass
+
+            # 按投资时间分组
+            short_term = []  # < 90天
+            medium_term = []  # 90-365天
+            long_term = []  # 1-3年
+            very_long_term = []  # > 3年
+
+            # 从数据目录名称中提取日期
+            end_date = date.today()
+            if data_dir:
+                dir_name = data_dir.name
+                if dir_name.startswith("money_csv_"):
+                    try:
+                        date_str = dir_name.replace("money_csv_", "")
+                        end_date = datetime.strptime(date_str, "%Y%m%d").date()
+                    except Exception:
+                        pass
+
+            for p in products:
+                if not p.start_date or not p.current_amount:
+                    continue
+
+                days = (end_date - p.start_date).days
+                
+                # 跳过开始日期晚于结束日期的产品
+                if days < 0:
+                    continue
+                    
+                years = days / 365
+
+                # 获取金额（考虑汇率）
+                from asset_lens.cli_modules.cli.report import _get_cny_amount
+
+                amount = float(_get_cny_amount(p))
+                initial = float(p.initial_amount or 0)
+                profit = float(p.profit_amount or 0) if p.profit_amount else amount - initial
+
+                product_info = {
+                    "name": p.name,
+                    "type": p.investment_type.value if p.investment_type else "其他",
+                    "days": days,
+                    "years": years,
+                    "initial": initial,
+                    "current": amount,
+                    "profit": profit,
+                    "return_rate": float(p.return_rate) if p.return_rate else 0,
+                    "annual_return": float(p.annual_return) if p.annual_return else 0,
+                }
+
+                if days < 90:
+                    short_term.append(product_info)
+                elif days < 365:
+                    medium_term.append(product_info)
+                elif days < 1095:  # 3年
+                    long_term.append(product_info)
+                else:
+                    very_long_term.append(product_info)
+
+            # 输出结果
+            def print_group(name: str, products_list: list[dict], color: str):
+                if not products_list:
+                    return
+
+                click.echo(f"\n{color} {name}:")
+                click.echo("-" * 60)
+
+                total_initial = sum(p["initial"] for p in products_list)
+                total_current = sum(p["current"] for p in products_list)
+                total_profit = sum(p["profit"] for p in products_list)
+                avg_return = total_profit / total_initial * 100 if total_initial > 0 else 0
+
+                # 计算加权平均年化收益率
+                weighted_annual = 0
+                total_weight = 0
+                for p in products_list:
+                    if p["annual_return"] > 0:
+                        weighted_annual += p["annual_return"] * p["initial"]
+                        total_weight += p["initial"]
+
+                avg_annual = weighted_annual / total_weight if total_weight > 0 else 0
+
+                click.echo(f"   产品数: {len(products_list)}")
+                click.echo(f"   总本金: ¥{total_initial:,.0f}")
+                click.echo(f"   总现值: ¥{total_current:,.0f}")
+                click.echo(f"   总收益: ¥{total_profit:,.0f}")
+                click.echo(f"   平均收益率: {avg_return:.2f}%")
+                if avg_annual > 0:
+                    click.echo(f"   加权年化收益率: {avg_annual:.2f}%")
+
+                # 显示前5个产品（表格形式）
+                from rich.table import Table
+
+                table = Table(title="\n   前5个产品", show_header=True, header_style="bold cyan")
+                table.add_column("排名", style="cyan", width=6)
+                table.add_column("产品名称", style="white", width=35)
+                table.add_column("现值(¥)", justify="right", style="green", width=12)
+                table.add_column("天数", justify="right", style="yellow", width=8)
+                table.add_column("实际收益率", justify="right", style="magenta", width=12)
+                table.add_column("年化收益率", justify="right", width=12)
+
+                for i, p in enumerate(sorted(products_list, key=lambda x: x["annual_return"], reverse=True)[:5], 1):
+                    annual_return_str = f"{p['annual_return']:.2f}%" if p["annual_return"] > 0 else "-"
+                    annual_return_style = "green" if p["annual_return"] > 0 else "red"
+                    table.add_row(
+                        str(i),
+                        p["name"],
+                        f"{p['current']:,.0f}",
+                        str(p["days"]),
+                        f"{p['return_rate']:.2f}%",
+                        f"[{annual_return_style}]{annual_return_str}[/{annual_return_style}]",
+                    )
+
+                console.print(table)
+
+            print_group("短期投资（< 90天）", short_term, "🟢")
+            print_group("中期投资（90-365天）", medium_term, "🟡")
+            print_group("长期投资（1-3年）", long_term, "🟠")
+            print_group("超长期投资（> 3年）", very_long_term, "🔴")
+
+            # 汇总
+            total_products = len(short_term) + len(medium_term) + len(long_term) + len(very_long_term)
+            total_initial = (
+                sum(p["initial"] for p in short_term)
+                + sum(p["initial"] for p in medium_term)
+                + sum(p["initial"] for p in long_term)
+                + sum(p["initial"] for p in very_long_term)
+            )
+            total_current = (
+                sum(p["current"] for p in short_term)
+                + sum(p["current"] for p in medium_term)
+                + sum(p["current"] for p in long_term)
+                + sum(p["current"] for p in very_long_term)
+            )
+            total_profit = (
+                sum(p["profit"] for p in short_term)
+                + sum(p["profit"] for p in medium_term)
+                + sum(p["profit"] for p in long_term)
+                + sum(p["profit"] for p in very_long_term)
+            )
+
+            click.echo("\n📊 汇总:")
+            click.echo(f"   总产品数: {total_products}")
+            click.echo(f"   总本金: ¥{total_initial:,.0f}")
+            click.echo(f"   总现值: ¥{total_current:,.0f}")
+            click.echo(f"   总收益: ¥{total_profit:,.0f}")
+            if total_initial > 0:
+                click.echo(f"   总收益率: {total_profit / total_initial * 100:.2f}%")
+
+            click.echo("\n✅ 分析完成！")
+
+        except Exception as e:
+            click.echo(f"❌ 分析失败: {e}", err=True)
+            import traceback
+
+            traceback.print_exc()
+
+    @cli.command("personal-irr")
+    @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
+    @click.option("--monthly-salary", type=float, default=None, help="月工资（税后），默认从配置文件读取")
+    @click.option("--annual-bonus", type=float, default=None, help="年终奖，默认从配置文件或bonus_records.json读取")
+    def personal_irr(data_mode: str | None, monthly_salary: float | None, annual_bonus: float | None):
+        """计算综合个人财务IRR（工资收入 + 消费支出 + 投资）"""
+        import csv
+        import json
+        from datetime import date, datetime
+        from pathlib import Path
+
+        from asset_lens.cli_modules.cli.helpers import setup_data_mode
+        from asset_lens.config import config, settings
+
+        setup_data_mode(data_mode)
+
+        # 优先使用命令行参数，如果没有指定则使用配置文件中的值
+        if monthly_salary is None:
+            monthly_salary = settings.monthly_salary
+
+        # 加载年终奖记录
+        bonus_records = {}
+        bonus_file = Path(__file__).parent.parent.parent.parent / "data" / "bonus_records.json"
+        if bonus_file.exists():
+            try:
+                with open(bonus_file, "r", encoding="utf-8") as f:
+                    bonus_data = json.load(f)
+                    for record in bonus_data.get("records", []):
+                        bonus_records[record["year"]] = {
+                            "date": datetime.strptime(record["issue_date"], "%Y-%m-%d").date(),
+                            "amount": record["after_tax"],
+                            "note": record.get("note", ""),
+                        }
+            except Exception as e:
+                click.echo(f"⚠️  读取年终奖记录失败: {e}")
+
+        # 如果没有指定年终奖，使用配置文件中的值
+        if annual_bonus is None:
+            annual_bonus = settings.annual_bonus
+
+        Console()
+
+        click.echo("\n📊 综合个人财务IRR分析")
+        click.echo("=" * 60)
+
+        # 显示假设条件
+        click.echo("\n⚠️  假设条件:")
+        click.echo(f"   1. 月工资（税后）: ¥{monthly_salary:,.0f}")
+        if bonus_records:
+            click.echo(f"   2. 年终奖: 从 bonus_records.json 读取（共 {len(bonus_records)} 年记录）")
+        else:
+            click.echo(f"   2. 年终奖: ¥{annual_bonus:,.0f}（固定金额）")
+        click.echo(f"   3. 工资发放日: 每月15日")
+        click.echo(f"   4. 年终奖发放日: 每年12月25日（或从JSON文件读取实际日期）")
+        click.echo(f"   5. 消费支出: 每月25日")
+        click.echo("\n💡 提示:")
+        click.echo("   - 可在 .env 文件中配置 MONTHLY_SALARY 和 ANNUAL_BONUS")
+        click.echo("   - 可在 data/bonus_records.json 中记录每年的年终奖详情")
+        click.echo("   - 也可通过 --monthly-salary 和 --annual-bonus 参数临时调整")
+
+        try:
+            from asset_lens.data.csv_parser import CSVParser
+
+            products = CSVParser.load_data()
+            data_dir = _get_data_dir(config.data_mode)
+
+            # 从数据目录名称中提取日期
+            end_date = date.today()
+            if data_dir:
+                dir_name = data_dir.name
+                if dir_name.startswith("money_csv_"):
+                    try:
+                        date_str = dir_name.replace("money_csv_", "")
+                        end_date = datetime.strptime(date_str, "%Y%m%d").date()
+                    except Exception:
+                        pass
 
             Decimal("7.2")
             Decimal("0.92")
@@ -811,7 +1125,15 @@ def register_analyze_commands(cli: click.Group) -> None:
             if base_date is None:
                 base_date = date(2024, 11, 1)
 
-            click.echo(f"\n📅 分析周期: {base_date} ~ 2026-04-25")
+            click.echo(f"\n📅 分析周期: {base_date} ~ {end_date}")
+
+            # 数据完整性检查
+            products_with_transactions = sum(1 for p in products if p.transaction_records)
+            products_with_start_date = sum(1 for p in products if p.start_date)
+            click.echo(f"\n📊 数据完整性:")
+            click.echo(f"   总产品数: {len(products)}")
+            click.echo(f"   有交易记录: {products_with_transactions}")
+            click.echo(f"   有开始日期: {products_with_start_date}")
 
             consumption_file = data_dir / "消费记录-表格 1.csv" if data_dir else None
             consumption_data: dict[str, float] = {}
@@ -828,9 +1150,9 @@ def register_analyze_commands(cli: click.Group) -> None:
                                 consumption_data[month_str] = total
                             except Exception:
                                 pass
-                click.echo(f"✅ 读取消费记录: {len(consumption_data)} 个月")
+                click.echo(f"   消费记录: {len(consumption_data)} 个月")
             else:
-                click.echo("⚠️  未找到消费记录文件")
+                click.echo("   消费记录: ⚠️  未找到")
 
             total_salary_income = Decimal("0")
             total_consumption = Decimal("0")
@@ -844,13 +1166,14 @@ def register_analyze_commands(cli: click.Group) -> None:
             if consumption_data:
                 avg_monthly_consumption = sum(consumption_data.values()) / len(consumption_data)
                 click.echo(f"   月均消费（推算依据）: ¥{avg_monthly_consumption:,.0f}")
+            else:
+                click.echo("   ⚠️  消费数据缺失，将无法准确计算储蓄率")
 
             salary_cashflows: list[dict[str, Any]] = []
             consumption_cashflows: list[dict[str, Any]] = []
 
             start_year = base_date.year
             start_month = base_date.month
-            end_date = date(2026, 4, 25)
 
             estimated_months = 0
             actual_months = 0
@@ -870,14 +1193,33 @@ def register_analyze_commands(cli: click.Group) -> None:
                         )
                         total_salary_income += Decimal(str(monthly_salary))
 
-                    if month == 12 and year < 2025:
-                        bonus_date = date(year, 12, 25)
-                        days = (bonus_date - base_date).days
-                        if days >= 0:
-                            salary_cashflows.append(
-                                {"amount": annual_bonus, "days": days, "type": "bonus", "date": bonus_date}
-                            )
-                            total_salary_income += Decimal(str(annual_bonus))
+                    if month == 12:
+                        # 检查是否有该年份的年终奖记录
+                        if year in bonus_records:
+                            # 使用实际发放日期和金额
+                            bonus_date = bonus_records[year]["date"]
+                            bonus_amount = bonus_records[year]["amount"]
+                            days = (bonus_date - base_date).days
+                            if days >= 0 and bonus_date <= end_date:
+                                salary_cashflows.append(
+                                    {
+                                        "amount": bonus_amount,
+                                        "days": days,
+                                        "type": "bonus",
+                                        "date": bonus_date,
+                                        "note": bonus_records[year].get("note", ""),
+                                    }
+                                )
+                                total_salary_income += Decimal(str(bonus_amount))
+                        else:
+                            # 使用默认日期和金额
+                            bonus_date = date(year, 12, 25)
+                            days = (bonus_date - base_date).days
+                            if days >= 0:
+                                salary_cashflows.append(
+                                    {"amount": annual_bonus, "days": days, "type": "bonus", "date": bonus_date}
+                                )
+                                total_salary_income += Decimal(str(annual_bonus))
 
                     month_key = f"{year}.{month:02d}"
                     consumption_date = date(year, month, 25)
@@ -910,10 +1252,10 @@ def register_analyze_commands(cli: click.Group) -> None:
 
             click.echo("\n📊 收支汇总:")
             click.echo(f"   工资收入: ¥{float(total_salary_income):,.0f}")
-            click.echo("      (2025年年终奖未发放，已排除)")
             click.echo(f"   消费支出: ¥{float(total_consumption):,.0f}")
             if estimated_months > 0:
                 click.echo(f"      (实际记录 {actual_months} 个月 + 推算 {estimated_months} 个月)")
+                click.echo(f"      ⚠️  推算部分可能不准确，建议补充消费记录数据")
             click.echo(f"   净收入: ¥{float(total_salary_income - total_consumption):,.0f}")
 
             from asset_lens.cli_modules.cli.report import (
@@ -1039,6 +1381,10 @@ def register_analyze_commands(cli: click.Group) -> None:
                     click.echo("\n🎯 综合IRR分析结果:")
                     click.echo(f"   IRR 年化收益率: {irr * 100:.2f}%")
                     click.echo("   说明: 包含工资收入、消费支出、投资产品")
+                    click.echo("\n⚠️  注意事项:")
+                    click.echo("   1. IRR计算基于假设条件，实际结果可能有所不同")
+                    click.echo("   2. 建议定期更新数据以提高准确性")
+                    click.echo("   3. 消费数据不完整时，IRR结果可能偏高")
 
                     float(total_current_value + total_salary_income - total_consumption - total_investment)
                     click.echo("\n📊 财富净值变化:")
@@ -1068,8 +1414,9 @@ def register_analyze_commands(cli: click.Group) -> None:
 
             click.echo("\n✅ 分析完成！")
 
+        except FileNotFoundError as e:
+            click.echo(f"❌ 文件未找到: {e}", err=True)
         except Exception as e:
             click.echo(f"❌ 分析失败: {e}", err=True)
             import traceback
-
             traceback.print_exc()

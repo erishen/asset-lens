@@ -569,7 +569,7 @@ def register_data_commands(cli: click.Group) -> None:
                 net_inflow = row.get("north_net_inflow", 0)
                 if net_inflow:
                     total_inflow += net_inflow
-                    trend = "🔴 流出" if net_inflow < 0 else "🟢 流入"
+                    trend = "🟢 流出" if net_inflow < 0 else "🔴 流入"
                     table.add_row(
                         str(row.get("date", "")),
                         f"{net_inflow:.2f}",
@@ -581,9 +581,245 @@ def register_data_commands(cli: click.Group) -> None:
             console.print("\n📊 汇总:")
             console.print(f"   总净流入: {total_inflow:.2f} 亿")
             if total_inflow > 0:
-                console.print("   [green]整体趋势: 北向资金净流入[/green]")
+                console.print("   [red]整体趋势: 北向资金净流入[/red]")
             else:
-                console.print("   [red]整体趋势: 北向资金净流出[/red]")
+                console.print("   [green]整体趋势: 北向资金净流出[/green]")
 
         except Exception as e:
             console.print(f"[red]❌ 获取北向资金数据失败: {e}[/red]")
+
+    @cli.command("north-industry")
+    @click.option("--save", is_flag=True, help="保存到数据库")
+    @click.option("--history", "show_history", is_flag=True, help="显示历史数据")
+    @click.option("--days", default=7, type=int, help="历史天数(默认7天)")
+    @click.option("--trend", "industry_name", help="显示指定行业的趋势")
+    def north_industry(save: bool, show_history: bool, days: int, industry_name: str | None):
+        """北向资金行业流向分析"""
+        from rich.console import Console
+        from rich.table import Table
+
+        from asset_lens.data.fundamental_fetcher import MoneyFlowFetcher
+        from asset_lens.db.database import db_manager
+
+        console = Console()
+        console.print("\n🏭 北向资金行业流向分析")
+        console.print("=" * 60)
+
+        try:
+            if show_history:
+                console.print(f"\n📊 显示最近 {days} 天的历史数据...")
+                dates = db_manager.get_north_industry_flow_dates(days=days)
+                
+                if not dates:
+                    console.print("[yellow]⚠️ 数据库中没有历史数据,请先使用 --save 保存数据[/yellow]")
+                    return
+                
+                console.print(f"✅ 找到 {len(dates)} 天的历史数据")
+                
+                for date in dates[:5]:
+                    flow_data = db_manager.get_north_industry_flow(date=date)
+                    if flow_data:
+                        _display_industry_flow_table(console, flow_data, date)
+                
+                if len(dates) > 5:
+                    console.print(f"\n... 还有 {len(dates) - 5} 天的数据未显示")
+                
+                return
+            
+            if industry_name:
+                console.print(f"\n📈 {industry_name} 行业流向趋势(最近{days}天)...")
+                trend_data = db_manager.get_north_industry_flow_trend(industry=industry_name, days=days)
+                
+                if not trend_data:
+                    console.print(f"[yellow]⚠️ 数据库中没有 {industry_name} 的历史数据[/yellow]")
+                    return
+                
+                _display_industry_trend(console, trend_data, industry_name)
+                return
+
+            fetcher = MoneyFlowFetcher()
+            df = fetcher.get_north_flow_by_industry()
+
+            if df.empty:
+                console.print("[yellow]⚠️ 无法获取北向资金行业流向数据[/yellow]")
+                return
+
+            console.print(f"\n📊 北向资金行业持仓分布 (数据来源: {df['data_source'].iloc[0]})")
+            console.print("   说明: 显示北向资金在各行业的持仓市值分布，单位：亿元")
+
+            if save:
+                from datetime import datetime, timedelta
+                date = datetime.now().strftime("%Y-%m-%d")
+                industry_data = df.to_dict('records')
+                result = db_manager.save_north_industry_flow(date, industry_data)
+                
+                if result['added'] > 0:
+                    console.print(f"\n✅ 已保存 {result['added']} 条新数据到数据库")
+                elif result['updated'] > 0:
+                    console.print(f"\n✅ 已更新 {result['updated']} 条数据到数据库")
+                else:
+                    console.print(f"\n✅ 数据已是最新，无需保存")
+                
+                # 计算流向变化
+                yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+                yesterday_data = db_manager.get_north_industry_flow(date=yesterday)
+                
+                if yesterday_data:
+                    console.print(f"\n📈 行业流向变化分析 (对比 {yesterday}):")
+                    
+                    # 计算变化
+                    yesterday_df = pd.DataFrame(yesterday_data)
+                    merged = df.merge(yesterday_df[['industry', 'net_inflow']], 
+                                     on='industry', 
+                                     suffixes=('', '_yesterday'))
+                    
+                    merged['flow_change'] = merged['net_inflow'] - merged['net_inflow_yesterday']
+                    merged['flow_change_pct'] = (merged['flow_change'] / merged['net_inflow_yesterday'].abs() * 100).fillna(0)
+                    
+                    # 显示流入增加最多的行业
+                    inflow_increase = merged[merged['flow_change'] > 0].nlargest(5, 'flow_change')
+                    if not inflow_increase.empty:
+                        console.print(f"\n   🔴 流入增加TOP5:")
+                        for i, (_, row) in enumerate(inflow_increase.iterrows(), 1):
+                            console.print(f"      {i}. {row['industry']}: +{row['flow_change']:.2f}亿 ({row['flow_change_pct']:+.1f}%)")
+                    
+                    # 显示流出最多的行业（持仓减少）
+                    outflow_increase = merged[merged['flow_change'] < 0].nsmallest(5, 'flow_change')
+                    if not outflow_increase.empty:
+                        console.print(f"\n   🟢 流出增加TOP5:")
+                        for i, (_, row) in enumerate(outflow_increase.iterrows(), 1):
+                            console.print(f"      {i}. {row['industry']}: {row['flow_change']:.2f}亿 ({row['flow_change_pct']:+.1f}%)")
+                else:
+                    console.print(f"\n💡 提示: 没有找到昨天({yesterday})的数据，明天可以看到流向变化")
+
+            _display_industry_flow_table(console, df.to_dict('records'))
+
+        except Exception as e:
+            console.print(f"[red]❌ 分析失败: {e}[/red]")
+            import traceback
+            traceback.print_exc()
+
+
+def _display_industry_flow_table(console, flow_data: list, date: str | None = None):
+    """显示行业流向表格"""
+    import pandas as pd
+    from rich.table import Table
+
+    df = pd.DataFrame(flow_data) if not isinstance(flow_data, pd.DataFrame) else flow_data
+    
+    if date:
+        console.print(f"\n📅 {date}")
+    
+    inflow_df = df[df['net_inflow'] > 0].head(10)
+    outflow_df = df[df['net_inflow'] < 0].head(10)
+
+    if not inflow_df.empty:
+        inflow_table = Table(title="\n🔴 持仓市值TOP10", show_header=True, header_style="bold red")
+        inflow_table.add_column("排名", style="cyan", width=6)
+        inflow_table.add_column("行业", style="white", width=20)
+        inflow_table.add_column("持仓市值(亿)", justify="right", style="red", width=12)
+        inflow_table.add_column("占比", justify="right", style="yellow", width=10)
+
+        total_value = df['net_inflow'].sum()
+        
+        for i, (_, row) in enumerate(inflow_df.iterrows(), 1):
+            ratio = (row['net_inflow'] / total_value * 100) if total_value > 0 else 0
+            inflow_table.add_row(
+                str(i),
+                row['industry'],
+                f"+{row['net_inflow']:.2f}",
+                f"{ratio:.1f}%"
+            )
+
+        console.print(inflow_table)
+
+    if not outflow_df.empty:
+        outflow_table = Table(title="\n🟢 净流出行业TOP10", show_header=True, header_style="bold green")
+        outflow_table.add_column("排名", style="cyan", width=6)
+        outflow_table.add_column("行业", style="white", width=20)
+        outflow_table.add_column("净流出(亿)", justify="right", style="green", width=12)
+        outflow_table.add_column("变化率", justify="right", style="yellow", width=10)
+
+        for i, (_, row) in enumerate(outflow_df.iterrows(), 1):
+            outflow_table.add_row(
+                str(i),
+                row['industry'],
+                f"{row['net_inflow']:.2f}",
+                f"{row['change_rate']:+.2f}%"
+            )
+
+        console.print(outflow_table)
+
+    total_inflow = df[df['net_inflow'] > 0]['net_inflow'].sum()
+    total_outflow = df[df['net_inflow'] < 0]['net_inflow'].sum()
+    net_total = total_inflow + total_outflow
+
+    console.print("\n📊 汇总统计:")
+    console.print(f"   行业数量: {len(df)} 个")
+    console.print(f"   总持仓市值: {net_total:.2f} 亿")
+    
+    if len(inflow_df) > 0:
+        top1 = inflow_df.iloc[0]
+        top1_ratio = (top1['net_inflow'] / net_total * 100) if net_total > 0 else 0
+        console.print(f"   第一大行业: {top1['industry']} ({top1_ratio:.1f}%)")
+
+    console.print("\n💡 分析建议:")
+    if not inflow_df.empty:
+        top_inflow = inflow_df.iloc[0]
+        console.print(f"   🔴 北向资金重仓: {top_inflow['industry']} (持仓 {top_inflow['net_inflow']:.2f} 亿)")
+        
+        # 显示前3大行业
+        if len(inflow_df) >= 3:
+            console.print(f"\n   📈 北向资金持仓TOP3:")
+            for i, (_, row) in enumerate(inflow_df.head(3).iterrows(), 1):
+                ratio = (row['net_inflow'] / net_total * 100) if net_total > 0 else 0
+                console.print(f"      {i}. {row['industry']}: {row['net_inflow']:.2f}亿 ({ratio:.1f}%)")
+
+
+def _display_industry_trend(console, trend_data: list, industry_name: str):
+    """显示行业趋势"""
+    from rich.table import Table
+
+    if not trend_data:
+        return
+
+    table = Table(title=f"\n📈 {industry_name} 行业流向趋势", show_header=True, header_style="bold magenta")
+    table.add_column("日期", style="cyan", width=12)
+    table.add_column("净流入(亿)", justify="right", width=12)
+    table.add_column("变化率", justify="right", width=10)
+    table.add_column("趋势", justify="center", width=8)
+
+    prev_inflow = None
+    for data in trend_data:
+        net_inflow = data['net_inflow']
+        change_rate = data['change_rate']
+        
+        if prev_inflow is not None:
+            if net_inflow > prev_inflow:
+                trend = "📈 上升"
+            elif net_inflow < prev_inflow:
+                trend = "📉 下降"
+            else:
+                trend = "➡️ 持平"
+        else:
+            trend = "-"
+        
+        table.add_row(
+            data['date'],
+            f"{net_inflow:+.2f}",
+            f"{change_rate:+.2f}%",
+            trend
+        )
+        prev_inflow = net_inflow
+
+    console.print(table)
+
+    avg_inflow = sum(d['net_inflow'] for d in trend_data) / len(trend_data)
+    console.print(f"\n📊 统计:")
+    console.print(f"   平均净流入: {avg_inflow:+.2f} 亿")
+    console.print(f"   数据天数: {len(trend_data)} 天")
+    
+    if avg_inflow > 0:
+        console.print(f"   💡 结论: 北向资金整体看好 {industry_name} 行业")
+    else:
+        console.print(f"   💡 结论: 北向资金整体看空 {industry_name} 行业")
