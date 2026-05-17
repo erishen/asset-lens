@@ -243,9 +243,11 @@ def register_analyze_commands(cli: click.Group) -> None:
 
             total_pnl = result.get("total", 0)
             total_amount = result.get("total_amount", 0)
+            total_amount_all = result.get("total_amount_all", total_amount)
             return_rate = result.get("total_return_rate", 0)
 
-            click.echo(f"\n💰 总资产: ¥{total_amount:,.2f}")
+            click.echo(f"\n💰 总资产: ¥{total_amount_all:,.2f}")
+            click.echo(f"💰 权益资产: ¥{total_amount:,.2f}")
             click.echo(f"📈 {period_text}盈亏: ¥{total_pnl:,.2f}")
             click.echo(f"📊 收益率: {return_rate:.2f}%")
 
@@ -333,11 +335,13 @@ def register_analyze_commands(cli: click.Group) -> None:
                 table.add_column("收益率", justify="right", min_width=7)
 
                 for result in up_results[:30]:
+                    from asset_lens.utils.cli_utils import format_amount_with_currency
+
                     table.add_row(
                         result.product_name,
                         result.product_type[:6],
                         (result.risk_level or "未知")[:4],
-                        f"¥{result.current_value:,.0f}",
+                        format_amount_with_currency(float(result.current_value), result.investment_type),
                         f"¥{result.estimated_daily_return:,.0f}",
                         f"{result.estimated_daily_return_rate:.2f}%",
                     )
@@ -355,11 +359,13 @@ def register_analyze_commands(cli: click.Group) -> None:
                 table.add_column("收益率", justify="right", min_width=7)
 
                 for result in down_results[:30]:
+                    from asset_lens.utils.cli_utils import format_amount_with_currency
+
                     table.add_row(
                         result.product_name,
                         result.product_type[:6],
                         (result.risk_level or "未知")[:4],
-                        f"¥{result.current_value:,.0f}",
+                        format_amount_with_currency(float(result.current_value), result.investment_type),
                         f"¥{result.estimated_daily_return:,.0f}",
                         f"{result.estimated_daily_return_rate:.2f}%",
                     )
@@ -419,7 +425,7 @@ def register_analyze_commands(cli: click.Group) -> None:
 
             total_initial = Decimal("0")
             total_profit = Decimal("0")
-            records_with_days = []
+            records_with_days: list[dict[str, Any]] = []
 
             for record in sell_records:
                 initial = float(record.initial_amount or 0)
@@ -863,10 +869,10 @@ def register_analyze_commands(cli: click.Group) -> None:
                     pass
 
             # 按投资时间分组
-            short_term = []  # < 90天
-            medium_term = []  # 90-365天
-            long_term = []  # 1-3年
-            very_long_term = []  # > 3年
+            short_term: list[dict[str, Any]] = []  # < 90天
+            medium_term: list[dict[str, Any]] = []  # 90-365天
+            long_term: list[dict[str, Any]] = []  # 1-3年
+            very_long_term: list[dict[str, Any]] = []  # > 3年
 
             # 从数据目录名称中提取日期
             end_date = date.today()

@@ -8,8 +8,28 @@ from datetime import date
 from decimal import Decimal
 from typing import Any
 
-from ..data.models import InvestmentProduct
+from ..data.models import InvestmentProduct, InvestmentType
 from ..data.parser_utils import calculate_return_rate
+
+
+def _get_cny_amount(product: InvestmentProduct, usd_rate: Decimal, hkd_rate: Decimal) -> Decimal:
+    """获取产品的人民币金额（考虑汇率转换）"""
+    amount = product.current_amount or Decimal("0")
+    if amount == 0:
+        return Decimal("0")
+
+    if product.investment_type in [InvestmentType.US_STOCK, InvestmentType.USD_FUND]:
+        rate = product.usd_rate or usd_rate
+        return amount * rate
+    elif product.investment_type in [
+        InvestmentType.HK_STOCK,
+        InvestmentType.HK_CASH,
+        InvestmentType.HK_DIVIDEND_FUND,
+    ]:
+        rate = product.hkd_rate or hkd_rate
+        return amount * rate
+
+    return amount
 
 
 @dataclass
@@ -74,6 +94,8 @@ class ComparisonAnalyzer:
         products_before: list[InvestmentProduct],
         products_after: list[InvestmentProduct],
         period: str = "自定义对比",
+        usd_rate: Decimal = Decimal("7.2"),
+        hkd_rate: Decimal = Decimal("0.92"),
     ) -> dict[str, Any]:
         """
         对比两个时期的投资组合
@@ -82,6 +104,8 @@ class ComparisonAnalyzer:
             products_before: 之前的产品列表
             products_after: 之后的产品列表
             period: 分析周期描述
+            usd_rate: 美元汇率
+            hkd_rate: 港元汇率
 
         Returns:
             对比分析结果
@@ -104,12 +128,16 @@ class ComparisonAnalyzer:
             product_before = before_map.get(name)
             product_after = after_map.get(name)
 
-            # 获取金额
+            # 获取金额（考虑汇率转换）
             amount_before = (
-                product_before.current_amount if product_before and product_before.current_amount else Decimal("0")
+                _get_cny_amount(product_before, usd_rate, hkd_rate)
+                if product_before
+                else Decimal("0")
             )
             amount_after = (
-                product_after.current_amount if product_after and product_after.current_amount else Decimal("0")
+                _get_cny_amount(product_after, usd_rate, hkd_rate)
+                if product_after
+                else Decimal("0")
             )
 
             # 计算变化
@@ -281,6 +309,8 @@ class ComparisonAnalyzer:
         products_before: list[InvestmentProduct],
         products_after: list[InvestmentProduct],
         period: str = "自定义对比",
+        usd_rate: Decimal = Decimal("7.2"),
+        hkd_rate: Decimal = Decimal("0.92"),
     ) -> dict[str, Any]:
         """
         生成完整的对比报告
@@ -289,12 +319,14 @@ class ComparisonAnalyzer:
             products_before: 之前的产品列表
             products_after: 之后的产品列表
             period: 分析周期描述
+            usd_rate: 美元汇率
+            hkd_rate: 港元汇率
 
         Returns:
             完整的对比分析结果
         """
         # 基础对比
-        comparison = self.compare_periods(products_before, products_after, period)
+        comparison = self.compare_periods(products_before, products_after, period, usd_rate, hkd_rate)
 
         # 分类统计
         improving = [r for r in comparison["details"] if r.return_rate > Decimal("0.5")]

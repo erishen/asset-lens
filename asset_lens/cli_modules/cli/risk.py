@@ -127,6 +127,7 @@ def check():
         holdings = {}
         stocks = []
         total_value: float = 0.0
+        cash_value: float = 0.0
 
         for product in products:
             current_value = float(product.current_amount or product.total_amount or 0)
@@ -134,6 +135,25 @@ def check():
                 code = product.code if hasattr(product, "code") else (product.name or "unknown")
                 holdings[code] = current_value
                 total_value += current_value
+
+                # 统计现金类资产和中低风险资产
+                if hasattr(product, "investment_type"):
+                    from asset_lens.data.models import InvestmentType
+                    # 中低风险资产（不计入仓位）
+                    low_risk_types = [
+                        InvestmentType.CASH,
+                        InvestmentType.HK_CASH,
+                        InvestmentType.MONETARY,
+                        InvestmentType.WEALTH,
+                        InvestmentType.HIGH_END_WEALTH,
+                        InvestmentType.BROKER_WEALTH,
+                        InvestmentType.PUBLIC_FIXED_INCOME,
+                        InvestmentType.FIXED_DEPOSIT,
+                        InvestmentType.BOND,
+                        InvestmentType.SPECIAL_TREASURY_BOND,
+                    ]
+                    if product.investment_type in low_risk_types:
+                        cash_value += current_value
 
                 cost = float(product.initial_amount or 0)
                 if cost > 0:
@@ -147,9 +167,13 @@ def check():
                         }
                     )
 
+        # 计算仓位：投资金额 / 总资产
+        invested_value = total_value - cash_value
+        position = (invested_value / total_value * 100) if total_value > 0 else 0
+
         portfolio_data = {
             "holdings": holdings,
-            "position": 100,
+            "position": position,
             "stocks": stocks,
         }
 

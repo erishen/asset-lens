@@ -84,12 +84,24 @@ def format_amount(value: float | Decimal | None, currency: str = "¥") -> str:
 def get_usd_rate() -> Decimal:
     """获取美元汇率"""
     from asset_lens.config import config
+    from asset_lens.data.csv_parser import CSVParser
 
+    data_dir = config.get_latest_data_dir()
+    if data_dir:
+        usd_rate, _ = CSVParser.get_exchange_rates(data_dir)
+        return Decimal(str(usd_rate))
+    
     return Decimal(str(config.default_usd_rate))
 
 
 def get_hkd_rate() -> Decimal:
     """获取港币汇率"""
     from asset_lens.config import config
+    from asset_lens.data.csv_parser import CSVParser
 
+    data_dir = config.get_latest_data_dir()
+    if data_dir:
+        _, hkd_rate = CSVParser.get_exchange_rates(data_dir)
+        return Decimal(str(hkd_rate))
+    
     return Decimal(str(config.default_hkd_rate))

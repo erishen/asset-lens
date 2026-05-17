@@ -98,15 +98,15 @@ class CSVParser:
                             hkd_idx = i
 
                     if usd_idx != -1 or hkd_idx != -1:
-                        usd_rate = default_usd
-                        hkd_rate = default_hkd
+                        usd_rate = None
+                        hkd_rate = None
 
                         for i in range(len(lines) - 1, 0, -1):
                             cells = lines[i].strip().split(",")
                             if len(cells) <= max(usd_idx, hkd_idx):
                                 continue
 
-                            if usd_idx != -1 and usd_rate == default_usd:
+                            if usd_idx != -1 and usd_rate is None:
                                 try:
                                     rate = float(cells[usd_idx])
                                     if 5 < rate < 10:
@@ -114,7 +114,7 @@ class CSVParser:
                                 except (ValueError, IndexError):
                                     pass
 
-                            if hkd_idx != -1 and hkd_rate == default_hkd:
+                            if hkd_idx != -1 and hkd_rate is None:
                                 try:
                                     rate = float(cells[hkd_idx])
                                     if 0.8 < rate < 1.2:
@@ -122,13 +122,13 @@ class CSVParser:
                                 except (ValueError, IndexError):
                                     pass
 
-                            if usd_rate != default_usd and hkd_rate != default_hkd:
+                            if usd_rate is not None and hkd_rate is not None:
                                 break
 
-                        if usd_rate != default_usd or hkd_rate != default_hkd:
-                            rates = (usd_rate, hkd_rate)
+                        if usd_rate is not None or hkd_rate is not None:
+                            rates = (usd_rate or default_usd, hkd_rate or default_hkd)
                             exchange_rate_cache.set(cache_key, rates)
-                            logger.info(f"从资产汇总加载汇率: USD={usd_rate}, HKD={hkd_rate}")
+                            logger.info(f"从资产汇总加载汇率: USD={rates[0]}, HKD={rates[1]}")
                             return rates
 
             csv_files = list(data_dir.glob("投资产品*.csv"))
@@ -150,15 +150,15 @@ class CSVParser:
                             hkd_idx = i
 
                     if usd_idx != -1 or hkd_idx != -1:
-                        usd_rate = default_usd
-                        hkd_rate = default_hkd
+                        usd_rate = None
+                        hkd_rate = None
 
                         for i in range(1, len(lines)):
                             cells = lines[i].strip().split(",")
                             if len(cells) <= max(usd_idx, hkd_idx):
                                 continue
 
-                            if usd_idx != -1 and usd_rate == default_usd:
+                            if usd_idx != -1 and usd_rate is None:
                                 try:
                                     rate = float(cells[usd_idx])
                                     if 5 < rate < 10:
@@ -166,7 +166,7 @@ class CSVParser:
                                 except (ValueError, IndexError):
                                     pass
 
-                            if hkd_idx != -1 and hkd_rate == default_hkd:
+                            if hkd_idx != -1 and hkd_rate is None:
                                 try:
                                     rate = float(cells[hkd_idx])
                                     if 0.8 < rate < 1.2:
@@ -174,13 +174,13 @@ class CSVParser:
                                 except (ValueError, IndexError):
                                     pass
 
-                            if usd_rate != default_usd and hkd_rate != default_hkd:
+                            if usd_rate is not None and hkd_rate is not None:
                                 break
 
-                        if usd_rate != default_usd or hkd_rate != default_hkd:
-                            rates = (usd_rate, hkd_rate)
+                        if usd_rate is not None or hkd_rate is not None:
+                            rates = (usd_rate or default_usd, hkd_rate or default_hkd)
                             exchange_rate_cache.set(cache_key, rates)
-                            logger.info(f"从投资产品加载汇率: USD={usd_rate}, HKD={hkd_rate}")
+                            logger.info(f"从投资产品加载汇率: USD={rates[0]}, HKD={rates[1]}")
                             return rates
 
             return default_usd, default_hkd
@@ -482,7 +482,7 @@ class CSVParser:
                         f"产品数据不一致: {product.name}",
                         extra={
                             "product_name": product.name,
-                            "csv_amount": float(product.initial_amount),
+                            "csv_amount": float(product.initial_amount or 0),
                             "transaction_amount": net_invest,
                             "difference": diff,
                             "diff_days": diff_days,
@@ -585,7 +585,16 @@ class CSVParser:
                 
                 # 使用交易记录重新计算实际收益率（与 ts-demo 保持一致）
                 if total_buy > 0:
-                    total_value = total_sell + current_amount_cny
+                    # 对于债券类产品，需要加上利息发放
+                    is_bond_product = (product.investment_type.value and "债" in product.investment_type.value) or (
+                        product.name and "分红" in product.name
+                    )
+                    
+                    if is_bond_product and interest_payment_cny > 0:
+                        total_value = total_sell + current_amount_cny + interest_payment_cny
+                    else:
+                        total_value = total_sell + current_amount_cny
+                    
                     actual_return = (total_value - total_buy) / total_buy
                     product.return_rate = Decimal(str(round(actual_return * 100, 2)))
 
@@ -786,6 +795,7 @@ class CSVParser:
     def parse_csv_file(cls, csv_path: Path, reference_date: date | None = None) -> list[InvestmentProduct]:
         """
         解析 CSV 文件
+
         Args:
             csv_path: CSV 文件路径
             reference_date: 参考日期（用于计算投资天数），默认为当前日期
@@ -800,6 +810,10 @@ class CSVParser:
 
         products = []
 
+        # 先从数据目录中读取汇率
+        data_dir = csv_path.parent
+        usd_rate, hkd_rate = cls.get_exchange_rates(data_dir)
+
         try:
             with open(csv_path, encoding="utf-8-sig") as f:
                 # 使用 csv.DictReader 读取
@@ -808,6 +822,11 @@ class CSVParser:
                 for _row_num, row in enumerate(reader, start=2):  # 从第2行开始计数
                     product = cls.parse_row(row, reference_date)
                     if product:
+                        # 如果产品没有汇率，使用从 CSV 文件中读取的汇率
+                        if product.usd_rate is None:
+                            product.usd_rate = Decimal(str(usd_rate))
+                        if product.hkd_rate is None:
+                            product.hkd_rate = Decimal(str(hkd_rate))
                         products.append(product)
                     # 不再打印警告，因为空行和小计行是正常情况
 

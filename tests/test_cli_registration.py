@@ -107,9 +107,9 @@ class TestCLIRegistration:
 
         commands = cli.list_commands(None)
 
-        # 应该有 40-70 个命令
+        # 应该有 40-75 个命令
         assert len(commands) >= 40, f"命令数量 {len(commands)} 应该 >= 40"
-        assert len(commands) <= 70, f"命令数量 {len(commands)} 应该 <= 70"
+        assert len(commands) <= 75, f"命令数量 {len(commands)} 应该 <= 75"
 
     def test_no_duplicate_commands(self):
         """测试没有重复的命令"""

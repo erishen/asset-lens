@@ -340,3 +340,46 @@ def safe_divide(numerator: float, denominator: float, default: float = 0.0) -> f
         除法结果
     """
     return numerator / denominator if denominator != 0 else default
+
+
+def format_amount_with_currency(
+    amount: float,
+    investment_type: str | None = None,
+    usd_rate: float | None = None,
+    hkd_rate: float | None = None,
+) -> str:
+    """
+    根据投资类型格式化金额显示
+
+    Args:
+        amount: 金额（原始货币）
+        investment_type: 投资类型
+        usd_rate: 美元汇率（可选）
+        hkd_rate: 港币汇率（可选）
+
+    Returns:
+        格式化后的金额字符串
+    """
+    if amount == 0:
+        return "¥0"
+
+    from asset_lens.config import config
+    from asset_lens.data.csv_parser import CSVParser
+    from pathlib import Path
+
+    if usd_rate is None or hkd_rate is None:
+        try:
+            data_dir = Path(config.real_data_path) if config.data_mode == "real" else Path(config.sample_data_path)
+            usd_rate, hkd_rate = CSVParser.get_exchange_rates(data_dir)
+        except Exception:
+            usd_rate = float(config.default_usd_rate)
+            hkd_rate = float(config.default_hkd_rate)
+
+    if investment_type in ["美股", "美元基金", "美元基金（美元）"]:
+        cny_amount = amount * usd_rate
+        return f"${amount:,.0f} (¥{cny_amount:,.0f})"
+    elif investment_type in ["港股", "现金（港元）", "股息基金（港元）"]:
+        cny_amount = amount * hkd_rate
+        return f"HK${amount:,.0f} (¥{cny_amount:,.0f})"
+
+    return f"¥{amount:,.0f}"

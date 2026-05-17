@@ -39,8 +39,8 @@ class CalculateReportGenerator:
             avg_positive_return = Decimal(str(total)) / Decimal(str(len(positive_products)))
 
         # 总投资金额 = 所有有类型且金额>0的记录的当前金额总和（考虑汇率转换，不包含利息）
-        usd_rate = Decimal(str(config.default_usd_rate))
-        hkd_rate = Decimal(str(config.default_hkd_rate))
+        usd_rate = portfolio.usd_rate or Decimal("7.0")
+        hkd_rate = portfolio.hkd_rate or Decimal("0.9")
 
         all_products_with_amount = [
             p
@@ -85,8 +85,15 @@ class CalculateReportGenerator:
         return [p for p in portfolio.products if p.annual_return is None or p.start_date is None]
 
     def _get_type_distribution(self, products: list[InvestmentProduct]) -> dict[str, dict[str, Any]]:
-        usd_rate = Decimal(str(config.default_usd_rate))
-        hkd_rate = Decimal(str(config.default_hkd_rate))
+        usd_rate = Decimal("7.0")
+        hkd_rate = Decimal("0.9")
+        
+        if products:
+            first_product = products[0]
+            if hasattr(first_product, '_portfolio') and first_product._portfolio:
+                usd_rate = first_product._portfolio.usd_rate or usd_rate
+                hkd_rate = first_product._portfolio.hkd_rate or hkd_rate
+        
         type_stats: dict[str, dict[str, Any]] = {}
 
         for product in products:

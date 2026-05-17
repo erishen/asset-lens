@@ -33,10 +33,17 @@ def register_compare_commands(cli: click.Group) -> None:
         try:
             data_dir = Path("data")
             real_dir = data_dir / "real"
+            ts_demo_data_dir = Path("../ts-demo/data")
 
             data_dirs = []
             if real_dir.exists():
                 data_dirs = sorted([d for d in real_dir.iterdir() if d.is_dir()], key=lambda x: x.name)
+
+            if not data_dirs and ts_demo_data_dir.exists():
+                data_dirs = sorted(
+                    [d for d in ts_demo_data_dir.iterdir() if d.is_dir() and d.name.startswith("money_csv_")],
+                    key=lambda x: x.name,
+                )
 
             if len(data_dirs) >= 2:
                 before_dir = (
@@ -66,8 +73,27 @@ def register_compare_commands(cli: click.Group) -> None:
             click.echo(f"✅ 加载 {len(products_before)} 个产品（之前）")
             click.echo(f"✅ 加载 {len(products_after)} 个产品（之后）")
 
+            # 获取汇率
+            from asset_lens.config import config
+            from decimal import Decimal
+
+            usd_rate = Decimal(str(config.default_usd_rate))
+            hkd_rate = Decimal(str(config.default_hkd_rate))
+            try:
+                from asset_lens.data.csv_parser import CSVParser
+
+                latest_data_dir = config.get_latest_data_dir()
+                if latest_data_dir:
+                    usd_rate_f, hkd_rate_f = CSVParser.get_exchange_rates(latest_data_dir)
+                    usd_rate = Decimal(str(usd_rate_f))
+                    hkd_rate = Decimal(str(hkd_rate_f))
+            except Exception:
+                pass
+
             analyzer = ComparisonAnalyzer()
-            result = analyzer.generate_comparison_report(products_before, products_after, f"近{days}天对比")
+            result = analyzer.generate_comparison_report(
+                products_before, products_after, f"近{days}天对比", usd_rate, hkd_rate
+            )
 
             trend = result["comparison"]["trend"]
             click.echo("\n💰 总体变化:")
@@ -221,13 +247,47 @@ def _get_historical_products(days: int) -> list:
 
 
 def _get_initial_products(current_products: list) -> list:
-    """获取初始投资产品数据（基于初始金额）"""
+    """获取初始投资产品数据（基于初始金额，考虑汇率转换）"""
     from copy import deepcopy
+    from decimal import Decimal
+
+    from asset_lens.data.models import InvestmentType
+
+    # 获取汇率
+    from asset_lens.config import config
+
+    usd_rate = Decimal(str(config.default_usd_rate))
+    hkd_rate = Decimal(str(config.default_hkd_rate))
+    try:
+        from asset_lens.data.csv_parser import CSVParser
+
+        data_dir = config.get_latest_data_dir()
+        if data_dir:
+            usd_rate_f, hkd_rate_f = CSVParser.get_exchange_rates(data_dir)
+            usd_rate = Decimal(str(usd_rate_f))
+            hkd_rate = Decimal(str(hkd_rate_f))
+    except Exception:
+        pass
 
     initial_products = []
     for p in current_products:
         initial_p = deepcopy(p)
-        initial_p.current_amount = p.initial_amount
+
+        # 获取初始金额并考虑汇率转换
+        initial_amount = p.initial_amount or Decimal("0")
+        if initial_amount > 0:
+            if p.investment_type in [InvestmentType.US_STOCK, InvestmentType.USD_FUND]:
+                rate = Decimal(str(p.usd_rate)) if p.usd_rate else usd_rate
+                initial_amount = initial_amount * rate
+            elif p.investment_type in [
+                InvestmentType.HK_STOCK,
+                InvestmentType.HK_CASH,
+                InvestmentType.HK_DIVIDEND_FUND,
+            ]:
+                rate = Decimal(str(p.hkd_rate)) if p.hkd_rate else hkd_rate
+                initial_amount = initial_amount * rate
+
+        initial_p.current_amount = initial_amount
         initial_p.return_rate = 0
         initial_p.profit_amount = 0
         initial_products.append(initial_p)

@@ -563,9 +563,9 @@ def register_strategy_commands(cli: click.Group) -> None:
                 click.echo(f"\n📉 卖出信号 ({len(sell_signals)}):")
                 for signal in sell_signals:
                     signal_type = (
-                        "🔴止损"
+                        "🟢止损"
                         if signal.get("is_stop_loss")
-                        else ("🟢止盈" if signal.get("is_take_profit") else "📊趋势")
+                        else ("🔴止盈" if signal.get("is_take_profit") else "📊趋势")
                     )
                     click.echo(f"  {signal['code']} - {signal['name']} [{signal_type}]")
                     click.echo(f"    收益率: {signal['profit_rate']:+.2f}%, 持仓: {signal['holding_days']}天")
@@ -583,7 +583,7 @@ def register_strategy_commands(cli: click.Group) -> None:
                             code=signal["code"], price=signal["current_price"], notes=f"止损卖出: {signal['reason']}"
                         )
                         if success:
-                            click.echo(f"🔴 止损卖出: {msg}")
+                            click.echo(f"🟢 止损卖出: {msg}")
                         else:
                             click.echo(f"⏭️ {msg}")
 
@@ -596,7 +596,7 @@ def register_strategy_commands(cli: click.Group) -> None:
                                     notes=f"止盈卖出: {signal['reason']}",
                                 )
                                 if success:
-                                    click.echo(f"🟢 止盈卖出: {msg}")
+                                    click.echo(f"🔴 止盈卖出: {msg}")
                                 else:
                                     click.echo(f"⏭️ {msg}")
                         else:
@@ -849,10 +849,10 @@ def register_strategy_commands(cli: click.Group) -> None:
                 click.echo("     继续执行策略，保持纪律")
 
             if unrealized_pnl_pct < -5:
-                click.echo("  🔴 整体亏损较大，建议检查持仓")
+                click.echo("  🟢 整体亏损较大，建议检查持仓")
                 click.echo("     考虑止损或减仓，等待市场好转")
             elif unrealized_pnl_pct > 10:
-                click.echo("  🟢 整体盈利良好，可考虑部分止盈")
+                click.echo("  🔴 整体盈利良好，可考虑部分止盈")
                 click.echo("     建议分批卖出锁定收益")
 
             if len(holding_stocks) > 10:
