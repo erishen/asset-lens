@@ -74,8 +74,9 @@ def register_compare_commands(cli: click.Group) -> None:
             click.echo(f"✅ 加载 {len(products_after)} 个产品（之后）")
 
             # 获取汇率
-            from asset_lens.config import config
             from decimal import Decimal
+
+            from asset_lens.config import config
 
             usd_rate = Decimal(str(config.default_usd_rate))
             hkd_rate = Decimal(str(config.default_hkd_rate))
@@ -249,12 +250,10 @@ def _get_historical_products(days: int) -> list:
 def _get_initial_products(current_products: list) -> list:
     """获取初始投资产品数据（基于初始金额，考虑汇率转换）"""
     from copy import deepcopy
-    from decimal import Decimal
-
-    from asset_lens.data.models import InvestmentType
 
     # 获取汇率
     from asset_lens.config import config
+    from asset_lens.data.models import InvestmentType
 
     usd_rate = Decimal(str(config.default_usd_rate))
     hkd_rate = Decimal(str(config.default_hkd_rate))

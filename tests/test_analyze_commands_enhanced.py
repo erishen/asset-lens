@@ -3,14 +3,15 @@ Tests for analyze-sold and personal-irr commands
 测试已卖出投资分析和个人财务IRR分析命令
 """
 
-import pytest
-from click.testing import CliRunner
-from unittest.mock import patch, MagicMock
 from datetime import date
 from decimal import Decimal
+from unittest.mock import MagicMock, patch
+
+import pytest
+from click.testing import CliRunner
 
 from asset_lens.cli import cli
-from asset_lens.data.models import SellRecord, RiskLevel
+from asset_lens.data.models import RiskLevel, SellRecord
 
 
 class TestAnalyzeSoldCommand:
