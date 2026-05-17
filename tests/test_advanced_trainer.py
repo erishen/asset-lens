@@ -8,6 +8,14 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
+
+try:
+    import lightgbm
+
+    HAS_LIGHTGBM = True
+except ImportError:
+    HAS_LIGHTGBM = False
 
 
 class TestTrainingResult:
@@ -129,6 +137,7 @@ class TestAdvancedMLTrainer:
             assert X_selected.shape[1] == 10
             assert len(trainer._selected_features) == 10
 
+    @pytest.mark.skipif(not HAS_LIGHTGBM, reason="lightgbm not installed")
     def test_train_with_cv(self):
         """测试交叉验证训练"""
         from asset_lens.ml.advanced_trainer import AdvancedMLTrainer
@@ -148,6 +157,7 @@ class TestAdvancedMLTrainer:
             assert len(result.cv_scores) == 3
             assert 0 <= result.auc_roc <= 1
 
+    @pytest.mark.skipif(not HAS_LIGHTGBM, reason="lightgbm not installed")
     def test_get_model(self):
         """测试获取模型"""
         from asset_lens.ml.advanced_trainer import AdvancedMLTrainer
@@ -186,6 +196,7 @@ class TestAdvancedMLTrainer:
             saved_file = Path(tmpdir) / "test_result.json"
             assert saved_file.exists()
 
+    @pytest.mark.skipif(not HAS_LIGHTGBM, reason="lightgbm not installed")
     def test_benchmark_query(self):
         """测试基准查询"""
         from asset_lens.ml.advanced_trainer import AdvancedMLTrainer
@@ -207,6 +218,7 @@ class TestAdvancedMLTrainer:
 class TestFeatureImportance:
     """特征重要性测试"""
 
+    @pytest.mark.skipif(not HAS_LIGHTGBM, reason="lightgbm not installed")
     def test_feature_importance_extraction(self):
         """测试特征重要性提取"""
         from asset_lens.ml.advanced_trainer import AdvancedMLTrainer
@@ -229,6 +241,7 @@ class TestFeatureImportance:
 class TestCrossValidation:
     """交叉验证测试"""
 
+    @pytest.mark.skipif(not HAS_LIGHTGBM, reason="lightgbm not installed")
     def test_cv_scores(self):
         """测试交叉验证分数"""
         from asset_lens.ml.advanced_trainer import AdvancedMLTrainer
@@ -251,6 +264,7 @@ class TestCrossValidation:
 class TestModelMetrics:
     """模型指标测试"""
 
+    @pytest.mark.skipif(not HAS_LIGHTGBM, reason="lightgbm not installed")
     def test_all_metrics_calculated(self):
         """测试所有指标计算"""
         from asset_lens.ml.advanced_trainer import AdvancedMLTrainer
