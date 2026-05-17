@@ -11,7 +11,7 @@ import pandas as pd
 import pytest
 
 try:
-    import lightgbm
+    import lightgbm  # noqa: F401
 
     HAS_LIGHTGBM = True
 except ImportError:

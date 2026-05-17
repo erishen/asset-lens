@@ -1184,34 +1184,34 @@ test: ## 运行测试（排除 E2E 测试，避免需要 web 服务）
 .PHONY: test-fast
 test-fast: ## 快速测试（仅核心模块）
 	@echo "🧪 快速测试..."
-	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/test_cli.py tests/test_cli_registration.py tests/test_market_stock_fetcher.py tests/test_report_analyzer.py
+	@uv run pytest tests/test_cli.py tests/test_cli_registration.py tests/test_market_stock_fetcher.py tests/test_report_analyzer.py
 
 .PHONY: test-all
 test-all: ## 运行所有测试（包括网络测试，可能较慢）
 	@echo "🧪 运行所有测试..."
-	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/ --ignore=
+	@uv run pytest tests/ --ignore=tests/e2e
 
 .PHONY: test-cov
 test-cov: ## 运行测试并生成覆盖率报告
 	@echo "🧪 运行测试并生成覆盖率报告..."
-	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/ --cov=asset_lens --cov-report=html --cov-report=term
+	@uv run pytest tests/ --ignore=tests/e2e --cov=asset_lens --cov-report=html --cov-report=term
 	@echo "✅ 测试完成，覆盖率报告已生成: htmlcov/index.html"
 
 .PHONY: test-verbose
 test-verbose: ## 运行测试（详细输出）
 	@echo "🧪 运行测试（详细模式）..."
-	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/ -v --tb=long
+	@uv run pytest tests/ --ignore=tests/e2e -v --tb=long
 
 .PHONY: test-failed
 test-failed: ## 只运行上次失败的测试
 	@echo "🧪 运行上次失败的测试..."
-	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/ --lf
+	@uv run pytest tests/ --ignore=tests/e2e --lf
 
 .PHONY: test-e2e
 test-e2e: ## 运行 E2E 测试（需要先启动 web 服务）
 	@echo "🧪 运行 E2E 测试..."
 	@echo "   请确保 web 服务已启动: make web"
-	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/e2e/ -v --tb=short
+	@uv run pytest tests/e2e/ -v --tb=short
 
 .PHONY: test-e2e-fast
 test-e2e-fast: ## 运行 E2E 测试（快速模式，跳过慢速测试）
@@ -1293,17 +1293,17 @@ test-collect: ## 收集测试用例（诊断用）
 	@PYTHONWARNINGS=ignore $(CONDA_PYTHON) -W ignore -m pytest tests/ --collect-only
 
 .PHONY: lint
-lint: ## 运行代码检查（并行执行）
-	@echo "🔍 运行代码检查（并行执行）..."
-	@$(CONDA_PYTHON) -m pylint asset_lens/ --disable=all --enable=E,F --exit-zero -j 0; \
-	 $(CONDA_PYTHON) -m mypy asset_lens/ --no-error-summary || true
+lint: ## 运行代码检查（使用 ruff 和 mypy）
+	@echo "🔍 运行代码检查..."
+	@uv run ruff check asset_lens/ tests/ --exit-zero
+	@uv run mypy asset_lens/ --ignore-missing-imports --no-error-summary || true
 	@echo "✅ 代码检查完成"
 
 .PHONY: format
-format: ## 格式化代码
-	@echo "✨ 格式化代码..."
-	$(CONDA_PYTHON) -m black asset_lens/ --line-length 100
-	$(CONDA_PYTHON) -m isort asset_lens/ --profile black
+format: ## 格式化代码（使用 black 和 isort）
+	@echo "🎨 格式化代码..."
+	@uv run ruff format asset_lens/ tests/
+	@uv run ruff check asset_lens/ tests/ --fix
 	@echo "✅ 代码格式化完成"
 
 .PHONY: ci
