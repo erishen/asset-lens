@@ -45,8 +45,8 @@ class Settings(BaseSettings):
     cache_path: str = Field(default="cache", description="缓存路径")
     config_path: str = Field(default="config", description="配置路径")
 
-    default_usd_rate: float = Field(default=7.1242, description="默认美元汇率")
-    default_hkd_rate: float = Field(default=0.9157, description="默认港元汇率")
+    default_usd_rate: float = Field(default=6.8415, description="默认美元汇率")
+    default_hkd_rate: float = Field(default=0.87343, description="默认港元汇率")
 
     min_return_threshold: float = Field(default=2.0, description="最小收益阈值")
     workday_ratio: float = Field(default=0.7, description="工作日比例")

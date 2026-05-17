@@ -53,7 +53,7 @@ class RiskAlertConfig:
     stop_loss_percent: float = -8.0
     take_profit_percent: float = 20.0
 
-    price_change_threshold: float = 5.0
+    price_change_threshold: float = 10.0  # 价格变动阈值（基金净值波动10%才预警）
     volume_spike_threshold: float = 3.0
 
     sector_exposure_limit: float = 40.0

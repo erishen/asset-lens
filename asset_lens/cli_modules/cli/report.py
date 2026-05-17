@@ -159,7 +159,7 @@ def register_report_commands(cli: click.Group) -> None:
             overview_table.add_row("总产品数", f"{len(products)}")
             overview_table.add_row("总资产", f"¥{total_amount:,.2f}")
             overview_table.add_row("总收益", f"¥{total_profit:,.2f}")
-            overview_table.add_row("收益率", f"{profit_rate:+.2f}%")
+            overview_table.add_row("实际收益率", f"{profit_rate:+.2f}%")
             console.print(overview_table)
 
             report_lines.extend(
@@ -171,7 +171,7 @@ def register_report_commands(cli: click.Group) -> None:
                     f"| 总产品数 | {len(products)} |",
                     f"| 总资产 | ¥{total_amount:,.2f} |",
                     f"| 总收益 | ¥{total_profit:,.2f} |",
-                    f"| 收益率 | {profit_rate:+.2f}% |",
+                    f"| 实际收益率 | {profit_rate:+.2f}% |",
                     "",
                 ]
             )
@@ -192,7 +192,7 @@ def register_report_commands(cli: click.Group) -> None:
             console.print("\n[bold]📊 本周表现[/bold]")
             perf_table = Table(show_header=True, header_style="bold cyan", title="🔴 涨幅前5")
             perf_table.add_column("产品名称", style="dim")
-            perf_table.add_column("收益率", justify="right", style="red")
+            perf_table.add_column("实际收益率", justify="right", style="red")
             perf_table.add_column("金额", justify="right")
             for p in sorted_up:
                 perf_table.add_row(p.name[:20], f"+{float(p.return_rate or 0):.2f}%", _format_amount(p))
@@ -201,7 +201,7 @@ def register_report_commands(cli: click.Group) -> None:
             if sorted_down:
                 down_table = Table(show_header=True, header_style="bold cyan", title="🟢 跌幅前5")
                 down_table.add_column("产品名称", style="dim")
-                down_table.add_column("收益率", justify="right", style="green")
+                down_table.add_column("实际收益率", justify="right", style="green")
                 down_table.add_column("金额", justify="right")
                 for p in sorted_down:
                     down_table.add_row(p.name[:20], f"{float(p.return_rate or 0):.2f}%", _format_amount(p))
@@ -238,15 +238,13 @@ def register_report_commands(cli: click.Group) -> None:
                 for p in sorted_down
             )
 
-            # 4. 基金持仓分析（1万以上）
+            # 4. 基金持仓分析（1万以上，按平台分组）
             console.print("\n[bold]💰 基金持仓分析（1万以上）[/bold]")
             report_lines.extend(
                 [
                     "",
                     "## 💰 基金持仓分析（1万以上）",
                     "",
-                    "| 基金名称 | 类型 | 持有金额 | 年化收益 | 评分 | 建议 | 理由 |",
-                    "|----------|------|----------|----------|------|------|------|",
                 ]
             )
 
@@ -259,7 +257,6 @@ def register_report_commands(cli: click.Group) -> None:
                 and p.current_amount
                 and _get_cny_amount(p) >= 10000
             ]
-            funds.sort(key=lambda x: _get_cny_amount(x), reverse=True)
 
             north_flow = _get_north_flow()
             north_trend = (
@@ -268,41 +265,60 @@ def register_report_commands(cli: click.Group) -> None:
                 else ("bearish" if north_flow.get("total_flow", 0) < -100 else "neutral")
             )
 
-            fund_evals = []
-            for f in funds[:15]:
-                eval_result = _evaluate_fund(f, north_trend)
-                fund_evals.append((f, eval_result))
+            # 按平台分组
+            platform_funds = _get_platform_products(funds)
+            
+            for platform_name, platform_data in sorted(platform_funds.items(), key=lambda x: x[1]["amount"], reverse=True):
+                platform_fund_list = cast(list, platform_data["products"])
+                if not platform_fund_list:
+                    continue
+                
+                console.print(f"\n[cyan]📱 {platform_name}[/cyan] (¥{platform_data['amount']:,.0f})")
+                
+                fund_evals = []
+                for f in platform_fund_list:
+                    eval_result = _evaluate_fund(f, north_trend)
+                    fund_evals.append((f, eval_result))
 
-            fund_evals.sort(key=lambda x: x[1]["score"], reverse=True)
+                fund_evals.sort(key=lambda x: x[1]["score"], reverse=True)
 
-            # Console 输出基金分析
-            fund_table = Table(show_header=True, header_style="bold cyan")
-            fund_table.add_column("基金名称", style="dim", width=15)
-            fund_table.add_column("类型", width=8)
-            fund_table.add_column("金额", justify="right", width=12)
-            fund_table.add_column("年化", justify="right", width=8)
-            fund_table.add_column("评分", justify="right", width=6)
-            fund_table.add_column("建议", width=12)
-            for f, eval_result in fund_evals[:8]:
-                annual_return = float(f.annual_return or 0)
-                suggestion = f"{eval_result['emoji']} {eval_result['suggestion']}"
-                fund_table.add_row(
-                    f.name[:15],
-                    eval_result["fund_type"],
-                    _format_amount(f),
-                    f"{annual_return:.1f}%",
-                    str(eval_result["score"]),
-                    suggestion[:10],
+                # Console 输出基金分析
+                fund_table = Table(show_header=True, header_style="bold cyan")
+                fund_table.add_column("基金名称", style="dim")
+                fund_table.add_column("类型", width=8)
+                fund_table.add_column("金额", justify="right", width=12)
+                fund_table.add_column("年化收益率", justify="right", width=10)
+                fund_table.add_column("评分", justify="right", width=6)
+                fund_table.add_column("建议", width=12)
+                for f, eval_result in fund_evals[:8]:
+                    annual_return = float(f.annual_return or 0)
+                    suggestion = f"{eval_result['emoji']} {eval_result['suggestion']}"
+                    fund_table.add_row(
+                        f.name,
+                        eval_result["fund_type"],
+                        _format_amount(f),
+                        f"{annual_return:.1f}%",
+                        str(eval_result["score"]),
+                        suggestion,
+                    )
+                console.print(fund_table)
+
+                report_lines.extend(
+                    [
+                        f"### 📱 {platform_name} (¥{platform_data['amount']:,.0f})",
+                        "",
+                        "| 基金名称 | 类型 | 持有金额 | 年化收益 | 评分 | 建议 | 理由 |",
+                        "|----------|------|----------|----------|------|------|------|",
+                    ]
                 )
-            console.print(fund_table)
 
-            for f, eval_result in fund_evals:
-                annual_return = float(f.annual_return or 0)
-                suggestion = f"{eval_result['emoji']} {eval_result['suggestion']}"
-                reasons_str = "; ".join(eval_result["reasons"][:2])
-                report_lines.append(
-                    f"| {f.name[:15]} | {eval_result['fund_type']} | {_format_amount(f)} | {annual_return:.2f}% | {eval_result['score']} | {suggestion} | {reasons_str} |"
-                )
+                for f, eval_result in fund_evals:
+                    annual_return = float(f.annual_return or 0)
+                    suggestion = f"{eval_result['emoji']} {eval_result['suggestion']}"
+                    reasons_str = "; ".join(eval_result["reasons"][:2])
+                    report_lines.append(
+                        f"| {f.name} | {eval_result['fund_type']} | {_format_amount(f)} | {annual_return:.2f}% | {eval_result['score']} | {suggestion} | {reasons_str} |"
+                    )
 
             # 5. ML预测分析
             if not skip_ml:
@@ -315,19 +331,19 @@ def register_report_commands(cli: click.Group) -> None:
 
                         # Console 输出ML预测
                         if bullish:
-                            ml_table = Table(show_header=True, header_style="bold cyan", title="🟢 看涨股票")
+                            ml_table = Table(show_header=True, header_style="bold cyan", title="🔴 看涨股票")
                             ml_table.add_column("代码", style="dim")
-                            ml_table.add_column("名称", style="green")
-                            ml_table.add_column("上涨概率", justify="right", style="green")
+                            ml_table.add_column("名称", style="red")
+                            ml_table.add_column("上涨概率", justify="right", style="red")
                             for r in bullish:
                                 ml_table.add_row(r["code"], r["name"], f"{r['prob']:.1f}%")
                             console.print(ml_table)
 
                         if bearish:
-                            ml_down_table = Table(show_header=True, header_style="bold cyan", title="🔴 看跌股票")
+                            ml_down_table = Table(show_header=True, header_style="bold cyan", title="🟢 看跌股票")
                             ml_down_table.add_column("代码", style="dim")
-                            ml_down_table.add_column("名称", style="red")
-                            ml_down_table.add_column("下跌概率", justify="right", style="red")
+                            ml_down_table.add_column("名称", style="green")
+                            ml_down_table.add_column("下跌概率", justify="right", style="green")
                             for r in bearish:
                                 ml_down_table.add_row(r["code"], r["name"], f"{r['prob']:.1f}%")
                             console.print(ml_down_table)
@@ -337,7 +353,7 @@ def register_report_commands(cli: click.Group) -> None:
                                 "",
                                 "## 🔮 ML预测分析",
                                 "",
-                                "### 🟢 看涨股票（高置信度）",
+                                "### 🔴 看涨股票（高置信度）",
                                 "",
                                 "| 代码 | 名称 | 上涨概率 | 预测 |",
                                 "|------|------|----------|------|",
@@ -351,7 +367,7 @@ def register_report_commands(cli: click.Group) -> None:
                         report_lines.extend(
                             [
                                 "",
-                                "### 🔴 看跌股票（高置信度）",
+                                "### 🟢 看跌股票（高置信度）",
                                 "",
                                 "| 代码 | 名称 | 下跌概率 | 预测 |",
                                 "|------|------|----------|------|",
@@ -371,16 +387,15 @@ def register_report_commands(cli: click.Group) -> None:
                     north_flow = _get_north_flow()
                     if north_flow:
                         total_flow = north_flow.get("total_flow", 0)
-                        trend_emoji = "🟢" if total_flow > 0 else "🔴"
-                        console.print(f"最近10天净流入: {trend_emoji} {total_flow:+.2f} 亿")
+                        trend_emoji = "🔴" if total_flow > 0 else "🟢"
+                        console.print(f"本周净流入: {trend_emoji} {total_flow:+.2f} 亿")
 
-                        # Console 输出北向资金
                         nf_table = Table(show_header=True, header_style="bold cyan")
                         nf_table.add_column("日期", style="dim")
                         nf_table.add_column("净流入(亿)", justify="right")
                         nf_table.add_column("趋势", justify="center")
-                        for flow in north_flow.get("flows", [])[:5]:
-                            trend = "🟢" if flow["flow"] >= 0 else "🔴"
+                        for flow in north_flow.get("flows", [])[:7]:
+                            trend = "🔴" if flow["flow"] > 0 else "🟢"
                             nf_table.add_row(flow["date"], f"{flow['flow']:+.2f}", trend)
                         console.print(nf_table)
 
@@ -389,18 +404,18 @@ def register_report_commands(cli: click.Group) -> None:
                                 "",
                                 "## 📈 北向资金分析",
                                 "",
-                                f"**最近10天净流入**: {total_flow:+.2f} 亿",
+                                f"**本周净流入**: {total_flow:+.2f} 亿",
                                 "",
-                                f"**整体趋势**: {'🟢 净流入' if total_flow > 0 else '🔴 净流出'}",
+                                f"**整体趋势**: {'🔴 净流入' if total_flow > 0 else '🟢 净流出'}",
                                 "",
-                                "### 最近10天流向",
+                                "### 本周流向",
                                 "",
                                 "| 日期 | 净流入(亿) | 趋势 |",
                                 "|------|------------|------|",
                             ]
                         )
-                        for flow in north_flow.get("flows", [])[:10]:
-                            trend = "🟢 流入" if flow["flow"] >= 0 else "🔴 流出"
+                        for flow in north_flow.get("flows", [])[:7]:
+                            trend = "🔴 流入" if flow["flow"] >= 0 else "🟢 流出"
                             report_lines.append(f"| {flow['date']} | {flow['flow']:+.2f} | {trend} |")
                 except Exception as e:
                     console.print(f"[yellow]⚠️ 北向资金分析失败: {e}[/yellow]")
@@ -504,7 +519,7 @@ def register_report_commands(cli: click.Group) -> None:
             overview_table.add_row("总产品数", f"{len(products)}")
             overview_table.add_row("总资产", f"¥{total_amount:,.2f}")
             overview_table.add_row("总收益", f"¥{total_profit:,.2f}")
-            overview_table.add_row("收益率", f"{profit_rate:+.2f}%")
+            overview_table.add_row("实际收益率", f"{profit_rate:+.2f}%")
             console.print(overview_table)
 
             report_lines.extend(
@@ -516,7 +531,7 @@ def register_report_commands(cli: click.Group) -> None:
                     f"| 总产品数 | {len(products)} |",
                     f"| 总资产 | ¥{total_amount:,.2f} |",
                     f"| 总收益 | ¥{total_profit:,.2f} |",
-                    f"| 收益率 | {profit_rate:+.2f}% |",
+                    f"| 实际收益率 | {profit_rate:+.2f}% |",
                     "",
                 ]
             )
@@ -530,7 +545,7 @@ def register_report_commands(cli: click.Group) -> None:
             console.print("\n[bold]📊 本月表现[/bold]")
             gain_table = Table(title="🔴 涨幅前10", show_header=True, header_style="bold red")
             gain_table.add_column("产品名称", style="dim")
-            gain_table.add_column("收益率", justify="right", style="red")
+            gain_table.add_column("实际收益率", justify="right", style="red")
             gain_table.add_column("金额", justify="right")
             for p in sorted_by_return[:10]:
                 gain_table.add_row(p.name[:20], f"{float(p.return_rate or 0):+.2f}%", _format_amount(p))
@@ -540,7 +555,7 @@ def register_report_commands(cli: click.Group) -> None:
             if loss_products:
                 loss_table = Table(title="🟢 跌幅前10", show_header=True, header_style="bold green")
                 loss_table.add_column("产品名称", style="dim")
-                loss_table.add_column("收益率", justify="right", style="green")
+                loss_table.add_column("实际收益率", justify="right", style="green")
                 loss_table.add_column("金额", justify="right")
                 for p in loss_products[:10]:
                     loss_table.add_row(p.name[:20], f"{float(p.return_rate or 0):.2f}%", _format_amount(p))
@@ -582,48 +597,65 @@ def register_report_commands(cli: click.Group) -> None:
 
             if large_funds:
                 console.print("\n[bold]💰 基金持仓分析（1万以上）[/bold]")
-                fund_table = Table(show_header=True, header_style="bold cyan")
-                fund_table.add_column("基金名称", style="dim")
-                fund_table.add_column("类型", justify="center")
-                fund_table.add_column("金额", justify="right")
-                fund_table.add_column("年化", justify="right")
-                fund_table.add_column("评分", justify="right")
-                fund_table.add_column("建议", justify="center")
-
-                fund_evaluations = []
-                for fund in large_funds:
-                    eval_result = _evaluate_fund_with_peers(fund, large_funds, "neutral")
-                    fund_evaluations.append((fund, eval_result))
-
-                fund_evaluations.sort(key=lambda x: x[1]["score"], reverse=True)
-
-                for fund, eval_result in fund_evaluations:
-                    fund_type = _get_fund_type_threshold(fund).get("type", "其他")
-                    annual_return = float(fund.annual_return or 0)
-                    score = eval_result["score"]
-                    suggestion = eval_result["suggestion"]
-                    fund_table.add_row(
-                        fund.name[:15], fund_type, _format_amount(fund), f"{annual_return:.1f}%", str(score), suggestion
-                    )
-                console.print(fund_table)
-
                 report_lines.extend(
                     [
                         "",
                         "## 💰 基金持仓分析（1万以上）",
                         "",
-                        "| 基金名称 | 类型 | 金额 | 年化 | 评分 | 建议 |",
-                        "|----------|------|------|------|------|------|",
                     ]
                 )
-                for fund, eval_result in fund_evaluations:
-                    fund_type = _get_fund_type_threshold(fund).get("type", "其他")
-                    annual_return = float(fund.annual_return or 0)
-                    score = eval_result["score"]
-                    suggestion = eval_result["suggestion"]
-                    report_lines.append(
-                        f"| {fund.name} | {fund_type} | {_format_amount(fund)} | {annual_return:.1f}% | {score} | {suggestion} |"
+
+                # 按平台分组
+                platform_funds = _get_platform_products(large_funds)
+                
+                for platform_name, platform_data in sorted(platform_funds.items(), key=lambda x: x[1]["amount"], reverse=True):
+                    platform_fund_list = cast(list, platform_data["products"])
+                    if not platform_fund_list:
+                        continue
+                    
+                    console.print(f"\n[cyan]📱 {platform_name}[/cyan] (¥{platform_data['amount']:,.0f})")
+                    
+                    fund_table = Table(show_header=True, header_style="bold cyan")
+                    fund_table.add_column("基金名称", style="dim")
+                    fund_table.add_column("类型", justify="center")
+                    fund_table.add_column("金额", justify="right")
+                    fund_table.add_column("年化收益率", justify="right")
+                    fund_table.add_column("评分", justify="right")
+                    fund_table.add_column("建议", justify="center")
+
+                    fund_evaluations = []
+                    for fund in platform_fund_list:
+                        eval_result = _evaluate_fund_with_peers(fund, platform_fund_list, "neutral")
+                        fund_evaluations.append((fund, eval_result))
+
+                    fund_evaluations.sort(key=lambda x: x[1]["score"], reverse=True)
+
+                    for fund, eval_result in fund_evaluations:
+                        fund_type = _get_fund_type_threshold(fund).get("type", "其他")
+                        annual_return = float(fund.annual_return or 0)
+                        score = eval_result["score"]
+                        suggestion = eval_result["suggestion"]
+                        fund_table.add_row(
+                            fund.name, fund_type, _format_amount(fund), f"{annual_return:.1f}%", str(score), suggestion
+                        )
+                    console.print(fund_table)
+
+                    report_lines.extend(
+                        [
+                            f"### 📱 {platform_name} (¥{platform_data['amount']:,.0f})",
+                            "",
+                            "| 基金名称 | 类型 | 金额 | 年化 | 评分 | 建议 |",
+                            "|----------|------|------|------|------|------|",
+                        ]
                     )
+                    for fund, eval_result in fund_evaluations:
+                        fund_type = _get_fund_type_threshold(fund).get("type", "其他")
+                        annual_return = float(fund.annual_return or 0)
+                        score = eval_result["score"]
+                        suggestion = eval_result["suggestion"]
+                        report_lines.append(
+                            f"| {fund.name} | {fund_type} | {_format_amount(fund)} | {annual_return:.1f}% | {score} | {suggestion} |"
+                        )
 
             north_flow_trend = "neutral"
             if not skip_north_flow:
@@ -634,9 +666,8 @@ def register_report_commands(cli: click.Group) -> None:
                     fetcher = MoneyFlowFetcher()
                     df = fetcher.get_north_money_flow(days=30)
                     if df is not None and not df.empty:
-                        recent = df.tail(10)
-                        total_inflow = recent["north_net_inflow"].sum()
-                        avg_inflow = total_inflow / len(recent)
+                        total_inflow = df["north_net_inflow"].sum()
+                        avg_inflow = total_inflow / len(df)
 
                         if total_inflow > 100:
                             north_flow_trend = "bullish"
@@ -648,18 +679,45 @@ def register_report_commands(cli: click.Group) -> None:
                             north_flow_trend = "bearish"
                             trend_str = "🟢 净流出"
 
-                        console.print(f"  最近30天净流入: {trend_str} {total_inflow:.2f} 亿")
+                        console.print(f"  本月净流入: {trend_str} {total_inflow:.2f} 亿")
                         console.print(f"  日均净流入: {avg_inflow:.2f} 亿")
+                        
+                        # 显示本月流向表格
+                        nf_table = Table(show_header=True, header_style="bold cyan")
+                        nf_table.add_column("日期", style="dim")
+                        nf_table.add_column("净流入(亿)", justify="right")
+                        nf_table.add_column("趋势", justify="center")
+                        
+                        for _, row in df.iterrows():
+                            date_val = str(row.get("date", row.get("日期", "")))[:10]
+                            flow_val = float(row.get("north_net_inflow", 0))
+                            trend = "🔴" if flow_val > 0 else "🟢"
+                            nf_table.add_row(date_val, f"{flow_val:+.2f}", trend)
+                        
+                        console.print(nf_table)
 
                         report_lines.extend(
                             [
                                 "",
                                 "## 🌊 北向资金分析",
                                 "",
-                                f"- 最近30天净流入: {trend_str} {total_inflow:.2f} 亿",
-                                f"- 日均净流入: {avg_inflow:.2f} 亿",
+                                f"**本月净流入**: {trend_str} {total_inflow:.2f} 亿",
+                                "",
+                                f"**日均净流入**: {avg_inflow:.2f} 亿",
+                                "",
+                                "### 本月流向详情",
+                                "",
+                                "| 日期 | 净流入(亿) | 趋势 |",
+                                "|------|------------|------|",
                             ]
                         )
+                        
+                        for _, row in df.iterrows():
+                            date_val = str(row.get("date", row.get("日期", "")))[:10]
+                            flow_val = float(row.get("north_net_inflow", 0))
+                            trend = "🔴 流入" if flow_val > 0 else "🟢 流出"
+                            report_lines.append(f"| {date_val} | {flow_val:+.2f} | {trend} |")
+                            
                 except Exception as e:
                     console.print(f"  ⚠️ 北向资金数据获取失败: {e}")
 
@@ -675,19 +733,19 @@ def register_report_commands(cli: click.Group) -> None:
                         console.print(f"  📊 预测时间范围: 未来 {prediction_days} 个交易日")
 
                         if bullish:
-                            ml_table = Table(show_header=True, header_style="bold cyan", title="🟢 看涨股票")
+                            ml_table = Table(show_header=True, header_style="bold cyan", title="🔴 看涨股票")
                             ml_table.add_column("代码", style="dim")
-                            ml_table.add_column("名称", style="green")
-                            ml_table.add_column("上涨概率", justify="right", style="green")
+                            ml_table.add_column("名称", style="red")
+                            ml_table.add_column("上涨概率", justify="right", style="red")
                             for r in bullish:
                                 ml_table.add_row(r["code"], r["name"], f"{r['prob']:.1f}%")
                             console.print(ml_table)
 
                         if bearish:
-                            ml_down_table = Table(show_header=True, header_style="bold cyan", title="🔴 看跌股票")
+                            ml_down_table = Table(show_header=True, header_style="bold cyan", title="🟢 看跌股票")
                             ml_down_table.add_column("代码", style="dim")
-                            ml_down_table.add_column("名称", style="red")
-                            ml_down_table.add_column("下跌概率", justify="right", style="red")
+                            ml_down_table.add_column("名称", style="green")
+                            ml_down_table.add_column("下跌概率", justify="right", style="green")
                             for r in bearish:
                                 ml_down_table.add_row(r["code"], r["name"], f"{r['prob']:.1f}%")
                             console.print(ml_down_table)
@@ -699,7 +757,7 @@ def register_report_commands(cli: click.Group) -> None:
                                 "",
                                 f"**预测时间范围**: 未来 {prediction_days} 个交易日",
                                 "",
-                                "### 🟢 看涨股票（高置信度）",
+                                "### 🔴 看涨股票（高置信度）",
                                 "",
                                 "| 代码 | 名称 | 上涨概率 | 预测 |",
                                 "|------|------|----------|------|",
@@ -713,7 +771,7 @@ def register_report_commands(cli: click.Group) -> None:
                         report_lines.extend(
                             [
                                 "",
-                                "### 🔴 看跌股票（高置信度）",
+                                "### 🟢 看跌股票（高置信度）",
                                 "",
                                 "| 代码 | 名称 | 下跌概率 | 预测 |",
                                 "|------|------|----------|------|",
@@ -748,8 +806,8 @@ def register_report_commands(cli: click.Group) -> None:
             platform_products = _get_platform_products(products)
             for platform_name, data in sorted(platform_products.items(), key=lambda x: x[1]["amount"], reverse=True):
                 products_list = cast(list, data["products"])
-                platform_funds = [p for p in products_list if p.investment_type and "基金" in p.investment_type.value]
-                if not platform_funds:
+                funds_in_platform: list[Any] = [p for p in products_list if p.investment_type and "基金" in p.investment_type.value]
+                if not funds_in_platform:
                     continue
 
                 strong_buy = []
@@ -757,8 +815,8 @@ def register_report_commands(cli: click.Group) -> None:
                 hold = []
                 reduce = []
 
-                for fund in platform_funds:
-                    eval_result = _evaluate_fund_with_peers(fund, platform_funds, north_flow_trend)
+                for fund in funds_in_platform:
+                    eval_result = _evaluate_fund_with_peers(fund, funds_in_platform, north_flow_trend)
                     suggestion = eval_result["suggestion"]
                     reasons = eval_result["reasons"]
 
@@ -797,7 +855,7 @@ def register_report_commands(cli: click.Group) -> None:
                             suggestions.append(f"      • {name}")
 
                     if reduce:
-                        suggestions.append(f"  🔴 考虑减仓 ({len(reduce)}只):")
+                        suggestions.append(f"  🟢 考虑减仓 ({len(reduce)}只):")
                         for item in reduce[:2]:
                             name = item["fund"].name[:12]
                             reasons = item["reasons"][0] if item["reasons"] else ""
@@ -1102,7 +1160,7 @@ def _get_north_flow() -> dict:
     from asset_lens.data.fundamental_fetcher import MoneyFlowFetcher
 
     fetcher = MoneyFlowFetcher()
-    df = fetcher.get_north_money_flow(days=10)
+    df = fetcher.get_north_money_flow(days=7)
 
     if df is None or df.empty:
         return {"total_flow": 0, "flows": []}
@@ -1230,10 +1288,10 @@ def _evaluate_fund(fund, north_flow_trend: str = "neutral") -> dict:
         emoji = "🟡"
     elif score >= -20:
         suggestion = "考虑减仓"
-        emoji = "🔴"
+        emoji = "🟢"
     else:
         suggestion = "建议赎回"
-        emoji = "🔴🔴"
+        emoji = "🟢🟢"
 
     return {
         "score": score,
@@ -1381,10 +1439,10 @@ def _evaluate_fund_with_peers(fund, peer_funds: list, north_flow_trend: str = "n
         emoji = "🟡"
     elif score >= -15:
         suggestion = "考虑减仓"
-        emoji = "🔴"
+        emoji = "🟢"
     else:
         suggestion = "建议赎回"
-        emoji = "🔴🔴"
+        emoji = "🟢🟢"
 
     return {
         "score": score,
@@ -1539,14 +1597,14 @@ def _generate_suggestions(products: list, funds: list) -> list:
                 suggestions.append(f"      • {name}")
 
         if reduce_funds:
-            suggestions.append(f"  🔴 考虑减仓 ({len(reduce_funds)}只):")
+            suggestions.append(f"  🟢 考虑减仓 ({len(reduce_funds)}只):")
             for e in reduce_funds[:2]:
                 name = e["fund"].name[:12]
                 reasons = e["reasons"][0] if e["reasons"] else ""
                 suggestions.append(f"      • {name}: {reasons}")
 
         if sell_funds:
-            suggestions.append(f"  🔴🔴 建议赎回 ({len(sell_funds)}只):")
+            suggestions.append(f"  🟢🟢 建议赎回 ({len(sell_funds)}只):")
             for e in sell_funds[:2]:
                 name = e["fund"].name[:12]
                 reasons = e["reasons"][0] if e["reasons"] else ""

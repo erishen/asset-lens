@@ -61,7 +61,7 @@ class ReportGenerator:
             "optimization_suggestions": self.generate_optimization_suggestions(portfolio),
             "investment_advice": self.generate_investment_advice(portfolio),
             "comprehensive_evaluation": self.generate_comprehensive_evaluation(portfolio, sell_records),
-            "investment_efficiency": self.generate_investment_efficiency(portfolio),
+            "investment_efficiency": self.generate_investment_efficiency(portfolio, sell_records),
         }
 
         return report
@@ -94,12 +94,35 @@ class ReportGenerator:
         Returns:
             包含投资组合摘要信息的字典
         """
+        from ..data.models import InvestmentType
+
+        valid_initial = Decimal("0")
+        valid_profit = Decimal("0")
+        for product in portfolio.products:
+            if product.start_date and product.initial_amount:
+                amount = product.initial_amount
+                if product.investment_type in [InvestmentType.US_STOCK, InvestmentType.USD_FUND]:
+                    amount = amount * (product.usd_rate or portfolio.usd_rate)
+                elif product.investment_type in [
+                    InvestmentType.HK_STOCK,
+                    InvestmentType.HK_CASH,
+                    InvestmentType.HK_DIVIDEND_FUND,
+                ]:
+                    amount = amount * (product.hkd_rate or portfolio.hkd_rate)
+                valid_initial += amount
+                if product.profit_amount:
+                    valid_profit += product.profit_amount
+
+        valid_return_rate = (valid_profit / valid_initial * 100) if valid_initial > Decimal("0") else Decimal("0")
+
         return {
             "total_products": len(portfolio.products),
             "total_value": str(portfolio.total_value),
             "total_initial": str(portfolio.total_initial),
+            "valid_initial": str(valid_initial),
             "total_profit": str(portfolio.total_profit),
             "overall_return_rate": f"{portfolio.overall_return_rate:.2f}%" if portfolio.overall_return_rate else "N/A",
+            "valid_return_rate": f"{valid_return_rate:.2f}%",
             "positive_avg_return": self._calculate_positive_avg_return(portfolio),
         }
 
@@ -577,38 +600,7 @@ class ReportGenerator:
         total_value = Decimal("0")
 
         for product in portfolio.products:
-            if not product.start_date:
-                continue
-
-            # 计算净投入（使用交易记录）
-            net_invest = portfolio._calculate_net_invest(product)
-
-            # 确定使用的初始金额
-            if net_invest and net_invest > 0:
-                initial = net_invest
-            elif product.initial_amount:
-                initial = product.initial_amount
-            else:
-                continue
-
-            # 汇率转换
-            if product.investment_type:
-                from ..data.models import InvestmentType
-
-                if product.investment_type in [InvestmentType.US_STOCK, InvestmentType.USD_FUND]:
-                    rate = product.usd_rate or portfolio.usd_rate
-                    initial = initial * rate
-                elif product.investment_type in [
-                    InvestmentType.HK_STOCK,
-                    InvestmentType.HK_CASH,
-                    InvestmentType.HK_DIVIDEND_FUND,
-                ]:
-                    rate = product.hkd_rate or portfolio.hkd_rate
-                    initial = initial * rate
-
-            total_initial += initial
-
-            # 计算当前总资产
+            # 计算当前总资产（包含所有产品，不管是否有start_date）
             if product.current_amount:
                 current = product.current_amount
                 if product.investment_type:
@@ -630,6 +622,32 @@ class ReportGenerator:
             # 计算未实现收益
             if product.profit_amount:
                 total_profit += product.profit_amount
+
+            # 计算总投入
+            # 与 ts-demo 保持一致：没有 start_date 的产品，initialAmount = currentAmount
+            if product.start_date and product.initial_amount:
+                initial = product.initial_amount
+            elif product.current_amount:
+                initial = product.current_amount
+            else:
+                continue
+
+            # 汇率转换
+            if product.investment_type:
+                from ..data.models import InvestmentType
+
+                if product.investment_type in [InvestmentType.US_STOCK, InvestmentType.USD_FUND]:
+                    rate = product.usd_rate or portfolio.usd_rate
+                    initial = initial * rate
+                elif product.investment_type in [
+                    InvestmentType.HK_STOCK,
+                    InvestmentType.HK_CASH,
+                    InvestmentType.HK_DIVIDEND_FUND,
+                ]:
+                    rate = product.hkd_rate or portfolio.hkd_rate
+                    initial = initial * rate
+
+            total_initial += initial
 
         realized_profit = Decimal("0")
         realized_initial = Decimal("0")
@@ -657,27 +675,9 @@ class ReportGenerator:
         weighted_annual_return = Decimal("0")
         total_weight = Decimal("0")
         
-        # 计算当前持有投资的加权年化收益率（使用初始金额作为权重，与 ts-demo 保持一致）
         for product in portfolio.products:
             if product.annual_return and product.initial_amount:
                 weight = product.initial_amount
-                # 对外币投资应用汇率转换
-                if product.investment_type:
-                    from ..data.models import InvestmentType
-                    if product.investment_type in [
-                        InvestmentType.US_STOCK,
-                        InvestmentType.USD_FUND,
-                    ]:
-                        rate = product.usd_rate or portfolio.usd_rate
-                        weight = weight * rate
-                    elif product.investment_type in [
-                        InvestmentType.HK_STOCK,
-                        InvestmentType.HK_CASH,
-                        InvestmentType.HK_DIVIDEND_FUND,
-                    ]:
-                        rate = product.hkd_rate or portfolio.hkd_rate
-                        weight = weight * rate
-                
                 weighted_annual_return += product.annual_return * weight
                 total_weight += weight
         
@@ -692,10 +692,10 @@ class ReportGenerator:
         weighted_annual_return = weighted_annual_return / total_weight if total_weight > Decimal("0") else Decimal("0")
 
         avg_investment_days = Decimal("0")
-        products_with_days = [p for p in portfolio.products if p.investment_days]
-        if products_with_days:
+        products_with_amount = [p for p in portfolio.products if p.current_amount and p.current_amount > 0]
+        if products_with_amount:
             avg_investment_days = Decimal(
-                str(sum(p.investment_days or 0 for p in products_with_days) / len(products_with_days))
+                str(sum(p.investment_days or 0 for p in products_with_amount) / len(products_with_amount))
             )
 
         # 时间加权年化收益率（使用复利公式，与 ts-demo 一致）
@@ -711,9 +711,10 @@ class ReportGenerator:
         else:
             time_weighted_return = Decimal("0")
 
-        # 计算预期年收益：当前总资产 × 当前年化收益率（最低按2%计算）
+        # 计算预期年收益：有效投资总额 × 当前年化收益率（最低按2%计算）
+        # 注意：使用有效投资总额而不是总资产，因为无收益率数据的投资不应该计入预期年收益
         current_annualized_rate = max(weighted_annual_return / Decimal("100"), Decimal("0.02"))
-        expected_annual_return = total_value * current_annualized_rate
+        expected_annual_return = total_initial * current_annualized_rate
 
         return {
             "total_investment": str(total_investment),
@@ -742,28 +743,43 @@ class ReportGenerator:
         else:
             return "⚠️  整体投资表现较低，建议优化投资策略"
 
-    def generate_investment_efficiency(self, portfolio: Portfolio) -> dict[str, Any]:
+    def generate_investment_efficiency(self, portfolio: Portfolio, sell_records: list[Any] | None = None) -> dict[str, Any]:
+        from ..data.models import SellRecord
+
         total_value = portfolio.total_value or Decimal("0")
         total_initial = portfolio.total_initial or Decimal("0")
 
         capital_efficiency = total_value / total_initial * 100 if total_initial > Decimal("0") else Decimal("100")
 
         avg_investment_days = Decimal("0")
-        products_with_days = [p for p in portfolio.products if p.investment_days]
-        if products_with_days:
+        products_with_amount = [p for p in portfolio.products if p.current_amount and p.current_amount > 0]
+        if products_with_amount:
             avg_investment_days = Decimal(
-                str(sum(p.investment_days or 0 for p in products_with_days) / len(products_with_days))
+                str(sum(p.investment_days or 0 for p in products_with_amount) / len(products_with_amount))
             )
 
-        if avg_investment_days > Decimal("0") and portfolio.overall_return_rate:
-            annual_growth_rate = portfolio.overall_return_rate * (Decimal("365") / avg_investment_days)
+        avg_investment_years = avg_investment_days / Decimal("360") if avg_investment_days > Decimal("0") else Decimal("0")
+
+        unrealized_profit = portfolio.total_profit or Decimal("0")
+        realized_profit = Decimal("0")
+        if sell_records:
+            for record in sell_records:
+                if isinstance(record, SellRecord) and record.profit_amount:
+                    realized_profit += record.profit_amount
+
+        total_profit_all = unrealized_profit + realized_profit
+
+        if avg_investment_years > Decimal("0") and total_initial > Decimal("0"):
+            overall_return_rate = (total_profit_all / total_initial) * Decimal("100")
+            overall_return = Decimal("1") + overall_return_rate / Decimal("100")
+            annual_growth_rate = (overall_return ** (Decimal("1") / avg_investment_years) - Decimal("1")) * Decimal("100")
         else:
             annual_growth_rate = Decimal("0")
 
         return {
             "capital_efficiency": f"{capital_efficiency:.1f}%",
             "annual_growth_rate": f"{annual_growth_rate:.2f}%",
-            "avg_investment_years": float(avg_investment_days / Decimal("365")) if avg_investment_days else 0,
+            "avg_investment_years": float(avg_investment_years),
         }
 
     def print_console_report(self, report: dict[str, Any]) -> None:
@@ -846,9 +862,10 @@ class ReportGenerator:
         portfolio_table.add_column("值", style="cyan")
         portfolio_table.add_row("当前总资产", f"{self._format_money(summary['total_value'])}元")
         portfolio_table.add_row("总投入资金", f"{self._format_money(summary['total_initial'])}元")
+        portfolio_table.add_row("  其中有效投资", f"{self._format_money(summary['valid_initial'])}元")
         portfolio_table.add_row("未实现收益", f"[green]+{self._format_money(summary['total_profit'])}元[/green]")
         portfolio_table.add_row("整体收益率", f"[green]{summary['overall_return_rate']}[/green]")
-        portfolio_table.add_row("有效投资收益率", f"[green]{summary['overall_return_rate']}[/green]")
+        portfolio_table.add_row("有效投资收益率", f"[green]{summary['valid_return_rate']}[/green]")
         portfolio_table.add_row(
             "正收益产品平均年化收益率", f"[yellow]{summary.get('positive_avg_return', 'N/A')}[/yellow]"
         )

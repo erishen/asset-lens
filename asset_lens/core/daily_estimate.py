@@ -18,6 +18,7 @@ class DailyEstimateResult:
         expected_annual_return: Decimal,
         market_sensitivity: Decimal,
         risk_level: str | None = None,
+        investment_type: str | None = None,
     ):
         self.product_name = product_name
         self.product_type = product_type
@@ -27,6 +28,7 @@ class DailyEstimateResult:
         self.expected_annual_return = expected_annual_return
         self.market_sensitivity = market_sensitivity
         self.risk_level = risk_level
+        self.investment_type = investment_type
 
     def to_dict(self):
         return {
@@ -38,6 +40,7 @@ class DailyEstimateResult:
             "expected_annual_return": float(self.expected_annual_return),
             "market_sensitivity": float(self.market_sensitivity),
             "risk_level": self.risk_level,
+            "investment_type": self.investment_type,
         }
 
 
@@ -142,6 +145,7 @@ def estimate_product_return(
         expected_annual_return=expected_annual_return,
         market_sensitivity=market_sensitivity,
         risk_level=risk_level,
+        investment_type=product_type,
     )
 
 
