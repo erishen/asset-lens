@@ -268,19 +268,18 @@ async def get_signal_history(days: int = 30) -> dict[str, Any]:
 
             rows = result.fetchall()
 
-            history = []
-            for row in rows:
-                history.append(
-                    {
-                        "code": row[0],
-                        "name": row[1],
-                        "prediction": row[2],
-                        "confidence": row[3],
-                        "up_prob": row[4],
-                        "down_prob": row[5],
-                        "timestamp": row[6],
-                    }
-                )
+            history = [
+                {
+                    "code": row[0],
+                    "name": row[1],
+                    "prediction": row[2],
+                    "confidence": row[3],
+                    "up_prob": row[4],
+                    "down_prob": row[5],
+                    "timestamp": row[6],
+                }
+                for row in rows
+            ]
 
             return {
                 "history": history,

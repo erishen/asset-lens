@@ -841,10 +841,7 @@ class MoneyFlowFetcher:
                 logger.debug(f"使用行业列: {industry_col}")
 
                 # 查找市值相关列
-                value_cols = []
-                for col in df.columns:
-                    if "市值" in col or "增持" in col:
-                        value_cols.append(col)
+                value_cols = [col for col in df.columns if "市值" in col or "增持" in col]
 
                 if not value_cols:
                     logger.warning("数据中没有市值相关列")

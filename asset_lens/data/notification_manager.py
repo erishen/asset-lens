@@ -263,10 +263,10 @@ class NotificationManager:
             "=== 持仓 ===",
         ]
 
-        for position in data.get("positions", [])[:10]:
-            lines.append(
-                f"  {position.get('name', '')} ({position.get('code', '')}): {position.get('profit_rate', 0):.2%}"
-            )
+        lines.extend(
+            f"  {position.get('name', '')} ({position.get('code', '')}): {position.get('profit_rate', 0):.2%}"
+            for position in data.get("positions", [])[:10]
+        )
 
         return "\n".join(lines)
 

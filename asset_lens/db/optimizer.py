@@ -274,14 +274,13 @@ class DatabaseOptimizer:
             result = session.execute(
                 text("SELECT name, tbl_name FROM sqlite_master WHERE type='index' AND sql IS NOT NULL")
             )
-            indexes = []
-            for row in result:
-                indexes.append(
-                    {
-                        "name": row[0],
-                        "table": row[1],
-                    }
-                )
+            indexes = [
+                {
+                    "name": row[0],
+                    "table": row[1],
+                }
+                for row in result
+            ]
             return indexes
         except Exception:
             return []

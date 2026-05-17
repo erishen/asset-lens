@@ -158,13 +158,11 @@ class ConfigValidator:
             lines.append(f"  {status} {name}: {'有效' if result.is_valid else '无效'}")
 
             if result.errors:
-                for error in result.errors:
-                    lines.append(f"    - 错误: {error}")
+                lines.extend(f"    - 错误: {error}" for error in result.errors)
                 all_valid = False
 
             if result.warnings:
-                for warning in result.warnings:
-                    lines.append(f"    - 警告: {warning}")
+                lines.extend(f"    - 警告: {warning}" for warning in result.warnings)
 
         lines.append("")
         lines.append(f"总体状态: {'✅ 配置有效' if all_valid else '❌ 配置存在问题'}")

@@ -109,20 +109,19 @@ class CCXTProvider(BaseProvider):
         try:
             ohlcvs = self.exchange.fetch_ohlcv(symbol, timeframe, since=since, limit=limit)
 
-            result = []
-            for ohlcv in ohlcvs:
-                result.append(
-                    {
-                        "timestamp": ohlcv[0],
-                        "datetime": datetime.fromtimestamp(ohlcv[0] / 1000).isoformat(),
-                        "open": float(ohlcv[1]),
-                        "high": float(ohlcv[2]),
-                        "low": float(ohlcv[3]),
-                        "close": float(ohlcv[4]),
-                        "volume": float(ohlcv[5]),
-                        "source": "ccxt",
-                    }
-                )
+            result = [
+                {
+                    "timestamp": ohlcv[0],
+                    "datetime": datetime.fromtimestamp(ohlcv[0] / 1000).isoformat(),
+                    "open": float(ohlcv[1]),
+                    "high": float(ohlcv[2]),
+                    "low": float(ohlcv[3]),
+                    "close": float(ohlcv[4]),
+                    "volume": float(ohlcv[5]),
+                    "source": "ccxt",
+                }
+                for ohlcv in ohlcvs
+            ]
 
             return result
         except Exception:

@@ -461,9 +461,11 @@ class MarketSentimentAnalyzer:
             suggestions.append("🔴 市场情绪悲观，建议降低仓位")
             suggestions.append("🔴 以防守为主，等待机会")
 
-        for indicator in indicators:
-            if indicator.level == "bearish" and indicator.value < 35:
-                suggestions.append(f"⚠️ {indicator.name}偏弱：{indicator.description}")
+        suggestions.extend(
+            f"⚠️ {indicator.name}偏弱：{indicator.description}"
+            for indicator in indicators
+            if indicator.level == "bearish" and indicator.value < 35
+        )
 
         return suggestions
 
@@ -499,8 +501,7 @@ class MarketSentimentAnalyzer:
             ]
         )
 
-        for suggestion in sentiment.suggestions:
-            lines.append(f"  {suggestion}")
+        lines.extend(f"  {suggestion}" for suggestion in sentiment.suggestions)
 
         lines.extend(
             [

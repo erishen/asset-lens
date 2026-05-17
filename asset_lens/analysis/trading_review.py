@@ -515,24 +515,23 @@ class TradingReview:
     def _load_closed_positions(self) -> list[ClosedPosition]:
         """加载平仓记录"""
         data = self._load_closed_positions_data()
-        positions: list[ClosedPosition] = []
-        for item in data:
-            positions.append(
-                ClosedPosition(
-                    code=item["code"],
-                    name=item["name"],
-                    buy_price=item["buy_price"],
-                    sell_price=item["sell_price"],
-                    shares=item["shares"],
-                    profit_loss=item["profit_loss"],
-                    profit_loss_percent=item["profit_loss_percent"],
-                    hold_days=item["hold_days"],
-                    buy_date=item["buy_date"],
-                    sell_date=item["sell_date"],
-                    strategy=item.get("strategy", ""),
-                    result=TradeResult(item.get("result", "profit")),
-                )
+        positions: list[ClosedPosition] = [
+            ClosedPosition(
+                code=item["code"],
+                name=item["name"],
+                buy_price=item["buy_price"],
+                sell_price=item["sell_price"],
+                shares=item["shares"],
+                profit_loss=item["profit_loss"],
+                profit_loss_percent=item["profit_loss_percent"],
+                hold_days=item["hold_days"],
+                buy_date=item["buy_date"],
+                sell_date=item["sell_date"],
+                strategy=item.get("strategy", ""),
+                result=TradeResult(item.get("result", "profit")),
             )
+            for item in data
+        ]
 
         return positions
 

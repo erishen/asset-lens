@@ -140,8 +140,7 @@ class HTMLReportGenerator:
 
         if report.get("recommendations"):
             parts.append("        <div class='card'><h2>建议</h2>")
-            for rec in report["recommendations"]:
-                parts.append(f"            <div class='recommendation'>{rec.get('message', '')}</div>")
+            parts.extend(f"            <div class='recommendation'>{rec.get('message', '')}</div>" for rec in report["recommendations"])
             parts.append("        </div>")
 
         return parts
@@ -286,8 +285,7 @@ class HTMLReportGenerator:
         recommendations = report.get("recommendations", [])
         if recommendations:
             parts.append("        <div class='card'><h2>建议</h2>")
-            for rec in recommendations:
-                parts.append(f"            <div class='recommendation'>{rec.get('message', '')}</div>")
+            parts.extend(f"            <div class='recommendation'>{rec.get('message', '')}</div>" for rec in recommendations)
             parts.append("        </div>")
 
         return parts

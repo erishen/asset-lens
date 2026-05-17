@@ -180,18 +180,17 @@ async def _get_kline_tencent(code: str, ktype: str, count: int) -> list[dict]:
                 stock_data = data.get("data", {}).get(code, {})
                 kline_data = stock_data.get(ktype_param, [])
 
-                result = []
-                for item in kline_data:
-                    result.append(
-                        {
-                            "date": item[0],
-                            "open": float(item[1]),
-                            "close": float(item[2]),
-                            "high": float(item[3]),
-                            "low": float(item[4]),
-                            "volume": float(item[5]),
-                        }
-                    )
+                result = [
+                    {
+                        "date": item[0],
+                        "open": float(item[1]),
+                        "close": float(item[2]),
+                        "high": float(item[3]),
+                        "low": float(item[4]),
+                        "volume": float(item[5]),
+                    }
+                    for item in kline_data
+                ]
 
                 return result
 

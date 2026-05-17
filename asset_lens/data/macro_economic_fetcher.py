@@ -205,17 +205,17 @@ class MacroEconomicFetcher:
 
             if response.status_code == 200:
                 data = response.json()
-                observations = []
-                for item in data[1] if len(data) > 1 else []:
-                    if item.get("value") is not None:
-                        observations.append(
-                            {
-                                "country": item.get("country", {}).get("value"),
-                                "country_code": item.get("countryiso3code"),
-                                "year": item.get("date"),
-                                "value": float(item["value"]),
-                            }
-                        )
+                items = data[1] if len(data) > 1 else []
+                observations = [
+                    {
+                        "country": item.get("country", {}).get("value"),
+                        "country_code": item.get("countryiso3code"),
+                        "year": item.get("date"),
+                        "value": float(item["value"]),
+                    }
+                    for item in items
+                    if item.get("value") is not None
+                ]
 
                 result = {
                     "indicator_id": indicator_id,
