@@ -674,13 +674,13 @@ class ReportGenerator:
 
         weighted_annual_return = Decimal("0")
         total_weight = Decimal("0")
-        
+
         for product in portfolio.products:
             if product.annual_return and product.initial_amount:
                 weight = product.initial_amount
                 weighted_annual_return += product.annual_return * weight
                 total_weight += weight
-        
+
         # 加入已卖出投资的加权年化收益率（与 ts-demo 保持一致）
         if sell_records:
             for record in sell_records:

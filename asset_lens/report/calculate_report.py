@@ -87,13 +87,13 @@ class CalculateReportGenerator:
     def _get_type_distribution(self, products: list[InvestmentProduct]) -> dict[str, dict[str, Any]]:
         usd_rate = Decimal("7.0")
         hkd_rate = Decimal("0.9")
-        
+
         if products:
             first_product = products[0]
             if hasattr(first_product, '_portfolio') and first_product._portfolio:
                 usd_rate = first_product._portfolio.usd_rate or usd_rate
                 hkd_rate = first_product._portfolio.hkd_rate or hkd_rate
-        
+
         type_stats: dict[str, dict[str, Any]] = {}
 
         for product in products:

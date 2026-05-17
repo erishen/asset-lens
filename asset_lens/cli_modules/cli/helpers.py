@@ -90,7 +90,7 @@ def get_usd_rate() -> Decimal:
     if data_dir:
         usd_rate, _ = CSVParser.get_exchange_rates(data_dir)
         return Decimal(str(usd_rate))
-    
+
     return Decimal(str(config.default_usd_rate))
 
 
@@ -103,5 +103,5 @@ def get_hkd_rate() -> Decimal:
     if data_dir:
         _, hkd_rate = CSVParser.get_exchange_rates(data_dir)
         return Decimal(str(hkd_rate))
-    
+
     return Decimal(str(config.default_hkd_rate))

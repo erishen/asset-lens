@@ -363,9 +363,10 @@ def format_amount_with_currency(
     if amount == 0:
         return "¥0"
 
+    from pathlib import Path
+
     from asset_lens.config import config
     from asset_lens.data.csv_parser import CSVParser
-    from pathlib import Path
 
     if usd_rate is None or hkd_rate is None:
         try:

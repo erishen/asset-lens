@@ -267,14 +267,14 @@ def register_report_commands(cli: click.Group) -> None:
 
             # 按平台分组
             platform_funds = _get_platform_products(funds)
-            
+
             for platform_name, platform_data in sorted(platform_funds.items(), key=lambda x: x[1]["amount"], reverse=True):
                 platform_fund_list = cast(list, platform_data["products"])
                 if not platform_fund_list:
                     continue
-                
+
                 console.print(f"\n[cyan]📱 {platform_name}[/cyan] (¥{platform_data['amount']:,.0f})")
-                
+
                 fund_evals = []
                 for f in platform_fund_list:
                     eval_result = _evaluate_fund(f, north_trend)
@@ -607,14 +607,14 @@ def register_report_commands(cli: click.Group) -> None:
 
                 # 按平台分组
                 platform_funds = _get_platform_products(large_funds)
-                
+
                 for platform_name, platform_data in sorted(platform_funds.items(), key=lambda x: x[1]["amount"], reverse=True):
                     platform_fund_list = cast(list, platform_data["products"])
                     if not platform_fund_list:
                         continue
-                    
+
                     console.print(f"\n[cyan]📱 {platform_name}[/cyan] (¥{platform_data['amount']:,.0f})")
-                    
+
                     fund_table = Table(show_header=True, header_style="bold cyan")
                     fund_table.add_column("基金名称", style="dim")
                     fund_table.add_column("类型", justify="center")
@@ -681,19 +681,19 @@ def register_report_commands(cli: click.Group) -> None:
 
                         console.print(f"  本月净流入: {trend_str} {total_inflow:.2f} 亿")
                         console.print(f"  日均净流入: {avg_inflow:.2f} 亿")
-                        
+
                         # 显示本月流向表格
                         nf_table = Table(show_header=True, header_style="bold cyan")
                         nf_table.add_column("日期", style="dim")
                         nf_table.add_column("净流入(亿)", justify="right")
                         nf_table.add_column("趋势", justify="center")
-                        
+
                         for _, row in df.iterrows():
                             date_val = str(row.get("date", row.get("日期", "")))[:10]
                             flow_val = float(row.get("north_net_inflow", 0))
                             trend = "🔴" if flow_val > 0 else "🟢"
                             nf_table.add_row(date_val, f"{flow_val:+.2f}", trend)
-                        
+
                         console.print(nf_table)
 
                         report_lines.extend(
@@ -711,13 +711,13 @@ def register_report_commands(cli: click.Group) -> None:
                                 "|------|------------|------|",
                             ]
                         )
-                        
+
                         for _, row in df.iterrows():
                             date_val = str(row.get("date", row.get("日期", "")))[:10]
                             flow_val = float(row.get("north_net_inflow", 0))
                             trend = "🔴 流入" if flow_val > 0 else "🟢 流出"
                             report_lines.append(f"| {date_val} | {flow_val:+.2f} | {trend} |")
-                            
+
                 except Exception as e:
                     console.print(f"  ⚠️ 北向资金数据获取失败: {e}")
 

@@ -384,7 +384,6 @@ def register_analyze_commands(cli: click.Group) -> None:
     @click.option("--data-mode", type=click.Choice(["sample", "real"]), help="数据模式")
     def analyze_sold(data_mode: str | None):
         """分析已卖出产品"""
-        from datetime import date, datetime
 
         from asset_lens.cli_modules.cli.helpers import setup_data_mode
         from asset_lens.data.sell_record_parser import SellRecordParser
@@ -802,10 +801,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                 ret = profit / float(initial_val) * 100 if float(initial_val) > 0 else 0  # type: ignore[arg-type]
 
                 inv_list = cast(list[dict[str, Any]], stats["investments"])
-                if inv_list:
-                    avg_days = sum((end_date - i["start_date"]).days for i in inv_list) / len(inv_list)
-                else:
-                    avg_days = 0
+                avg_days = sum((end_date - i["start_date"]).days for i in inv_list) / len(inv_list) if inv_list else 0
                 avg_years = avg_days / 365
 
                 if avg_years > 0:
@@ -857,14 +853,14 @@ def register_analyze_commands(cli: click.Group) -> None:
             products = CSVParser.load_data()
 
             # 获取汇率
-            usd_rate = Decimal("7.2")
-            hkd_rate = Decimal("0.92")
+            Decimal("7.2")
+            Decimal("0.92")
             data_dir = _get_data_dir(config.data_mode)
             if data_dir:
                 try:
                     rates = CSVParser.get_exchange_rates(data_dir)
-                    usd_rate = Decimal(str(rates[0]))
-                    hkd_rate = Decimal(str(rates[1]))
+                    Decimal(str(rates[0]))
+                    Decimal(str(rates[1]))
                 except Exception:
                     pass
 
@@ -890,11 +886,11 @@ def register_analyze_commands(cli: click.Group) -> None:
                     continue
 
                 days = (end_date - p.start_date).days
-                
+
                 # 跳过开始日期晚于结束日期的产品
                 if days < 0:
                     continue
-                    
+
                 years = days / 365
 
                 # 获取金额（考虑汇率）
@@ -1048,7 +1044,7 @@ def register_analyze_commands(cli: click.Group) -> None:
         bonus_file = Path(__file__).parent.parent.parent.parent / "data" / "bonus_records.json"
         if bonus_file.exists():
             try:
-                with open(bonus_file, "r", encoding="utf-8") as f:
+                with open(bonus_file, encoding="utf-8") as f:
                     bonus_data = json.load(f)
                     for record in bonus_data.get("records", []):
                         bonus_records[record["year"]] = {
@@ -1075,9 +1071,9 @@ def register_analyze_commands(cli: click.Group) -> None:
             click.echo(f"   2. 年终奖: 从 bonus_records.json 读取（共 {len(bonus_records)} 年记录）")
         else:
             click.echo(f"   2. 年终奖: ¥{annual_bonus:,.0f}（固定金额）")
-        click.echo(f"   3. 工资发放日: 每月15日")
-        click.echo(f"   4. 年终奖发放日: 每年12月25日（或从JSON文件读取实际日期）")
-        click.echo(f"   5. 消费支出: 每月25日")
+        click.echo("   3. 工资发放日: 每月15日")
+        click.echo("   4. 年终奖发放日: 每年12月25日（或从JSON文件读取实际日期）")
+        click.echo("   5. 消费支出: 每月25日")
         click.echo("\n💡 提示:")
         click.echo("   - 可在 .env 文件中配置 MONTHLY_SALARY 和 ANNUAL_BONUS")
         click.echo("   - 可在 data/bonus_records.json 中记录每年的年终奖详情")
@@ -1136,7 +1132,7 @@ def register_analyze_commands(cli: click.Group) -> None:
             # 数据完整性检查
             products_with_transactions = sum(1 for p in products if p.transaction_records)
             products_with_start_date = sum(1 for p in products if p.start_date)
-            click.echo(f"\n📊 数据完整性:")
+            click.echo("\n📊 数据完整性:")
             click.echo(f"   总产品数: {len(products)}")
             click.echo(f"   有交易记录: {products_with_transactions}")
             click.echo(f"   有开始日期: {products_with_start_date}")
@@ -1261,7 +1257,7 @@ def register_analyze_commands(cli: click.Group) -> None:
             click.echo(f"   消费支出: ¥{float(total_consumption):,.0f}")
             if estimated_months > 0:
                 click.echo(f"      (实际记录 {actual_months} 个月 + 推算 {estimated_months} 个月)")
-                click.echo(f"      ⚠️  推算部分可能不准确，建议补充消费记录数据")
+                click.echo("      ⚠️  推算部分可能不准确，建议补充消费记录数据")
             click.echo(f"   净收入: ¥{float(total_salary_income - total_consumption):,.0f}")
 
             from asset_lens.cli_modules.cli.report import (
