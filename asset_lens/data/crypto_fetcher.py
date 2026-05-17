@@ -148,19 +148,18 @@ class CryptoFetcher:
         try:
             ohlcvs = self.exchange.fetch_ohlcv(symbol, timeframe, since=since, limit=limit)
 
-            result = []
-            for ohlcv in ohlcvs:
-                result.append(
-                    {
-                        "timestamp": ohlcv[0],
-                        "datetime": datetime.fromtimestamp(ohlcv[0] / 1000).isoformat(),
-                        "open": float(ohlcv[1]),
-                        "high": float(ohlcv[2]),
-                        "low": float(ohlcv[3]),
-                        "close": float(ohlcv[4]),
-                        "volume": float(ohlcv[5]),
-                    }
-                )
+            result = [
+                {
+                    "timestamp": ohlcv[0],
+                    "datetime": datetime.fromtimestamp(ohlcv[0] / 1000).isoformat(),
+                    "open": float(ohlcv[1]),
+                    "high": float(ohlcv[2]),
+                    "low": float(ohlcv[3]),
+                    "close": float(ohlcv[4]),
+                    "volume": float(ohlcv[5]),
+                }
+                for ohlcv in ohlcvs
+            ]
 
             self._set_cache(cache_key, result)
             return result
@@ -253,25 +252,24 @@ class CryptoFetcher:
 
             if response is not None and response.status_code == 200:
                 data = response.json()
-                result = []
-                for coin in data:
-                    result.append(
-                        {
-                            "id": coin.get("id"),
-                            "symbol": coin.get("symbol", "").upper(),
-                            "name": coin.get("name"),
-                            "current_price": coin.get("current_price"),
-                            "market_cap": coin.get("market_cap"),
-                            "market_cap_rank": coin.get("market_cap_rank"),
-                            "total_volume": coin.get("total_volume"),
-                            "price_change_24h": coin.get("price_change_24h"),
-                            "price_change_percentage_24h": coin.get("price_change_percentage_24h"),
-                            "circulating_supply": coin.get("circulating_supply"),
-                            "total_supply": coin.get("total_supply"),
-                            "image": coin.get("image"),
-                            "last_updated": coin.get("last_updated"),
-                        }
-                    )
+                result = [
+                    {
+                        "id": coin.get("id"),
+                        "symbol": coin.get("symbol", "").upper(),
+                        "name": coin.get("name"),
+                        "current_price": coin.get("current_price"),
+                        "market_cap": coin.get("market_cap"),
+                        "market_cap_rank": coin.get("market_cap_rank"),
+                        "total_volume": coin.get("total_volume"),
+                        "price_change_24h": coin.get("price_change_24h"),
+                        "price_change_percentage_24h": coin.get("price_change_percentage_24h"),
+                        "circulating_supply": coin.get("circulating_supply"),
+                        "total_supply": coin.get("total_supply"),
+                        "image": coin.get("image"),
+                        "last_updated": coin.get("last_updated"),
+                    }
+                    for coin in data
+                ]
                 return result
 
         except Exception as e:

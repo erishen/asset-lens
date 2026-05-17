@@ -168,20 +168,20 @@ class InvestmentReportGenerator:
         positions_dict = pool.positions
         positions_list: list[dict[str, Any]] = report["positions"]
         if positions_dict:
-            for pos in positions_dict.values():
-                positions_list.append(
-                    {
-                        "code": pos.code,
-                        "name": pos.name,
-                        "status": pos.status,
-                        "buy_price": pos.buy_price,
-                        "current_price": pos.current_price,
-                        "sell_price": pos.sell_price,
-                        "shares": pos.shares,
-                        "selected_count": pos.selected_count,
-                        "first_selected_date": pos.first_selected_date,
-                    }
-                )
+            positions_list.extend(
+                {
+                    "code": pos.code,
+                    "name": pos.name,
+                    "status": pos.status,
+                    "buy_price": pos.buy_price,
+                    "current_price": pos.current_price,
+                    "sell_price": pos.sell_price,
+                    "shares": pos.shares,
+                    "selected_count": pos.selected_count,
+                    "first_selected_date": pos.first_selected_date,
+                }
+                for pos in positions_dict.values()
+            )
 
         report["performance"] = {
             "win_rate": pool_status.get("win_rate", 0),

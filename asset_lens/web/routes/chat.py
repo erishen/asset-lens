@@ -399,20 +399,19 @@ async def get_signals(request: SignalsRequest):
             min_score=request.min_score,
         )
 
-        signals = []
-        for s in result.top_signals[: request.limit]:
-            signals.append(
-                {
-                    "code": s.code,
-                    "name": s.name or s.code,
-                    "signal_type": s.signal_type.value,
-                    "strength": s.strength.value,
-                    "score": s.score,
-                    "price": s.price,
-                    "change_percent": s.change_percent,
-                    "date": s.date,
-                }
-            )
+        signals = [
+            {
+                "code": s.code,
+                "name": s.name or s.code,
+                "signal_type": s.signal_type.value,
+                "strength": s.strength.value,
+                "score": s.score,
+                "price": s.price,
+                "change_percent": s.change_percent,
+                "date": s.date,
+            }
+            for s in result.top_signals[: request.limit]
+        ]
 
         return {
             "success": True,
@@ -528,16 +527,15 @@ async def _query_rag(query: str, k: int = 5) -> list[dict[str, Any]]:
         rag_system.load_vector_store(qdrant_path)
         documents = rag_system.retrieve_documents(query, k=k)
 
-        results = []
-        for doc in documents:
-            results.append(
-                {
-                    "content": doc.page_content,
-                    "title": doc.metadata.get("title", ""),
-                    "source": doc.metadata.get("source", ""),
-                    "category": doc.metadata.get("category", ""),
-                }
-            )
+        results = [
+            {
+                "content": doc.page_content,
+                "title": doc.metadata.get("title", ""),
+                "source": doc.metadata.get("source", ""),
+                "category": doc.metadata.get("category", ""),
+            }
+            for doc in documents
+        ]
 
         return results
 

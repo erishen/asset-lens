@@ -181,18 +181,16 @@ class PortfolioAnalyzer:
 
     def generate_special_bonds_analysis(self, portfolio: Portfolio) -> list[dict[str, Any]]:
         """生成特别国债分析"""
-        special_bonds = []
-
-        for product in portfolio.products:
-            if product.investment_type and "国债" in product.investment_type.value:
-                special_bonds.append(
-                    {
-                        "name": product.name,
-                        "type": product.investment_type.value,
-                        "current_amount": str(product.current_amount) if product.current_amount else "-",
-                        "annual_return": f"{product.annual_return:.2f}%" if product.annual_return else "-",
-                        "investment_days": product.investment_days or "-",
-                    }
-                )
+        special_bonds = [
+            {
+                "name": product.name,
+                "type": product.investment_type.value,
+                "current_amount": str(product.current_amount) if product.current_amount else "-",
+                "annual_return": f"{product.annual_return:.2f}%" if product.annual_return else "-",
+                "investment_days": product.investment_days or "-",
+            }
+            for product in portfolio.products
+            if product.investment_type and "国债" in product.investment_type.value
+        ]
 
         return special_bonds

@@ -296,21 +296,20 @@ class ReportGenerator:
     def generate_time_group_analysis(self, portfolio: Portfolio) -> dict[str, Any]:
         result = self.time_analyzer.analyze_by_holding_period(portfolio.products)
 
-        groups = []
-        for group in result.get("groups", []):
-            groups.append(
-                {
-                    "name": group.group_name,
-                    "description": group.group_description,
-                    "count": group.products_count,
-                    "total_amount": str(group.total_amount),
-                    "total_initial": str(group.total_initial),
-                    "total_profit": str(group.total_profit),
-                    "avg_return_rate": f"{group.avg_return_rate:.2f}%" if group.avg_return_rate else "-",
-                    "avg_holding_days": group.avg_holding_days,
-                    "products": group.products[:5],
-                }
-            )
+        groups = [
+            {
+                "name": group.group_name,
+                "description": group.group_description,
+                "count": group.products_count,
+                "total_amount": str(group.total_amount),
+                "total_initial": str(group.total_initial),
+                "total_profit": str(group.total_profit),
+                "avg_return_rate": f"{group.avg_return_rate:.2f}%" if group.avg_return_rate else "-",
+                "avg_holding_days": group.avg_holding_days,
+                "products": group.products[:5],
+            }
+            for group in result.get("groups", [])
+        ]
 
         return {
             "groups": groups,
@@ -358,22 +357,20 @@ class ReportGenerator:
         }
 
     def generate_special_bonds_analysis(self, portfolio: Portfolio) -> list[dict[str, Any]]:
-        special_bonds = []
         bond_keywords = ["特别国债", "国债"]
-
-        for product in portfolio.products:
-            if any(keyword in product.name for keyword in bond_keywords):
-                special_bonds.append(
-                    {
-                        "name": product.name,
-                        "current_amount": str(product.current_amount) if product.current_amount else "-",
-                        "initial_amount": str(product.initial_amount) if product.initial_amount else "-",
-                        "profit_amount": str(product.profit_amount) if product.profit_amount else "-",
-                        "return_rate": f"{product.return_rate:.2f}%" if product.return_rate else "-",
-                        "annual_return": f"{product.annual_return:.2f}%" if product.annual_return else "-",
-                        "investment_days": product.investment_days or "-",
-                    }
-                )
+        special_bonds = [
+            {
+                "name": product.name,
+                "current_amount": str(product.current_amount) if product.current_amount else "-",
+                "initial_amount": str(product.initial_amount) if product.initial_amount else "-",
+                "profit_amount": str(product.profit_amount) if product.profit_amount else "-",
+                "return_rate": f"{product.return_rate:.2f}%" if product.return_rate else "-",
+                "annual_return": f"{product.annual_return:.2f}%" if product.annual_return else "-",
+                "investment_days": product.investment_days or "-",
+            }
+            for product in portfolio.products
+            if any(keyword in product.name for keyword in bond_keywords)
+        ]
 
         return special_bonds
 

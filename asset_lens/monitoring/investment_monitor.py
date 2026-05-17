@@ -224,8 +224,7 @@ class InvestmentMonitor:
 
         if self.alerts:
             report_lines.append("⚠️ 预警信息:")
-            for alert in self.alerts[-5:]:
-                report_lines.append(f"  [{alert.level}] {alert.type}: {alert.message}")
+            report_lines.extend(f"  [{alert.level}] {alert.type}: {alert.message}" for alert in self.alerts[-5:])
             report_lines.append("")
 
         report_lines.append("💡 投资建议:")

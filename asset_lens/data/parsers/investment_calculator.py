@@ -80,15 +80,14 @@ class InvestmentCalculator:
             product_name=product_name,
         )
 
-        result = []
-        for t in transactions:
-            result.append(
-                {
-                    "date": t.transaction_date.strftime("%Y/%m/%d"),
-                    "type": t.action,
-                    "amount": float(t.amount),
-                }
-            )
+        result = [
+            {
+                "date": t.transaction_date.strftime("%Y/%m/%d"),
+                "type": t.action,
+                "amount": float(t.amount),
+            }
+            for t in transactions
+        ]
 
         return result
 
