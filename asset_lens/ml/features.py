@@ -116,8 +116,9 @@ class FeatureEngineer:
         """均线特征"""
         features = {}
         for period in self.config.ma_periods:
-            features[f"ma{period}"] = df["close"].rolling(window=period).mean()
-            features[f"close_ma{period}_ratio"] = df["close"] / features[f"ma{period}"]
+            rolling_ma = df["close"].rolling(window=period, min_periods=max(period // 2, 1)).mean()
+            features[f"ma{period}"] = rolling_ma
+            features[f"close_ma{period}_ratio"] = df["close"] / rolling_ma
 
         if f"ma{self.config.ma_periods[0]}" in features and f"ma{self.config.ma_periods[2]}" in features:
             ma5 = features["ma5"]

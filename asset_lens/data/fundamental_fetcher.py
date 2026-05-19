@@ -278,7 +278,15 @@ class MoneyFlowFetcher:
         return flows[0] if flows else MoneyFlowData(code=code)
 
     def get_north_money_flow(self, days: int = 30) -> pd.DataFrame:
-        """获取北向资金数据（优先使用 Playwright 获取最新数据）"""
+        """获取北向资金数据（优先使用东方财富API，然后Playwright，最后AkShare）"""
+        try:
+            df = self._get_north_money_flow_eastmoney_api(days)
+            if df is not None and not df.empty:
+                logger.info(f"东方财富API获取北向资金成功，最新日期: {df['date'].iloc[0]}")
+                return df
+        except Exception as e:
+            logger.warning(f"东方财富API获取北向资金失败: {e}")
+
         try:
             df = self._get_north_money_flow_playwright(days)
             if df is not None and not df.empty:
@@ -313,6 +321,60 @@ class MoneyFlowFetcher:
             logger.warning(f"获取北向资金历史数据失败: {e}")
 
         return pd.DataFrame()
+
+    def _get_north_money_flow_eastmoney_api(self, days: int = 30) -> pd.DataFrame | None:
+        """使用东方财富API获取北向资金每日净流入数据"""
+        import requests
+
+        try:
+            url = "https://datacenter-web.eastmoney.com/api/data/v1/get"
+            params = {
+                "reportName": "RPT_HSGT_NORTHBOUNDDETAIL",
+                "columns": "TRADE_DATE,NET_BUY_AMT,SH_NET_BUY_AMT,SZ_NET_BUY_AMT",
+                "pageSize": str(days),
+                "sortColumns": "TRADE_DATE",
+                "sortTypes": "-1",
+            }
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+                "Referer": "https://data.eastmoney.com/",
+            }
+            response = requests.get(url, params=params, headers=headers, timeout=15)
+
+            if response.status_code != 200:
+                return None
+
+            data = response.json()
+            if not data.get("result") or not data["result"].get("data"):
+                return None
+
+            items = data["result"]["data"]
+            records = []
+            for item in items:
+                trade_date = item.get("TRADE_DATE", "")
+                net_buy = item.get("NET_BUY_AMT", 0)
+                sh_buy = item.get("SH_NET_BUY_AMT", 0)
+                sz_buy = item.get("SZ_NET_BUY_AMT", 0)
+
+                if trade_date:
+                    if isinstance(trade_date, str) and len(trade_date) > 10:
+                        trade_date = trade_date[:10]
+                    records.append({
+                        "date": str(trade_date),
+                        "north_net_inflow": float(net_buy) / 1e8 if isinstance(net_buy, (int, float)) and abs(net_buy) > 1e6 else float(net_buy or 0),
+                        "north_inflow": float(sh_buy + sz_buy) / 1e8 if isinstance(sh_buy, (int, float)) and abs(sh_buy) > 1e6 else float((sh_buy or 0) + (sz_buy or 0)),
+                        "data_source": "东方财富(API)",
+                    })
+
+            if records:
+                df = pd.DataFrame(records)
+                df = df.sort_values("date", ascending=False)
+                return df.head(days)
+
+        except Exception as e:
+            logger.debug(f"东方财富API获取北向资金数据失败: {e}")
+
+        return None
 
     def _get_north_money_flow_playwright(self, days: int = 30) -> pd.DataFrame | None:
         """使用 Playwright 从东方财富获取北向资金数据"""
@@ -426,27 +488,29 @@ class MoneyFlowFetcher:
         current_hour = now.hour
         current_minute = now.minute
         is_trading_time = (9 <= current_hour < 15) or (current_hour == 9 and current_minute >= 30)
+        is_weekend = now.weekday() >= 5
 
         if use_cache:
             cached_df = self._load_industry_cache(cache_file)
             if cached_df is not None and not cached_df.empty:
-                # 安全地获取缓存时间
                 cache_time = None
                 if 'cache_time' in cached_df.columns and len(cached_df) > 0:
                     cache_time = cached_df['cache_time'].iloc[0]
 
-                if cache_time:
+                if is_weekend or not is_trading_time:
+                    logger.info(f"非交易时间，使用缓存的行业流向数据(缓存时间: {cache_time or '未知'})")
+                elif cache_time:
                     logger.info(f"使用缓存的行业流向数据(缓存时间: {cache_time})")
                 else:
                     logger.info("使用缓存的行业流向数据")
 
                 return cached_df.drop(columns=['cache_time'], errors='ignore')
 
-        # 开市时间不主动获取新数据（太慢），除非强制
-        if is_trading_time and not force:
-            logger.warning("⚠️ 开市时间不主动获取北向资金行业数据（耗时15-45秒）")
-            logger.info("💡 建议：使用缓存数据，或在非开市时间（15:00后）运行此命令")
-            logger.info("💡 或者使用 force=True 参数强制获取")
+        if (is_weekend or not is_trading_time) and not force:
+            logger.warning("⚠️ 非交易时间，北向资金行业数据源不返回实时数据")
+            logger.info("💡 建议：1) 等待交易时间(周一至周五 9:30-15:00)再获取")
+            logger.info("💡        2) 使用 force=True 强制尝试获取")
+            logger.info("💡        3) 查看历史数据: make north-industry-history")
             return pd.DataFrame()
 
         try:

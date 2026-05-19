@@ -417,7 +417,7 @@ def predict_pool(model: str, limit: int, auto_train: bool):
             code = stock.get("code", "")
             name = stock.get("name", "")
             try:
-                history = fetcher.fetch_history(code, days=120)
+                history = fetcher.fetch_history(code, days=250)
                 history_data = None
                 if history and history.get("klines"):
                     history_data = []

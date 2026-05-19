@@ -179,7 +179,7 @@ def check():
 
         analyzer = RiskAnalyzer()
 
-        returns = [stock.get("change_percent", 0) / 100 for stock in stocks]
+        returns = [float(stock.get("change_percent", 0)) / 100 for stock in stocks]
 
         if returns:
             volatility = analyzer.calculate_volatility(returns)
