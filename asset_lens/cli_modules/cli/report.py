@@ -1139,7 +1139,7 @@ def _get_ml_predictions_for_model(
                         }
                     )
 
-            result = predictor.predict_single(code=code, name=name, history_data=history_data)
+            result = predictor.predict_single(code=code, name=str(name or ""), history_data=history_data)
             if result:
                 prob = result.up_prob
                 if prob >= bullish_threshold:
