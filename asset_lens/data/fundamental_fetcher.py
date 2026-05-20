@@ -465,30 +465,22 @@ class MoneyFlowFetcher:
             return None
 
     def get_north_flow_by_industry(self, use_cache: bool = True, force: bool = False) -> pd.DataFrame:
-        """获取北向资金行业流向数据
+        """获取行业资金流向数据
 
-        使用AkShare的北向资金持股数据,按行业聚合计算流向
+        数据源优先级：新浪行业板块(非交易时间可用) → 东方财富push2 → Playwright → AkShare北向持股
 
         缓存策略:
-        - 开市时间 (9:30-15:00): 缓存30分钟，且不主动获取新数据（除非force=True）
-        - 非开市时间: 缓存4小时，可以获取新数据
+        - 开市时间 (9:30-15:00): 缓存30分钟
+        - 非开市时间: 缓存4小时
 
         Args:
             use_cache: 是否使用缓存(默认True)
-            force: 强制获取数据，即使在开市时间(默认False)
+            force: 强制获取数据，忽略缓存(默认False)
 
         Returns:
             DataFrame包含行业流向数据
         """
         cache_file = self.cache_path / "north_industry_flow_cache.json"
-
-        # 判断是否在开市时间
-        from datetime import datetime
-        now = datetime.now()
-        current_hour = now.hour
-        current_minute = now.minute
-        is_trading_time = (9 <= current_hour < 15) or (current_hour == 9 and current_minute >= 30)
-        is_weekend = now.weekday() >= 5
 
         if use_cache:
             cached_df = self._load_industry_cache(cache_file)
@@ -497,26 +489,21 @@ class MoneyFlowFetcher:
                 if 'cache_time' in cached_df.columns and len(cached_df) > 0:
                     cache_time = cached_df['cache_time'].iloc[0]
 
-                if is_weekend or not is_trading_time:
-                    logger.info(f"非交易时间，使用缓存的行业流向数据(缓存时间: {cache_time or '未知'})")
-                elif cache_time:
+                if cache_time:
                     logger.info(f"使用缓存的行业流向数据(缓存时间: {cache_time})")
                 else:
                     logger.info("使用缓存的行业流向数据")
 
                 return cached_df.drop(columns=['cache_time'], errors='ignore')
 
-        if (is_weekend or not is_trading_time) and not force:
-            logger.info("非交易时间，尝试获取北向资金行业数据（可能返回最近交易日数据）...")
-
         try:
-            logger.info("使用AkShare获取北向资金持股数据...")
+            logger.info("获取行业资金流向数据...")
             df = self._fetch_industry_flow_from_akshare()
 
             if df is not None and not df.empty:
                 if self._validate_industry_data(df):
                     self._save_industry_cache(cache_file, df)
-                    logger.info(f"✅ 成功获取并缓存 {len(df)} 个行业的北向资金流向数据")
+                    logger.info(f"✅ 成功获取并缓存 {len(df)} 个行业的资金流向数据")
                     return df
                 else:
                     logger.warning("数据验证失败")
@@ -526,7 +513,7 @@ class MoneyFlowFetcher:
                 return pd.DataFrame()
 
         except Exception as e:
-            logger.error(f"获取北向资金行业流向数据失败: {e}")
+            logger.error(f"获取行业资金流向数据失败: {e}")
             import traceback
             traceback.print_exc()
             return pd.DataFrame()
@@ -604,6 +591,156 @@ class MoneyFlowFetcher:
 
         # 如果API失败，尝试使用Playwright
         return self._fetch_industry_flow_from_eastmoney_playwright()
+
+    def _fetch_industry_flow_from_sina(self) -> pd.DataFrame | None:
+        """使用新浪财经获取行业板块资金流向数据（非交易时间也可用）
+
+        新浪行业板块接口返回84个申万行业的涨跌幅、成交额等数据。
+        由于没有直接的"净流入"数据，使用成交额×涨跌方向作为资金流向代理指标：
+        - 涨幅为正的行业 → 资金净流入（正值）
+        - 涨幅为负的行业 → 资金净流出（负值）
+        """
+        import re as _re
+
+        try:
+            url = "https://vip.stock.finance.sina.com.cn/q/view/newFLJK.php?param=industry"
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+                "Referer": "https://finance.sina.com.cn/",
+            }
+
+            import requests
+
+            response = requests.get(url, headers=headers, timeout=15)
+
+            if response.status_code != 200:
+                logger.warning(f"新浪行业接口请求失败: {response.status_code}")
+                return None
+
+            text = response.text
+            match = _re.search(r'=\s*(\{.*\})', text, _re.DOTALL)
+            if not match:
+                logger.warning("新浪行业接口返回格式异常")
+                return None
+
+            data = json.loads(match.group(1))
+            if not data:
+                logger.warning("新浪行业接口返回数据为空")
+                return None
+
+            records = []
+            for val in data.values():
+                fields = val.split(",")
+                if len(fields) < 8:
+                    continue
+
+                try:
+                    industry_name = fields[1]
+                    stock_count = int(fields[2])
+                    change_pct = float(fields[5])
+                    turnover = float(fields[7])
+
+                    turnover_yi = turnover / 1e8
+
+                    sign = 1 if change_pct > 0 else (-1 if change_pct < 0 else 0)
+                    net_inflow = turnover_yi * sign
+
+                    records.append({
+                        "industry": industry_name,
+                        "net_inflow": net_inflow,
+                        "today_holding": turnover_yi,
+                        "change_rate": change_pct,
+                        "stock_count": stock_count,
+                        "data_source": "新浪行业板块",
+                    })
+                except (ValueError, IndexError) as e:
+                    logger.debug(f"解析行业数据失败: {e}, data={val[:50]}")
+                    continue
+
+            if records:
+                df = pd.DataFrame(records)
+                df = df.sort_values("net_inflow", ascending=False)
+                logger.info(f"✅ 新浪行业板块获取 {len(df)} 个行业数据（非交易时间可用）")
+                return df
+
+        except Exception as e:
+            logger.warning(f"新浪行业板块获取失败: {e}")
+
+        return None
+
+    def _fetch_industry_flow_from_push2(self) -> pd.DataFrame | None:
+        """使用东方财富push2接口获取北向资金行业持股汇总（非交易时间也可用）"""
+        import requests
+
+        try:
+            url = "https://push2.eastmoney.com/api/qt/clist/get"
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+                "Referer": "https://data.eastmoney.com/",
+            }
+
+            params = {
+                "pn": "1",
+                "pz": "100",
+                "po": "1",
+                "np": "1",
+                "fltt": "2",
+                "invt": "2",
+                "fid": "f62",
+                "fs": "b:BK0824",
+                "fields": "f12,f14,f2,f3,f62,f184,f66,f69,f72,f75,f78,f81,f84,f87",
+                "ut": "433fd2d0e98eaf36ad3d5001f088614d",
+            }
+
+            response = requests.get(url, params=params, headers=headers, timeout=15)
+
+            if response.status_code != 200:
+                logger.warning(f"push2接口请求失败: {response.status_code}")
+                return None
+
+            data = response.json()
+            if not data.get("data") or not data["data"].get("diff"):
+                logger.warning("push2接口返回数据为空")
+                return None
+
+            items = data["data"]["diff"]
+            records = []
+
+            for item in items:
+                industry = item.get("f14", "")
+                if not industry:
+                    continue
+
+                net_inflow = item.get("f62", 0)
+                if isinstance(net_inflow, str):
+                    try:
+                        net_inflow = float(net_inflow)
+                    except (ValueError, TypeError):
+                        net_inflow = 0
+
+                if abs(net_inflow) > 1e8:
+                    net_inflow = net_inflow / 1e8
+                elif abs(net_inflow) > 1e4:
+                    net_inflow = net_inflow / 1e4
+
+                records.append({
+                    "industry": industry,
+                    "net_inflow": float(net_inflow) if isinstance(net_inflow, (int, float)) else 0,
+                    "today_holding": 0,
+                    "change_rate": float(item.get("f3", 0) or 0),
+                    "data_source": "东方财富(push2)",
+                })
+
+            if records:
+                df = pd.DataFrame(records)
+                df = df.sort_values("net_inflow", ascending=False)
+                logger.info(f"✅ push2接口获取 {len(df)} 个行业资金流向数据")
+                return df
+
+        except Exception as e:
+            logger.warning(f"push2接口获取失败: {e}")
+
+        return None
 
     def _fetch_industry_flow_from_eastmoney_playwright(self) -> pd.DataFrame | None:
         """使用Playwright从东方财富获取北向资金行业流向数据（备用方法）"""
@@ -775,15 +912,29 @@ class MoneyFlowFetcher:
         return None
 
     def _fetch_industry_flow_from_akshare(self) -> pd.DataFrame | None:
-        """从AkShare获取北向资金持股数据并按行业聚合"""
-        # 先尝试使用Playwright从东方财富获取
-        logger.info("尝试使用Playwright从东方财富获取北向资金行业流向数据...")
+        """从多个数据源获取行业资金流向数据
+
+        优先级：新浪行业板块(非交易时间可用) → 东方财富push2 → Playwright → AkShare北向持股
+        """
+        logger.info("尝试从新浪行业板块获取行业资金流向数据（非交易时间可用）...")
+        df = self._fetch_industry_flow_from_sina()
+        if df is not None and not df.empty:
+            logger.info(f"✅ 成功从新浪行业板块获取 {len(df)} 个行业数据")
+            return df
+
+        logger.info("新浪行业板块获取失败，尝试东方财富push2接口...")
+        df = self._fetch_industry_flow_from_push2()
+        if df is not None and not df.empty:
+            logger.info(f"✅ 成功从东方财富push2接口获取 {len(df)} 个行业数据")
+            return df
+
+        logger.info("尝试使用Playwright从东方财富获取行业资金流向数据...")
         df = self._fetch_industry_flow_from_eastmoney_playwright()
         if df is not None and not df.empty:
             logger.info(f"✅ 成功从东方财富Playwright获取 {len(df)} 个行业数据")
             return df
 
-        logger.warning("东方财富Playwright获取失败，尝试使用AkShare...")
+        logger.warning("以上数据源均失败，尝试使用AkShare北向持股数据...")
 
         if not self.akshare:
             logger.warning("AkShare 未安装")
@@ -1064,9 +1215,16 @@ class MoneyFlowFetcher:
         total_inflow = df[df['net_inflow'] > 0]['net_inflow'].sum()
         total_outflow = df[df['net_inflow'] < 0]['net_inflow'].sum()
 
-        # 北向资金总规模可能在几千亿到几万亿,调整验证阈值
-        if abs(total_inflow) > 50000 or abs(total_outflow) > 50000:
-            logger.warning(f"数据异常: 总流入{total_inflow:.2f}亿, 总流出{total_outflow:.2f}亿 (超过5万亿)")
+        data_source = df['data_source'].iloc[0] if 'data_source' in df.columns else ""
+        if "新浪" in data_source:
+            threshold = 200000
+            unit_desc = "20万亿"
+        else:
+            threshold = 50000
+            unit_desc = "5万亿"
+
+        if abs(total_inflow) > threshold or abs(total_outflow) > threshold:
+            logger.warning(f"数据异常: 总流入{total_inflow:.2f}亿, 总流出{total_outflow:.2f}亿 (超过{unit_desc})")
             return False
 
         logger.info(f"数据验证通过: {len(df)}个行业, 总流入{total_inflow:.2f}亿, 总流出{total_outflow:.2f}亿")

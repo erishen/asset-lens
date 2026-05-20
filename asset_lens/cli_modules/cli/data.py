@@ -606,42 +606,8 @@ def register_data_commands(cli: click.Group) -> None:
         from asset_lens.db.database import db_manager
 
         console = Console()
-        console.print("\n🏭 北向资金行业流向分析")
+        console.print("\n🏭 行业资金流向分析")
         console.print("=" * 60)
-
-        # 检查是否在开市时间
-        now = datetime.now()
-        current_hour = now.hour
-        current_minute = now.minute
-        is_trading_time = (9 <= current_hour < 15) or (current_hour == 9 and current_minute >= 30)
-
-        if is_trading_time and not force and not skip_fetch:
-            console.print("\n[yellow]⏰ 当前是开市时间 (9:30-15:00)[/yellow]")
-            console.print("[yellow]⚠️  北向资金行业数据获取需要15-45秒，建议在非开市时间获取[/yellow]")
-            console.print("\n[cyan]💡 可用选项：[/cyan]")
-            console.print("   1. 使用缓存数据（如果有）")
-            console.print("   2. 查看历史数据: make north-industry-history")
-            console.print("   3. 强制获取: make north-industry --force")
-            console.print("")
-
-            # 尝试使用缓存
-            try:
-                fetcher = MoneyFlowFetcher()
-                df = fetcher.get_north_flow_by_industry(use_cache=True)
-                if not df.empty:
-                    console.print("✅ 使用缓存数据：")
-                    console.print(f"   数据来源: {df['data_source'].iloc[0]}")
-                    _display_industry_flow_table(console, df.to_dict('records'))
-                    return
-                else:
-                    console.print("[yellow]⚠️  没有缓存数据[/yellow]")
-                    console.print("\n请使用以下命令：")
-                    console.print("   - 查看历史: make north-industry-history")
-                    console.print("   - 强制获取: make north-industry --force")
-                    return
-            except Exception as e:
-                console.print(f"[red]❌ 获取缓存失败: {e}[/red]")
-                return
 
         try:
             if show_history:
@@ -693,30 +659,29 @@ def register_data_commands(cli: click.Group) -> None:
             df = fetcher.get_north_flow_by_industry(force=force)
 
             if df.empty:
-                console.print("\n[yellow]⚠️ 无法获取北向资金行业流向数据[/yellow]")
+                console.print("\n[yellow]⚠️ 无法获取行业资金流向数据[/yellow]")
                 console.print("\n[cyan]💡 建议使用以下替代方案：[/cyan]")
                 console.print("   1. 查看历史数据: make north-industry-history")
-                console.print("   2. 稍后重试（非开市时间成功率更高）")
+                console.print("   2. 稍后重试")
                 console.print("   3. 强制获取: make north-industry --force")
-                console.print("\n[dim]提示: 北向资金行业数据获取需要30-60秒，且经常超时[/dim]")
                 return
 
-            # 安全地获取数据源
             data_source = None
             if 'data_source' in df.columns and not df.empty:
                 data_source = df['data_source'].iloc[0] if len(df) > 0 else None
 
             if data_source:
-                console.print(f"\n📊 北向资金行业流向分析 (数据来源: {data_source})")
+                console.print(f"\n📊 行业资金流向分析 (数据来源: {data_source})")
 
-                # 根据数据源显示不同说明
-                if "5日" in str(data_source):
+                if "新浪" in str(data_source):
+                    console.print("   说明: 显示各行业涨跌及成交额分布，正值=上涨，负值=下跌，单位：亿元")
+                elif "5日" in str(data_source):
                     console.print("   说明: 显示北向资金近5日在各行业的净流入变化，单位：亿元")
                     console.print("   计算: 5日净流入 = 今日持仓 - 5日前持仓")
                 else:
                     console.print("   说明: 显示北向资金在各行业的持仓市值分布，单位：亿元")
             else:
-                console.print("\n📊 北向资金行业流向分析")
+                console.print("\n📊 行业资金流向分析")
 
             if save:
                 from datetime import datetime, timedelta
@@ -790,11 +755,15 @@ def _display_industry_flow_table(console, flow_data: list, date: str | None = No
     inflow_df = df[df['net_inflow'] > 0].head(10)
     outflow_df = df[df['net_inflow'] < 0].head(10)
 
-    # 判断是否是5日流向变化
-    is_flow_change = "5日" in df['data_source'].iloc[0] if 'data_source' in df.columns else False
+    data_source = df['data_source'].iloc[0] if 'data_source' in df.columns else ""
+    is_flow_change = "5日" in data_source
+    is_sina = "新浪" in data_source
 
     if not inflow_df.empty:
-        if is_flow_change:
+        if is_sina:
+            title = "\n🔴 行业上涨TOP10（成交额·亿）"
+            col_name = "成交额(亿)"
+        elif is_flow_change:
             title = "\n🔴 5日净流入TOP10"
             col_name = "净流入(亿)"
         else:
@@ -827,7 +796,10 @@ def _display_industry_flow_table(console, flow_data: list, date: str | None = No
         console.print(inflow_table)
 
     if not outflow_df.empty:
-        if is_flow_change:
+        if is_sina:
+            title = "\n🟢 行业下跌TOP10（成交额·亿）"
+            col_name = "成交额(亿)"
+        elif is_flow_change:
             title = "\n🟢 5日净流出TOP10"
             col_name = "净流出(亿)"
         else:
@@ -865,7 +837,13 @@ def _display_industry_flow_table(console, flow_data: list, date: str | None = No
 
     console.print("\n📊 汇总统计:")
 
-    if is_flow_change:
+    if is_sina:
+        console.print(f"   行业数量: {len(df)} 个")
+        console.print(f"   上涨行业: {len(inflow_df)} 个")
+        console.print(f"   下跌行业: {len(outflow_df)} 个")
+        console.print(f"   上涨成交额: {total_inflow:.2f} 亿")
+        console.print(f"   下跌成交额: {abs(total_outflow):.2f} 亿")
+    elif is_flow_change:
         console.print(f"   净流入行业数: {len(inflow_df)} 个")
         console.print(f"   净流出行业数: {len(outflow_df)} 个")
         console.print(f"   总净流入: {total_inflow:.2f} 亿")
@@ -883,12 +861,14 @@ def _display_industry_flow_table(console, flow_data: list, date: str | None = No
     console.print("\n💡 分析建议:")
     if not inflow_df.empty:
         top_inflow = inflow_df.iloc[0]
-        if is_flow_change:
+        if is_sina:
+            console.print(f"   🔴 今日最强行业: {top_inflow['industry']} (成交额 {top_inflow['net_inflow']:.2f} 亿, 涨幅 {top_inflow['change_rate']:+.2f}%)")
+        elif is_flow_change:
             console.print(f"   🔴 5日净流入最多: {top_inflow['industry']} (净流入 {top_inflow['net_inflow']:.2f} 亿)")
         else:
             console.print(f"   🔴 北向资金重仓: {top_inflow['industry']} (持仓 {top_inflow['net_inflow']:.2f} 亿)")
 
-        if not is_flow_change and len(inflow_df) >= 3:
+        if not is_flow_change and not is_sina and len(inflow_df) >= 3:
             console.print("\n   📈 北向资金持仓TOP3:")
             for i, (_, row) in enumerate(inflow_df.head(3).iterrows(), 1):
                 ratio = (row['net_inflow'] / net_total * 100) if net_total > 0 else 0
@@ -897,6 +877,10 @@ def _display_industry_flow_table(console, flow_data: list, date: str | None = No
     if is_flow_change and not outflow_df.empty:
         top_outflow = outflow_df.iloc[0]
         console.print(f"   🟢 5日净流出最多: {top_outflow['industry']} (净流出 {abs(top_outflow['net_inflow']):.2f} 亿)")
+
+    if is_sina and not outflow_df.empty:
+        top_outflow = outflow_df.iloc[0]
+        console.print(f"   🟢 今日最弱行业: {top_outflow['industry']} (成交额 {abs(top_outflow['net_inflow']):.2f} 亿, 跌幅 {top_outflow['change_rate']:+.2f}%)")
 
 
 def _display_industry_trend(console, trend_data: list, industry_name: str):
