@@ -507,11 +507,7 @@ class MoneyFlowFetcher:
                 return cached_df.drop(columns=['cache_time'], errors='ignore')
 
         if (is_weekend or not is_trading_time) and not force:
-            logger.warning("⚠️ 非交易时间，北向资金行业数据源不返回实时数据")
-            logger.info("💡 建议：1) 等待交易时间(周一至周五 9:30-15:00)再获取")
-            logger.info("💡        2) 使用 force=True 强制尝试获取")
-            logger.info("💡        3) 查看历史数据: make north-industry-history")
-            return pd.DataFrame()
+            logger.info("非交易时间，尝试获取北向资金行业数据（可能返回最近交易日数据）...")
 
         try:
             logger.info("使用AkShare获取北向资金持股数据...")
