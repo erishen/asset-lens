@@ -226,9 +226,7 @@ async def screen_stocks(
 @router.get("/market/indices")
 async def get_market_indices(api_info: dict = Depends(check_rate_limit)):
     try:
-        return create_success_response(
-            {"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "indices": []}
-        )
+        return create_success_response({"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "indices": []})
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 

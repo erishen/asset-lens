@@ -79,9 +79,7 @@ class DatabaseManager:
 
             dates = [k["date"] for k in valid_klines]
             existing_map = {}
-            for row in session.query(StockKline).filter(
-                StockKline.code == code, StockKline.date.in_(dates)
-            ).all():
+            for row in session.query(StockKline).filter(StockKline.code == code, StockKline.date.in_(dates)).all():
                 existing_map[row.date] = row
 
             saved_count = 0
@@ -558,11 +556,7 @@ class DatabaseManager:
                     session.add(record)
                     added_count += 1
 
-            return {
-                'added': added_count,
-                'updated': updated_count,
-                'total': added_count + updated_count
-            }
+            return {"added": added_count, "updated": updated_count, "total": added_count + updated_count}
 
     def get_north_industry_flow(
         self,

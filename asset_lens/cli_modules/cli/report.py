@@ -222,8 +222,7 @@ def register_report_commands(cli: click.Group) -> None:
             )
 
             report_lines.extend(
-                f"| {p.name} | +{float(p.return_rate or 0):.2f}% | {_format_amount(p)} |"
-                for p in sorted_up
+                f"| {p.name} | +{float(p.return_rate or 0):.2f}% | {_format_amount(p)} |" for p in sorted_up
             )
 
             report_lines.extend(
@@ -237,8 +236,7 @@ def register_report_commands(cli: click.Group) -> None:
             )
 
             report_lines.extend(
-                f"| {p.name} | {float(p.return_rate or 0):.2f}% | {_format_amount(p)} |"
-                for p in sorted_down
+                f"| {p.name} | {float(p.return_rate or 0):.2f}% | {_format_amount(p)} |" for p in sorted_down
             )
 
             # 4. 基金持仓分析（1万以上，按平台分组）
@@ -271,7 +269,9 @@ def register_report_commands(cli: click.Group) -> None:
             # 按平台分组
             platform_funds = _get_platform_products(funds)
 
-            for platform_name, platform_data in sorted(platform_funds.items(), key=lambda x: x[1]["amount"], reverse=True):
+            for platform_name, platform_data in sorted(
+                platform_funds.items(), key=lambda x: x[1]["amount"], reverse=True
+            ):
                 platform_fund_list = cast(list, platform_data["products"])
                 if not platform_fund_list:
                     continue
@@ -576,8 +576,7 @@ def register_report_commands(cli: click.Group) -> None:
                 ]
             )
             report_lines.extend(
-                f"| {p.name} | {float(p.return_rate or 0):+.2f}% | {_format_amount(p)} |"
-                for p in sorted_by_return[:10]
+                f"| {p.name} | {float(p.return_rate or 0):+.2f}% | {_format_amount(p)} |" for p in sorted_by_return[:10]
             )
 
             if loss_products:
@@ -591,8 +590,7 @@ def register_report_commands(cli: click.Group) -> None:
                     ]
                 )
                 report_lines.extend(
-                    f"| {p.name} | {float(p.return_rate or 0):.2f}% | {_format_amount(p)} |"
-                    for p in loss_products[:10]
+                    f"| {p.name} | {float(p.return_rate or 0):.2f}% | {_format_amount(p)} |" for p in loss_products[:10]
                 )
 
             funds = [p for p in products if p.investment_type and "基金" in p.investment_type.value]
@@ -611,7 +609,9 @@ def register_report_commands(cli: click.Group) -> None:
                 # 按平台分组
                 platform_funds = _get_platform_products(large_funds)
 
-                for platform_name, platform_data in sorted(platform_funds.items(), key=lambda x: x[1]["amount"], reverse=True):
+                for platform_name, platform_data in sorted(
+                    platform_funds.items(), key=lambda x: x[1]["amount"], reverse=True
+                ):
                     platform_fund_list = cast(list, platform_data["products"])
                     if not platform_fund_list:
                         continue
@@ -809,7 +809,9 @@ def register_report_commands(cli: click.Group) -> None:
             platform_products = _get_platform_products(products)
             for platform_name, data in sorted(platform_products.items(), key=lambda x: x[1]["amount"], reverse=True):
                 products_list = cast(list, data["products"])
-                funds_in_platform: list[Any] = [p for p in products_list if p.investment_type and "基金" in p.investment_type.value]
+                funds_in_platform: list[Any] = [
+                    p for p in products_list if p.investment_type and "基金" in p.investment_type.value
+                ]
                 if not funds_in_platform:
                     continue
 
@@ -1531,9 +1533,7 @@ def _generate_suggestions(products: list, funds: list) -> list:
 
     # 先按类别分组所有基金（跨平台同类比较）
     all_funds = [
-        p
-        for p in products
-        if p.investment_type and p.investment_type.value in ["基金", "定投基金", "ETF", "QDII"]
+        p for p in products if p.investment_type and p.investment_type.value in ["基金", "定投基金", "ETF", "QDII"]
     ]
 
     category_funds_global: dict[str, list] = {}

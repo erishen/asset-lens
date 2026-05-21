@@ -139,6 +139,7 @@ def check():
                 # 统计现金类资产和中低风险资产
                 if hasattr(product, "investment_type"):
                     from asset_lens.data.models import InvestmentType
+
                     # 中低风险资产（不计入仓位）
                     low_risk_types = [
                         InvestmentType.CASH,

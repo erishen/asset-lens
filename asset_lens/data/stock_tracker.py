@@ -211,7 +211,7 @@ class StockTracker:
         count = 0
         for stock in stocks_data:
             if stock.get("code") in self.stock_pool.positions and self.record_daily(stock):
-                    count += 1
+                count += 1
 
         self._save_tracker()
         return count

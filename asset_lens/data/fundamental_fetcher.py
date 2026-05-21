@@ -359,12 +359,18 @@ class MoneyFlowFetcher:
                 if trade_date:
                     if isinstance(trade_date, str) and len(trade_date) > 10:
                         trade_date = trade_date[:10]
-                    records.append({
-                        "date": str(trade_date),
-                        "north_net_inflow": float(net_buy) / 1e8 if isinstance(net_buy, (int, float)) and abs(net_buy) > 1e6 else float(net_buy or 0),
-                        "north_inflow": float(sh_buy + sz_buy) / 1e8 if isinstance(sh_buy, (int, float)) and abs(sh_buy) > 1e6 else float((sh_buy or 0) + (sz_buy or 0)),
-                        "data_source": "东方财富(API)",
-                    })
+                    records.append(
+                        {
+                            "date": str(trade_date),
+                            "north_net_inflow": float(net_buy) / 1e8
+                            if isinstance(net_buy, (int, float)) and abs(net_buy) > 1e6
+                            else float(net_buy or 0),
+                            "north_inflow": float(sh_buy + sz_buy) / 1e8
+                            if isinstance(sh_buy, (int, float)) and abs(sh_buy) > 1e6
+                            else float((sh_buy or 0) + (sz_buy or 0)),
+                            "data_source": "东方财富(API)",
+                        }
+                    )
 
             if records:
                 df = pd.DataFrame(records)
@@ -486,15 +492,15 @@ class MoneyFlowFetcher:
             cached_df = self._load_industry_cache(cache_file)
             if cached_df is not None and not cached_df.empty:
                 cache_time = None
-                if 'cache_time' in cached_df.columns and len(cached_df) > 0:
-                    cache_time = cached_df['cache_time'].iloc[0]
+                if "cache_time" in cached_df.columns and len(cached_df) > 0:
+                    cache_time = cached_df["cache_time"].iloc[0]
 
                 if cache_time:
                     logger.info(f"使用缓存的行业流向数据(缓存时间: {cache_time})")
                 else:
                     logger.info("使用缓存的行业流向数据")
 
-                return cached_df.drop(columns=['cache_time'], errors='ignore')
+                return cached_df.drop(columns=["cache_time"], errors="ignore")
 
         try:
             logger.info("获取行业资金流向数据...")
@@ -515,6 +521,7 @@ class MoneyFlowFetcher:
         except Exception as e:
             logger.error(f"获取行业资金流向数据失败: {e}")
             import traceback
+
             traceback.print_exc()
             return pd.DataFrame()
 
@@ -531,15 +538,13 @@ class MoneyFlowFetcher:
             params = {
                 "reportName": "RPT_HSGT_BOARD_HOLDRANK",
                 "columns": "BOARD_NAME,BOARD_CODE,HOLD_MARKET_VALUE,HOLD_MARKET_VALUE_CHANGE,HOLD_RATIO,CHANGE_RATIO",
-                "filter": "(MARKET=\"北向\")",
+                "filter": '(MARKET="北向")',
                 "pageSize": "100",
                 "sortColumns": "HOLD_MARKET_VALUE",
-                "sortTypes": "-1"
+                "sortTypes": "-1",
             }
 
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-            }
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 
             response = requests.get(url, params=params, headers=headers, timeout=30)
 
@@ -570,13 +575,15 @@ class MoneyFlowFetcher:
                 if isinstance(change, (int, float)):
                     change = change / 1e8
 
-                records.append({
-                    "industry": industry,
-                    "net_inflow": float(change) if isinstance(change, (int, float)) else 0,
-                    "today_holding": float(holding) if isinstance(holding, (int, float)) else 0,
-                    "change_rate": 0.0,
-                    "data_source": "东方财富(API)"
-                })
+                records.append(
+                    {
+                        "industry": industry,
+                        "net_inflow": float(change) if isinstance(change, (int, float)) else 0,
+                        "today_holding": float(holding) if isinstance(holding, (int, float)) else 0,
+                        "change_rate": 0.0,
+                        "data_source": "东方财富(API)",
+                    }
+                )
 
             if records:
                 df = pd.DataFrame(records)
@@ -618,7 +625,7 @@ class MoneyFlowFetcher:
                 return None
 
             text = response.text
-            match = _re.search(r'=\s*(\{.*\})', text, _re.DOTALL)
+            match = _re.search(r"=\s*(\{.*\})", text, _re.DOTALL)
             if not match:
                 logger.warning("新浪行业接口返回格式异常")
                 return None
@@ -645,14 +652,16 @@ class MoneyFlowFetcher:
                     sign = 1 if change_pct > 0 else (-1 if change_pct < 0 else 0)
                     net_inflow = turnover_yi * sign
 
-                    records.append({
-                        "industry": industry_name,
-                        "net_inflow": net_inflow,
-                        "today_holding": turnover_yi,
-                        "change_rate": change_pct,
-                        "stock_count": stock_count,
-                        "data_source": "新浪行业板块",
-                    })
+                    records.append(
+                        {
+                            "industry": industry_name,
+                            "net_inflow": net_inflow,
+                            "today_holding": turnover_yi,
+                            "change_rate": change_pct,
+                            "stock_count": stock_count,
+                            "data_source": "新浪行业板块",
+                        }
+                    )
                 except (ValueError, IndexError) as e:
                     logger.debug(f"解析行业数据失败: {e}, data={val[:50]}")
                     continue
@@ -723,13 +732,15 @@ class MoneyFlowFetcher:
                 elif abs(net_inflow) > 1e4:
                     net_inflow = net_inflow / 1e4
 
-                records.append({
-                    "industry": industry,
-                    "net_inflow": float(net_inflow) if isinstance(net_inflow, (int, float)) else 0,
-                    "today_holding": 0,
-                    "change_rate": float(item.get("f3", 0) or 0),
-                    "data_source": "东方财富(push2)",
-                })
+                records.append(
+                    {
+                        "industry": industry,
+                        "net_inflow": float(net_inflow) if isinstance(net_inflow, (int, float)) else 0,
+                        "today_holding": 0,
+                        "change_rate": float(item.get("f3", 0) or 0),
+                        "data_source": "东方财富(push2)",
+                    }
+                )
 
             if records:
                 df = pd.DataFrame(records)
@@ -777,8 +788,11 @@ class MoneyFlowFetcher:
 
                 logger.info("访问东方财富北向资金行业流向页面...")
                 # 访问北向资金行业流向页面
-                page.goto("https://data.eastmoney.com/hsgt/hsgtDetail/industry.html",
-                         wait_until="domcontentloaded", timeout=30000)
+                page.goto(
+                    "https://data.eastmoney.com/hsgt/hsgtDetail/industry.html",
+                    wait_until="domcontentloaded",
+                    timeout=30000,
+                )
                 page.wait_for_timeout(10000)  # 等待10秒让数据加载
 
                 # 如果没有捕获到API响应，尝试从页面直接解析
@@ -808,32 +822,45 @@ class MoneyFlowFetcher:
                                     industry = industry_text.strip() if industry_text else ""
 
                                     # 检查是否是有效的行业名称（通常是中文，长度2-10个字符）
-                                    if not industry or len(industry) > 20 or not any('\u4e00' <= c <= '\u9fff' for c in industry):
+                                    if (
+                                        not industry
+                                        or len(industry) > 20
+                                        or not any("\u4e00" <= c <= "\u9fff" for c in industry)
+                                    ):
                                         continue
 
                                     # 尝试解析数字
                                     try:
                                         holding_text = cells[1].text_content()
                                         holding_text = holding_text.strip() if holding_text else "0"
-                                        holding = float(holding_text.replace(",", "").replace("亿", "").replace("%", ""))
+                                        holding = float(
+                                            holding_text.replace(",", "").replace("亿", "").replace("%", "")
+                                        )
                                     except (ValueError, AttributeError):
                                         holding = 0
 
                                     try:
                                         change_text = cells[2].text_content()
                                         change_text = change_text.strip() if change_text else "0"
-                                        change = float(change_text.replace(",", "").replace("亿", "").replace("+", "").replace("%", ""))
+                                        change = float(
+                                            change_text.replace(",", "")
+                                            .replace("亿", "")
+                                            .replace("+", "")
+                                            .replace("%", "")
+                                        )
                                     except (ValueError, AttributeError):
                                         change = 0
 
                                     if industry:
-                                        records.append({
-                                            "industry": industry,
-                                            "net_inflow": change,
-                                            "today_holding": holding,
-                                            "change_rate": 0.0,
-                                            "data_source": "东方财富(Playwright-页面解析)"
-                                        })
+                                        records.append(
+                                            {
+                                                "industry": industry,
+                                                "net_inflow": change,
+                                                "today_holding": holding,
+                                                "change_rate": 0.0,
+                                                "data_source": "东方财富(Playwright-页面解析)",
+                                            }
+                                        )
 
                         if records:
                             df = pd.DataFrame(records)
@@ -890,13 +917,15 @@ class MoneyFlowFetcher:
                     if isinstance(change, (int, float)) and abs(change) > 1e8:
                         change = change / 1e8
 
-                    records.append({
-                        "industry": industry,
-                        "net_inflow": float(change) if isinstance(change, (int, float)) else 0,
-                        "today_holding": float(holding) if isinstance(holding, (int, float)) else 0,
-                        "change_rate": 0.0,
-                        "data_source": "东方财富(Playwright)"
-                    })
+                    records.append(
+                        {
+                            "industry": industry,
+                            "net_inflow": float(change) if isinstance(change, (int, float)) else 0,
+                            "today_holding": float(holding) if isinstance(holding, (int, float)) else 0,
+                            "change_rate": 0.0,
+                            "data_source": "东方财富(Playwright)",
+                        }
+                    )
 
                 if records:
                     df = pd.DataFrame(records)
@@ -997,6 +1026,7 @@ class MoneyFlowFetcher:
                     return None
                 except Exception as e:
                     import traceback
+
                     logger.warning(f"数据解析错误: {e}")
                     logger.warning("AkShare接口返回数据格式异常，可能是数据源问题")
                     logger.debug(f"详细错误信息:\n{traceback.format_exc()}")
@@ -1089,10 +1119,7 @@ class MoneyFlowFetcher:
 
                 if five_day_col:
                     # 计算5日流向变化
-                    industry_flow = df.groupby(industry_col).agg({
-                        today_col: "sum",
-                        five_day_col: "sum"
-                    }).reset_index()
+                    industry_flow = df.groupby(industry_col).agg({today_col: "sum", five_day_col: "sum"}).reset_index()
 
                     # 计算今日持仓和5日前持仓
                     industry_flow.columns = ["industry", "today_holding", "five_day_holding"]
@@ -1126,9 +1153,7 @@ class MoneyFlowFetcher:
                     industry_flow["change_rate"] = industry_flow.apply(calc_change_rate, axis=1)
                 else:
                     # 没有5日数据，只显示当前持仓
-                    industry_flow = df.groupby(industry_col).agg({
-                        today_col: "sum"
-                    }).reset_index()
+                    industry_flow = df.groupby(industry_col).agg({today_col: "sum"}).reset_index()
 
                     industry_flow.columns = ["industry", "net_inflow"]
 
@@ -1172,6 +1197,7 @@ class MoneyFlowFetcher:
                 else:
                     logger.error(f"非网络错误,停止重试: {e}")
                     import traceback
+
                     traceback.print_exc()
                     return None
 
@@ -1182,6 +1208,7 @@ class MoneyFlowFetcher:
                     logger.info("   2. 查看历史数据: make north-industry-history")
                     logger.info("   3. 稍后重试（非开市时间成功率更高）")
                     import traceback
+
                     traceback.print_exc()
                     return None
 
@@ -1204,18 +1231,18 @@ class MoneyFlowFetcher:
             logger.warning(f"行业数量过少: {len(df)}")
             return False
 
-        if df['net_inflow'].isna().any():
+        if df["net_inflow"].isna().any():
             logger.warning("存在缺失的净流入数据")
             return False
 
-        if df['change_rate'].isna().any():
+        if df["change_rate"].isna().any():
             logger.warning("存在缺失的变化率数据")
             return False
 
-        total_inflow = df[df['net_inflow'] > 0]['net_inflow'].sum()
-        total_outflow = df[df['net_inflow'] < 0]['net_inflow'].sum()
+        total_inflow = df[df["net_inflow"] > 0]["net_inflow"].sum()
+        total_outflow = df[df["net_inflow"] < 0]["net_inflow"].sum()
 
-        data_source = df['data_source'].iloc[0] if 'data_source' in df.columns else ""
+        data_source = df["data_source"].iloc[0] if "data_source" in df.columns else ""
         if "新浪" in data_source:
             threshold = 200000
             unit_desc = "20万亿"
@@ -1246,15 +1273,15 @@ class MoneyFlowFetcher:
             import json
             from datetime import datetime, timedelta
 
-            with open(cache_file, encoding='utf-8') as f:
+            with open(cache_file, encoding="utf-8") as f:
                 data = json.load(f)
 
             # 检查数据是否有效
-            if not data or 'cache_time' not in data or 'industries' not in data:
+            if not data or "cache_time" not in data or "industries" not in data:
                 logger.warning("缓存数据格式无效")
                 return None
 
-            cache_time_str = data.get('cache_time')
+            cache_time_str = data.get("cache_time")
             if not cache_time_str:
                 logger.warning("缓存时间缺失")
                 return None
@@ -1281,8 +1308,8 @@ class MoneyFlowFetcher:
                 logger.info(f"缓存已过期(超过{cache_desc})")
                 return None
 
-            df = pd.DataFrame(data['industries'])
-            df['cache_time'] = data['cache_time']
+            df = pd.DataFrame(data["industries"])
+            df["cache_time"] = data["cache_time"]
             return df
 
         except Exception as e:
@@ -1302,12 +1329,9 @@ class MoneyFlowFetcher:
             import json
             from datetime import datetime
 
-            data = {
-                'cache_time': datetime.now().isoformat(),
-                'industries': df.to_dict('records')
-            }
+            data = {"cache_time": datetime.now().isoformat(), "industries": df.to_dict("records")}
 
-            with open(cache_file, 'w', encoding='utf-8') as f:
+            with open(cache_file, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
 
             logger.info(f"缓存已保存: {cache_file}")

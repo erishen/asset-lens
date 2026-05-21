@@ -740,7 +740,9 @@ class ReportGenerator:
         else:
             return "⚠️  整体投资表现较低，建议优化投资策略"
 
-    def generate_investment_efficiency(self, portfolio: Portfolio, sell_records: list[Any] | None = None) -> dict[str, Any]:
+    def generate_investment_efficiency(
+        self, portfolio: Portfolio, sell_records: list[Any] | None = None
+    ) -> dict[str, Any]:
         from ..data.models import SellRecord
 
         total_value = portfolio.total_value or Decimal("0")
@@ -755,7 +757,9 @@ class ReportGenerator:
                 str(sum(p.investment_days or 0 for p in products_with_amount) / len(products_with_amount))
             )
 
-        avg_investment_years = avg_investment_days / Decimal("360") if avg_investment_days > Decimal("0") else Decimal("0")
+        avg_investment_years = (
+            avg_investment_days / Decimal("360") if avg_investment_days > Decimal("0") else Decimal("0")
+        )
 
         unrealized_profit = portfolio.total_profit or Decimal("0")
         realized_profit = Decimal("0")
@@ -769,7 +773,9 @@ class ReportGenerator:
         if avg_investment_years > Decimal("0") and total_initial > Decimal("0"):
             overall_return_rate = (total_profit_all / total_initial) * Decimal("100")
             overall_return = Decimal("1") + overall_return_rate / Decimal("100")
-            annual_growth_rate = (overall_return ** (Decimal("1") / avg_investment_years) - Decimal("1")) * Decimal("100")
+            annual_growth_rate = (overall_return ** (Decimal("1") / avg_investment_years) - Decimal("1")) * Decimal(
+                "100"
+            )
         else:
             annual_growth_rate = Decimal("0")
 

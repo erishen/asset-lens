@@ -223,12 +223,16 @@ class MarketSentimentAnalyzer:
             for pool_file in pool_files:
                 pool = StockPool(pool_file.stem.replace("_pool", ""))
                 for code, position in pool.positions.items():
-                    if position.status in ["watching", "holding"] and not code.startswith("sh92") and not code.startswith("bj"):
-                            total_stocks += 1
-                            profit_rate = position.return_rate if hasattr(position, "return_rate") else 0
-                            if profit_rate > 0:
-                                profit_stocks += 1
-                                total_profit_rate += profit_rate
+                    if (
+                        position.status in ["watching", "holding"]
+                        and not code.startswith("sh92")
+                        and not code.startswith("bj")
+                    ):
+                        total_stocks += 1
+                        profit_rate = position.return_rate if hasattr(position, "return_rate") else 0
+                        if profit_rate > 0:
+                            profit_stocks += 1
+                            total_profit_rate += profit_rate
 
             if total_stocks == 0:
                 return SentimentIndicator(

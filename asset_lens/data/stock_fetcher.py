@@ -144,7 +144,10 @@ class StockDataFetcher:
         logger.error(f"所有数据源都失败: {stock_code}")
         return None
 
-    @with_retry(max_retries=3, retry_delay=2.0, )
+    @with_retry(
+        max_retries=3,
+        retry_delay=2.0,
+    )
     def _fetch_cn_stock_quote_sina(self, stock_code: str) -> dict[str, Any] | None:
         """
         获取A股实时行情（新浪数据源）
@@ -210,7 +213,10 @@ class StockDataFetcher:
             logger.error(f"新浪获取A股行情失败 {stock_code}: {e}")
             raise
 
-    @with_retry(max_retries=2, retry_delay=1.0, )
+    @with_retry(
+        max_retries=2,
+        retry_delay=1.0,
+    )
     def _fetch_cn_stock_quote_baostock(self, stock_code: str) -> dict[str, Any] | None:
         """
         获取A股实时行情（Baostock数据源）
@@ -294,7 +300,10 @@ class StockDataFetcher:
             logger.error(f"Baostock获取A股行情失败 {stock_code}: {e}")
             raise
 
-    @with_retry(max_retries=2, retry_delay=1.0, )
+    @with_retry(
+        max_retries=2,
+        retry_delay=1.0,
+    )
     def _fetch_cn_stock_quote_joinquant(self, stock_code: str) -> dict[str, Any] | None:
         """
         获取A股实时行情（聚宽数据源）
@@ -390,7 +399,10 @@ class StockDataFetcher:
         else:
             return stock_code
 
-    @with_retry(max_retries=3, retry_delay=2.0, )
+    @with_retry(
+        max_retries=3,
+        retry_delay=2.0,
+    )
     def _fetch_cn_stock_quote(self, stock_code: str) -> dict[str, Any] | None:
         """
         获取A股实时行情（AkShare）
@@ -458,7 +470,10 @@ class StockDataFetcher:
             logger.error(f"获取A股行情失败 {stock_code}: {e}")
             raise
 
-    @with_retry(max_retries=3, retry_delay=2.0, )
+    @with_retry(
+        max_retries=3,
+        retry_delay=2.0,
+    )
     def _fetch_hk_stock_quote(self, stock_code: str) -> dict[str, Any] | None:
         """
         获取港股实时行情（AkShare）

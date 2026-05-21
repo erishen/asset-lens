@@ -129,16 +129,8 @@ class ComparisonAnalyzer:
             product_after = after_map.get(name)
 
             # 获取金额（考虑汇率转换）
-            amount_before = (
-                _get_cny_amount(product_before, usd_rate, hkd_rate)
-                if product_before
-                else Decimal("0")
-            )
-            amount_after = (
-                _get_cny_amount(product_after, usd_rate, hkd_rate)
-                if product_after
-                else Decimal("0")
-            )
+            amount_before = _get_cny_amount(product_before, usd_rate, hkd_rate) if product_before else Decimal("0")
+            amount_after = _get_cny_amount(product_after, usd_rate, hkd_rate) if product_after else Decimal("0")
 
             # 计算变化
             amount_change = amount_after - amount_before

@@ -202,17 +202,20 @@ class AISimulatedTrader:
             if price <= 0:
                 continue
 
-            if config["min_market_cap"] <= market_cap <= config["max_market_cap"] and config["min_turnover"] <= turnover <= config["max_turnover"]:
-                    candidates.append(
-                        {
-                            "code": code,
-                            "name": name,
-                            "price": price,
-                            "market_cap": market_cap,
-                            "turnover": turnover,
-                            "change_percent": stock.get("change_percent", 0),
-                        }
-                    )
+            if (
+                config["min_market_cap"] <= market_cap <= config["max_market_cap"]
+                and config["min_turnover"] <= turnover <= config["max_turnover"]
+            ):
+                candidates.append(
+                    {
+                        "code": code,
+                        "name": name,
+                        "price": price,
+                        "market_cap": market_cap,
+                        "turnover": turnover,
+                        "change_percent": stock.get("change_percent", 0),
+                    }
+                )
 
         return candidates[:100]
 

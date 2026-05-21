@@ -169,7 +169,9 @@ class FeatureEngineer:
         features["boll_upper"] = features["boll_mid"] + std_mult * features["boll_std"]
         features["boll_lower"] = features["boll_mid"] - std_mult * features["boll_std"]
         features["boll_width"] = (features["boll_upper"] - features["boll_lower"]) / features["boll_mid"]
-        features["boll_position"] = (df["close"] - features["boll_lower"]) / (features["boll_upper"] - features["boll_lower"])
+        features["boll_position"] = (df["close"] - features["boll_lower"]) / (
+            features["boll_upper"] - features["boll_lower"]
+        )
 
         return pd.DataFrame(features)
 
@@ -184,8 +186,7 @@ class FeatureEngineer:
         features["kdj_d"] = features["kdj_k"].ewm(alpha=1 / 3, adjust=False).mean()
         features["kdj_j"] = 3 * features["kdj_k"] - 2 * features["kdj_d"]
         features["kdj_cross"] = (
-            (features["kdj_k"] > features["kdj_d"])
-            & (features["kdj_k"].shift(1) <= features["kdj_d"].shift(1))
+            (features["kdj_k"] > features["kdj_d"]) & (features["kdj_k"].shift(1) <= features["kdj_d"].shift(1))
         ).astype(int)
 
         return pd.DataFrame(features)
@@ -271,8 +272,7 @@ class FeatureEngineer:
         lower_shadow = (df[["open", "close"]].min(axis=1) - df["low"]) / df["close"]
         upper_shadow = (df["high"] - df[["open", "close"]].max(axis=1)) / df["close"]
         features["hammer"] = (
-            (lower_shadow > 2 * abs(df["close"] - df["open"]))
-            & (upper_shadow < 0.1 * (df["high"] - df["low"]))
+            (lower_shadow > 2 * abs(df["close"] - df["open"])) & (upper_shadow < 0.1 * (df["high"] - df["low"]))
         ).astype(int)
 
         return pd.DataFrame(features)

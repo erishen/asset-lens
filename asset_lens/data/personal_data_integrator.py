@@ -290,9 +290,7 @@ class PersonalDataIntegrator:
         """
         key = self.INDEX_MAPPING.get(index_name, index_name)
         history = [
-            (record.date, record.indices[key])
-            for record in self.weekly_records[-days:]
-            if key in record.indices
+            (record.date, record.indices[key]) for record in self.weekly_records[-days:] if key in record.indices
         ]
 
         return history
@@ -309,11 +307,7 @@ class PersonalDataIntegrator:
             [(日期, 数值), ...]
         """
         key = self.ETF_MAPPING.get(etf_name, etf_name.lower())
-        history = [
-            (record.date, record.etfs[key])
-            for record in self.weekly_records[-days:]
-            if key in record.etfs
-        ]
+        history = [(record.date, record.etfs[key]) for record in self.weekly_records[-days:] if key in record.etfs]
 
         return history
 
@@ -329,11 +323,7 @@ class PersonalDataIntegrator:
             [(日期, 数值), ...]
         """
         key = self.RATE_MAPPING.get(rate_name, rate_name.lower())
-        history = [
-            (record.date, record.rates[key])
-            for record in self.weekly_records[-days:]
-            if key in record.rates
-        ]
+        history = [(record.date, record.rates[key]) for record in self.weekly_records[-days:] if key in record.rates]
 
         return history
 

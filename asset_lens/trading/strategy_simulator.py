@@ -443,8 +443,12 @@ class StrategySimulator:
                     selected = selected[: self.config.max_positions]
 
                 for code in list(self.positions.keys()):
-                    if code not in [s.get("code") for s in selected] and code in prices and self.can_sell_position(code, date_str, "rebalance"):
-                            self.execute_sell(code, prices[code], date_str, "rebalance")
+                    if (
+                        code not in [s.get("code") for s in selected]
+                        and code in prices
+                        and self.can_sell_position(code, date_str, "rebalance")
+                    ):
+                        self.execute_sell(code, prices[code], date_str, "rebalance")
 
                 total_score = sum(s.get("score", 0) for s in selected)
 

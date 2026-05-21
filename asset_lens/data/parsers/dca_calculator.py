@@ -80,7 +80,11 @@ class DCACalculator:
     @staticmethod
     def is_dca_product(product: Any) -> bool:
         """判断是否为定投产品"""
-        if hasattr(product, "investment_type") and product.investment_type and product.investment_type.value == "定投基金":
+        if (
+            hasattr(product, "investment_type")
+            and product.investment_type
+            and product.investment_type.value == "定投基金"
+        ):
             return True
 
         if hasattr(product, "transaction_records") and product.transaction_records:

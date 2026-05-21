@@ -90,7 +90,7 @@ class CalculateReportGenerator:
 
         if products:
             first_product = products[0]
-            if hasattr(first_product, '_portfolio') and first_product._portfolio:
+            if hasattr(first_product, "_portfolio") and first_product._portfolio:
                 usd_rate = first_product._portfolio.usd_rate or usd_rate
                 hkd_rate = first_product._portfolio.hkd_rate or hkd_rate
 

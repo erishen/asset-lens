@@ -433,12 +433,17 @@ class TradingReview:
 
         if report.attribution.top_winners:
             lines.append("🏆 盈利 TOP 3:")
-            lines.extend(f"   {pos.code} {pos.name}: +{pos.profit_loss_percent:.1f}%" for pos in report.attribution.top_winners[:3])
+            lines.extend(
+                f"   {pos.code} {pos.name}: +{pos.profit_loss_percent:.1f}%"
+                for pos in report.attribution.top_winners[:3]
+            )
             lines.append("")
 
         if report.attribution.top_losers:
             lines.append("📉 亏损 TOP 3:")
-            lines.extend(f"   {pos.code} {pos.name}: {pos.profit_loss_percent:.1f}%" for pos in report.attribution.top_losers[:3])
+            lines.extend(
+                f"   {pos.code} {pos.name}: {pos.profit_loss_percent:.1f}%" for pos in report.attribution.top_losers[:3]
+            )
             lines.append("")
 
         lines.append("💡 改进建议:")
