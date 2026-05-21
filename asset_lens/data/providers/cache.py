@@ -473,7 +473,7 @@ class UnifiedCache:
                 data = json.load(f)
 
             if not isinstance(data, dict):
-                return data
+                return dict(data) if data is not None else None
 
             meta = data.get("_cache_meta")
             if meta:

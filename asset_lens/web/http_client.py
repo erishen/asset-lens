@@ -63,7 +63,7 @@ async def async_get(
         kwargs["headers"] = headers
     if timeout is not None:
         kwargs["timeout"] = aiohttp.ClientTimeout(total=timeout)
-    return session.get(url, **kwargs)
+    return await session.get(url, **kwargs)
 
 
 async def async_post(
@@ -95,30 +95,29 @@ async def async_post(
         kwargs["headers"] = headers
     if timeout is not None:
         kwargs["timeout"] = aiohttp.ClientTimeout(total=timeout)
-    return session.post(url, **kwargs)
+    return await session.post(url, **kwargs)
 
 
 async def async_gather_get(
     requests_list: list[dict[str, Any]],
-) -> list[aiohttp.ClientResponse | Exception]:
+) -> list[aiohttp.ClientResponse | BaseException]:
     """批量并发 GET 请求
 
     Args:
         requests_list: 请求参数列表，每项包含 url, params, headers, timeout 等
 
     Returns:
-        响应列表，失败项为 Exception 实例
+        响应列表，失败项为 BaseException 实例
     """
     import asyncio
 
     async def _single(req: dict[str, Any]) -> aiohttp.ClientResponse:
-        async with await async_get(
+        return await async_get(
             url=req["url"],
             params=req.get("params"),
             headers=req.get("headers"),
             timeout=req.get("timeout"),
-        ) as resp:
-            return resp
+        )
 
     tasks = [_single(r) for r in requests_list]
     return await asyncio.gather(*tasks, return_exceptions=True)
