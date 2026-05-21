@@ -5,11 +5,14 @@ Provider Cache System - 数据源缓存系统
 
 import hashlib
 import json
+import logging
 import time
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 class CacheLevel(Enum):
@@ -170,7 +173,8 @@ class FileCache:
                 json.dump(entry.to_dict(), f, ensure_ascii=False, indent=2)
 
             return entry
-        except Exception:
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
             return None
 
     def set(self, key: str, value: Any, ttl: int) -> None:

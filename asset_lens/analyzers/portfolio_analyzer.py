@@ -3,14 +3,23 @@ Portfolio analyzer for asset-lens.
 投资组合分析器 - 包含投资组合相关分析方法
 """
 
+import warnings
 from decimal import Decimal
 from typing import Any
 
 from ..data.models import Portfolio
 
 
-class PortfolioAnalyzer:
-    """投资组合分析器"""
+class LegacyPortfolioAnalyzer:
+    """投资组合分析器 (已废弃，请使用 asset_lens.analysis.portfolio_analyzer.PortfolioAnalyzer)"""
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "LegacyPortfolioAnalyzer 已废弃，请使用 asset_lens.analysis.portfolio_analyzer.PortfolioAnalyzer",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
 
     def generate_portfolio_summary(self, portfolio: Portfolio) -> dict[str, Any]:
         """生成投资组合摘要

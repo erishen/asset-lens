@@ -3,9 +3,12 @@ Strategy CLI commands for asset-lens.
 策略命令模块 - 包含 strategy, backtest, screen-stocks, filter-stocks, volume-breakout, momentum-screen, optimize-strategy
 """
 
+import logging
 from pathlib import Path
 
 import click
+
+logger = logging.getLogger(__name__)
 
 
 def register_strategy_commands(cli: click.Group) -> None:
@@ -380,7 +383,7 @@ def register_strategy_commands(cli: click.Group) -> None:
                                 "sentiment": "乐观" if change > 1 else ("悲观" if change < -1 else "中性"),
                             }
                             break
-            except Exception:
+            except (ValueError, TypeError):
                 pass
 
             click.echo("\n📊 分析股票池持仓...")
@@ -443,7 +446,7 @@ def register_strategy_commands(cli: click.Group) -> None:
                     try:
                         buy_dt = datetime.strptime(buy_date, "%Y-%m-%d")
                         holding_days = (datetime.now() - buy_dt).days
-                    except Exception:
+                    except ValueError:
                         pass
 
                 strategy_sell = False
@@ -511,8 +514,8 @@ def register_strategy_commands(cli: click.Group) -> None:
                         if ml_result:
                             ml_sell_prediction = ml_result
                             ml_down_prob = ml_result.down_prob
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug(f"忽略异常: {e}")
 
                 should_sell = strategy_sell
                 final_reason = strategy_reason
@@ -711,8 +714,8 @@ def register_strategy_commands(cli: click.Group) -> None:
                             if ml_result:
                                 ml_prediction = ml_result
                                 ml_up_prob = ml_result.up_prob
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            logger.debug(f"忽略异常: {e}")
 
                     final_action = "buy"
                     final_reason = strategy_reason

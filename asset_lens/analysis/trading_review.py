@@ -486,7 +486,7 @@ class TradingReview:
             with open(self.trades_file, encoding="utf-8") as f:
                 data: list[dict[str, Any]] = json.load(f)
                 return data
-        except Exception:
+        except (ValueError, KeyError, TypeError):
             return []
 
     def _save_closed_position(self, position: ClosedPosition) -> None:
@@ -543,7 +543,7 @@ class TradingReview:
             with open(self.closed_positions_file, encoding="utf-8") as f:
                 data: list[dict[str, Any]] = json.load(f)
                 return data
-        except Exception:
+        except (ValueError, KeyError, TypeError):
             return []
 
     def _save_report(self, report: ReviewReport) -> None:
@@ -553,7 +553,7 @@ class TradingReview:
             try:
                 with open(self.reports_file, encoding="utf-8") as f:
                     reports = json.load(f)
-            except Exception:
+            except (ValueError, KeyError, TypeError):
                 reports = []
 
         reports.append(

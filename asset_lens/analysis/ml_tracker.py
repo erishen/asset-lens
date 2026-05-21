@@ -10,6 +10,7 @@ ML 预测历史记录模块 - 追踪模型效果
 """
 
 import json
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -17,6 +18,8 @@ from pathlib import Path
 from typing import Any
 
 from ..config import config
+
+logger = logging.getLogger(__name__)
 
 
 class PredictionOutcome(Enum):
@@ -346,7 +349,8 @@ class MLPredictionTracker:
                     )
                     for p in data
                 ]
-        except Exception:
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
             return []
 
     def format_performance_report(self, performance: ModelPerformance) -> str:

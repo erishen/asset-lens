@@ -10,11 +10,14 @@ Strategy engine for asset-lens.
 """
 
 import json
+import logging
 from dataclasses import dataclass, field
 from typing import Any
 
 from ..config import config
 from .portfolio_evaluator import StrategyPortfolioEvaluator
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -574,7 +577,8 @@ class StrategyEngine:
                             }
                             best_result = result
 
-                    except Exception:
+                    except Exception as e:
+                        logger.debug(f"忽略异常: {e}")
                         continue
 
         strategy.stop_loss = float(original_params["stop_loss"])

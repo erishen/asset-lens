@@ -340,7 +340,7 @@ class AIQAEngine:
             with open(self.knowledge_base_file, encoding="utf-8") as f:
                 data: list[dict[str, Any]] = json.load(f)
                 return data
-        except Exception:
+        except (ValueError, KeyError, TypeError):
             return []
 
     def _save_qa_history(self, response: QAResponse) -> None:
@@ -350,7 +350,7 @@ class AIQAEngine:
             try:
                 with open(self.qa_history_file, encoding="utf-8") as f:
                     history = json.load(f)
-            except Exception:
+            except (ValueError, KeyError, TypeError):
                 history = []
 
         history.append(
@@ -377,7 +377,7 @@ class AIQAEngine:
             with open(self.qa_history_file, encoding="utf-8") as f:
                 history: list[dict[str, Any]] = json.load(f)
                 return history[-limit:]
-        except Exception:
+        except (ValueError, KeyError, TypeError):
             return []
 
 

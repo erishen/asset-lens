@@ -4,12 +4,15 @@ Volume breakout filter for asset-lens.
 """
 
 import json
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from ..config import config
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -70,7 +73,8 @@ class VolumeBreakoutFilter:
                 max_results=data.get("max_results", 30),
                 use_api_history=data.get("use_api_history", True),
             )
-        except Exception:
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
             return VolumeBreakoutConfig()
 
     def _get_industry(self, name: str) -> str | None:

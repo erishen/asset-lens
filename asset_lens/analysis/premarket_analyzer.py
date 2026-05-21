@@ -11,11 +11,14 @@ Pre-market Analysis Module.
 """
 
 import json
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
 from ..config import config
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -107,7 +110,8 @@ class PreMarketAnalyzer:
                                     )
                                 )
                                 break
-                except Exception:
+                except Exception as e:
+                    logger.debug(f"忽略异常: {e}")
                     continue
 
         except Exception as e:

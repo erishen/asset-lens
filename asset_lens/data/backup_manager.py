@@ -10,12 +10,15 @@ Auto backup system for asset-lens.
 """
 
 import json
+import logging
 import shutil
 import tarfile
 from datetime import datetime, timedelta
 from typing import Any
 
 from ..config import config
+
+logger = logging.getLogger(__name__)
 
 
 class BackupManager:
@@ -52,7 +55,7 @@ class BackupManager:
                 with open(self.config_file, encoding="utf-8") as f:
                     saved_config = json.load(f)
                     default_config.update(saved_config)
-            except Exception:
+            except (ValueError, KeyError, TypeError):
                 pass
 
         return default_config
@@ -236,7 +239,8 @@ class BackupManager:
                         "modified_at": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
                     }
                 )
-            except Exception:
+            except Exception as e:
+                logger.debug(f"忽略异常: {e}")
                 continue
 
         return backups
@@ -286,7 +290,8 @@ class BackupManager:
             try:
                 oldest.unlink()
                 deleted_count += 1
-            except Exception:
+            except Exception as e:
+                logger.debug(f"忽略异常: {e}")
                 continue
 
         return deleted_count
@@ -324,7 +329,7 @@ class BackupManager:
             interval = self.config.get("backup_interval_days", 1)
             next_time = last_time + timedelta(days=interval)
             return next_time.strftime("%Y-%m-%d %H:%M:%S")
-        except Exception:
+        except ValueError:
             return None
 
     def should_backup(self) -> bool:
@@ -346,7 +351,7 @@ class BackupManager:
             interval = self.config.get("backup_interval_days", 1)
             next_time = last_time + timedelta(days=interval)
             return datetime.now() >= next_time
-        except Exception:
+        except ValueError:
             return True
 
     def auto_backup(self) -> dict[str, Any] | None:

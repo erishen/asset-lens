@@ -17,6 +17,7 @@ Multi-source data fetcher for asset-lens.
 """
 
 import json
+import logging
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -25,6 +26,8 @@ from enum import Enum
 from typing import Any, TypeVar
 
 from ..config import config
+
+logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
@@ -100,7 +103,7 @@ class MultiSourceDataFetcher:
                     if name in default_sources:
                         default_sources[name].enabled = cfg.get("enabled", True)
                         default_sources[name].priority = cfg.get("priority", default_sources[name].priority)
-            except Exception:
+            except (ValueError, KeyError, TypeError):
                 pass
 
         return default_sources
@@ -171,7 +174,8 @@ class MultiSourceDataFetcher:
 
             return False
 
-        except Exception:
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
             return False
 
     def get_available_sources(self) -> list[str]:
@@ -295,7 +299,7 @@ class MultiSourceDataFetcher:
                 "data_source": "akshare",
             }
 
-        except Exception:
+        except (ValueError, TypeError):
             return None
 
     def _fetch_quote_eastmoney(self, code: str) -> dict[str, Any] | None:
@@ -330,7 +334,7 @@ class MultiSourceDataFetcher:
                 "data_source": "eastmoney",
             }
 
-        except Exception:
+        except (ValueError, TypeError):
             return None
 
     def _fetch_quote_sina(self, code: str) -> dict[str, Any] | None:
@@ -365,7 +369,7 @@ class MultiSourceDataFetcher:
                 "data_source": "sina",
             }
 
-        except Exception:
+        except (ValueError, TypeError):
             return None
 
     def _fetch_quote_tushare(self, code: str) -> dict[str, Any] | None:
@@ -402,7 +406,7 @@ class MultiSourceDataFetcher:
                 "data_source": "tushare",
             }
 
-        except Exception:
+        except (ValueError, TypeError):
             return None
 
     def _fetch_quote_baostock(self, code: str) -> dict[str, Any] | None:
@@ -457,7 +461,7 @@ class MultiSourceDataFetcher:
             finally:
                 bs.logout()
 
-        except Exception:
+        except (ValueError, TypeError):
             return None
 
     def get_source_status(self) -> dict[str, Any]:

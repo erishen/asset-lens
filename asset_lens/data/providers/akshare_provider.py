@@ -3,10 +3,13 @@ AkShare Data Provider implementation.
 AkShare 数据源实现
 """
 
+import logging
 from typing import Any
 
 from . import DataType, ProviderType
 from .base import BaseProvider
+
+logger = logging.getLogger(__name__)
 
 
 class AkshareProvider(BaseProvider):
@@ -68,7 +71,8 @@ class AkshareProvider(BaseProvider):
                 return self._fetch_index_quote(symbol)
             else:
                 return None
-        except Exception:
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
             return None
 
     def _fetch_stock_quote(self, symbol: str) -> dict[str, Any] | None:
@@ -94,7 +98,7 @@ class AkshareProvider(BaseProvider):
                 "prev_close": float(row.get("昨收", 0)),
                 "source": "akshare",
             }
-        except Exception:
+        except (ValueError, TypeError):
             return None
 
     def _fetch_fund_quote(self, symbol: str) -> dict[str, Any] | None:
@@ -111,7 +115,7 @@ class AkshareProvider(BaseProvider):
                 "date": str(latest.get("净值日期", "")),
                 "source": "akshare",
             }
-        except Exception:
+        except (ValueError, TypeError):
             return None
 
     def _fetch_futures_quote(self, symbol: str) -> dict[str, Any] | None:
@@ -134,7 +138,7 @@ class AkshareProvider(BaseProvider):
                 "volume": int(row.get("成交量", 0)),
                 "source": "akshare",
             }
-        except Exception:
+        except (ValueError, TypeError):
             return None
 
     def _fetch_index_quote(self, symbol: str) -> dict[str, Any] | None:
@@ -157,7 +161,7 @@ class AkshareProvider(BaseProvider):
                 "change_percent": float(row.get("涨跌幅", 0)),
                 "source": "akshare",
             }
-        except Exception:
+        except (ValueError, TypeError):
             return None
 
 

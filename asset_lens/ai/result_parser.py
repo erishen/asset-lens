@@ -105,7 +105,8 @@ class ResultParser:
                 end_idx = len(text)
 
             return text[start_idx:end_idx].strip()
-        except Exception:
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
             return ""
 
     @staticmethod
@@ -128,8 +129,8 @@ class ResultParser:
                         items.append(item)
                 elif line and not line.startswith("#"):
                     break
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
 
         return items
 

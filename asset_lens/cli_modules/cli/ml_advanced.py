@@ -3,9 +3,13 @@ Advanced ML CLI commands for asset-lens.
 高级机器学习命令 - 超参数优化、模型解释、交叉验证
 """
 
+import logging
+
 import click
 from rich.console import Console
 from rich.table import Table
+
+logger = logging.getLogger(__name__)
 
 console = Console()
 
@@ -73,7 +77,8 @@ def _prepare_training_data():
                     all_codes.append(code)
                     all_names.append(code)
 
-            except Exception:
+            except Exception as e:
+                logger.debug(f"忽略异常: {e}")
                 continue
 
         if not all_X:

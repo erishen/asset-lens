@@ -305,7 +305,7 @@ class BlackSwanMonitor:
             try:
                 with open(self.history_file, encoding="utf-8") as f:
                     history = json.load(f)
-            except Exception:
+            except (ValueError, KeyError, TypeError):
                 pass
 
         for alert in alerts:
@@ -322,7 +322,7 @@ class BlackSwanMonitor:
             with open(self.history_file, encoding="utf-8") as f:
                 history: list[dict[str, Any]] = json.load(f)
                 return history[-limit:]
-        except Exception:
+        except (ValueError, KeyError, TypeError):
             return []
 
     def format_assessment(self, assessment: MarketRiskAssessment) -> str:

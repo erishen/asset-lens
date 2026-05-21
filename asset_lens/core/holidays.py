@@ -3,7 +3,10 @@
 与 ts-demo 的 holidays.ts 保持一致
 """
 
+import logging
 from datetime import date, datetime, timedelta
+
+logger = logging.getLogger(__name__)
 
 
 class HolidayConfig:
@@ -231,15 +234,15 @@ def parse_stop_periods(record_str: str) -> list[tuple]:
                     end = _parse_date_string(range_parts[1].strip())
                     if start and end:
                         stop_periods.append((start, end))
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"忽略异常: {e}")
         else:
             try:
                 single_date = _parse_date_string(date_range)
                 if single_date:
                     stop_periods.append((single_date, single_date))
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"忽略异常: {e}")
 
     return stop_periods
 

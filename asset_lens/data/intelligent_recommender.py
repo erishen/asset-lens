@@ -8,11 +8,14 @@ Intelligent recommendation system for asset-lens.
 3. 综合评分和排序
 """
 
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
 from ..config import config
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -227,8 +230,8 @@ class IntelligentRecommender:
                         "max_drawdown": validation.get("max_drawdown", 0),
                     }
 
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"忽略异常: {e}")
 
         risk_score = self._calculate_risk_compatibility(
             strategy,
@@ -514,7 +517,8 @@ class IntelligentRecommender:
                 "risk_level": env.risk_level,
                 "sentiment": env.sentiment,
             }
-        except Exception:
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
             return {
                 "market_type": "震荡",
                 "risk_level": "medium",

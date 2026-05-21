@@ -4,9 +4,12 @@ HTML 报告生成模块 - 使用 Jinja2 生成专业投资报告
 """
 
 import base64
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 class HTMLReportGenerator:
@@ -50,8 +53,8 @@ class HTMLReportGenerator:
                     try:
                         with open(chart_path, "rb") as f:
                             chart_images[chart_name] = base64.b64encode(f.read()).decode("utf-8")
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug(f"忽略异常: {e}")
 
         html_content = self._generate_html_content(portfolio_data, analysis_result, chart_images)
 

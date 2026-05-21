@@ -98,7 +98,7 @@ class SnapshotManager:
             try:
                 with open(file_path, encoding="utf-8") as f:
                     snapshots = json.load(f)
-            except Exception:
+            except (ValueError, KeyError, TypeError):
                 snapshots = []
 
         snapshots.append(snapshot.to_dict())
@@ -130,7 +130,7 @@ class SnapshotManager:
 
             latest = snapshots[-1]
             return PortfolioSnapshot(**latest)
-        except Exception:
+        except (ValueError, KeyError, TypeError):
             return None
 
     def get_snapshots_by_date_range(

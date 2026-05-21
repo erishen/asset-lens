@@ -231,7 +231,7 @@ async def _get_market_indexes():
                                         else 0,
                                     }
                                 )
-            except Exception:
+            except (ValueError, TypeError):
                 pass
 
     return indexes
@@ -280,7 +280,7 @@ async def _get_stock_quotes(codes: list[str]):
                                         "amount": float(parts[9]) if parts[9] else 0,
                                     }
                                 )
-            except Exception:
+            except (ValueError, TypeError):
                 pass
 
     return quotes

@@ -350,8 +350,8 @@ class DataCoverageEnhancer:
                     try:
                         fetcher.fetch(h.code, days=30)  # type: ignore[attr-defined]  # pylint: disable=no-member
                         count += 1
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug(f"忽略异常: {e}")
 
             return f"已获取 {count} 只股票的价格数据"
         except Exception as e:

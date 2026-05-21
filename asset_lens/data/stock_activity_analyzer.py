@@ -4,12 +4,15 @@ Stock activity analyzer for asset-lens.
 """
 
 import json
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from ..config import config
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -378,8 +381,8 @@ class StockActivityAnalyzer:
                         confidence = 90.0  # 数据一般
                     else:
                         confidence = 99.0  # 数据新鲜
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"忽略异常: {e}")
 
             return ETFPrediction(
                 etf_name=index_name,

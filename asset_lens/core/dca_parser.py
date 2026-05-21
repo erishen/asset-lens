@@ -4,7 +4,7 @@ DCA (Dollar Cost Average) strategy parser for asset-lens.
 """
 
 from datetime import date, datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from enum import Enum
 
 from ..data.models import Currency, InvestmentType, Transaction
@@ -37,7 +37,7 @@ class DCAParser:
                     normal = Decimal(parts[1].strip())
                     high = Decimal(parts[2].strip())
                     return DCAInvestmentType.VALUATION, normal, high
-                except Exception:
+                except (ValueError, TypeError, InvalidOperation):
                     pass
 
         if "~" in amount_str:
@@ -50,7 +50,7 @@ class DCAParser:
                         return DCAInvestmentType.RANGE, Decimal("0"), high
                     avg = (low + high) / Decimal("2")
                     return DCAInvestmentType.RANGE, avg, high
-                except Exception:
+                except (ValueError, TypeError, InvalidOperation):
                     pass
 
         if "±" in amount_str or "+/-" in amount_str:
@@ -60,13 +60,13 @@ class DCAParser:
                     base = Decimal(parts[0].strip())
                     delta = Decimal(parts[1].strip())
                     return DCAInvestmentType.FLOAT, base, base + delta
-                except Exception:
+                except (ValueError, TypeError, InvalidOperation):
                     pass
 
         try:
             amount = Decimal(amount_str)
             return DCAInvestmentType.FIXED, amount, amount
-        except Exception:
+        except (ValueError, TypeError, InvalidOperation):
             return DCAInvestmentType.FIXED, Decimal("0"), Decimal("0")
 
     @staticmethod
@@ -171,7 +171,7 @@ class DCAParser:
                             currency=currency,
                         )
                         transactions.append(transaction)
-                    except Exception:
+                    except (ValueError, TypeError, InvalidOperation):
                         pass
                 continue
 

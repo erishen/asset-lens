@@ -229,7 +229,7 @@ class StockHistoryFetcher:
 
             return history if history["klines"] else None
 
-        except Exception:
+        except (ValueError, TypeError):
             return None
 
     def baostock_logout(self) -> None:
@@ -238,8 +238,8 @@ class StockHistoryFetcher:
             try:
                 self.baostock.logout()
                 self._baostock_logged_in = False
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"忽略异常: {e}")
 
     def fetch_history_tushare(self, code: str, days: int = 60) -> dict[str, Any] | None:
         """
@@ -305,7 +305,8 @@ class StockHistoryFetcher:
 
             return history if history["klines"] else None
 
-        except Exception:
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
             return None
 
     def fetch_history_akshare(self, code: str, days: int = 60) -> dict[str, Any] | None:
@@ -458,16 +459,16 @@ class StockHistoryFetcher:
                 history = self.fetch_history_tushare(code, days)
                 if history:
                     return history
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"忽略异常: {e}")
 
         # 优先使用 AkShare-东方财富（稳定可靠，包含换手率）
         try:
             history = self.fetch_history_akshare_daily(code, days)
             if history:
                 return history
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
 
         # 使用 Baostock（如果 AkShare 失败）
         if not self._baostock_failed:
@@ -475,13 +476,14 @@ class StockHistoryFetcher:
                 history = self.fetch_history_baostock(code, days)
                 if history:
                     return history
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"忽略异常: {e}")
 
         # 最后回退到 AkShare-腾讯
         try:
             return self.fetch_history_akshare(code, days)
-        except Exception:
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
             return None
 
     def fetch_batch_history(

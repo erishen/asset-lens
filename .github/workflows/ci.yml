@@ -21,31 +21,25 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Cache dependencies
-      uses: actions/cache@v4
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
       with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+        enable-cache: true
 
     - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest pytest-cov ruff mypy
+      run: uv sync --dev
 
     - name: Lint with ruff
       run: |
-        ruff check asset_lens --select=F,E,W --ignore=E501,F401,F841,E722
+        uv run ruff check asset_lens --select=F,E,W --ignore=E501,F401,F841,E722
 
     - name: Type check with mypy
       run: |
-        mypy asset_lens --ignore-missing-imports --no-error-summary || true
+        uv run mypy asset_lens --ignore-missing-imports --no-error-summary || true
 
     - name: Run tests
       run: |
-        pytest tests/ -v --cov=asset_lens --cov-report=xml --cov-report=html
+        uv run pytest tests/ -v --cov=asset_lens --cov-report=xml --cov-report=html
 
     - name: Upload coverage
       uses: codecov/codecov-action@v4
@@ -66,18 +60,16 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install build tools
-      run: |
-        python -m pip install --upgrade pip
-        pip install build twine
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
 
     - name: Build package
-      run: |
-        python -m build
+      run: uv build
 
     - name: Check package
-      run: |
-        twine check dist/*
+      run: uv run twine check dist/*
 
   security:
     runs-on: ubuntu-latest
@@ -90,13 +82,16 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install safety
-      run: |
-        pip install safety
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
+
+    - name: Install dependencies
+      run: uv sync --dev
 
     - name: Security check
-      run: |
-        safety check -r requirements.txt || true
+      run: uv run safety check || true
 
   docs:
     runs-on: ubuntu-latest
@@ -110,14 +105,17 @@ jobs:
       with:
         python-version: '3.11'
 
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
+
     - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
-        pip install pdoc
+      run: uv sync --dev
 
     - name: Generate docs
       run: |
-        pdoc asset_lens -o docs/ || true
+        uv run pdoc asset_lens -o docs/ || true
 
     - name: Deploy docs
       uses: peaceiris/actions-gh-pages@v4

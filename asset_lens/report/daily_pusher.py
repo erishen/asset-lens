@@ -43,7 +43,7 @@ class DailyReportPusher:
                 with open(self.config_path, encoding="utf-8") as f:
                     loaded = json.load(f)
                     self._config.update(loaded)
-            except Exception:
+            except (ValueError, KeyError, TypeError):
                 pass
 
     def generate_daily_report(

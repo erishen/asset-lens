@@ -45,7 +45,8 @@ def timeout_context(seconds: int, message: str = "操作超时"):
             raise TimeoutError(message)
     except TimeoutError:
         raise
-    except Exception:
+    except Exception as e:
+        logger.debug(f"忽略异常: {e}")
         raise
     finally:
         timer.cancel()

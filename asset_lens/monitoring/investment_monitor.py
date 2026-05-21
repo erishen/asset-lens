@@ -34,8 +34,8 @@ def _safe_log(level: str, msg: str):
         log_func = getattr(logger, level, None)
         if log_func:
             log_func(msg)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f"忽略异常: {e}")
 
 
 @dataclass

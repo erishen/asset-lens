@@ -48,7 +48,8 @@ class WebSocketManager:
         for connection in list(self.connections):
             try:
                 await connection.send_json(message)
-            except Exception:
+            except Exception as e:
+                logger.debug(f"忽略异常: {e}")
                 self.connections.discard(connection)
 
     async def start_periodic_broadcast(self, interval: int = 30):
@@ -179,8 +180,8 @@ async def get_market_summary() -> dict[str, Any]:
                                 "change_percent": round(change_pct, 2),
                             }
                         )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
 
     return {"indexes": indexes}
 

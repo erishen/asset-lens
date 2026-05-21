@@ -3,11 +3,14 @@ Alpha Vantage Data Provider implementation.
 Alpha Vantage 数据源实现
 """
 
+import logging
 import os
 from typing import TYPE_CHECKING, Any
 
 from . import DataType, ProviderType
 from .base import BaseProvider
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     import requests
@@ -68,7 +71,8 @@ class AlphaVantageProvider(BaseProvider):
                 return self._fetch_index_quote(symbol)
             else:
                 return None
-        except Exception:
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
             return None
 
     def _fetch_stock_quote(self, symbol: str) -> dict[str, Any] | None:
@@ -101,7 +105,7 @@ class AlphaVantageProvider(BaseProvider):
                 "prev_close": float(quote.get("08. previous close", 0)),
                 "source": "alpha_vantage",
             }
-        except Exception:
+        except (ValueError, TypeError):
             return None
 
     def _fetch_index_quote(self, symbol: str) -> dict[str, Any] | None:

@@ -9,12 +9,16 @@ AI 分析模块 - 使用大模型进行股票分析和交易决策
 """
 
 import json
+import logging
 import os
+import warnings
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 
 class AIDecision(Enum):
@@ -45,12 +49,17 @@ class AIAnalysisResult:
     total_tokens: int = 0  # 总 token 数
 
 
-class AIAnalyzer:
-    """AI 分析器"""
+class LegacyAIAnalyzer:
+    """AI 分析器 (已废弃，请使用 asset_lens.core.ai_analyzer.AIAnalyzer)"""
 
     SYSTEM_PROMPT = '你是股票分析师，输出JSON格式: {"d":"buy/sell/hold/wait","c":0-100,"r":"理由","rl":"low/medium/high","kf":["因素"],"ms":"乐观/中性/悲观","sl":止损价,"tp":止盈价}'
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "LegacyAIAnalyzer 已废弃，请使用 asset_lens.core.ai_analyzer.AIAnalyzer",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.api_key = os.getenv("DEEPSEEK_API_KEY") or os.getenv("OPENAI_API_KEY") or os.getenv("ZHIPU_API_KEY")
 
         if os.getenv("DEEPSEEK_API_KEY"):
@@ -198,8 +207,8 @@ class AIAnalyzer:
                     completion_tokens=completion_tokens,
                     total_tokens=total_tokens,
                 )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
 
         return self._default_result("解析 AI 响应失败")
 
@@ -245,7 +254,7 @@ class AITradingAdvisor:
     """AI 交易顾问"""
 
     def __init__(self):
-        self.analyzer = AIAnalyzer()
+        self.analyzer = LegacyAIAnalyzer()
 
     def evaluate_buy_signal(
         self,
@@ -413,5 +422,5 @@ class AITradingAdvisor:
         return {"action": "hold", "reason": f"持仓{holding_days}天，盈亏{profit_rate:.2f}%，继续持有"}
 
 
-ai_analyzer = AIAnalyzer()
+ai_analyzer = LegacyAIAnalyzer()
 ai_trading_advisor = AITradingAdvisor()

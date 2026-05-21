@@ -7,6 +7,7 @@ Database manager for asset-lens.
 # mypy: ignore-errors
 
 import json
+import logging
 from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import datetime, timedelta
@@ -17,6 +18,8 @@ from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
 
 from .models import DataSyncLog, MLModel, NorthIndustryFlow, PredictionRecord, StockInfo, StockKline, init_database
+
+logger = logging.getLogger(__name__)
 
 
 class DatabaseManager:
@@ -41,7 +44,8 @@ class DatabaseManager:
         try:
             yield session
             session.commit()
-        except Exception:
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
             session.rollback()
             raise
         finally:

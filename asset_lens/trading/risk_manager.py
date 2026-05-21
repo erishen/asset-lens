@@ -159,8 +159,8 @@ class RiskManager:
                         )
                         for w in data.get("warnings", [])[-100:]  # 只保留最近100条
                     ]
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"忽略异常: {e}")
 
     def _save_warnings(self) -> None:
         """保存预警历史"""

@@ -265,8 +265,8 @@ class AdvancedMLTrainer:
         try:
             importance = optuna.importance.get_param_importances(study)
             param_importance = dict(importance)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
 
         trials_history = [
             {

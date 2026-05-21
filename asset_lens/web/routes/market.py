@@ -2,8 +2,12 @@
 Market Routes - 市场数据相关 API
 """
 
+import logging
+
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/market", tags=["market"])
 
@@ -81,8 +85,8 @@ async def _get_market_indexes() -> list[MarketIndex]:
 
             return result
 
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f"忽略异常: {e}")
 
     return []
 
@@ -149,7 +153,7 @@ async def _get_north_flow_data() -> dict:
                         "total_inflow": float(latest[9]) if len(latest) > 9 else 0,
                     }
 
-    except Exception:
+    except (ValueError, TypeError):
         pass
 
     return {"date": "", "main_inflow": 0, "retail_inflow": 0, "total_inflow": 0}

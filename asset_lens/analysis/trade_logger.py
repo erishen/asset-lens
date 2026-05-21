@@ -381,7 +381,7 @@ class EnhancedTradeLogger:
             with open(self.log_file, encoding="utf-8") as f:
                 data: list[dict[str, Any]] = json.load(f)
                 return data
-        except Exception:
+        except (ValueError, KeyError, TypeError):
             return []
 
     def format_statistics_report(self, stats: TradeStatistics) -> str:

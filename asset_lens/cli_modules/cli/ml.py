@@ -4,9 +4,12 @@ ML CLI Commands.
 """
 
 import json
+import logging
 from pathlib import Path
 
 import click
+
+logger = logging.getLogger(__name__)
 
 
 @click.group()
@@ -444,8 +447,8 @@ def predict_pool(model: str, limit: int, auto_train: bool):
                             "up_prob": pred_result.up_prob,
                         }
                     )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"忽略异常: {e}")
 
         if predictions:
             table = Table(title="股票池预测结果")
@@ -575,7 +578,8 @@ def status():
             console.print(f"   类型: {model_info['model_type']}")
             console.print(f"   准确率: {model_info['metrics'].get('accuracy', 0):.2%}")
             console.print(f"   创建时间: {model_info['created_at']}")
-    except Exception:
+    except Exception as e:
+        logger.debug(f"忽略异常: {e}")
         console.print("\n[yellow]⚠️ 数据库未初始化或无数据[/yellow]")
 
 
@@ -752,10 +756,10 @@ def train_adaptive(model_type: str):
     from rich.console import Console
 
     from asset_lens.ml.adaptive_trainer import adaptive_trainer
-    from asset_lens.strategy.ai_analyzer import AIAnalyzer
+    from asset_lens.strategy.ai_analyzer import LegacyAIAnalyzer
 
     console = Console()
-    ai_analyzer = AIAnalyzer()
+    ai_analyzer = LegacyAIAnalyzer()
     initial_tokens = ai_analyzer.total_tokens_used
     initial_cost = ai_analyzer.total_cost
 
@@ -822,10 +826,10 @@ def trade():
     from rich.console import Console
 
     from asset_lens.ml.ai_trader import AISimulatedTrader
-    from asset_lens.strategy.ai_analyzer import AIAnalyzer
+    from asset_lens.strategy.ai_analyzer import LegacyAIAnalyzer
 
     console = Console()
-    ai_analyzer = AIAnalyzer()
+    ai_analyzer = LegacyAIAnalyzer()
     initial_tokens = ai_analyzer.total_tokens_used
     initial_cost = ai_analyzer.total_cost
 

@@ -10,11 +10,14 @@ Stock screener for asset-lens.
 """
 
 import json
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from ..config import config
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -125,7 +128,8 @@ class StockScreener:
                 max_results=data.get("max_results", 20),
                 min_score=data.get("min_score", 60.0),
             )
-        except Exception:
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
             return ScreenerConfig()
 
     def _load_market_stocks(self) -> list[dict[str, Any]]:

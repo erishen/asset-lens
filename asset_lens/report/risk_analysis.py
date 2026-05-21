@@ -2,14 +2,23 @@
 Risk Analysis - 风险分析模块
 """
 
+import warnings
 from decimal import Decimal
 from typing import Any
 
 from ..data.models import Portfolio, RiskLevel
 
 
-class RiskAnalyzer:
-    """风险分析器"""
+class LegacyRiskAnalyzer:
+    """风险分析器 (已废弃，请使用 asset_lens.monitoring.risk_analyzer.RiskAnalyzer)"""
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "LegacyRiskAnalyzer 已废弃，请使用 asset_lens.monitoring.risk_analyzer.RiskAnalyzer",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
 
     def get_type_distribution(self, portfolio: Portfolio) -> dict[str, Any]:
         """获取投资类型分布
@@ -120,4 +129,4 @@ class RiskAnalyzer:
         return warnings
 
 
-risk_analyzer = RiskAnalyzer()
+risk_analyzer = LegacyRiskAnalyzer()

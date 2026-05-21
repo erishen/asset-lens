@@ -187,7 +187,8 @@ class AICacheManager:
             try:
                 cache_file.unlink()
                 return True
-            except Exception:
+            except Exception as e:
+                logger.debug(f"忽略异常: {e}")
                 return False
 
         return True
@@ -211,8 +212,8 @@ class AICacheManager:
                 try:
                     cache_file.unlink()
                     count += 1
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"忽略异常: {e}")
 
         return count
 
@@ -244,7 +245,7 @@ class AICacheManager:
                     if elapsed > self.ttl:
                         cache_file.unlink()
                         count += 1
-                except Exception:
+                except (ValueError, KeyError, TypeError):
                     pass
 
         return count

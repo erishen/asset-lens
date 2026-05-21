@@ -228,7 +228,7 @@ def check_data_freshness(
                 if age > timedelta(hours=max_age_hours):
                     return True, update_time_str
                 return False, update_time_str
-    except Exception:
+    except ValueError:
         pass
 
     return True, None
@@ -372,7 +372,7 @@ def format_amount_with_currency(
         try:
             data_dir = Path(config.real_data_path) if config.data_mode == "real" else Path(config.sample_data_path)
             usd_rate, hkd_rate = CSVParser.get_exchange_rates(data_dir)
-        except Exception:
+        except (ValueError, KeyError, TypeError):
             usd_rate = float(config.default_usd_rate)
             hkd_rate = float(config.default_hkd_rate)
 
