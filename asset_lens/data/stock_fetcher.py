@@ -7,15 +7,15 @@ Stock data fetcher for asset-lens.
 - 文档: https://akshare.akfamily.xyz
 """
 
-import json
 import logging
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from ..config import config
 from ..utils.http_client import get_session_without_proxy
+from .providers.cache import UnifiedCache
 
 logger = logging.getLogger(__name__)
 
@@ -26,17 +26,20 @@ class StockDataFetcher:
     """股票数据获取器 - 使用 AkShare 开源库"""
 
     def __init__(self, cache_path: Path | None = None):
-        """
-        初始化股票数据获取器
-
-        Args:
-            cache_path: 缓存路径
-        """
-        self.cache_path = cache_path or config.cache_path
-        self.cache_path.mkdir(parents=True, exist_ok=True)
-        self.stock_cache_file = self.cache_path / "stock_quotes.json"
+        self._cache = UnifiedCache(
+            cache_dir=cache_path or config.cache_path,
+            default_ttl=3600,
+        )
         self._stock_codes_map: dict[str, str] | None = None
         self._akshare = None
+
+    @property
+    def cache_path(self) -> Path:
+        return self._cache.cache_dir
+
+    @property
+    def stock_cache_file(self) -> Path:
+        return self._cache.cache_dir / "stock_quotes.json"
 
     @property
     def akshare(self):
@@ -55,23 +58,15 @@ class StockDataFetcher:
         return self._akshare
 
     def _load_stock_codes_config(self) -> dict[str, str]:
-        """
-        加载股票代码配置
-
-        Returns:
-            股票名称到代码的映射
-        """
         if self._stock_codes_map is not None:
             return self._stock_codes_map
 
         config_file = config.project_root / "config" / "fund_stock_codes.json"
         result = {}
 
-        if config_file.exists():
+        data = self._cache.load_file(str(config_file))
+        if data is not None:
             try:
-                with open(config_file, encoding="utf-8") as f:
-                    data = json.load(f)
-
                 for stock in data.get("stocks", []):
                     name = stock.get("name", "")
                     code = stock.get("code", "")
@@ -647,16 +642,15 @@ class StockDataFetcher:
             "data": results,
         }
 
-        with open(self.stock_cache_file, "w", encoding="utf-8") as f:
-            json.dump(cache_data, f, ensure_ascii=False, indent=2)
+        self._cache.save_file("stock_quotes.json", cache_data, ttl=0)
 
         return cache_data
 
     def get_cached_stocks(self) -> dict[str, Any]:
         """获取缓存的股票数据"""
-        if self.stock_cache_file.exists():
-            with open(self.stock_cache_file, encoding="utf-8") as f:
-                return json.load(f)  # type: ignore
+        data = self._cache.load_file("stock_quotes.json")
+        if data is not None:
+            return cast(dict[str, Any], data)
         return {}
 
     def fetch_multiple_stocks_concurrent(
@@ -675,8 +669,6 @@ class StockDataFetcher:
         """
         from concurrent.futures import ThreadPoolExecutor, as_completed
 
-        from ..core.intelligent_cache import intelligent_cache
-
         results = {}
         cached_count = 0
         fetch_count = 0
@@ -684,7 +676,7 @@ class StockDataFetcher:
         if use_cache:
             for code in stock_codes:
                 cache_key = f"stock_quote_{code}"
-                cached_data = intelligent_cache.get(cache_key)
+                cached_data = self._cache.load(cache_key)
 
                 if cached_data is not None:
                     results[code] = cached_data
@@ -712,7 +704,7 @@ class StockDataFetcher:
                         fetch_count += 1
                         if use_cache:
                             cache_key = f"stock_quote_{code}"
-                            intelligent_cache.set(cache_key, data, ttl=60)
+                            self._cache.save(cache_key, data, ttl=60)
                         logger.info(f"✅ {code}: {data.get('name', 'N/A')} - 获取成功")
                     else:
                         logger.error(f"❌ {code}: 获取失败")
@@ -728,8 +720,7 @@ class StockDataFetcher:
             },
         }
 
-        with open(self.stock_cache_file, "w", encoding="utf-8") as f:
-            json.dump(cache_data, f, ensure_ascii=False, indent=2)
+        self._cache.save_file("stock_quotes.json", cache_data, ttl=0)
 
         logger.info(f"批量获取完成: 总计 {len(stock_codes)} 只, 缓存 {cached_count} 只, 新获取 {fetch_count} 只")
 

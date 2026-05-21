@@ -248,12 +248,12 @@ class RichProgressBar:
     def update(self, advance: int = 1):
         """更新进度"""
         if self.progress and self.task is not None:
-            self.progress.advance(self.task, advance)  # type: ignore
+            self.progress.advance(self.task, advance)  # type: ignore[arg-type]
 
     def set_description(self, description: str):
         """设置描述"""
         if self.progress and self.task is not None:
-            self.progress.update(self.task, description=description)  # type: ignore
+            self.progress.update(self.task, description=description)  # type: ignore[arg-type]
 
 
 class TqdmProgressBar:

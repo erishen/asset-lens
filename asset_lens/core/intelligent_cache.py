@@ -1,6 +1,11 @@
 """
 Intelligent Cache System - 智能缓存系统
 支持 TTL、LRU 淘汰策略、缓存预热、缓存统计
+
+.. deprecated::
+    此模块已废弃，请使用 ``asset_lens.data.providers.cache.UnifiedCache`` 替代。
+    UnifiedCache 提供了内存+文件双级缓存、TTL、批量操作等完整功能，
+    是此模块的超集。此模块将在未来版本中移除。
 """
 
 import hashlib
@@ -8,6 +13,7 @@ import json
 import logging
 import threading
 import time
+import warnings
 from collections import OrderedDict
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -41,17 +47,18 @@ class CacheEntry:
 
 
 class IntelligentCache:
-    """智能缓存系统"""
+    """智能缓存系统
+
+    .. deprecated::
+        请使用 ``asset_lens.data.providers.cache.UnifiedCache`` 替代。
+    """
 
     def __init__(self, max_size: int = 1000, default_ttl: int = 3600, enable_stats: bool = True):
-        """
-        初始化智能缓存
-
-        Args:
-            max_size: 最大缓存数量
-            default_ttl: 默认 TTL（秒）
-            enable_stats: 是否启用统计
-        """
+        warnings.warn(
+            "IntelligentCache 已废弃，请使用 asset_lens.data.providers.cache.UnifiedCache 替代",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.max_size = max_size
         self.default_ttl = default_ttl
         self.enable_stats = enable_stats
@@ -317,10 +324,18 @@ def cached(ttl: int | None = None):
     """
     缓存装饰器
 
+    .. deprecated::
+        请使用 ``asset_lens.data.providers.cache.UnifiedCache`` 替代。
+
     Args:
         ttl: TTL（秒）
 
     Returns:
         装饰器函数
     """
+    warnings.warn(
+        "cached() 已废弃，请使用 asset_lens.data.providers.cache.UnifiedCache 替代",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     return intelligent_cache.memoize(ttl)

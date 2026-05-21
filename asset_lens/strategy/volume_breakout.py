@@ -8,7 +8,7 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from ..config import config
 
@@ -90,14 +90,14 @@ class VolumeBreakoutFilter:
         if self.market_stock_file.exists():
             with open(self.market_stock_file, encoding="utf-8") as f:
                 data = json.load(f)
-                return data.get("data", [])  # type: ignore
+                return cast(list[dict[str, Any]], data.get("data", []))
         return []
 
     def _load_history(self) -> dict[str, Any]:
         """加载历史数据"""
         if self.history_file.exists():
             with open(self.history_file, encoding="utf-8") as f:
-                return json.load(f)  # type: ignore
+                return cast(dict[str, Any], json.load(f))
         return {}
 
     def _save_history(self, history: dict[str, Any]) -> None:

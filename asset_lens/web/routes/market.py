@@ -31,7 +31,7 @@ async def get_market_indexes():
 
 async def _get_market_indexes() -> list[MarketIndex]:
     """获取市场指数数据"""
-    import requests
+    from ..http_client import async_get
 
     index_codes = [
         ("sh000001", "上证指数"),
@@ -50,40 +50,40 @@ async def _get_market_indexes() -> list[MarketIndex]:
     }
 
     try:
-        response = requests.get(url, headers=headers, timeout=10)
+        async with await async_get(url, headers=headers, timeout=10) as response:
 
-        if response.status_code == 200:
-            result = []
-            content = response.text
+            if response.status == 200:
+                result = []
+                content = await response.text()
 
-            for code, name in index_codes:
-                pattern = f'var hq_str_{code}="'
-                start = content.find(pattern)
+                for code, name in index_codes:
+                    pattern = f'var hq_str_{code}="'
+                    start = content.find(pattern)
 
-                if start != -1:
-                    start += len(pattern)
-                    end = content.find('";', start)
-                    data_str = content[start:end]
+                    if start != -1:
+                        start += len(pattern)
+                        end = content.find('";', start)
+                        data_str = content[start:end]
 
-                    if data_str:
-                        parts = data_str.split(",")
-                        if len(parts) >= 32:
-                            current_price = float(parts[3]) if parts[3] else 0
-                            prev_close = float(parts[2]) if parts[2] else 0
-                            change = current_price - prev_close if prev_close > 0 else 0
-                            change_percent = (change / prev_close * 100) if prev_close > 0 else 0
+                        if data_str:
+                            parts = data_str.split(",")
+                            if len(parts) >= 32:
+                                current_price = float(parts[3]) if parts[3] else 0
+                                prev_close = float(parts[2]) if parts[2] else 0
+                                change = current_price - prev_close if prev_close > 0 else 0
+                                change_percent = (change / prev_close * 100) if prev_close > 0 else 0
 
-                            result.append(
-                                MarketIndex(
-                                    code=code,
-                                    name=name,
-                                    price=current_price,
-                                    change=change,
-                                    change_percent=change_percent,
+                                result.append(
+                                    MarketIndex(
+                                        code=code,
+                                        name=name,
+                                        price=current_price,
+                                        change=change,
+                                        change_percent=change_percent,
+                                    )
                                 )
-                            )
 
-            return result
+                return result
 
     except Exception as e:
         logger.debug(f"忽略异常: {e}")
@@ -124,7 +124,7 @@ async def get_north_flow():
 
 async def _get_north_flow_data() -> dict:
     """获取北向资金数据"""
-    import requests
+    from ..http_client import async_get
 
     url = "http://push2.eastmoney.com/api/qt/stock/fflow/kline/get"
     params = {
@@ -136,22 +136,22 @@ async def _get_north_flow_data() -> dict:
     }
 
     try:
-        response = requests.get(url, params=params, timeout=10)
+        async with await async_get(url, params=params, timeout=10) as response:
 
-        if response.status_code == 200:
-            data = response.json()
+            if response.status == 200:
+                data = await response.json(content_type=None)
 
-            if data.get("data") and data["data"].get("klines"):
-                klines = data["data"]["klines"]
+                if data.get("data") and data["data"].get("klines"):
+                    klines = data["data"]["klines"]
 
-                if klines:
-                    latest = klines[-1].split(",")
-                    return {
-                        "date": latest[0],
-                        "main_inflow": float(latest[1]) if len(latest) > 1 else 0,
-                        "retail_inflow": float(latest[5]) if len(latest) > 5 else 0,
-                        "total_inflow": float(latest[9]) if len(latest) > 9 else 0,
-                    }
+                    if klines:
+                        latest = klines[-1].split(",")
+                        return {
+                            "date": latest[0],
+                            "main_inflow": float(latest[1]) if len(latest) > 1 else 0,
+                            "retail_inflow": float(latest[5]) if len(latest) > 5 else 0,
+                            "total_inflow": float(latest[9]) if len(latest) > 9 else 0,
+                        }
 
     except (ValueError, TypeError):
         pass

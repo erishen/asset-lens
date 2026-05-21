@@ -145,7 +145,7 @@ class InvestmentTypeConfig:
 class Config:
     """Configuration class for asset-lens."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._settings = settings
 
         self.data_mode: str = self._settings.data_mode

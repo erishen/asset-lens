@@ -138,7 +138,7 @@ async def get_dashboard_data() -> dict[str, Any]:
 
 async def get_market_summary() -> dict[str, Any]:
     """获取市场摘要"""
-    import requests
+    from .http_client import async_get
 
     indexes = []
     index_codes = [
@@ -154,32 +154,32 @@ async def get_market_summary() -> dict[str, Any]:
                 "Referer": "http://finance.sina.com.cn",
                 "User-Agent": "Mozilla/5.0",
             }
-            response = requests.get(url, headers=headers, timeout=3)
+            async with await async_get(url, headers=headers, timeout=3) as response:
 
-            if response.status_code == 200:
-                content = response.text
-                pattern = f'var hq_str_{code}="'
-                start = content.find(pattern)
+                if response.status == 200:
+                    content = await response.text()
+                    pattern = f'var hq_str_{code}="'
+                    start = content.find(pattern)
 
-                if start != -1:
-                    start += len(pattern)
-                    end = content.find('";', start)
-                    data_str = content[start:end]
-                    parts = data_str.split(",")
+                    if start != -1:
+                        start += len(pattern)
+                        end = content.find('";', start)
+                        data_str = content[start:end]
+                        parts = data_str.split(",")
 
-                    if len(parts) >= 32:
-                        current = float(parts[3]) if parts[3] else 0
-                        prev = float(parts[2]) if parts[2] else 0
-                        change_pct = ((current - prev) / prev * 100) if prev > 0 else 0
+                        if len(parts) >= 32:
+                            current = float(parts[3]) if parts[3] else 0
+                            prev = float(parts[2]) if parts[2] else 0
+                            change_pct = ((current - prev) / prev * 100) if prev > 0 else 0
 
-                        indexes.append(
-                            {
-                                "code": code,
-                                "name": name,
-                                "price": current,
-                                "change_percent": round(change_pct, 2),
-                            }
-                        )
+                            indexes.append(
+                                {
+                                    "code": code,
+                                    "name": name,
+                                    "price": current,
+                                    "change_percent": round(change_pct, 2),
+                                }
+                            )
         except Exception as e:
             logger.debug(f"忽略异常: {e}")
 

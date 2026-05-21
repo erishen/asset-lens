@@ -148,7 +148,7 @@ class NotificationManager:
             return False
 
         try:
-            import requests  # type: ignore
+            import requests  # type: ignore[import-untyped]
 
             url = f"https://sctapi.ftqq.com/{self.config.wechat_server_key}.send"
             data = {

@@ -7,15 +7,15 @@ Fund data fetcher for asset-lens.
 - 文档: https://akshare.akfamily.xyz
 """
 
-import json
 import logging
 import time
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from ..config import config
+from .providers.cache import UnifiedCache
 
 logger = logging.getLogger(__name__)
 
@@ -56,17 +56,20 @@ class FundDataFetcher:
     """基金数据获取器 - 使用 AkShare 开源库"""
 
     def __init__(self, cache_path: Path | None = None):
-        """
-        初始化基金数据获取器
-
-        Args:
-            cache_path: 缓存路径
-        """
-        self.cache_path = cache_path or config.cache_path
-        self.cache_path.mkdir(parents=True, exist_ok=True)
-        self.fund_cache_file = self.cache_path / "fund_quotes.json"
+        self._cache = UnifiedCache(
+            cache_dir=cache_path or config.cache_path,
+            default_ttl=3600,
+        )
         self._fund_codes_map: dict[str, str] | None = None
         self._akshare = None
+
+    @property
+    def cache_path(self) -> Path:
+        return self._cache.cache_dir
+
+    @property
+    def fund_cache_file(self) -> Path:
+        return self._cache.cache_dir / "fund_quotes.json"
 
     @property
     def akshare(self):
@@ -85,23 +88,15 @@ class FundDataFetcher:
         return self._akshare
 
     def _load_fund_codes_config(self) -> dict[str, str]:
-        """
-        加载基金代码配置
-
-        Returns:
-            基金名称到代码的映射
-        """
         if self._fund_codes_map is not None:
             return self._fund_codes_map
 
         config_file = config.project_root / "config" / "fund_stock_codes.json"
         result = {}
 
-        if config_file.exists():
+        data = self._cache.load_file(str(config_file))
+        if data is not None:
             try:
-                with open(config_file, encoding="utf-8") as f:
-                    data = json.load(f)
-
                 for fund in data.get("funds", []):
                     name = fund.get("name", "")
                     code = fund.get("code", "")
@@ -280,16 +275,15 @@ class FundDataFetcher:
             "data": results,
         }
 
-        with open(self.fund_cache_file, "w", encoding="utf-8") as f:
-            json.dump(cache_data, f, ensure_ascii=False, indent=2)
+        self._cache.save_file("fund_quotes.json", cache_data, ttl=0)
 
         return cache_data
 
     def get_cached_funds(self) -> dict[str, Any]:
         """获取缓存的基金数据"""
-        if self.fund_cache_file.exists():
-            with open(self.fund_cache_file, encoding="utf-8") as f:
-                return json.load(f)  # type: ignore
+        data = self._cache.load_file("fund_quotes.json")
+        if data is not None:
+            return cast(dict[str, Any], data)
         return {}
 
     def search_fund(self, keyword: str) -> list[dict[str, Any]]:

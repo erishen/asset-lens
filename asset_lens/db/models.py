@@ -1,3 +1,10 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
+
 from investkit_utils.db.models import (
     Base,
     DataSyncLog,
@@ -21,7 +28,7 @@ __all__ = [
 ]
 
 
-def get_session(db_url: str | None = None):
+def get_session(db_url: str | None = None) -> Session:
     import warnings
 
     warnings.warn("get_session() is deprecated, use DatabaseManager.session_scope()", DeprecationWarning, stacklevel=2)

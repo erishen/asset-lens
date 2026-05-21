@@ -12,7 +12,7 @@ Chart generator for asset-lens.
 import json
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 
 @dataclass
@@ -112,7 +112,7 @@ class ChartGenerator:
             else:
                 profit_rates.append(0.0)
 
-        data_dict: dict[str, Any] = chart_data["data"]  # type: ignore
+        data_dict: dict[str, Any] = cast(dict[str, Any], chart_data["data"])
         data_dict["dates"] = sorted_dates
         data_dict["profit_rates"] = profit_rates
 
@@ -244,7 +244,7 @@ class ChartGenerator:
 
         sorted_dates = sorted(date_counts.keys())[-days:]
 
-        data_dict: dict[str, Any] = chart_data["data"]  # type: ignore
+        data_dict: dict[str, Any] = cast(dict[str, Any], chart_data["data"])
         data_dict["dates"] = sorted_dates
         data_dict["signal_counts"] = [date_counts.get(d, 0) for d in sorted_dates]
         data_dict["signal_types"] = dict(sorted(type_counts.items(), key=lambda x: x[1], reverse=True)[:10])

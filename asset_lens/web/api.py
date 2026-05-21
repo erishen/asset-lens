@@ -16,6 +16,7 @@ Web API 服务 - 提供 REST API 接口
 import json
 import logging
 import os
+from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 
@@ -26,10 +27,20 @@ from fastapi.staticfiles import StaticFiles
 
 logger = logging.getLogger(__name__)
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    from .http_client import close_session
+
+    yield
+    await close_session()
+
+
 app = FastAPI(
     title="Asset Lens API",
     description="Personal Asset Operating System API",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 CORS_ORIGINS = os.getenv(
@@ -187,7 +198,7 @@ async def websocket_market(websocket: WebSocket):
 
 async def _get_market_indexes():
     """获取市场指数数据"""
-    import aiohttp
+    from .http_client import async_get
 
     indexes = []
     index_codes = [
@@ -203,43 +214,42 @@ async def _get_market_indexes():
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     }
 
-    async with aiohttp.ClientSession() as http_session:
-        for code, name in index_codes:
-            try:
-                url = f"http://hq.sinajs.cn/list={code}"
-                async with http_session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=3)) as response:
-                    if response.status == 200:
-                        content = await response.text()
-                        pattern = f'var hq_str_{code}="'
-                        start = content.find(pattern)
+    for code, name in index_codes:
+        try:
+            url = f"http://hq.sinajs.cn/list={code}"
+            async with await async_get(url, headers=headers, timeout=3) as response:
+                if response.status == 200:
+                    content = await response.text()
+                    pattern = f'var hq_str_{code}="'
+                    start = content.find(pattern)
 
-                        if start != -1:
-                            start += len(pattern)
-                            end = content.find('";', start)
-                            data_str = content[start:end]
-                            parts = data_str.split(",")
+                    if start != -1:
+                        start += len(pattern)
+                        end = content.find('";', start)
+                        data_str = content[start:end]
+                        parts = data_str.split(",")
 
-                            if len(parts) >= 32:
-                                indexes.append(
-                                    {
-                                        "code": code,
-                                        "name": name,
-                                        "price": float(parts[3]) if parts[3] else 0,
-                                        "change": float(parts[3]) - float(parts[2]) if parts[3] and parts[2] else 0,
-                                        "changePercent": ((float(parts[3]) - float(parts[2])) / float(parts[2]) * 100)
-                                        if parts[2] and parts[3]
-                                        else 0,
-                                    }
-                                )
-            except (ValueError, TypeError):
-                pass
+                        if len(parts) >= 32:
+                            indexes.append(
+                                {
+                                    "code": code,
+                                    "name": name,
+                                    "price": float(parts[3]) if parts[3] else 0,
+                                    "change": float(parts[3]) - float(parts[2]) if parts[3] and parts[2] else 0,
+                                    "changePercent": ((float(parts[3]) - float(parts[2])) / float(parts[2]) * 100)
+                                    if parts[2] and parts[3]
+                                    else 0,
+                                }
+                            )
+        except (ValueError, TypeError):
+            pass
 
     return indexes
 
 
 async def _get_stock_quotes(codes: list[str]):
     """获取股票行情数据"""
-    import aiohttp
+    from .http_client import async_get
 
     quotes = []
     headers = {
@@ -247,41 +257,40 @@ async def _get_stock_quotes(codes: list[str]):
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     }
 
-    async with aiohttp.ClientSession() as http_session:
-        for code in codes[:10]:
-            try:
-                url = f"http://hq.sinajs.cn/list={code}"
-                async with http_session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=3)) as response:
-                    if response.status == 200:
-                        content = await response.text()
-                        pattern = f'var hq_str_{code}="'
-                        start = content.find(pattern)
+    for code in codes[:10]:
+        try:
+            url = f"http://hq.sinajs.cn/list={code}"
+            async with await async_get(url, headers=headers, timeout=3) as response:
+                if response.status == 200:
+                    content = await response.text()
+                    pattern = f'var hq_str_{code}="'
+                    start = content.find(pattern)
 
-                        if start != -1:
-                            start += len(pattern)
-                            end = content.find('";', start)
-                            data_str = content[start:end]
-                            parts = data_str.split(",")
+                    if start != -1:
+                        start += len(pattern)
+                        end = content.find('";', start)
+                        data_str = content[start:end]
+                        parts = data_str.split(",")
 
-                            if len(parts) >= 32:
-                                current_price = float(parts[3]) if parts[3] else 0
-                                prev_close = float(parts[2]) if parts[2] else 0
-                                change_percent = (
-                                    ((current_price - prev_close) / prev_close * 100) if prev_close > 0 else 0
-                                )
+                        if len(parts) >= 32:
+                            current_price = float(parts[3]) if parts[3] else 0
+                            prev_close = float(parts[2]) if parts[2] else 0
+                            change_percent = (
+                                ((current_price - prev_close) / prev_close * 100) if prev_close > 0 else 0
+                            )
 
-                                quotes.append(
-                                    {
-                                        "code": code,
-                                        "name": parts[0],
-                                        "current_price": current_price,
-                                        "change_percent": change_percent,
-                                        "volume": float(parts[8]) if parts[8] else 0,
-                                        "amount": float(parts[9]) if parts[9] else 0,
-                                    }
-                                )
-            except (ValueError, TypeError):
-                pass
+                            quotes.append(
+                                {
+                                    "code": code,
+                                    "name": parts[0],
+                                    "current_price": current_price,
+                                    "change_percent": change_percent,
+                                    "volume": float(parts[8]) if parts[8] else 0,
+                                    "amount": float(parts[9]) if parts[9] else 0,
+                                }
+                            )
+        except (ValueError, TypeError):
+            pass
 
     return quotes
 

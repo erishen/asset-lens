@@ -8,17 +8,18 @@ Hong Kong and US stock data fetcher for asset-lens.
 3. 历史数据获取
 """
 
-import json
 import logging
 import os
 import time
 from collections.abc import Callable
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 import requests
 
 from ..config import config
+from .providers.cache import UnifiedCache
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +31,22 @@ class InternationalStockFetcher:
     RETRY_DELAY = 2.0
 
     def __init__(self):
-        self.cache_path = config.cache_path
-        self.hk_stock_cache = self.cache_path / "hk_stocks.json"
-        self.us_stock_cache = self.cache_path / "us_stocks.json"
+        self._cache = UnifiedCache(
+            cache_dir=config.cache_path,
+            default_ttl=86400,
+        )
+
+    @property
+    def cache_path(self) -> Path:
+        return self._cache.cache_dir
+
+    @property
+    def hk_stock_cache(self) -> Path:
+        return self._cache.cache_dir / "hk_stocks.json"
+
+    @property
+    def us_stock_cache(self) -> Path:
+        return self._cache.cache_dir / "us_stocks.json"
 
     def _fetch_with_retry(
         self,
@@ -605,19 +619,14 @@ class InternationalStockFetcher:
             "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "data": stocks,
         }
-        with open(self.hk_stock_cache, "w", encoding="utf-8") as f:
-            json.dump(cache_data, f, ensure_ascii=False, indent=2)
+        self._cache.save_file("hk_stocks.json", cache_data, ttl=0)
 
     def load_hk_stocks_cache(self) -> list[dict[str, Any]]:
         """加载港股缓存"""
-        if not self.hk_stock_cache.exists():
-            return []
-        try:
-            with open(self.hk_stock_cache, encoding="utf-8") as f:
-                data = json.load(f)
-                return list(data.get("data", []))
-        except (ValueError, KeyError, TypeError):
-            return []
+        data = self._cache.load_file("hk_stocks.json")
+        if data is not None:
+            return list(data.get("data", []))
+        return []
 
     def save_us_stocks_cache(self, stocks: list[dict[str, Any]]) -> None:
         """保存美股缓存"""
@@ -625,19 +634,14 @@ class InternationalStockFetcher:
             "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "data": stocks,
         }
-        with open(self.us_stock_cache, "w", encoding="utf-8") as f:
-            json.dump(cache_data, f, ensure_ascii=False, indent=2)
+        self._cache.save_file("us_stocks.json", cache_data, ttl=0)
 
     def load_us_stocks_cache(self) -> list[dict[str, Any]]:
         """加载美股缓存"""
-        if not self.us_stock_cache.exists():
-            return []
-        try:
-            with open(self.us_stock_cache, encoding="utf-8") as f:
-                data = json.load(f)
-                return list(data.get("data", []))
-        except (ValueError, KeyError, TypeError):
-            return []
+        data = self._cache.load_file("us_stocks.json")
+        if data is not None:
+            return list(data.get("data", []))
+        return []
 
 
 international_stock_fetcher = InternationalStockFetcher()

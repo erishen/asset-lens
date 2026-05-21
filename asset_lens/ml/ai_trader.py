@@ -10,7 +10,6 @@ AI驱动的模拟交易系统
 """
 
 # pylint: disable=no-value-for-parameter,no-member
-# type: ignore[assignment]
 
 import json
 import logging

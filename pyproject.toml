@@ -144,7 +144,7 @@ python_version = "3.11"
 warn_return_any = false
 warn_unused_configs = true
 ignore_missing_imports = true
-disable_error_code = ["no-any-return", "attr-defined", "assignment", "no-member", "no-value-for-parameter", "not-callable", "unsupported-assignment-operation", "unsubscriptable-object", "valid-type", "misc", "import-not-found", "import-untyped"]
+
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
