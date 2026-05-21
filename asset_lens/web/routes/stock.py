@@ -150,7 +150,7 @@ async def get_stock_kline(
 
 async def _get_kline_tencent(code: str, ktype: str, count: int) -> list[dict]:
     """从腾讯获取 K 线数据"""
-    import requests
+    from ..http_client import async_get
 
     ktype_map = {"day": "day", "week": "week", "month": "month"}
     ktype_param = ktype_map.get(ktype, "day")
@@ -166,32 +166,32 @@ async def _get_kline_tencent(code: str, ktype: str, count: int) -> list[dict]:
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     }
 
-    response = requests.get(url, params=params, headers=headers, timeout=10)
+    async with await async_get(url, params=params, headers=headers, timeout=10) as response:
 
-    if response.status_code == 200:
-        import json
+        if response.status == 200:
+            import json
 
-        text = response.text
-        json_start = text.find("{")
-        if json_start != -1:
-            data = json.loads(text[json_start:])
+            text = await response.text()
+            json_start = text.find("{")
+            if json_start != -1:
+                data = json.loads(text[json_start:])
 
-            if data.get("code") == 0:
-                stock_data = data.get("data", {}).get(code, {})
-                kline_data = stock_data.get(ktype_param, [])
+                if data.get("code") == 0:
+                    stock_data = data.get("data", {}).get(code, {})
+                    kline_data = stock_data.get(ktype_param, [])
 
-                result = [
-                    {
-                        "date": item[0],
-                        "open": float(item[1]),
-                        "close": float(item[2]),
-                        "high": float(item[3]),
-                        "low": float(item[4]),
-                        "volume": float(item[5]),
-                    }
-                    for item in kline_data
-                ]
+                    result = [
+                        {
+                            "date": item[0],
+                            "open": float(item[1]),
+                            "close": float(item[2]),
+                            "high": float(item[3]),
+                            "low": float(item[4]),
+                            "volume": float(item[5]),
+                        }
+                        for item in kline_data
+                    ]
 
-                return result
+                    return result
 
     return []

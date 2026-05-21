@@ -5,6 +5,7 @@ Tests for Data Fetchers Base Module
 from datetime import datetime
 
 from asset_lens.data.fetchers.base import BaseFetcher, FetchResult
+from asset_lens.data.providers.cache import UnifiedCache
 
 
 class TestFetchResult:
@@ -71,7 +72,7 @@ class TestBaseFetcher:
 
         assert fetcher.timeout == 30
         assert fetcher.max_retries == 5
-        assert fetcher._cache == {}
+        assert isinstance(fetcher._cache, UnifiedCache)
 
     def test_fetch_method(self):
         """测试 fetch 方法"""

@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class ReturnCalculator:
     """收益率计算器"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.irr_calculator = IRRCalculator()
 
     def calculate_returns(

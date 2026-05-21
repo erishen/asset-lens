@@ -12,8 +12,8 @@ from functools import lru_cache
 logger = logging.getLogger(__name__)
 
 try:
-    from numpy import irr as numpy_irr  # type: ignore
-    from numpy_financial import xirr as numpy_xirr  # type: ignore
+    from numpy import irr as numpy_irr  # type: ignore[attr-defined]
+    from numpy_financial import xirr as numpy_xirr  # type: ignore[import-untyped]
 
     HAS_NUMPY = True
     HAS_NUMPY_FINANCIAL = True

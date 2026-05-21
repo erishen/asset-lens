@@ -348,6 +348,205 @@ class ProviderCache:
         }
 
 
+class UnifiedCache:
+    """
+    统一缓存系统
+
+    整合内存缓存和文件缓存，提供简单的 key-value API。
+    替代各 Fetcher 中手写的 json.load/dump 缓存逻辑。
+
+    用法:
+        cache = UnifiedCache(cache_dir=Path("/path/to/cache"))
+        cache.save("stock_quotes", data, ttl=3600)
+        data = cache.load("stock_quotes")
+
+        cache.save_file("stock_quotes.json", {"data": results}, ttl=3600)
+        data = cache.load_file("stock_quotes.json")
+    """
+
+    def __init__(
+        self,
+        cache_dir: Path | None = None,
+        default_ttl: int = 3600,
+        max_memory_size: int = 1000,
+    ):
+        self._cache_dir = cache_dir or Path.home() / ".asset_lens" / "cache"
+        self._cache_dir.mkdir(parents=True, exist_ok=True)
+        self._default_ttl = default_ttl
+        self._memory = MemoryCache(max_size=max_memory_size)
+        self._file = FileCache(self._cache_dir)
+
+    @property
+    def cache_dir(self) -> Path:
+        return self._cache_dir
+
+    def save(self, key: str, value: Any, ttl: int | None = None) -> None:
+        """
+        保存缓存（内存 + 文件双写）
+
+        Args:
+            key: 缓存键
+            value: 缓存值
+            ttl: 缓存时间（秒），None 使用默认值
+        """
+        effective_ttl = ttl if ttl is not None else self._default_ttl
+        self._memory.set(key, value, effective_ttl)
+        self._file.set(key, value, effective_ttl)
+
+    def load(self, key: str) -> Any | None:
+        """
+        加载缓存（内存优先，回退到文件）
+
+        Args:
+            key: 缓存键
+
+        Returns:
+            缓存值，不存在或过期返回 None
+        """
+        entry = self._memory.get(key)
+        if entry is not None:
+            return entry.value
+        entry = self._file.get(key)
+        if entry is not None:
+            self._memory.set(key, entry.value, entry.ttl)
+            return entry.value
+        return None
+
+    def delete(self, key: str) -> bool:
+        """删除缓存"""
+        m = self._memory.delete(key)
+        f = self._file.delete(key)
+        return m or f
+
+    def exists(self, key: str) -> bool:
+        """检查缓存是否存在且未过期"""
+        return self.load(key) is not None
+
+    def save_file(self, filename: str, data: dict[str, Any], ttl: int | None = None) -> None:
+        """
+        保存到命名文件缓存（兼容现有 Fetcher 的缓存文件格式）
+
+        在数据中注入 _cache_meta 字段用于 TTL 管理，
+        但保持与现有 json 格式兼容。
+
+        Args:
+            filename: 文件名（如 "stock_quotes.json"）
+            data: 要缓存的数据
+            ttl: 缓存时间（秒），None 使用默认值，0 表示永不过期
+        """
+        file_path = self._cache_dir / filename
+        effective_ttl = ttl if ttl is not None else self._default_ttl
+        cache_data = {
+            "_cache_meta": {
+                "updated_at": time.time(),
+                "ttl": effective_ttl,
+            },
+            **data,
+        }
+        try:
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(cache_data, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            logger.warning(f"保存缓存文件失败 {filename}: {e}")
+
+    def load_file(self, filename: str, max_age: int | None = None) -> dict[str, Any] | None:
+        """
+        从命名文件加载缓存（兼容现有 Fetcher 的缓存文件格式）
+
+        支持两种格式:
+        1. 新格式: 包含 _cache_meta 字段，使用 TTL 自动过期
+        2. 旧格式: 不包含 _cache_meta，使用 max_age 参数判断过期
+
+        Args:
+            filename: 文件名（如 "stock_quotes.json"）
+            max_age: 最大缓存时间（秒），None 使用文件中的 TTL 或默认值
+
+        Returns:
+            缓存数据（不含 _cache_meta），不存在或过期返回 None
+        """
+        file_path = self._cache_dir / filename
+        if not file_path.exists():
+            return None
+
+        try:
+            with open(file_path, encoding="utf-8") as f:
+                data = json.load(f)
+
+            if not isinstance(data, dict):
+                return data
+
+            meta = data.get("_cache_meta")
+            if meta:
+                updated_at = meta.get("updated_at", 0)
+                cache_ttl = meta.get("ttl", self._default_ttl)
+                effective_max_age = max_age if max_age is not None else cache_ttl
+                if effective_max_age > 0 and time.time() - updated_at > effective_max_age:
+                    return None
+                result = {k: v for k, v in data.items() if k != "_cache_meta"}
+                return result
+
+            if max_age is not None:
+                update_time_str = data.get("update_time", "")
+                if update_time_str:
+                    try:
+                        from datetime import datetime
+
+                        update_time = datetime.strptime(update_time_str, "%Y-%m-%d %H:%M:%S")
+                        age_seconds = (datetime.now() - update_time).total_seconds()
+                        if age_seconds > max_age:
+                            return None
+                    except (ValueError, TypeError):
+                        pass
+
+            return data
+
+        except Exception as e:
+            logger.warning(f"加载缓存文件失败 {filename}: {e}")
+            return None
+
+    def is_file_valid(self, filename: str, max_age: int | None = None) -> bool:
+        """检查命名文件缓存是否有效"""
+        return self.load_file(filename, max_age) is not None
+
+    def delete_file(self, filename: str) -> bool:
+        """删除命名文件缓存"""
+        file_path = self._cache_dir / filename
+        if file_path.exists():
+            file_path.unlink()
+            return True
+        return False
+
+    def save_batch(self, items: dict[str, Any], ttl: int | None = None) -> None:
+        """批量保存缓存"""
+        for key, value in items.items():
+            self.save(key, value, ttl)
+
+    def load_batch(self, keys: list[str]) -> dict[str, Any]:
+        """批量加载缓存"""
+        result = {}
+        for key in keys:
+            value = self.load(key)
+            if value is not None:
+                result[key] = value
+        return result
+
+    def clear(self) -> None:
+        """清空所有缓存"""
+        self._memory.clear()
+        self._file.clear()
+
+    def stats(self) -> dict[str, Any]:
+        """获取缓存统计"""
+        return {
+            "memory": self._memory.stats(),
+            "file": self._file.stats(),
+            "cache_dir": str(self._cache_dir),
+        }
+
+
+unified_cache = UnifiedCache()
+
+
 provider_cache = ProviderCache()
 
 
@@ -359,5 +558,7 @@ __all__ = [
     "FileCache",
     "MemoryCache",
     "ProviderCache",
+    "UnifiedCache",
     "provider_cache",
+    "unified_cache",
 ]

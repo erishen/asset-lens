@@ -14,7 +14,7 @@ from ..data.models import Currency
 class CurrencyConverter:
     """货币转换器"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.rates: dict[Currency, Decimal] = {
             Currency.CNY: Decimal("1.0"),  # 人民币汇率为1
         }

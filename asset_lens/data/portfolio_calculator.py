@@ -5,7 +5,7 @@ Portfolio Calculator - 投资组合计算服务
 
 from datetime import date
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from .models import InvestmentProduct, Portfolio
@@ -73,7 +73,7 @@ class PortfolioCalculator:
         """计算总资产（带缓存）"""
         cache_key = "total_value"
         if cache_key in self._cache:
-            return self._cache[cache_key]  # type: ignore
+            return cast(Decimal, self._cache[cache_key])
 
         total = Decimal("0")
         for product in self._portfolio.products:
@@ -90,7 +90,7 @@ class PortfolioCalculator:
         """计算总初始投资（带缓存）"""
         cache_key = "total_initial"
         if cache_key in self._cache:
-            return self._cache[cache_key]  # type: ignore
+            return cast(Decimal, self._cache[cache_key])
 
         total = Decimal("0")
         for product in self._portfolio.products:
@@ -113,7 +113,7 @@ class PortfolioCalculator:
         """计算总收益（带缓存）"""
         cache_key = "total_profit"
         if cache_key in self._cache:
-            return self._cache[cache_key]  # type: ignore
+            return cast(Decimal, self._cache[cache_key])
 
         total = Decimal("0")
         for product in self._portfolio.products:
@@ -149,7 +149,7 @@ class PortfolioCalculator:
         """获取类型分布（带缓存）"""
         cache_key = "type_distribution"
         if cache_key in self._cache:
-            return self._cache[cache_key]  # type: ignore
+            return cast(dict[str, Any], self._cache[cache_key])
 
         type_stats: dict[str, dict[str, Any]] = {}
         for product in self._portfolio.products:
@@ -180,7 +180,7 @@ class PortfolioCalculator:
         """获取风险分布（带缓存）"""
         cache_key = "risk_distribution"
         if cache_key in self._cache:
-            return self._cache[cache_key]  # type: ignore
+            return cast(dict[str, Any], self._cache[cache_key])
 
         risk_stats: dict[str, dict[str, Any]] = {}
         for product in self._portfolio.products:

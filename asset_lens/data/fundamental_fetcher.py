@@ -25,6 +25,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from .providers.cache import UnifiedCache
+
 logger = logging.getLogger(__name__)
 
 
@@ -102,11 +104,21 @@ class FundamentalFetcher:
     """基本面数据获取器"""
 
     def __init__(self, cache_path: Path | None = None):
-        self.cache_path = cache_path or Path(__file__).parent / "cache"
-        self.cache_file = self.cache_path / "fundamental_cache.json"
+        self._cache = UnifiedCache(
+            cache_dir=cache_path or Path(__file__).parent / "cache",
+            default_ttl=86400,
+        )
         self._akshare = None
-        self._cache: dict[str, FundamentalData] = {}
+        self._fundamental_cache: dict[str, FundamentalData] = {}
         self._load_cache()
+
+    @property
+    def cache_path(self) -> Path:
+        return self._cache.cache_dir
+
+    @property
+    def cache_file(self) -> Path:
+        return self._cache.cache_dir / "fundamental_cache.json"
 
     @property
     def akshare(self):
@@ -120,40 +132,38 @@ class FundamentalFetcher:
         return self._akshare
 
     def _load_cache(self):
-        if self.cache_file.exists():
-            try:
-                with open(self.cache_file, encoding="utf-8") as f:
-                    data = json.load(f)
-                    for code, info in data.get("fundamentals", {}).items():
-                        self._cache[code] = FundamentalData(
-                            code=code,
-                            pe_ratio=info.get("pe_ratio", 0),
-                            pb_ratio=info.get("pb_ratio", 0),
-                            roe=info.get("roe", 0),
-                            revenue_growth=info.get("revenue_growth", 0),
-                            profit_growth=info.get("profit_growth", 0),
-                            debt_ratio=info.get("debt_ratio", 0),
-                            gross_margin=info.get("gross_margin", 0),
-                            net_margin=info.get("net_margin", 0),
-                            total_market_value=info.get("total_market_value", 0),
-                            circulating_market_value=info.get("circulating_market_value", 0),
-                        )
-            except Exception as e:
-                logger.warning(f"加载基本面缓存失败: {e}")
+        data = self._cache.load_file("fundamental_cache.json")
+        if data is None:
+            return
+        try:
+            for code, info in data.get("fundamentals", {}).items():
+                self._fundamental_cache[code] = FundamentalData(
+                    code=code,
+                    pe_ratio=info.get("pe_ratio", 0),
+                    pb_ratio=info.get("pb_ratio", 0),
+                    roe=info.get("roe", 0),
+                    revenue_growth=info.get("revenue_growth", 0),
+                    profit_growth=info.get("profit_growth", 0),
+                    debt_ratio=info.get("debt_ratio", 0),
+                    gross_margin=info.get("gross_margin", 0),
+                    net_margin=info.get("net_margin", 0),
+                    total_market_value=info.get("total_market_value", 0),
+                    circulating_market_value=info.get("circulating_market_value", 0),
+                )
+        except Exception as e:
+            logger.warning(f"加载基本面缓存失败: {e}")
 
     def _save_cache(self):
-        self.cache_path.mkdir(parents=True, exist_ok=True)
         data = {
             "updated_at": datetime.now().isoformat(),
-            "fundamentals": {code: info.to_dict() for code, info in self._cache.items()},
+            "fundamentals": {code: info.to_dict() for code, info in self._fundamental_cache.items()},
         }
-        with open(self.cache_file, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+        self._cache.save_file("fundamental_cache.json", data, ttl=0)
 
     def get_fundamental(self, code: str) -> FundamentalData:
         """获取单只股票基本面数据"""
-        if code in self._cache:
-            return self._cache[code]
+        if code in self._fundamental_cache:
+            return self._fundamental_cache[code]
 
         data = FundamentalData(code=code)
 
@@ -169,7 +179,7 @@ class FundamentalFetcher:
             except Exception as e:
                 logger.debug(f"获取 {code} 基本面数据失败: {e}")
 
-        self._cache[code] = data
+        self._fundamental_cache[code] = data
         return data
 
     def get_realtime_pe_pb(self, code: str) -> tuple[float, float]:
@@ -201,11 +211,21 @@ class MoneyFlowFetcher:
     """资金流向数据获取器"""
 
     def __init__(self, cache_path: Path | None = None):
-        self.cache_path = cache_path or Path(__file__).parent / "cache"
-        self.cache_file = self.cache_path / "money_flow_cache.json"
+        self._ucache = UnifiedCache(
+            cache_dir=cache_path or Path(__file__).parent / "cache",
+            default_ttl=86400,
+        )
         self._akshare = None
-        self._cache: dict[str, list[MoneyFlowData]] = {}
-        self._load_cache()
+        self._money_flow_cache: dict[str, list[MoneyFlowData]] = {}
+        self._load_money_flow_cache()
+
+    @property
+    def cache_path(self) -> Path:
+        return self._ucache.cache_dir
+
+    @property
+    def cache_file(self) -> Path:
+        return self._ucache.cache_dir / "money_flow_cache.json"
 
     @property
     def akshare(self):
@@ -218,30 +238,28 @@ class MoneyFlowFetcher:
                 logger.warning("AkShare 未安装")
         return self._akshare
 
-    def _load_cache(self):
-        if self.cache_file.exists():
-            try:
-                with open(self.cache_file, encoding="utf-8") as f:
-                    data = json.load(f)
-                    for code, flows in data.get("money_flows", {}).items():
-                        self._cache[code] = [MoneyFlowData(**flow) for flow in flows]
-            except Exception as e:
-                logger.warning(f"加载资金流向缓存失败: {e}")
+    def _load_money_flow_cache(self):
+        data = self._ucache.load_file("money_flow_cache.json")
+        if data is None:
+            return
+        try:
+            for code, flows in data.get("money_flows", {}).items():
+                self._money_flow_cache[code] = [MoneyFlowData(**flow) for flow in flows]
+        except Exception as e:
+            logger.warning(f"加载资金流向缓存失败: {e}")
 
-    def _save_cache(self):
-        self.cache_path.mkdir(parents=True, exist_ok=True)
+    def _save_money_flow_cache(self):
         data = {
             "updated_at": datetime.now().isoformat(),
-            "money_flows": {code: [flow.to_dict() for flow in flows] for code, flows in self._cache.items()},
+            "money_flows": {code: [flow.to_dict() for flow in flows] for code, flows in self._money_flow_cache.items()},
         }
-        with open(self.cache_file, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+        self._ucache.save_file("money_flow_cache.json", data, ttl=0)
 
     def get_money_flow(self, code: str, days: int = 30) -> list[MoneyFlowData]:
         """获取股票资金流向数据"""
         cache_key = f"{code}_{days}"
-        if cache_key in self._cache:
-            return self._cache[cache_key]
+        if cache_key in self._money_flow_cache:
+            return self._money_flow_cache[cache_key]
 
         flows = []
 
@@ -269,7 +287,7 @@ class MoneyFlowFetcher:
             except Exception as e:
                 logger.debug(f"获取 {code} 资金流向失败: {e}")
 
-        self._cache[cache_key] = flows
+        self._money_flow_cache[cache_key] = flows
         return flows
 
     def get_latest_money_flow(self, code: str) -> MoneyFlowData:
@@ -1258,25 +1276,15 @@ class MoneyFlowFetcher:
         return True
 
     def _load_industry_cache(self, cache_file: Path) -> pd.DataFrame | None:
-        """加载行业流向缓存
-
-        Args:
-            cache_file: 缓存文件路径
-
-        Returns:
-            缓存的DataFrame或None
-        """
-        if not cache_file.exists():
+        """加载行业流向缓存"""
+        filename = cache_file.name
+        data = self._ucache.load_file(filename)
+        if data is None:
             return None
 
         try:
-            import json
             from datetime import datetime, timedelta
 
-            with open(cache_file, encoding="utf-8") as f:
-                data = json.load(f)
-
-            # 检查数据是否有效
             if not data or "cache_time" not in data or "industries" not in data:
                 logger.warning("缓存数据格式无效")
                 return None
@@ -1292,16 +1300,14 @@ class MoneyFlowFetcher:
                 logger.warning(f"缓存时间格式错误: {e}")
                 return None
 
-            # 根据当前时间动态调整缓存有效期
             now = datetime.now()
             current_hour = now.hour
 
-            # 开市时间 (9:30-15:00) 缓存30分钟，非开市时间缓存4小时
             if 9 <= current_hour < 15:
-                cache_hours = 0.5  # 30分钟
+                cache_hours = 0.5
                 cache_desc = "30分钟(开市时间)"
             else:
-                cache_hours = 4  # 4小时
+                cache_hours = 4
                 cache_desc = "4小时(非开市时间)"
 
             if now - cache_time > timedelta(hours=cache_hours):
@@ -1317,22 +1323,14 @@ class MoneyFlowFetcher:
             return None
 
     def _save_industry_cache(self, cache_file: Path, df: pd.DataFrame):
-        """保存行业流向缓存
-
-        Args:
-            cache_file: 缓存文件路径
-            df: 待缓存的DataFrame
-        """
+        """保存行业流向缓存"""
         try:
-            self.cache_path.mkdir(parents=True, exist_ok=True)
-
-            import json
             from datetime import datetime
 
+            filename = cache_file.name
             data = {"cache_time": datetime.now().isoformat(), "industries": df.to_dict("records")}
 
-            with open(cache_file, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
+            self._ucache.save_file(filename, data, ttl=0)
 
             logger.info(f"缓存已保存: {cache_file}")
 

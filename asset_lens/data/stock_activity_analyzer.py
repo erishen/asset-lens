@@ -8,7 +8,7 @@ import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from ..config import config
 
@@ -154,7 +154,7 @@ class StockActivityAnalyzer:
         if self.market_stock_cache_file.exists():
             with open(self.market_stock_cache_file, encoding="utf-8") as f:
                 data = json.load(f)
-                return data.get("data", [])  # type: ignore
+                return cast(list[dict[str, Any]], data.get("data", []))
         return []
 
     def analyze_activity(self, stocks: list[dict[str, Any]]) -> ActivityMetrics:

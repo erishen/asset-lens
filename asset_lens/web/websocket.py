@@ -141,7 +141,7 @@ async def handle_market_websocket(websocket: WebSocket):
 
 async def _get_market_indexes_async():
     """获取市场指数数据（异步版本）"""
-    import aiohttp
+    from .http_client import async_get
 
     indexes = []
     index_codes = [
@@ -156,100 +156,96 @@ async def _get_market_indexes_async():
         "Referer": "http://finance.sina.com.cn",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     }
-    timeout = aiohttp.ClientTimeout(total=5)
 
-    async with aiohttp.ClientSession() as session:
-        for code, name in index_codes:
-            try:
-                url = f"http://hq.sinajs.cn/list={code}"
-                async with session.get(url, headers=headers, timeout=timeout) as response:
-                    if response.status == 200:
-                        content = await response.text()
-                        pattern = f'var hq_str_{code}="'
-                        start = content.find(pattern)
+    for code, name in index_codes:
+        try:
+            url = f"http://hq.sinajs.cn/list={code}"
+            async with await async_get(url, headers=headers, timeout=5) as response:
+                if response.status == 200:
+                    content = await response.text()
+                    pattern = f'var hq_str_{code}="'
+                    start = content.find(pattern)
 
-                        if start != -1:
-                            start += len(pattern)
-                            end = content.find('";', start)
-                            data_str = content[start:end]
-                            parts = data_str.split(",")
+                    if start != -1:
+                        start += len(pattern)
+                        end = content.find('";', start)
+                        data_str = content[start:end]
+                        parts = data_str.split(",")
 
-                            if len(parts) >= 32:
-                                try:
-                                    current_price = float(parts[3]) if parts[3] else 0
-                                    prev_close = float(parts[2]) if parts[2] else 0
-                                    change = current_price - prev_close
-                                    change_percent = (change / prev_close * 100) if prev_close > 0 else 0
+                        if len(parts) >= 32:
+                            try:
+                                current_price = float(parts[3]) if parts[3] else 0
+                                prev_close = float(parts[2]) if parts[2] else 0
+                                change = current_price - prev_close
+                                change_percent = (change / prev_close * 100) if prev_close > 0 else 0
 
-                                    indexes.append(
-                                        {
-                                            "code": code,
-                                            "name": name,
-                                            "price": current_price,
-                                            "change": change,
-                                            "changePercent": change_percent,
-                                        }
-                                    )
-                                except (ValueError, ZeroDivisionError) as e:
-                                    logger.debug(f"Failed to parse index {code}: {e}")
-            except asyncio.TimeoutError:
-                logger.debug(f"Timeout fetching index {code}")
-            except Exception as e:
-                logger.debug(f"Error fetching index {code}: {e}")
+                                indexes.append(
+                                    {
+                                        "code": code,
+                                        "name": name,
+                                        "price": current_price,
+                                        "change": change,
+                                        "changePercent": change_percent,
+                                    }
+                                )
+                            except (ValueError, ZeroDivisionError) as e:
+                                logger.debug(f"Failed to parse index {code}: {e}")
+        except asyncio.TimeoutError:
+            logger.debug(f"Timeout fetching index {code}")
+        except Exception as e:
+            logger.debug(f"Error fetching index {code}: {e}")
 
     return indexes
 
 
 async def _get_stock_quotes_async(codes: list[str]):
     """获取股票行情数据（异步版本）"""
-    import aiohttp
+    from .http_client import async_get
 
     quotes = []
     headers = {
         "Referer": "http://finance.sina.com.cn",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     }
-    timeout = aiohttp.ClientTimeout(total=5)
 
-    async with aiohttp.ClientSession() as session:
-        for code in codes[:10]:
-            try:
-                url = f"http://hq.sinajs.cn/list={code}"
-                async with session.get(url, headers=headers, timeout=timeout) as response:
-                    if response.status == 200:
-                        content = await response.text()
-                        pattern = f'var hq_str_{code}="'
-                        start = content.find(pattern)
+    for code in codes[:10]:
+        try:
+            url = f"http://hq.sinajs.cn/list={code}"
+            async with await async_get(url, headers=headers, timeout=5) as response:
+                if response.status == 200:
+                    content = await response.text()
+                    pattern = f'var hq_str_{code}="'
+                    start = content.find(pattern)
 
-                        if start != -1:
-                            start += len(pattern)
-                            end = content.find('";', start)
-                            data_str = content[start:end]
-                            parts = data_str.split(",")
+                    if start != -1:
+                        start += len(pattern)
+                        end = content.find('";', start)
+                        data_str = content[start:end]
+                        parts = data_str.split(",")
 
-                            if len(parts) >= 32:
-                                try:
-                                    current_price = float(parts[3]) if parts[3] else 0
-                                    prev_close = float(parts[2]) if parts[2] else 0
-                                    change_percent = (
-                                        ((current_price - prev_close) / prev_close * 100) if prev_close > 0 else 0
-                                    )
+                        if len(parts) >= 32:
+                            try:
+                                current_price = float(parts[3]) if parts[3] else 0
+                                prev_close = float(parts[2]) if parts[2] else 0
+                                change_percent = (
+                                    ((current_price - prev_close) / prev_close * 100) if prev_close > 0 else 0
+                                )
 
-                                    quotes.append(
-                                        {
-                                            "code": code,
-                                            "name": parts[0],
-                                            "current_price": current_price,
-                                            "change_percent": change_percent,
-                                            "volume": float(parts[8]) if parts[8] else 0,
-                                            "amount": float(parts[9]) if parts[9] else 0,
-                                        }
-                                    )
-                                except (ValueError, ZeroDivisionError) as e:
-                                    logger.debug(f"Failed to parse quote {code}: {e}")
-            except asyncio.TimeoutError:
-                logger.debug(f"Timeout fetching quote {code}")
-            except Exception as e:
-                logger.debug(f"Error fetching quote {code}: {e}")
+                                quotes.append(
+                                    {
+                                        "code": code,
+                                        "name": parts[0],
+                                        "current_price": current_price,
+                                        "change_percent": change_percent,
+                                        "volume": float(parts[8]) if parts[8] else 0,
+                                        "amount": float(parts[9]) if parts[9] else 0,
+                                    }
+                                )
+                            except (ValueError, ZeroDivisionError) as e:
+                                logger.debug(f"Failed to parse quote {code}: {e}")
+        except asyncio.TimeoutError:
+            logger.debug(f"Timeout fetching quote {code}")
+        except Exception as e:
+            logger.debug(f"Error fetching quote {code}: {e}")
 
     return quotes

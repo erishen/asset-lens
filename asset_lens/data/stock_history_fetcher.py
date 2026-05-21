@@ -14,7 +14,6 @@ Tushare 注册:
 3. 在 .env 文件中设置 TUSHARE_TOKEN=your_token
 """
 
-import json
 import logging
 import os
 import time
@@ -27,6 +26,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from ..config import config
+from .providers.cache import UnifiedCache
 
 logger = logging.getLogger(__name__)
 
@@ -41,15 +41,24 @@ class StockHistoryFetcher:
     _baostock_hint_shown = False
 
     def __init__(self, cache_path: Path | None = None):
-        self.cache_path = cache_path or config.cache_path
-        self.cache_path.mkdir(parents=True, exist_ok=True)
-        self.history_cache_file = self.cache_path / "stock_history_baostock.json"
+        self._cache = UnifiedCache(
+            cache_dir=cache_path or config.cache_path,
+            default_ttl=86400,
+        )
         self._tushare = None
         self._akshare = None
         self._baostock = None
         self._baostock_logged_in = False
         self._tushare_token = os.environ.get("TUSHARE_TOKEN", "")
         self._baostock_failed = False
+
+    @property
+    def cache_path(self) -> Path:
+        return self._cache.cache_dir
+
+    @property
+    def history_cache_file(self) -> Path:
+        return self._cache.cache_dir / "stock_history_baostock.json"
 
     @property
     def tushare(self):
@@ -573,18 +582,15 @@ class StockHistoryFetcher:
             "data": histories,
         }
 
-        with open(self.history_cache_file, "w", encoding="utf-8") as f:
-            json.dump(cache_data, f, ensure_ascii=False, indent=2)
+        self._cache.save_file("stock_history_baostock.json", cache_data, ttl=0)
 
         print(f"✅ 历史数据已保存到: {self.history_cache_file}")
 
     def load_history_cache(self) -> dict[str, dict[str, Any]]:
         """加载历史数据缓存"""
-        if self.history_cache_file.exists():
-            with open(self.history_cache_file, encoding="utf-8") as f:
-                data: dict[str, Any] = json.load(f)
-                result: dict[str, dict[str, Any]] = data.get("data", {})
-                return result
+        data = self._cache.load_file("stock_history_baostock.json")
+        if data is not None:
+            return data.get("data", {})
         return {}
 
     def get_stocks_with_history(
@@ -692,16 +698,9 @@ class StockHistoryFetcher:
             return None
 
     def check_cache_validity(self, max_age_hours: int = 24) -> dict[str, Any]:
-        """
-        检查缓存数据的有效性
-
-        Args:
-            max_age_hours: 最大缓存时间（小时）
-
-        Returns:
-            检查结果字典
-        """
-        if not self.history_cache_file.exists():
+        """检查缓存数据的有效性"""
+        data = self._cache.load_file("stock_history_baostock.json")
+        if data is None:
             return {
                 "valid": False,
                 "reason": "缓存文件不存在",
@@ -710,15 +709,12 @@ class StockHistoryFetcher:
             }
 
         try:
-            with open(self.history_cache_file, encoding="utf-8") as f:
-                cache_data: dict[str, Any] = json.load(f)
-
-            update_time_str = cache_data.get("update_time", "")
+            update_time_str = data.get("update_time", "")
             if not update_time_str:
                 return {
                     "valid": False,
                     "reason": "缓存缺少更新时间",
-                    "total_stocks": len(cache_data.get("data", {})),
+                    "total_stocks": len(data.get("data", {})),
                     "need_update": [],
                 }
 
@@ -734,7 +730,7 @@ class StockHistoryFetcher:
                     return {
                         "valid": True,
                         "reason": "周六使用周五缓存数据",
-                        "total_stocks": len(cache_data.get("data", {})),
+                        "total_stocks": len(data.get("data", {})),
                         "update_time": update_time_str,
                         "age_hours": age_hours,
                         "need_update": [],
@@ -743,7 +739,7 @@ class StockHistoryFetcher:
                     return {
                         "valid": True,
                         "reason": "周日使用周五缓存数据",
-                        "total_stocks": len(cache_data.get("data", {})),
+                        "total_stocks": len(data.get("data", {})),
                         "update_time": update_time_str,
                         "age_hours": age_hours,
                         "need_update": [],
@@ -753,15 +749,15 @@ class StockHistoryFetcher:
                 return {
                     "valid": False,
                     "reason": f"缓存已过期 ({age_hours:.1f}小时 > {max_age_hours}小时)",
-                    "total_stocks": len(cache_data.get("data", {})),
+                    "total_stocks": len(data.get("data", {})),
                     "update_time": update_time_str,
                     "need_update": [],
                 }
 
-            data: dict[str, dict[str, Any]] = cache_data.get("data", {})
+            cache_data: dict[str, dict[str, Any]] = data.get("data", {})
             incomplete_stocks = []
 
-            for code, history in data.items():
+            for code, history in cache_data.items():
                 klines: list[dict[str, Any]] = history.get("klines", [])
                 if len(klines) < 30:
                     incomplete_stocks.append(
@@ -774,7 +770,7 @@ class StockHistoryFetcher:
             return {
                 "valid": len(incomplete_stocks) == 0,
                 "reason": "缓存有效" if not incomplete_stocks else f"{len(incomplete_stocks)}只股票数据不完整",
-                "total_stocks": len(data),
+                "total_stocks": len(cache_data),
                 "update_time": update_time_str,
                 "age_hours": age_hours,
                 "incomplete_stocks": incomplete_stocks,
@@ -890,13 +886,9 @@ class StockHistoryFetcher:
         return result
 
     def get_cache_statistics(self) -> dict[str, Any]:
-        """
-        获取缓存统计信息
-
-        Returns:
-            统计信息字典
-        """
-        if not self.history_cache_file.exists():
+        """获取缓存统计信息"""
+        data = self._cache.load_file("stock_history_baostock.json")
+        if data is None:
             return {
                 "exists": False,
                 "total_stocks": 0,
@@ -906,15 +898,12 @@ class StockHistoryFetcher:
             }
 
         try:
-            with open(self.history_cache_file, encoding="utf-8") as f:
-                cache_data: dict[str, Any] = json.load(f)
-
-            data: dict[str, dict[str, Any]] = cache_data.get("data", {})
-            total_stocks = len(data)
+            cache_data: dict[str, dict[str, Any]] = data.get("data", {})
+            total_stocks = len(cache_data)
             total_klines = 0
             data_sources: dict[str, int] = {}
 
-            for history in data.values():
+            for history in cache_data.values():
                 klines: list[dict[str, Any]] = history.get("klines", [])
                 total_klines += len(klines)
                 source = history.get("data_source", "Unknown")
@@ -922,12 +911,12 @@ class StockHistoryFetcher:
 
             return {
                 "exists": True,
-                "update_time": cache_data.get("update_time", ""),
+                "update_time": data.get("update_time", ""),
                 "total_stocks": total_stocks,
                 "total_klines": total_klines,
                 "avg_klines_per_stock": total_klines / total_stocks if total_stocks > 0 else 0,
                 "data_sources": data_sources,
-                "file_size_kb": self.history_cache_file.stat().st_size / 1024,
+                "file_size_kb": self.history_cache_file.stat().st_size / 1024 if self.history_cache_file.exists() else 0,
             }
 
         except Exception as e:
@@ -938,16 +927,10 @@ class StockHistoryFetcher:
             }
 
     def clear_cache(self) -> bool:
-        """
-        清除历史数据缓存
-
-        Returns:
-            是否成功
-        """
+        """清除历史数据缓存"""
         try:
-            if self.history_cache_file.exists():
-                self.history_cache_file.unlink()
-                print(f"✅ 已清除历史数据缓存: {self.history_cache_file}")
+            self._cache.delete_file("stock_history_baostock.json")
+            print(f"✅ 已清除历史数据缓存: {self.history_cache_file}")
             return True
         except Exception as e:
             print(f"❌ 清除缓存失败: {e}")

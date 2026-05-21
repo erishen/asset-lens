@@ -10,7 +10,7 @@ Futures data fetcher for asset-lens.
 
 import time
 from datetime import datetime, timedelta
-from typing import Any, ClassVar
+from typing import Any, ClassVar, cast
 
 
 class FuturesFetcher:
@@ -156,7 +156,7 @@ class FuturesFetcher:
         cache_key = "all_domestic"
         cached = self._get_cached(cache_key)
         if cached:
-            return list(cached)  # type: ignore
+            return cast(list[dict[str, Any]], list(cached))
 
         try:
 

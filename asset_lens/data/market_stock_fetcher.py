@@ -7,15 +7,15 @@ Market stock list fetcher for asset-lens.
 - 文档: https://akshare.akfamily.xyz
 """
 
-import json
 import os
 from collections.abc import Generator
 from contextlib import contextmanager
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, cast
 
 from ..config import config
+from .providers.cache import UnifiedCache
 
 
 @contextmanager
@@ -75,16 +75,19 @@ class MarketStockFetcher:
     }
 
     def __init__(self, cache_path: Path | None = None):
-        """
-        初始化市场股票获取器
-
-        Args:
-            cache_path: 缓存路径
-        """
-        self.cache_path = cache_path or config.cache_path
-        self.cache_path.mkdir(parents=True, exist_ok=True)
-        self.market_stock_cache_file = self.cache_path / "market_stocks.json"
+        self._cache = UnifiedCache(
+            cache_dir=cache_path or config.cache_path,
+            default_ttl=86400,
+        )
         self._akshare = None
+
+    @property
+    def cache_path(self) -> Path:
+        return self._cache.cache_dir
+
+    @property
+    def market_stock_cache_file(self) -> Path:
+        return self._cache.cache_dir / "market_stocks.json"
 
     @property
     def akshare(self):
@@ -898,8 +901,7 @@ class MarketStockFetcher:
             "data": stocks,
         }
 
-        with open(self.market_stock_cache_file, "w", encoding="utf-8") as f:
-            json.dump(cache_data, f, ensure_ascii=False, indent=2)
+        self._cache.save_file("market_stocks.json", cache_data, ttl=0)
 
         print(f"✅ 市场股票数据已保存到: {self.market_stock_cache_file}")
 
@@ -909,13 +911,12 @@ class MarketStockFetcher:
         Args:
             max_age_hours: 缓存有效期（小时），默认24小时
         """
-        if self.market_stock_cache_file.exists():
-            try:
-                with open(self.market_stock_cache_file, encoding="utf-8") as f:
-                    data = json.load(f)
-
-                update_time_str = data.get("update_time", "")
-                if update_time_str:
+        data = self._cache.load_file("market_stocks.json", max_age=max_age_hours * 3600)
+        if data is not None:
+            update_time_str = data.get("update_time", "")
+            stocks = data.get("data", [])
+            if update_time_str:
+                try:
                     update_time = datetime.strptime(update_time_str, "%Y-%m-%d %H:%M:%S")
                     age_hours = (datetime.now() - update_time).total_seconds() / 3600
 
@@ -926,93 +927,37 @@ class MarketStockFetcher:
                     else:
                         age_str = f"{age_hours / 24:.1f}天"
 
-                    remaining_hours = max_age_hours - age_hours
-                    if remaining_hours < 0:
-                        remaining_str = "已过期"
-                    elif remaining_hours < 1:
-                        remaining_str = f"剩余 {remaining_hours * 60:.0f} 分钟"
-                    else:
-                        remaining_str = f"剩余 {remaining_hours:.1f} 小时"
-
-                    print(f"📦 使用缓存数据: {len(data.get('data', []))} 只股票 (缓存时间: {age_str}前)")
+                    print(f"📦 使用缓存数据: {len(stocks)} 只股票 (缓存时间: {age_str}前)")
                     print(f"   缓存文件: {self.market_stock_cache_file}")
                     print(f"   更新时间: {update_time_str}")
-                    print(f"   有效期: {max_age_hours}小时 ({remaining_str})")
-                else:
-                    print(f"📦 使用缓存数据: {len(data.get('data', []))} 只股票")
+                except (ValueError, TypeError):
+                    print(f"📦 使用缓存数据: {len(stocks)} 只股票")
+            else:
+                print(f"📦 使用缓存数据: {len(stocks)} 只股票")
 
-                return list(data.get("data", []))  # type: ignore
-            except Exception as e:
-                print(f"❌ 读取缓存失败: {e}")
-                return []
-        else:
-            print(f"📦 缓存文件不存在: {self.market_stock_cache_file}")
-            return []
+            return cast(list[dict[str, Any]], stocks)
+
+        print(f"📦 缓存文件不存在或已过期: {self.market_stock_cache_file}")
+        return []
 
     def is_cache_expired(self, max_age_hours: int = 24) -> bool:
         """检查缓存是否过期"""
-        if not self.market_stock_cache_file.exists():
-            print("📦 缓存不存在，需要重新获取")
-            return True
-
-        try:
-            with open(self.market_stock_cache_file, encoding="utf-8") as f:
-                data = json.load(f)
-                update_time_str = data.get("update_time", "")
-                if not update_time_str:
-                    print("📦 缓存无时间戳，需要重新获取")
-                    return True
-
-                update_time = datetime.strptime(update_time_str, "%Y-%m-%d %H:%M:%S")
-                age_hours = (datetime.now() - update_time).total_seconds() / 3600
-
-                now = datetime.now()
-                weekday = now.weekday()
-
-                if weekday >= 5:
-                    if weekday == 5:
-                        friday = now - timedelta(days=1)
-                        friday_15pm = friday.replace(hour=15, minute=0, second=0, microsecond=0)
-                        cache_from_friday = update_time >= friday_15pm - timedelta(hours=2)
-                        if cache_from_friday and age_hours < 72:
-                            print(f"📅 周六使用周五缓存数据 (缓存时间: {age_hours:.1f}小时)")
-                            return False
-                    elif weekday == 6:
-                        friday = now - timedelta(days=2)
-                        friday_15pm = friday.replace(hour=15, minute=0, second=0, microsecond=0)
-                        cache_from_friday = update_time >= friday_15pm - timedelta(hours=2)
-                        if cache_from_friday and age_hours < 96:
-                            print(f"📅 周日使用周五缓存数据 (缓存时间: {age_hours:.1f}小时)")
-                            return False
-
-                if age_hours > max_age_hours:
-                    age_str = f"{age_hours:.1f}小时" if age_hours < 48 else f"{age_hours / 24:.1f}天"
-                    print(f"⚠️ 缓存已过期: 缓存时间 {age_str}，有效期 {max_age_hours}小时")
-                    return True
-                else:
-                    remaining = max_age_hours - age_hours
-                    remaining_str = f"{remaining * 60:.0f}分钟" if remaining < 1 else f"{remaining:.1f}小时"
-                    print(f"✅ 缓存有效: 剩余有效期 {remaining_str}")
-                    return False
-        except Exception as e:
-            print(f"❌ 检查缓存失败: {e}")
-            return True
+        return not self._cache.is_file_valid("market_stocks.json", max_age=max_age_hours * 3600)
 
     def get_cache_age_hours(self) -> float:
         """获取缓存年龄（小时）"""
-        if not self.market_stock_cache_file.exists():
+        data = self._cache.load_file("market_stocks.json")
+        if data is None:
+            return -1
+
+        update_time_str = data.get("update_time", "")
+        if not update_time_str:
             return -1
 
         try:
-            with open(self.market_stock_cache_file, encoding="utf-8") as f:
-                data = json.load(f)
-                update_time_str = data.get("update_time", "")
-                if not update_time_str:
-                    return -1
-
-                update_time = datetime.strptime(update_time_str, "%Y-%m-%d %H:%M:%S")
-                return (datetime.now() - update_time).total_seconds() / 3600
-        except ValueError:
+            update_time = datetime.strptime(update_time_str, "%Y-%m-%d %H:%M:%S")
+            return (datetime.now() - update_time).total_seconds() / 3600
+        except (ValueError, TypeError):
             return -1
 
 

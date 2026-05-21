@@ -6,7 +6,7 @@ Analyze CLI commands for asset-lens.
 import logging
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, TypedDict, cast
 
 import click
 from rich import box
@@ -14,6 +14,13 @@ from rich.console import Console
 from rich.table import Table
 
 logger = logging.getLogger(__name__)
+
+
+class _YearStats(TypedDict):
+    count: int
+    initial: float
+    current: float
+    investments: list[dict[str, Any]]
 
 
 def _get_data_dir(data_mode: str | None) -> Path | None:
@@ -777,15 +784,15 @@ def register_analyze_commands(cli: click.Group) -> None:
                 logger.debug(f"忽略异常: {e}")
 
             # 7. 按年份分组
-            by_year: dict[int, dict[str, int | float | list]] = {}
+            by_year: dict[int, _YearStats] = {}
             for inv in investments:
                 year = inv["start_date"].year
                 if year not in by_year:
                     by_year[year] = {"count": 0, "initial": 0.0, "current": 0.0, "investments": []}
-                by_year[year]["count"] += 1  # type: ignore[operator]
-                by_year[year]["initial"] += inv["initial"]  # type: ignore[operator]
-                by_year[year]["current"] += inv["current"]  # type: ignore[operator]
-                cast(list[dict[str, Any]], by_year[year]["investments"]).append(inv)
+                by_year[year]["count"] += 1
+                by_year[year]["initial"] += inv["initial"]
+                by_year[year]["current"] += inv["current"]
+                by_year[year]["investments"].append(inv)
 
             click.echo("\n📈 按投资年份分析:")
 
@@ -803,8 +810,8 @@ def register_analyze_commands(cli: click.Group) -> None:
                 stats = by_year[year]
                 current_val = stats["current"]
                 initial_val = stats["initial"]
-                profit = float(current_val) - float(initial_val)  # type: ignore[arg-type]
-                ret = profit / float(initial_val) * 100 if float(initial_val) > 0 else 0  # type: ignore[arg-type]
+                profit = float(current_val) - float(initial_val)
+                ret = profit / float(initial_val) * 100 if float(initial_val) > 0 else 0
 
                 inv_list = cast(list[dict[str, Any]], stats["investments"])
                 avg_days = sum((end_date - i["start_date"]).days for i in inv_list) / len(inv_list) if inv_list else 0

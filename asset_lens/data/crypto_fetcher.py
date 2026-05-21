@@ -8,9 +8,10 @@ Cryptocurrency data fetcher for asset-lens.
 - 支持交易所: Binance, OKX, Coinbase, Kraken, Huobi 等
 """
 
-import time
 from datetime import datetime
-from typing import Any, ClassVar
+from typing import Any, ClassVar, cast
+
+from .providers.cache import UnifiedCache
 
 
 class CryptoFetcher:
@@ -28,13 +29,12 @@ class CryptoFetcher:
 
     DEFAULT_EXCHANGE: ClassVar[str] = "binance"
 
-    CACHE_DURATION = 300  # 5分钟缓存
+    CACHE_DURATION = 300
 
     def __init__(self, exchange: str | None = None) -> None:
         self._exchange_name = exchange or self.DEFAULT_EXCHANGE
         self._exchange = None
-        self._cache: dict[str, Any] = {}
-        self._cache_time: dict[str, float] = {}
+        self._cache = UnifiedCache(default_ttl=self.CACHE_DURATION)
 
     @property
     def exchange(self):
@@ -60,25 +60,19 @@ class CryptoFetcher:
 
     def _is_cache_valid(self, cache_key: str) -> bool:
         """检查缓存是否有效"""
-        if cache_key not in self._cache_time:
-            return False
-        return time.time() - self._cache_time[cache_key] < self.CACHE_DURATION
+        return self._cache.exists(cache_key)
 
     def _get_cached(self, cache_key: str) -> Any | None:
         """获取缓存数据"""
-        if self._is_cache_valid(cache_key):
-            return self._cache.get(cache_key)
-        return None
+        return self._cache.load(cache_key)
 
     def _set_cache(self, cache_key: str, data: Any) -> None:
         """设置缓存"""
-        self._cache[cache_key] = data
-        self._cache_time[cache_key] = time.time()
+        self._cache.save(cache_key, data, ttl=self.CACHE_DURATION)
 
     def clear_cache(self) -> None:
         """清除缓存"""
         self._cache.clear()
-        self._cache_time.clear()
 
     def get_ticker(self, symbol: str) -> dict[str, Any] | None:
         """
@@ -93,7 +87,7 @@ class CryptoFetcher:
         cache_key = f"ticker_{symbol}"
         cached = self._get_cached(cache_key)
         if cached:
-            return dict(cached)  # type: ignore
+            return cast(dict[str, Any], dict(cached))
 
         try:
             ticker = self.exchange.fetch_ticker(symbol)
@@ -143,7 +137,7 @@ class CryptoFetcher:
         cache_key = f"ohlcv_{symbol}_{timeframe}_{limit}"
         cached = self._get_cached(cache_key)
         if cached:
-            return list(cached)  # type: ignore
+            return cast(list[dict[str, Any]], list(cached))
 
         try:
             ohlcvs = self.exchange.fetch_ohlcv(symbol, timeframe, since=since, limit=limit)

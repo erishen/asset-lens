@@ -421,7 +421,7 @@ def update_missing(days, limit, delay, source) -> None:
         table.add_column("最新日期", style="white")
         table.add_column("数据量", style="dim")
 
-        for stock in stocks_to_update[:20]:  # type: ignore
+        for stock in stocks_to_update[:20]:
             table.add_row(
                 stock.get("code", ""),
                 stock.get("reason", ""),

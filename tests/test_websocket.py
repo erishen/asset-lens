@@ -99,14 +99,12 @@ class TestConnectionManager:
     """ConnectionManager 测试"""
 
     def test_connection_manager_import(self):
-        """测试 ConnectionManager 导入"""
-        from asset_lens.web.api import ConnectionManager
+        from asset_lens.web.websocket import ConnectionManager
 
         assert ConnectionManager is not None
 
     def test_connection_manager_init(self):
-        """测试 ConnectionManager 初始化"""
-        from asset_lens.web.api import ConnectionManager
+        from asset_lens.web.websocket import ConnectionManager
 
         manager = ConnectionManager()
         assert manager.active_connections is not None

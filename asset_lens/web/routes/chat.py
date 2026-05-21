@@ -105,26 +105,27 @@ async def chat_qa(request: ChatRequest):
             response_text = None
 
             try:
-                import requests
+                from ..http_client import async_get, async_post
 
                 ollama_models = ["gemma4", "llama3", "qwen2.5", "deepseek-r1"]
                 ollama_model = None
 
                 try:
-                    resp = requests.get("http://localhost:11434/api/tags", timeout=2)
-                    if resp.status_code == 200:
-                        models = resp.json().get("models", [])
-                        model_names = [m.get("name", "").split(":")[0] for m in models]
-                        for m in ollama_models:
-                            if m in model_names:
-                                ollama_model = m
-                                break
+                    async with await async_get("http://localhost:11434/api/tags", timeout=2) as resp:
+                        if resp.status == 200:
+                            resp_json = await resp.json(content_type=None)
+                            models = resp_json.get("models", [])
+                            model_names = [m.get("name", "").split(":")[0] for m in models]
+                            for m in ollama_models:
+                                if m in model_names:
+                                    ollama_model = m
+                                    break
                 except Exception as e:
                     logger.debug(f"忽略异常: {e}")
 
                 if ollama_model:
                     full_prompt = f"{system_prompt}\n\n用户问题: {user_message}"
-                    resp = requests.post(
+                    async with await async_post(
                         "http://localhost:11434/api/chat",
                         json={
                             "model": ollama_model,
@@ -133,17 +134,17 @@ async def chat_qa(request: ChatRequest):
                             "options": {"num_predict": 300, "temperature": 0.7},
                         },
                         timeout=45,
-                    )
-                    if resp.status_code == 200:
-                        result = resp.json()
-                        message = result.get("message", {})
-                        response_text = message.get("content", "")
-                        if not response_text:
-                            thinking = message.get("thinking", "")
-                            if thinking:
-                                response_text = thinking
-                        if not response_text:
-                            logger.warning(f"Ollama returned empty response: {result}")
+                    ) as resp:
+                        if resp.status == 200:
+                            result = await resp.json(content_type=None)
+                            message = result.get("message", {})
+                            response_text = message.get("content", "")
+                            if not response_text:
+                                thinking = message.get("thinking", "")
+                                if thinking:
+                                    response_text = thinking
+                            if not response_text:
+                                logger.warning(f"Ollama returned empty response: {result}")
             except Exception as e:
                 logger.warning(f"Ollama generation failed: {e}")
 
