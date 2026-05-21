@@ -447,8 +447,8 @@ class AIAnalyzer:
                     ensure_ascii=False,
                     indent=2,
                 )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
 
     def generate_investment_advice(
         self,

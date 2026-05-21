@@ -3,11 +3,14 @@ CCXT Crypto Provider implementation.
 CCXT 加密货币数据源实现
 """
 
+import logging
 from datetime import datetime
 from typing import Any
 
 from . import DataType, ProviderType
 from .base import BaseProvider
+
+logger = logging.getLogger(__name__)
 
 
 class CCXTProvider(BaseProvider):
@@ -68,7 +71,8 @@ class CCXTProvider(BaseProvider):
 
         try:
             return self._fetch_ticker(symbol)
-        except Exception:
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
             return None
 
     def _fetch_ticker(self, symbol: str) -> dict[str, Any] | None:
@@ -92,7 +96,7 @@ class CCXTProvider(BaseProvider):
                 "datetime": datetime.fromtimestamp(ticker.get("timestamp", 0) / 1000).isoformat(),
                 "source": "ccxt",
             }
-        except Exception:
+        except (ValueError, TypeError):
             return None
 
     def fetch_ohlcv(
@@ -124,7 +128,7 @@ class CCXTProvider(BaseProvider):
             ]
 
             return result
-        except Exception:
+        except (ValueError, TypeError):
             return []
 
 

@@ -56,7 +56,7 @@ class NotificationManager:
                 with open(config_file, encoding="utf-8") as f:
                     data = json.load(f)
                 return NotificationConfig(**data)
-            except Exception:
+            except (ValueError, KeyError, TypeError):
                 pass
 
         return NotificationConfig()

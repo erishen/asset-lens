@@ -998,7 +998,7 @@ class MarketStockFetcher:
 
                 update_time = datetime.strptime(update_time_str, "%Y-%m-%d %H:%M:%S")
                 return (datetime.now() - update_time).total_seconds() / 3600
-        except Exception:
+        except ValueError:
             return -1
 
 

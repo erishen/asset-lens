@@ -74,26 +74,26 @@ class TestAIAnalyzer:
     def test_ai_analyzer_init_no_api_key(self):
         """测试无 API Key 初始化"""
         with patch.dict("os.environ", {}, clear=True):
-            from asset_lens.strategy.ai_analyzer import AIAnalyzer
+            from asset_lens.strategy.ai_analyzer import LegacyAIAnalyzer
 
-            analyzer = AIAnalyzer()
+            analyzer = LegacyAIAnalyzer()
             assert analyzer.enabled is False
 
     def test_ai_analyzer_init_with_api_key(self):
         """测试有 API Key 初始化"""
         with patch.dict("os.environ", {"DEEPSEEK_API_KEY": "test_key"}):
-            from asset_lens.strategy.ai_analyzer import AIAnalyzer
+            from asset_lens.strategy.ai_analyzer import LegacyAIAnalyzer
 
-            analyzer = AIAnalyzer()
+            analyzer = LegacyAIAnalyzer()
             assert analyzer.enabled is True
             assert analyzer.api_key == "test_key"
 
     def test_build_analysis_prompt(self):
         """测试构建分析提示词"""
         with patch.dict("os.environ", {}, clear=True):
-            from asset_lens.strategy.ai_analyzer import AIAnalyzer
+            from asset_lens.strategy.ai_analyzer import LegacyAIAnalyzer
 
-            analyzer = AIAnalyzer()
+            analyzer = LegacyAIAnalyzer()
 
             stock_data = {
                 "code": "sh600519",
@@ -113,9 +113,9 @@ class TestAIAnalyzer:
     def test_build_analysis_prompt_with_market_data(self):
         """测试构建分析提示词（含市场数据）"""
         with patch.dict("os.environ", {}, clear=True):
-            from asset_lens.strategy.ai_analyzer import AIAnalyzer
+            from asset_lens.strategy.ai_analyzer import LegacyAIAnalyzer
 
-            analyzer = AIAnalyzer()
+            analyzer = LegacyAIAnalyzer()
 
             stock_data = {"code": "sh600519", "name": "测试", "price": 100}
             market_data = {"index_change": 1.5}
@@ -126,9 +126,9 @@ class TestAIAnalyzer:
     def test_build_analysis_prompt_with_strategy_signal(self):
         """测试构建分析提示词（含策略信号）"""
         with patch.dict("os.environ", {}, clear=True):
-            from asset_lens.strategy.ai_analyzer import AIAnalyzer
+            from asset_lens.strategy.ai_analyzer import LegacyAIAnalyzer
 
-            analyzer = AIAnalyzer()
+            analyzer = LegacyAIAnalyzer()
 
             stock_data = {"code": "sh600519", "name": "测试", "price": 100}
 
@@ -138,9 +138,9 @@ class TestAIAnalyzer:
     def test_default_result(self):
         """测试默认结果"""
         with patch.dict("os.environ", {}, clear=True):
-            from asset_lens.strategy.ai_analyzer import AIAnalyzer, AIDecision
+            from asset_lens.strategy.ai_analyzer import LegacyAIAnalyzer, AIDecision
 
-            analyzer = AIAnalyzer()
+            analyzer = LegacyAIAnalyzer()
 
             result = analyzer._default_result("测试原因")
             assert result.decision == AIDecision.WAIT
@@ -150,9 +150,9 @@ class TestAIAnalyzer:
 
     def test_parse_response_valid_json(self):
         """测试解析有效 JSON 响应"""
-        from asset_lens.strategy.ai_analyzer import AIAnalyzer, AIDecision
+        from asset_lens.strategy.ai_analyzer import LegacyAIAnalyzer, AIDecision
 
-        analyzer = AIAnalyzer()
+        analyzer = LegacyAIAnalyzer()
 
         content = (
             '{"d": "buy", "c": 80, "r": "技术面好", "rl": "low", "kf": ["因素1"], "ms": "乐观", "sl": 90, "tp": 110}'
@@ -168,9 +168,9 @@ class TestAIAnalyzer:
 
     def test_parse_response_invalid_json(self):
         """测试解析无效 JSON 响应"""
-        from asset_lens.strategy.ai_analyzer import AIAnalyzer, AIDecision
+        from asset_lens.strategy.ai_analyzer import LegacyAIAnalyzer, AIDecision
 
-        analyzer = AIAnalyzer()
+        analyzer = LegacyAIAnalyzer()
 
         content = "invalid json"
         result = analyzer._parse_response(content)
@@ -181,9 +181,9 @@ class TestAIAnalyzer:
     def test_analyze_stock_sync_disabled(self):
         """测试同步分析（未启用）"""
         with patch.dict("os.environ", {}, clear=True):
-            from asset_lens.strategy.ai_analyzer import AIAnalyzer, AIDecision
+            from asset_lens.strategy.ai_analyzer import LegacyAIAnalyzer, AIDecision
 
-            analyzer = AIAnalyzer()
+            analyzer = LegacyAIAnalyzer()
 
             result = analyzer.analyze_stock_sync({"code": "sh600519"})
             assert result.decision == AIDecision.WAIT
@@ -192,9 +192,9 @@ class TestAIAnalyzer:
     def test_batch_analyze(self):
         """测试批量分析"""
         with patch.dict("os.environ", {}, clear=True):
-            from asset_lens.strategy.ai_analyzer import AIAnalyzer
+            from asset_lens.strategy.ai_analyzer import LegacyAIAnalyzer
 
-            analyzer = AIAnalyzer()
+            analyzer = LegacyAIAnalyzer()
 
             stocks = [
                 {"code": "sh600519", "name": "茅台"},

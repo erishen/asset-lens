@@ -2,6 +2,7 @@
 报告生成 CLI 命令
 """
 
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any, cast
@@ -10,6 +11,8 @@ import click
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
+
+logger = logging.getLogger(__name__)
 
 _global_rates: dict[str, float | bool | None] = {"usd": None, "hkd": None, "loaded": False}
 
@@ -27,7 +30,7 @@ def _get_global_rates(data_dir: Path | None = None) -> tuple[float, float]:
             usd_rate, hkd_rate = CSVParser.get_exchange_rates(data_dir)
             _global_rates["usd"] = usd_rate
             _global_rates["hkd"] = hkd_rate
-        except Exception:
+        except (ValueError, KeyError, TypeError):
             _global_rates["usd"] = float(config.default_usd_rate)
             _global_rates["hkd"] = float(config.default_hkd_rate)
 
@@ -926,7 +929,8 @@ def register_report_commands(cli: click.Group) -> None:
                     console.print(Panel(summary, title="投资组合", border_style="blue"))
                 else:
                     console.print("[yellow]⚠️ 无投资组合数据[/yellow]")
-            except Exception:
+            except Exception as e:
+                logger.debug(f"忽略异常: {e}")
                 console.print("[yellow]⚠️ 无法加载投资组合[/yellow]")
 
             console.print("\n✅ 日度报告生成完成！")
@@ -1025,7 +1029,8 @@ def _train_model_if_needed(model_path, prediction_days: int, max_age_days: int =
                         if len(df) >= 60:
                             stocks_price_data[code] = df
                             success_count += 1
-            except Exception:
+            except Exception as e:
+                logger.debug(f"忽略异常: {e}")
                 continue
 
         if success_count < 10:
@@ -1146,7 +1151,8 @@ def _get_ml_predictions_for_model(
                     bullish.append({"code": code, "name": name, "prob": prob * 100})
                 elif prob <= bearish_threshold:
                     bearish.append({"code": code, "name": name, "prob": (1 - prob) * 100})
-        except Exception:
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
             continue
 
     bullish.sort(key=lambda x: x["prob"], reverse=True)

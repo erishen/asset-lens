@@ -182,7 +182,7 @@ class FundamentalFetcher:
                     pe = float(latest.get("pe", 0) or 0)
                     pb = float(latest.get("pb", 0) or 0)
                     return pe, pb
-            except Exception:
+            except (ValueError, TypeError):
                 pass
         return 0.0, 0.0
 
@@ -765,8 +765,8 @@ class MoneyFlowFetcher:
                     if body and ("BOARD_NAME" in body or "INDUSTRY" in body) and len(body) > 100:
                         captured_data.append(body)
                         logger.info("捕获到行业流向数据响应")
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"忽略异常: {e}")
 
         try:
             logger.info("启动 Playwright 浏览器...")

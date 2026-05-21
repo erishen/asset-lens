@@ -6,7 +6,7 @@ from decimal import Decimal
 
 import pytest
 
-from asset_lens.report.risk_analysis import RiskAnalyzer
+from asset_lens.report.risk_analysis import LegacyRiskAnalyzer
 
 
 class TestRiskAnalyzer:
@@ -15,7 +15,7 @@ class TestRiskAnalyzer:
     @pytest.fixture
     def analyzer(self):
         """Create analyzer instance"""
-        return RiskAnalyzer()
+        return LegacyRiskAnalyzer()
 
     def test_init(self, analyzer):
         """Test initialization"""

@@ -3,7 +3,7 @@ Console printer for asset-lens.
 控制台打印器 - 处理报告的控制台输出
 """
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import Any
 
 from rich.console import Console
@@ -152,5 +152,5 @@ class ConsolePrinter:
             if amount >= Decimal("10000"):
                 return f"¥{amount / Decimal('10000'):.1f}万"
             return f"¥{amount:.0f}"
-        except Exception:
+        except (ValueError, TypeError, InvalidOperation):
             return value

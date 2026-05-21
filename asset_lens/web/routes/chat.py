@@ -119,8 +119,8 @@ async def chat_qa(request: ChatRequest):
                             if m in model_names:
                                 ollama_model = m
                                 break
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"忽略异常: {e}")
 
                 if ollama_model:
                     full_prompt = f"{system_prompt}\n\n用户问题: {user_message}"
@@ -569,7 +569,7 @@ async def get_config():
                             configs[name] = json.load(f)
                     else:
                         configs[name] = {"path": str(path), "exists": True}
-                except Exception:
+                except (ValueError, KeyError, TypeError):
                     configs[name] = {"error": "读取失败"}
 
         return {

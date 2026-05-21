@@ -394,7 +394,7 @@ class BacktestReporter:
             with open(self.reports_file, encoding="utf-8") as f:
                 data: list[dict[str, Any]] = json.load(f)
                 return data
-        except Exception:
+        except (ValueError, KeyError, TypeError):
             return []
 
     def get_recent_reports(self, limit: int = 10) -> list[dict[str, Any]]:

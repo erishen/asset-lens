@@ -9,6 +9,7 @@ Hong Kong and US stock data fetcher for asset-lens.
 """
 
 import json
+import logging
 import os
 import time
 from collections.abc import Callable
@@ -18,6 +19,8 @@ from typing import Any
 import requests
 
 from ..config import config
+
+logger = logging.getLogger(__name__)
 
 
 class InternationalStockFetcher:
@@ -447,7 +450,8 @@ class InternationalStockFetcher:
 
         try:
             return self._fetch_with_retry(_fetch) or []
-        except Exception:
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
             return []
 
     def search_us_stock(self, keyword: str) -> list[dict[str, Any]]:
@@ -478,7 +482,8 @@ class InternationalStockFetcher:
 
         try:
             return self._fetch_with_retry(_fetch) or []
-        except Exception:
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
             return []
 
     def get_hk_stock_list(self) -> list[dict[str, Any]]:
@@ -511,7 +516,7 @@ class InternationalStockFetcher:
 
         try:
             return self._fetch_with_retry(_fetch) or []
-        except Exception:
+        except (ValueError, TypeError):
             return []
 
     def get_us_stock_list(self) -> list[dict[str, Any]]:
@@ -544,7 +549,7 @@ class InternationalStockFetcher:
 
         try:
             return self._fetch_with_retry(_fetch) or []
-        except Exception:
+        except (ValueError, TypeError):
             return []
 
     def fetch_futures_quote(self, symbol: str) -> dict[str, Any] | None:
@@ -611,7 +616,7 @@ class InternationalStockFetcher:
             with open(self.hk_stock_cache, encoding="utf-8") as f:
                 data = json.load(f)
                 return list(data.get("data", []))
-        except Exception:
+        except (ValueError, KeyError, TypeError):
             return []
 
     def save_us_stocks_cache(self, stocks: list[dict[str, Any]]) -> None:
@@ -631,7 +636,7 @@ class InternationalStockFetcher:
             with open(self.us_stock_cache, encoding="utf-8") as f:
                 data = json.load(f)
                 return list(data.get("data", []))
-        except Exception:
+        except (ValueError, KeyError, TypeError):
             return []
 
 

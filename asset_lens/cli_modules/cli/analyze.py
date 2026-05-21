@@ -3,6 +3,7 @@ Analyze CLI commands for asset-lens.
 分析命令模块 - 包含 analyze, calculate, pnl, estimate, analyze-sold
 """
 
+import logging
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, cast
@@ -11,6 +12,8 @@ import click
 from rich import box
 from rich.console import Console
 from rich.table import Table
+
+logger = logging.getLogger(__name__)
 
 
 def _get_data_dir(data_mode: str | None) -> Path | None:
@@ -77,7 +80,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                 if data_dir
                 else (config.default_usd_rate, config.default_hkd_rate)
             )
-        except Exception:
+        except (ValueError, KeyError, TypeError):
             usd_rate, hkd_rate = config.default_usd_rate, config.default_hkd_rate
 
         portfolio = Portfolio(
@@ -179,7 +182,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                 if data_dir
                 else (config.default_usd_rate, config.default_hkd_rate)
             )
-        except Exception:
+        except (ValueError, KeyError, TypeError):
             usd_rate, hkd_rate = config.default_usd_rate, config.default_hkd_rate
 
         portfolio = Portfolio(
@@ -307,7 +310,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                         count += 1
                     if count > 0:
                         market_change = total_change / count / Decimal("100")
-            except Exception:
+            except (ValueError, TypeError):
                 pass
 
             results = estimate_all_products(products, market_change, is_weekly=weekly)
@@ -535,7 +538,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                     try:
                         date_str = dir_name.replace("money_csv_", "")
                         end_date = datetime.strptime(date_str, "%Y%m%d").date()
-                    except Exception:
+                    except ValueError:
                         pass
 
             # 获取汇率
@@ -546,7 +549,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                     rates = CSVParser.get_exchange_rates(data_dir)
                     usd_rate = Decimal(str(rates[0]))
                     hkd_rate = Decimal(str(rates[1]))
-                except Exception:
+                except (ValueError, TypeError):
                     pass
 
             # 1. 持有中产品收益
@@ -580,7 +583,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                                 try:
                                     sold_initial += Decimal(row[19]) if row[19] else Decimal("0")
                                     sold_profit += Decimal(row[20]) if row[20] else Decimal("0")
-                                except Exception:
+                                except (ValueError, TypeError):
                                     pass
 
             # 3. 总计
@@ -601,7 +604,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                                 dt = datetime.strptime(r["date"], "%Y-%m-%d")
                                 if start_date is None or dt.date() < start_date:
                                     start_date = dt.date()
-                            except Exception:
+                            except ValueError:
                                 pass
                         if isinstance(r, dict) and r.get("type") == "buy":
                             initial += Decimal(str(r.get("amount", 0)))
@@ -610,7 +613,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                     try:
                         start_date = datetime.strptime(str(p.start_date), "%Y-%m-%d").date()
                         initial = p.initial_amount or Decimal("0")
-                    except Exception:
+                    except ValueError:
                         pass
 
                 if start_date:
@@ -709,7 +712,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                                     tx_date = datetime.strptime(date_str, "%Y-%m-%d").date()
                                     if base_date is None or tx_date < base_date:
                                         base_date = tx_date
-                                except Exception:
+                                except ValueError:
                                     pass
                     # 从开始日期找最早日期（缺失交易记录的产品）
                     if p.start_date and (base_date is None or p.start_date < base_date):
@@ -736,7 +739,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                                             elif tx_type == "sell":
                                                 all_cashflows.append({"amount": amount, "days": days})
                                                 tx_count += 1
-                                        except Exception:
+                                        except (ValueError, TypeError):
                                             pass
                                 if p.current_amount:
                                     total_current_value += p.current_amount
@@ -767,8 +770,8 @@ def register_analyze_commands(cli: click.Group) -> None:
                             click.echo(
                                 f"   (基于 {tx_count} 笔买入/卖出记录 + {len([p for p in products if not (p.transaction_records and isinstance(p.transaction_records, str) and CSVParser._parse_transaction_records(p.transaction_records))])} 个一次性买入产品)"
                             )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"忽略异常: {e}")
 
             # 7. 按年份分组
             by_year: dict[int, dict[str, int | float | list]] = {}
@@ -861,7 +864,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                     rates = CSVParser.get_exchange_rates(data_dir)
                     Decimal(str(rates[0]))
                     Decimal(str(rates[1]))
-                except Exception:
+                except (ValueError, TypeError):
                     pass
 
             # 按投资时间分组
@@ -878,7 +881,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                     try:
                         date_str = dir_name.replace("money_csv_", "")
                         end_date = datetime.strptime(date_str, "%Y%m%d").date()
-                    except Exception:
+                    except ValueError:
                         pass
 
             for p in products:
@@ -1093,7 +1096,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                     try:
                         date_str = dir_name.replace("money_csv_", "")
                         end_date = datetime.strptime(date_str, "%Y%m%d").date()
-                    except Exception:
+                    except ValueError:
                         pass
 
             Decimal("7.2")
@@ -1103,7 +1106,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                     rates = CSVParser.get_exchange_rates(data_dir)
                     Decimal(str(rates[0]))
                     Decimal(str(rates[1]))
-                except Exception:
+                except (ValueError, TypeError):
                     pass
 
             all_cashflows: list[dict[str, Any]] = []
@@ -1119,7 +1122,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                                 tx_date = datetime.strptime(date_str, "%Y-%m-%d").date()
                                 if base_date is None or tx_date < base_date:
                                     base_date = tx_date
-                            except Exception:
+                            except ValueError:
                                 pass
                 if p.start_date and (base_date is None or p.start_date < base_date):
                     base_date = p.start_date
@@ -1150,7 +1153,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                             try:
                                 total = float(row[6]) if row[6] else 0
                                 consumption_data[month_str] = total
-                            except Exception:
+                            except (ValueError, TypeError):
                                 pass
                 click.echo(f"   消费记录: {len(consumption_data)} 个月")
             else:
@@ -1289,7 +1292,7 @@ def register_analyze_commands(cli: click.Group) -> None:
                                 try:
                                     sold_initial += Decimal(row[19]) if row[19] else Decimal("0")
                                     sold_profit += Decimal(row[20]) if row[20] else Decimal("0")
-                                except Exception:
+                                except (ValueError, TypeError):
                                     pass
 
             total_investment = holding_initial + sold_initial
@@ -1336,8 +1339,8 @@ def register_analyze_commands(cli: click.Group) -> None:
                                                 "product": p.name,
                                             }
                                         )
-                                except Exception:
-                                    pass
+                                except Exception as e:
+                                    logger.debug(f"忽略异常: {e}")
                     else:
                         if p.start_date and p.initial_amount and p.initial_amount > 0 and p.current_amount:
                             days = (p.start_date - base_date).days

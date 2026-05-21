@@ -76,7 +76,8 @@ async def handle_market_websocket(websocket: WebSocket):
                 await asyncio.sleep(30)
                 try:
                     await websocket.send_json({"type": "ping"})
-                except Exception:
+                except Exception as e:
+                    logger.debug(f"忽略异常: {e}")
                     break
 
         heartbeat_task = asyncio.create_task(heartbeat())

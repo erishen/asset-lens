@@ -181,7 +181,7 @@ class IRRCalculator:
         try:
             irr_value = numpy_irr(cashflows)
             return float(irr_value * 100)  # 转换为百分比
-        except Exception:
+        except (ValueError, TypeError):
             return None
 
     @staticmethod
@@ -267,7 +267,8 @@ class IRRCalculator:
                     try:
                         irr_value = numpy_irr(cashflows)
                         return irr_value * 100 if irr_value is not None else None
-                    except Exception:
+                    except Exception as e:
+                        logger.debug(f"忽略异常: {e}")
                         return None
                 return None
 
@@ -276,7 +277,8 @@ class IRRCalculator:
             try:
                 irr_value = numpy_irr(cashflows)
                 return irr_value * 100 if irr_value is not None else None
-            except Exception:
+            except Exception as e:
+                logger.debug(f"忽略异常: {e}")
                 return None
 
         return None
@@ -390,7 +392,7 @@ class IRRCalculator:
                 (Decimal("1") + return_rate / Decimal("100")) ** (Decimal("1") / years) - Decimal("1")
             ) * Decimal("100")
             return annual_return
-        except Exception:
+        except (ValueError, TypeError):
             # 如果计算失败，使用简单线性年化
             annual_return = return_rate * Decimal("360") / Decimal(days)
             return annual_return
@@ -490,8 +492,8 @@ class IRRCalculator:
                 amounts = [cf[1] for cf in cashflows]
                 result = numpy_xirr(amounts, dates)
                 return result * 100 if result is not None else None
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"忽略异常: {e}")
 
         sorted_cfs = sorted(cashflows, key=lambda x: x[0])
         base_date = sorted_cfs[0][0]

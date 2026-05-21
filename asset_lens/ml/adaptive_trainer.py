@@ -341,7 +341,8 @@ class AdaptiveMLTrainer:
             from ..db.database import db_manager
 
             return db_manager.get_stock_codes()[:100]
-        except Exception:
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
             return ["sh600519", "sh601318", "sh600036", "sz000001", "sz000002"]
 
     def _train_with_config(

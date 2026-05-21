@@ -297,7 +297,7 @@ class ModelRetrainer:
             with open(predictions_file, encoding="utf-8") as f:
                 data: list[dict[str, Any]] = json.load(f)
                 return len(data)
-        except Exception:
+        except (ValueError, KeyError, TypeError):
             return 0
 
     def _save_version(self, version: ModelVersion) -> None:
@@ -332,7 +332,7 @@ class ModelRetrainer:
             with open(versions_file, encoding="utf-8") as f:
                 data: list[dict[str, Any]] = json.load(f)
                 return data
-        except Exception:
+        except (ValueError, KeyError, TypeError):
             return []
 
     def _log_retraining(self, result: RetrainingResult) -> None:
@@ -344,7 +344,7 @@ class ModelRetrainer:
             try:
                 with open(log_file, encoding="utf-8") as f:
                     logs = json.load(f)
-            except Exception:
+            except (ValueError, KeyError, TypeError):
                 pass
 
         logs.append(

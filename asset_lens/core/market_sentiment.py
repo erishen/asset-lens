@@ -10,8 +10,11 @@ Market Sentiment Analyzer for asset-lens.
 5. 投资建议生成
 """
 
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -155,7 +158,8 @@ class MarketSentimentAnalyzer:
                                 total_score += score * weight
                                 descriptions.append(f"{name}{desc}({change_pct:+.2f}%)")
                                 count += 1
-                except Exception:
+                except Exception as e:
+                    logger.debug(f"忽略异常: {e}")
                     continue
 
             if count == 0:

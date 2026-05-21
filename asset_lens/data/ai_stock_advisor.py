@@ -10,11 +10,14 @@ AI 智能选股顾问 - 基于机器学习和规则的智能选股建议
 """
 
 import json
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
 from ..config import config
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -392,7 +395,8 @@ class AIStockAdvisor:
                     market_environment=market_environment,
                 )
                 advices.append(advice)
-            except Exception:
+            except Exception as e:
+                logger.debug(f"忽略异常: {e}")
                 continue
 
         advices.sort(key=lambda x: x.confidence, reverse=True)

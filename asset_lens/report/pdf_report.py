@@ -3,6 +3,7 @@ PDF report generation module for asset-lens.
 PDF 报告生成模块 - 使用 reportlab 生成专业投资报告
 """
 
+import logging
 import os
 from datetime import datetime
 from pathlib import Path
@@ -15,6 +16,8 @@ from reportlab.lib.units import cm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Image, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+logger = logging.getLogger(__name__)
 
 
 class PDFReportGenerator:
@@ -50,8 +53,8 @@ class PDFReportGenerator:
                     pdfmetrics.registerFont(TTFont("ChineseFont", font_path))
                     self.chinese_font = "ChineseFont"
                     break
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"忽略异常: {e}")
 
     def _setup_styles(self):
         """设置样式"""
@@ -245,8 +248,8 @@ class PDFReportGenerator:
                         img = Image(str(chart_path), width=15 * cm, height=10 * cm)
                         story.append(img)
                         story.append(Spacer(1, 10))
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug(f"忽略异常: {e}")
 
         if analysis_result:
             story.append(PageBreak())

@@ -471,7 +471,7 @@ class DashboardGenerator:
             with open(self.dashboard_file, encoding="utf-8") as f:
                 data: dict[str, Any] = json.load(f)
                 return self._dict_to_dashboard(data)
-        except Exception:
+        except (ValueError, KeyError, TypeError):
             return None
 
     def _dict_to_dashboard(self, data: dict[str, Any]) -> PerformanceDashboard:

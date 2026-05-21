@@ -10,6 +10,7 @@ Announcement Alert Module.
 5. 停复牌提醒
 """
 
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -18,6 +19,8 @@ from typing import Any
 
 from ..config import config
 from .signal_pusher import Priority, Signal, SignalPusher, SignalType
+
+logger = logging.getLogger(__name__)
 
 
 class AnnouncementType(Enum):
@@ -105,8 +108,8 @@ class AnnouncementMonitor:
 
         except ImportError:
             pass
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
 
         return announcements
 
@@ -131,7 +134,8 @@ class AnnouncementMonitor:
                 action_required=impact in [ImpactLevel.POSITIVE_HIGH, ImpactLevel.NEGATIVE_HIGH],
                 action_suggestion=self._get_action_suggestion(impact, ann_type),
             )
-        except Exception:
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
             return None
 
     def _classify_announcement(self, title: str, content: str) -> AnnouncementType:

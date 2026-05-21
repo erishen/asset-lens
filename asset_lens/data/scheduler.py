@@ -60,7 +60,7 @@ class TaskScheduler:
             try:
                 with open(self.log_file, encoding="utf-8") as f:
                     self.tasks = json.load(f)
-            except Exception:
+            except (ValueError, KeyError, TypeError):
                 self.tasks = {}
 
     def _save_log(self) -> None:

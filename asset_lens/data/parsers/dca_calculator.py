@@ -74,7 +74,7 @@ class DCACalculator:
 
             rate = newton(xirr_func, 0.1)
             return Decimal(str(round(rate * 100, 2)))
-        except Exception:
+        except (ValueError, TypeError):
             return None
 
     @staticmethod

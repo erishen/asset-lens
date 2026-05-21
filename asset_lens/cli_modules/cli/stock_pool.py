@@ -3,7 +3,11 @@ Stock Pool CLI commands for asset-lens.
 股票池命令模块 - 包含 stock-pool, track-stocks, investment-status, investment-report
 """
 
+import logging
+
 import click
+
+logger = logging.getLogger(__name__)
 
 
 def register_stock_pool_commands(cli: click.Group) -> None:
@@ -148,7 +152,8 @@ def register_stock_pool_commands(cli: click.Group) -> None:
                         if not confirm:
                             click.echo("❌ 已取消操作")
                             return
-                    except Exception:
+                    except Exception as e:
+                        logger.debug(f"忽略异常: {e}")
                         click.echo("❌ 无法获取确认，请使用 --force 参数强制清空")
                         return
 

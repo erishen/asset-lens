@@ -3,6 +3,7 @@ Risk analyzer for asset-lens.
 风险分析器 - 包含风险相关分析方法
 """
 
+import warnings
 from decimal import Decimal
 from typing import Any
 
@@ -10,8 +11,16 @@ from ..config import config
 from ..data.models import Portfolio
 
 
-class RiskAnalyzer:
-    """风险分析器"""
+class LegacyRiskAnalyzer:
+    """风险分析器 (已废弃，请使用 asset_lens.monitoring.risk_analyzer.RiskAnalyzer)"""
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "LegacyRiskAnalyzer 已废弃，请使用 asset_lens.monitoring.risk_analyzer.RiskAnalyzer",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
 
     def generate_risk_warnings(self, portfolio: Portfolio) -> list[dict[str, Any]]:
         """生成风险警告"""

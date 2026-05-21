@@ -209,8 +209,8 @@ class DatabaseOptimizer:
                 try:
                     session.execute(text(f"ANALYZE {table}"))
                     result["tables"].append(table)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"忽略异常: {e}")
 
             session.commit()
             result["message"] = f"已分析 {len(result['tables'])} 个表"
@@ -282,7 +282,8 @@ class DatabaseOptimizer:
                 for row in result
             ]
             return indexes
-        except Exception:
+        except Exception as e:
+            logger.debug(f"忽略异常: {e}")
             return []
 
     def get_table_stats(self, session: Session) -> dict[str, Any]:
@@ -302,7 +303,8 @@ class DatabaseOptimizer:
                 row = result.fetchone()
                 count = row[0] if row else 0
                 stats[table] = {"row_count": count}
-            except Exception:
+            except Exception as e:
+                logger.debug(f"忽略异常: {e}")
                 stats[table] = {"row_count": 0}
 
         return stats
@@ -328,7 +330,8 @@ class DatabaseOptimizer:
                 session.commit()
                 elapsed = time.perf_counter() - start
                 times.append(elapsed)
-            except Exception:
+            except Exception as e:
+                logger.debug(f"忽略异常: {e}")
                 times.append(-1)
 
         valid_times = [t for t in times if t > 0]

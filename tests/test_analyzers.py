@@ -12,8 +12,8 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent / "asset_lens"))
 
 from asset_lens.analyzers.evaluation_analyzer import EvaluationAnalyzer
-from asset_lens.analyzers.portfolio_analyzer import PortfolioAnalyzer
-from asset_lens.analyzers.risk_analyzer import RiskAnalyzer
+from asset_lens.analyzers.portfolio_analyzer import LegacyPortfolioAnalyzer
+from asset_lens.analyzers.risk_analyzer import LegacyRiskAnalyzer
 from asset_lens.data.models import InvestmentProduct, InvestmentType, Portfolio, RiskLevel
 
 
@@ -157,14 +157,14 @@ class TestRiskAnalyzer:
 
     def test_generate_risk_warnings(self, sample_portfolio):
         """测试生成风险警告"""
-        analyzer = RiskAnalyzer()
+        analyzer = LegacyRiskAnalyzer()
         warnings = analyzer.generate_risk_warnings(sample_portfolio)
 
         assert isinstance(warnings, list)
 
     def test_generate_risk_warnings_with_loss(self, sample_portfolio):
         """测试有亏损产品的风险警告"""
-        analyzer = RiskAnalyzer()
+        analyzer = LegacyRiskAnalyzer()
         warnings = analyzer.generate_risk_warnings(sample_portfolio)
 
         loss_warnings = [w for w in warnings if w["type"] == "loss"]
@@ -172,7 +172,7 @@ class TestRiskAnalyzer:
 
     def test_generate_risk_warnings_empty_portfolio(self):
         """测试空投资组合的风险警告"""
-        analyzer = RiskAnalyzer()
+        analyzer = LegacyRiskAnalyzer()
         portfolio = Portfolio(products=[])
 
         warnings = analyzer.generate_risk_warnings(portfolio)
@@ -181,7 +181,7 @@ class TestRiskAnalyzer:
 
     def test_get_low_return_products(self, sample_portfolio):
         """测试获取低收益产品"""
-        analyzer = RiskAnalyzer()
+        analyzer = LegacyRiskAnalyzer()
 
         low_return = analyzer._get_low_return_products(sample_portfolio, threshold=5.0)
 
@@ -193,7 +193,7 @@ class TestPortfolioAnalyzer:
 
     def test_generate_portfolio_summary(self, sample_portfolio):
         """测试生成投资组合摘要"""
-        analyzer = PortfolioAnalyzer()
+        analyzer = LegacyPortfolioAnalyzer()
         result = analyzer.generate_portfolio_summary(sample_portfolio)
 
         assert isinstance(result, dict)
@@ -202,7 +202,7 @@ class TestPortfolioAnalyzer:
 
     def test_get_top_performers(self, sample_portfolio):
         """测试获取最高收益产品"""
-        analyzer = PortfolioAnalyzer()
+        analyzer = LegacyPortfolioAnalyzer()
 
         result = analyzer.get_top_performers(sample_portfolio)
 
@@ -210,7 +210,7 @@ class TestPortfolioAnalyzer:
 
     def test_get_low_return_products(self, sample_portfolio):
         """测试获取低收益产品"""
-        analyzer = PortfolioAnalyzer()
+        analyzer = LegacyPortfolioAnalyzer()
 
         result = analyzer.get_low_return_products(sample_portfolio)
 
@@ -218,7 +218,7 @@ class TestPortfolioAnalyzer:
 
     def test_get_type_distribution(self, sample_portfolio):
         """测试获取投资类型分布"""
-        analyzer = PortfolioAnalyzer()
+        analyzer = LegacyPortfolioAnalyzer()
 
         result = analyzer.get_type_distribution(sample_portfolio)
 
@@ -226,7 +226,7 @@ class TestPortfolioAnalyzer:
 
     def test_get_risk_distribution(self, sample_portfolio):
         """测试获取风险分布"""
-        analyzer = PortfolioAnalyzer()
+        analyzer = LegacyPortfolioAnalyzer()
 
         result = analyzer.get_risk_distribution(sample_portfolio)
 

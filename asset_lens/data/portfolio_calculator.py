@@ -235,7 +235,7 @@ class PortfolioCalculator:
         if data_dir and data_dir.name.startswith("money_csv_"):
             try:
                 return int(data_dir.name.replace("money_csv_", ""))
-            except Exception:
+            except (ValueError, TypeError):
                 pass
 
         today = date.today()

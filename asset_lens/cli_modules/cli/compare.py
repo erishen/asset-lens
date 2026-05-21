@@ -88,7 +88,7 @@ def register_compare_commands(cli: click.Group) -> None:
                     usd_rate_f, hkd_rate_f = CSVParser.get_exchange_rates(latest_data_dir)
                     usd_rate = Decimal(str(usd_rate_f))
                     hkd_rate = Decimal(str(hkd_rate_f))
-            except Exception:
+            except (ValueError, TypeError):
                 pass
 
             analyzer = ComparisonAnalyzer()
@@ -265,7 +265,7 @@ def _get_initial_products(current_products: list) -> list:
             usd_rate_f, hkd_rate_f = CSVParser.get_exchange_rates(data_dir)
             usd_rate = Decimal(str(usd_rate_f))
             hkd_rate = Decimal(str(hkd_rate_f))
-    except Exception:
+    except (ValueError, TypeError):
         pass
 
     initial_products = []
