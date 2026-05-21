@@ -148,7 +148,7 @@ class FundamentalDataUpdater:
             except Exception as e:
                 logger.debug(f"更新 {code} 资金流向失败: {e}")
 
-        self.money_flow_fetcher._save_cache()
+        self.money_flow_fetcher._save_money_flow_cache()
 
         self.status["last_daily_update"] = datetime.now().isoformat()
         self._save_status()

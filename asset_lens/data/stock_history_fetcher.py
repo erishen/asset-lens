@@ -19,7 +19,7 @@ import os
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from dotenv import load_dotenv
 
@@ -590,7 +590,7 @@ class StockHistoryFetcher:
         """加载历史数据缓存"""
         data = self._cache.load_file("stock_history_baostock.json")
         if data is not None:
-            return data.get("data", {})
+            return cast(dict[str, dict[str, Any]], data.get("data", {}))
         return {}
 
     def get_stocks_with_history(
