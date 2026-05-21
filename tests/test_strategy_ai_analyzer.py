@@ -138,7 +138,7 @@ class TestAIAnalyzer:
     def test_default_result(self):
         """测试默认结果"""
         with patch.dict("os.environ", {}, clear=True):
-            from asset_lens.strategy.ai_analyzer import LegacyAIAnalyzer, AIDecision
+            from asset_lens.strategy.ai_analyzer import AIDecision, LegacyAIAnalyzer
 
             analyzer = LegacyAIAnalyzer()
 
@@ -150,7 +150,7 @@ class TestAIAnalyzer:
 
     def test_parse_response_valid_json(self):
         """测试解析有效 JSON 响应"""
-        from asset_lens.strategy.ai_analyzer import LegacyAIAnalyzer, AIDecision
+        from asset_lens.strategy.ai_analyzer import AIDecision, LegacyAIAnalyzer
 
         analyzer = LegacyAIAnalyzer()
 
@@ -168,7 +168,7 @@ class TestAIAnalyzer:
 
     def test_parse_response_invalid_json(self):
         """测试解析无效 JSON 响应"""
-        from asset_lens.strategy.ai_analyzer import LegacyAIAnalyzer, AIDecision
+        from asset_lens.strategy.ai_analyzer import AIDecision, LegacyAIAnalyzer
 
         analyzer = LegacyAIAnalyzer()
 
@@ -181,7 +181,7 @@ class TestAIAnalyzer:
     def test_analyze_stock_sync_disabled(self):
         """测试同步分析（未启用）"""
         with patch.dict("os.environ", {}, clear=True):
-            from asset_lens.strategy.ai_analyzer import LegacyAIAnalyzer, AIDecision
+            from asset_lens.strategy.ai_analyzer import AIDecision, LegacyAIAnalyzer
 
             analyzer = LegacyAIAnalyzer()
 

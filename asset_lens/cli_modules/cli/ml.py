@@ -201,6 +201,7 @@ def predict(model: str, code: str, auto_train: bool):
                     console.print("=" * 60)
 
                     from asset_lens.db.database import db_manager
+
                     sync_result = db_manager.auto_sync_history(fast=True, days=180, daily_limit=50)
 
                     if sync_result.get("synced", 0) > 0:
@@ -366,6 +367,7 @@ def predict_pool(model: str, limit: int, auto_train: bool):
                     console.print("=" * 60)
 
                     from asset_lens.db.database import db_manager
+
                     sync_result = db_manager.auto_sync_history(fast=True, days=180, daily_limit=50)
 
                     if sync_result.get("synced", 0) > 0:
@@ -634,6 +636,7 @@ def train_db(model_type: str, days: int, output: str):
         console.print("🔄 正在自动同步股票历史数据...")
 
         from asset_lens.db.database import db_manager
+
         sync_result = db_manager.auto_sync_history(fast=True, days=180, daily_limit=50)
 
         if sync_result.get("synced", 0) > 0:

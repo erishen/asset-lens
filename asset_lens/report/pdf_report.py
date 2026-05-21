@@ -273,7 +273,9 @@ class PDFReportGenerator:
 
             if "warnings" in analysis_result:
                 story.append(Paragraph("风险警告", self.styles["ChineseBody"]))
-                story.extend(Paragraph(f"⚠️ {warning}", self.styles["ChineseBody"]) for warning in analysis_result["warnings"])
+                story.extend(
+                    Paragraph(f"⚠️ {warning}", self.styles["ChineseBody"]) for warning in analysis_result["warnings"]
+                )
 
         doc.build(story)
 

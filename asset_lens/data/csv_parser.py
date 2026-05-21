@@ -394,7 +394,11 @@ class CSVParser:
 
     @classmethod
     def _calculate_irr_for_products(
-        cls, products: list[InvestmentProduct], reference_date: datetime | None = None, usd_rate: float = 7.1242, hkd_rate: float = 0.9157
+        cls,
+        products: list[InvestmentProduct],
+        reference_date: datetime | None = None,
+        usd_rate: float = 7.1242,
+        hkd_rate: float = 0.9157,
     ) -> list[InvestmentProduct]:
         """
         对有交易记录的产品使用 IRR 计算年化收益率（与 ts-demo 保持一致）
@@ -439,12 +443,7 @@ class CSVParser:
             if is_usd_investment or is_hkd_investment:
                 rate = product_usd_rate if is_usd_investment else product_hkd_rate
                 transactions = [
-                    {
-                        "date": t["date"],
-                        "type": t["type"],
-                        "amount": round(t["amount"] * rate)
-                    }
-                    for t in transactions
+                    {"date": t["date"], "type": t["type"], "amount": round(t["amount"] * rate)} for t in transactions
                 ]
 
             total_buy = sum(t["amount"] for t in transactions if t["type"] == "buy") if transactions else 0
@@ -489,7 +488,6 @@ class CSVParser:
                     )
                     # 数据不一致时，使用交易记录计算收益率（交易记录更准确）
                     # 不跳过后续的 IRR 计算，让系统使用交易记录计算
-
 
             if total_buy > 0:
                 current_value = current_amount_cny
@@ -969,6 +967,7 @@ class CSVParser:
 
         # 对所有产品调用 IRR 计算（与 ts-demo 保持一致）
         from datetime import datetime
+
         reference_date = datetime.now()
         products = cls._calculate_irr_for_products(
             products, reference_date, float(config.default_usd_rate), float(config.default_hkd_rate)

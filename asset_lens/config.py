@@ -362,10 +362,11 @@ class Config:
             return self.data_path
 
         # 首先检查 real_data_path 是否已经是一个 money_csv_* 目录
-        if self.real_data_path and (
-            self.real_data_path.name.startswith("money_csv_") or
-            self.real_data_path.name.startswith("money_")
-        ) and self.real_data_path.exists():
+        if (
+            self.real_data_path
+            and (self.real_data_path.name.startswith("money_csv_") or self.real_data_path.name.startswith("money_"))
+            and self.real_data_path.exists()
+        ):
             return self.real_data_path
 
         # 其次尝试在 real_data_path 中查找 money_csv_* 目录

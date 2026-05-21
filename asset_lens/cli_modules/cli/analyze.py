@@ -450,13 +450,15 @@ def register_analyze_commands(cli: click.Group) -> None:
                 total_profit += Decimal(str(profit))
 
                 if days > 0:
-                    records_with_days.append({
-                        "name": record.name,
-                        "days": days,
-                        "return_rate": return_rate,
-                        "annual_return": annual_return,
-                        "initial": initial,
-                    })
+                    records_with_days.append(
+                        {
+                            "name": record.name,
+                            "days": days,
+                            "return_rate": return_rate,
+                            "annual_return": annual_return,
+                            "initial": initial,
+                        }
+                    )
 
                 table.add_row(
                     record.name[:25],
@@ -505,6 +507,7 @@ def register_analyze_commands(cli: click.Group) -> None:
         except Exception as e:
             click.echo(f"❌ 分析失败: {e}", err=True)
             import traceback
+
             traceback.print_exc()
 
     @cli.command("annual-return")
@@ -1424,4 +1427,5 @@ def register_analyze_commands(cli: click.Group) -> None:
         except Exception as e:
             click.echo(f"❌ 分析失败: {e}", err=True)
             import traceback
+
             traceback.print_exc()

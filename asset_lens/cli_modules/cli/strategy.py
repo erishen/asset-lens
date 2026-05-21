@@ -348,6 +348,7 @@ def register_strategy_commands(cli: click.Group) -> None:
                             from click.testing import CliRunner
 
                             from asset_lens.cli_modules.cli.ml import train as train_cmd
+
                             runner = CliRunner()
                             result = runner.invoke(train_cmd, [])
                             if result.exit_code == 0 and model_path.exists():
@@ -1149,11 +1150,7 @@ def _check_market_environment() -> tuple:
 
 def _generate_buy_reason(evaluation: dict) -> str:
     """生成买入理由"""
-    reasons = [
-        f"{detail.get('condition', '')}"
-        for detail in evaluation.get("details", [])
-        if detail.get("matched")
-    ]
+    reasons = [f"{detail.get('condition', '')}" for detail in evaluation.get("details", []) if detail.get("matched")]
     return ", ".join(reasons) if reasons else "策略匹配"
 
 
