@@ -93,16 +93,16 @@ class TestTransactionParser:
         assert transaction_parser is not None
 
     def test_transaction_class(self):
-        """测试 Transaction 类"""
-        from asset_lens.data.transaction_parser import Transaction
+        """测试 DCATransaction 类"""
+        from asset_lens.data.transaction_parser import DCATransaction
 
-        assert Transaction is not None
+        assert DCATransaction is not None
 
     def test_investment_type_enum(self):
-        """测试投资类型枚举"""
-        from asset_lens.data.transaction_parser import InvestmentType
+        """测试定投类型枚举"""
+        from asset_lens.data.transaction_parser import DCAInvestmentType
 
-        assert InvestmentType is not None
+        assert DCAInvestmentType is not None
 
 
 class TestStockActivityAnalyzer:

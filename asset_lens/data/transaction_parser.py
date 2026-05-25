@@ -14,7 +14,7 @@ from ..core.holidays import calculate_fund_trading_days, calculate_working_days,
 logger = logging.getLogger(__name__)
 
 
-class InvestmentType(Enum):
+class DCAInvestmentType(Enum):
     """定投类型"""
 
     FIXED = "fixed"
@@ -24,7 +24,7 @@ class InvestmentType(Enum):
 
 
 @dataclass
-class Transaction:
+class DCATransaction:
     """交易记录"""
 
     date: date
@@ -33,7 +33,7 @@ class Transaction:
     is_period_investment: bool = False
     work_days: int = 0
     daily_amount: Decimal = Decimal("0")
-    investment_type: InvestmentType = InvestmentType.FIXED
+    investment_type: DCAInvestmentType = DCAInvestmentType.FIXED
     original_record: str = ""
 
 
@@ -41,7 +41,7 @@ class Transaction:
 class ParsedTransactions:
     """解析后的交易记录集合"""
 
-    transactions: list[Transaction]
+    transactions: list[DCATransaction]
     total_buy: Decimal
     total_sell: Decimal
     net_invest: Decimal
@@ -118,7 +118,7 @@ def parse_period_record(
     suffix: int,
     is_qdii: bool = False,
     stop_periods: list[tuple[date, date]] | None = None,
-) -> list[Transaction]:
+) -> list[DCATransaction]:
     """
     解析定投期间记录
 
@@ -128,7 +128,7 @@ def parse_period_record(
     - 浮动定投：2025/9/19-now:buy:100±20
     - 估值模式定投：2025/9/19-now:buy:100-300-500
     """
-    transactions: list[Transaction] = []
+    transactions: list[DCATransaction] = []
 
     parts = period_record.split(":")
     if len(parts) < 3:
@@ -175,7 +175,7 @@ def parse_period_record(
                 normal_valuation = Decimal(amounts[1])
                 daily_amount = normal_valuation
                 total_amount = normal_valuation * work_days
-                investment_type = InvestmentType.VALUATION
+                investment_type = DCAInvestmentType.VALUATION
             except (ValueError, InvalidOperation):
                 return transactions
         else:
@@ -188,7 +188,7 @@ def parse_period_record(
                 max_amount = Decimal(amount_parts[1])
                 daily_amount = (min_amount + max_amount) / 2
                 total_amount = daily_amount * work_days
-                investment_type = InvestmentType.SMART
+                investment_type = DCAInvestmentType.SMART
             except (ValueError, InvalidOperation):
                 return transactions
         else:
@@ -199,19 +199,19 @@ def parse_period_record(
             base_amount = Decimal(base_str)
             daily_amount = base_amount
             total_amount = base_amount * work_days
-            investment_type = InvestmentType.FLOATING
+            investment_type = DCAInvestmentType.FLOATING
         except (ValueError, InvalidOperation):
             return transactions
     else:
         try:
             daily_amount = Decimal(amount_str)
             total_amount = daily_amount * work_days
-            investment_type = InvestmentType.FIXED
+            investment_type = DCAInvestmentType.FIXED
         except (ValueError, InvalidOperation):
             return transactions
 
     transactions.append(
-        Transaction(
+        DCATransaction(
             date=start_date,
             action=action,
             amount=total_amount,
@@ -249,7 +249,7 @@ def parse_transactions(transaction_string: str, suffix: int, is_qdii: bool = Fal
         )
 
     cleaned = transaction_string.strip().rstrip(";")
-    transactions: list[Transaction] = []
+    transactions: list[DCATransaction] = []
 
     stop_periods = parse_stop_periods(cleaned)
 
@@ -274,7 +274,7 @@ def parse_transactions(transaction_string: str, suffix: int, is_qdii: bool = Fal
                 amount = Decimal(parts[2].strip())
 
                 transactions.append(
-                    Transaction(
+                    DCATransaction(
                         date=tx_date,
                         action=action,
                         amount=amount,
@@ -323,7 +323,7 @@ def calculate_net_invest_from_transactions(
     parsed = parse_transactions(transaction_string, suffix, is_qdii)
 
     # 检查是否有智能定投（totalAmount = 0 的情况）
-    has_smart_investment = any(tx.investment_type == InvestmentType.SMART for tx in parsed.transactions)
+    has_smart_investment = any(tx.investment_type == DCAInvestmentType.SMART for tx in parsed.transactions)
 
     # 智能定投使用 CSV 初始金额
     if has_smart_investment and initial_amount:
