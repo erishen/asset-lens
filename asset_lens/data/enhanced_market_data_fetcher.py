@@ -19,21 +19,9 @@ from typing import Any
 
 from ..config import config
 from ..utils.http_client import HTTPClient
+from .providers.cache import CacheEntry
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class CacheEntry:
-    """缓存条目"""
-
-    data: dict[str, Any]
-    timestamp: float
-    ttl: int = 3600  # 默认1小时过期
-
-    def is_expired(self) -> bool:
-        """检查是否过期"""
-        return time.time() - self.timestamp > self.ttl
 
 
 @dataclass
@@ -139,14 +127,15 @@ class EnhancedMarketDataFetcher:
         """从缓存获取数据"""
         entry = self._cache.get(key)
         if entry and not entry.is_expired():
-            return entry.data
+            return entry.value  # type: ignore[no-any-return]
         return None
 
     def _set_cache(self, key: str, data: dict[str, Any], ttl: int | None = None):
         """设置缓存"""
         self._cache[key] = CacheEntry(
-            data=data,
-            timestamp=time.time(),
+            key=key,
+            value=data,
+            created_at=time.time(),
             ttl=ttl or self.cache_ttl,
         )
 
