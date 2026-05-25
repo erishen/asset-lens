@@ -959,17 +959,21 @@ class MoneyFlowFetcher:
         return None
 
     def _fetch_industry_flow_from_akshare(self) -> pd.DataFrame | None:
-        """从多个数据源获取行业资金流向数据
+        """从多个数据源获取北向资金行业流向数据
 
-        优先级：新浪行业板块(非交易时间可用) → 东方财富push2 → Playwright → AkShare北向持股
+        优先级：AkShare北向持股(真正的北向数据) → 东方财富push2 → Playwright → 新浪行业板块(全市场代理)
         """
-        logger.info("尝试从新浪行业板块获取行业资金流向数据（非交易时间可用）...")
-        df = self._fetch_industry_flow_from_sina()
-        if df is not None and not df.empty:
-            logger.info(f"✅ 成功从新浪行业板块获取 {len(df)} 个行业数据")
-            return df
+        if self.akshare:
+            logger.info("尝试从AkShare获取北向持股行业数据（真正的北向资金）...")
+            try:
+                df = self._fetch_north_holding_from_akshare()
+                if df is not None and not df.empty:
+                    logger.info(f"✅ 成功从AkShare北向持股获取 {len(df)} 个行业数据")
+                    return df
+            except Exception as e:
+                logger.warning(f"AkShare北向持股获取失败: {e}")
 
-        logger.info("新浪行业板块获取失败，尝试东方财富push2接口...")
+        logger.info("AkShare北向持股获取失败，尝试东方财富push2接口...")
         df = self._fetch_industry_flow_from_push2()
         if df is not None and not df.empty:
             logger.info(f"✅ 成功从东方财富push2接口获取 {len(df)} 个行业数据")
@@ -981,12 +985,16 @@ class MoneyFlowFetcher:
             logger.info(f"✅ 成功从东方财富Playwright获取 {len(df)} 个行业数据")
             return df
 
-        logger.warning("以上数据源均失败，尝试使用AkShare北向持股数据...")
+        logger.warning("以上数据源均失败，尝试新浪行业板块（全市场代理数据，非北向）...")
+        df = self._fetch_industry_flow_from_sina()
+        if df is not None and not df.empty:
+            logger.info(f"✅ 成功从新浪行业板块获取 {len(df)} 个行业数据（注意：非北向数据，为全市场代理）")
+            return df
 
-        if not self.akshare:
-            logger.warning("AkShare 未安装")
-            return None
+        return None
 
+    def _fetch_north_holding_from_akshare(self) -> pd.DataFrame | None:
+        """使用AkShare获取北向持股行业数据（真正的北向资金数据）"""
         max_retries = 2  # 减少重试次数
         for attempt in range(max_retries):
             try:
