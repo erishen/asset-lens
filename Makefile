@@ -354,7 +354,7 @@ calculate: ## 快捷计算收益率（显示收益率排名前10）
 .PHONY: compare
 compare: ## 对比不同时期的投资收益变化
 	@echo "📊 对比投资收益变化..."
-	$(PY) compare
+	$(PY) compare $(COMPARE_ARGS)
 
 .PHONY: pnl
 pnl: ## 实时盈亏估算（基于市场指数）

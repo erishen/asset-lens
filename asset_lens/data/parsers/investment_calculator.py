@@ -93,7 +93,7 @@ class InvestmentCalculator:
 
     @staticmethod
     def calculate_cashflows_with_days(
-        transactions: list[dict], start_date, current_amount, total_days: int
+        transactions: list[dict], start_date, current_amount, total_days: int, interest_payment: Decimal | None = None
     ) -> list[dict]:
         """
         计算现金流（使用 days360 计算天数，与 ts-demo 一致）
@@ -102,6 +102,7 @@ class InvestmentCalculator:
             start_date: 开始日期
             current_amount: 当前金额
             total_days: 总投资天数
+            interest_payment: 利息发放（分红等）
         Returns:
             现金流列表，格式为 [{"amount": float, "days": int}, ...]
         """
@@ -134,8 +135,11 @@ class InvestmentCalculator:
             elif trans["type"] == "sell":
                 cashflows.append({"amount": trans["amount"], "days": trans_days})
 
-        if current_amount:
-            cashflows.append({"amount": float(current_amount), "days": total_days})
+        final_amount = float(current_amount or 0)
+        if interest_payment:
+            final_amount += float(interest_payment)
+        if final_amount:
+            cashflows.append({"amount": final_amount, "days": total_days})
 
         return cashflows
 
@@ -146,19 +150,38 @@ class InvestmentCalculator:
         current_amount: Decimal,
         total_days: int,
         initial_amount: Decimal,
+        interest_payment: Decimal | None = None,
     ) -> list[dict]:
         """
-        计算定投产品的现金流（使用初始金额作为净投入）
+        计算定投产品的现金流（使用每笔交易的实际日期）
         """
         cashflows: list[dict] = []
 
         if not start_date:
             return cashflows
 
-        cashflows.append({"amount": -float(initial_amount), "days": 0})
+        if transactions:
+            for trans in transactions:
+                trans_date_str = trans.get("date", "")
+                try:
+                    trans_date = datetime.strptime(trans_date_str, "%Y/%m/%d").date()
+                    days = days360(start_date, trans_date)
+                    if days < 0:
+                        days = 0
+                except (ValueError, TypeError):
+                    days = 0
+                if trans.get("type") == "buy":
+                    cashflows.append({"amount": -float(trans.get("amount", 0)), "days": days})
+                elif trans.get("type") == "sell":
+                    cashflows.append({"amount": float(trans.get("amount", 0)), "days": days})
+        else:
+            cashflows.append({"amount": -float(initial_amount), "days": 0})
 
-        if current_amount:
-            cashflows.append({"amount": float(current_amount), "days": total_days})
+        final_amount = float(current_amount or 0)
+        if interest_payment:
+            final_amount += float(interest_payment)
+        if final_amount:
+            cashflows.append({"amount": final_amount, "days": total_days})
 
         return cashflows
 
@@ -249,12 +272,14 @@ class InvestmentCalculator:
                 pass
 
             current_value = float(product.current_amount or 0)
+            interest = float(product.interest_payment or 0)
             initial_value = float(product.initial_amount)
-            simple_return = (current_value - initial_value) / initial_value
+            simple_return = (current_value + interest - initial_value) / initial_value
             product.return_rate = Decimal(str(round(simple_return * 100, 2)))
         elif total_buy > 0:
             current_value = float(product.current_amount or 0)
-            net_gain = current_value + total_sell - total_buy
+            interest = float(product.interest_payment or 0)
+            net_gain = current_value + interest + total_sell - total_buy
             simple_return = net_gain / total_buy
             product.return_rate = Decimal(str(round(simple_return * 100, 2)))
         elif product.initial_amount and product.initial_amount > 0:
@@ -287,18 +312,45 @@ class InvestmentCalculator:
                         product.current_amount,
                         total_days,
                         product.initial_amount,
+                        product.interest_payment,
                     )
 
                     if len(cashflows) >= 2:
                         irr = irr_calculator.calculate_irr_with_days(cashflows)
-                        if irr is not None:
+                        if irr is not None and -1 < irr < 10:
                             product.annual_return = Decimal(str(round(irr * 100, 2)))
+                            return product
+
+                if product.return_rate is not None:
+                    simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
+                    product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
+            else:
+                if total_days < 180:
+                    if product.return_rate is not None:
+                        simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
+                        product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
+                elif transactions and len(transactions) > 1 and total_buy > 0:
+                    cashflows = cls.calculate_cashflows_with_days(
+                        transactions, product.start_date, product.current_amount, total_days, product.interest_payment
+                    )
+                    if cashflows and len(cashflows) > 1:
+                        irr = irr_calculator.calculate_irr_with_days(cashflows)
+                        if irr is not None and -1 < irr < 10:
+                            if product.return_rate is not None:
+                                simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
+                                diff = abs(irr - simple_annualized)
+                                if diff > 1:
+                                    product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
+                                else:
+                                    product.annual_return = Decimal(str(round(irr * 100, 2)))
+                            else:
+                                product.annual_return = Decimal(str(round(irr * 100, 2)))
+                            return product
 
                     if product.return_rate is not None:
                         simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
                         product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
-            else:
-                if product.return_rate is not None and total_days > 0:
+                elif product.return_rate is not None:
                     simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
                     product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
 

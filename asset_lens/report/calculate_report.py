@@ -284,8 +284,25 @@ class CalculateReportGenerator:
         )
         self.console.print(explanation)
 
+    def _get_display_amount(self, product: InvestmentProduct, usd_rate: Decimal, hkd_rate: Decimal) -> Decimal:
+        if product.investment_type in [InvestmentType.US_STOCK, InvestmentType.USD_FUND]:
+            rate = product.usd_rate or usd_rate
+            return (product.current_amount or Decimal("0")) * rate
+        elif product.investment_type in [InvestmentType.HK_STOCK, InvestmentType.HK_CASH, InvestmentType.HK_DIVIDEND_FUND]:
+            rate = product.hkd_rate or hkd_rate
+            return (product.current_amount or Decimal("0")) * rate
+        return product.current_amount or Decimal("0")
+
     def _print_top_performers(self, products: list[InvestmentProduct]) -> None:
         self.console.print("\n[bold green]📈 收益率排名前10的产品：[/bold green]")
+
+        usd_rate = Decimal("7.0")
+        hkd_rate = Decimal("0.9")
+        if products:
+            first = products[0]
+            if hasattr(first, "_portfolio") and first._portfolio:
+                usd_rate = first._portfolio.usd_rate or usd_rate
+                hkd_rate = first._portfolio.hkd_rate or hkd_rate
 
         table = Table(
             show_header=True,
@@ -309,7 +326,7 @@ class CalculateReportGenerator:
 
             platform = self._get_main_platform(product)
             days = f"{product.investment_days}" if product.investment_days else "-"
-            amount = self._format_amount(product.current_amount)
+            amount = self._format_amount(self._get_display_amount(product, usd_rate, hkd_rate))
             annual = f"{product.annual_return:.2f}%" if product.annual_return else "-"
             actual = f"{product.return_rate:.2f}%" if product.return_rate else "-"
 
@@ -321,6 +338,14 @@ class CalculateReportGenerator:
 
     def _print_negative_performers(self, products: list[InvestmentProduct]) -> None:
         self.console.print("\n[bold red]📉 收益率为负的产品：[/bold red]")
+
+        usd_rate = Decimal("7.0")
+        hkd_rate = Decimal("0.9")
+        if products:
+            first = products[0]
+            if hasattr(first, "_portfolio") and first._portfolio:
+                usd_rate = first._portfolio.usd_rate or usd_rate
+                hkd_rate = first._portfolio.hkd_rate or hkd_rate
 
         table = Table(
             show_header=True,
@@ -344,7 +369,7 @@ class CalculateReportGenerator:
 
             platform = self._get_main_platform(product)
             days = f"{product.investment_days}" if product.investment_days else "-"
-            amount = self._format_amount(product.current_amount)
+            amount = self._format_amount(self._get_display_amount(product, usd_rate, hkd_rate))
             annual = f"{product.annual_return:.2f}%" if product.annual_return else "-"
             actual = f"{product.return_rate:.2f}%" if product.return_rate else "-"
 
@@ -356,6 +381,14 @@ class CalculateReportGenerator:
 
     def _print_low_positive_performers(self, products: list[InvestmentProduct]) -> None:
         self.console.print("\n[bold yellow]📊 收益率0-2.0%的产品：[/bold yellow]")
+
+        usd_rate = Decimal("7.0")
+        hkd_rate = Decimal("0.9")
+        if products:
+            first = products[0]
+            if hasattr(first, "_portfolio") and first._portfolio:
+                usd_rate = first._portfolio.usd_rate or usd_rate
+                hkd_rate = first._portfolio.hkd_rate or hkd_rate
 
         table = Table(
             show_header=True,
@@ -379,7 +412,7 @@ class CalculateReportGenerator:
 
             platform = self._get_main_platform(product)
             days = f"{product.investment_days}" if product.investment_days else "-"
-            amount = self._format_amount(product.current_amount)
+            amount = self._format_amount(self._get_display_amount(product, usd_rate, hkd_rate))
             annual = f"{product.annual_return:.2f}%" if product.annual_return else "-"
             actual = f"{product.return_rate:.2f}%" if product.return_rate else "-"
 

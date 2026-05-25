@@ -46,8 +46,6 @@ class DCAParser:
                 try:
                     low = Decimal(parts[0].strip())
                     high = Decimal(parts[1].strip())
-                    if low > 0 and high > low and high <= 365 and low <= 100:
-                        return DCAInvestmentType.RANGE, Decimal("0"), high
                     avg = (low + high) / Decimal("2")
                     return DCAInvestmentType.RANGE, avg, high
                 except (ValueError, TypeError, InvalidOperation):

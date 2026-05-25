@@ -476,7 +476,7 @@ class CSVParser:
                 if abs(net_invest - initial_amount_cny) > 1:
                     diff = net_invest - initial_amount_cny
                     diff_days = abs(diff) / 100 if abs(diff) >= 100 else abs(diff) / 50
-                    logger.warning(
+                    logger.debug(
                         f"产品数据不一致: {product.name}",
                         extra={
                             "product_name": product.name,
@@ -532,6 +532,7 @@ class CSVParser:
                             Decimal(str(current_amount_cny)),
                             total_days,
                             Decimal(str(initial_amount_cny)),
+                            Decimal(str(interest_payment_cny)) if interest_payment_cny else None,
                         )
                     else:
                         cashflows = []
@@ -558,6 +559,7 @@ class CSVParser:
                         product.start_date,
                         Decimal(str(current_amount_cny)),
                         total_days,
+                        Decimal(str(interest_payment_cny)) if interest_payment_cny else None,
                     )
 
                     if cashflows and len(cashflows) > 1:
@@ -582,15 +584,7 @@ class CSVParser:
 
                 # 使用交易记录重新计算实际收益率（与 ts-demo 保持一致）
                 if total_buy > 0:
-                    # 对于债券类产品，需要加上利息发放
-                    is_bond_product = (product.investment_type.value and "债" in product.investment_type.value) or (
-                        product.name and "分红" in product.name
-                    )
-
-                    if is_bond_product and interest_payment_cny > 0:
-                        total_value = total_sell + current_amount_cny + interest_payment_cny
-                    else:
-                        total_value = total_sell + current_amount_cny
+                    total_value = total_sell + current_amount_cny + interest_payment_cny
 
                     actual_return = (total_value - total_buy) / total_buy
                     product.return_rate = Decimal(str(round(actual_return * 100, 2)))
@@ -644,7 +638,7 @@ class CSVParser:
 
     @classmethod
     def _calculate_cashflows_with_days(
-        cls, transactions: list[dict], start_date, current_amount, total_days: int
+        cls, transactions: list[dict], start_date, current_amount, total_days: int, interest_payment: Decimal | None = None
     ) -> list[dict]:
         """
         计算现金流（使用 days360 计算天数，与 ts-demo 一致）
@@ -653,6 +647,7 @@ class CSVParser:
             start_date: 开始日期
             current_amount: 当前金额
             total_days: 总投资天数
+            interest_payment: 利息发放（分红等）
         Returns:
             现金流列表，格式为 [{"amount": float, "days": int}, ...]
         """
@@ -664,12 +659,9 @@ class CSVParser:
             return cashflows
 
         for trans in transactions:
-            # 解析交易日期 - 支持多种格式
             date_str = trans["date"]
             try:
-                # 尝试 YYYY/MM/DD-MM/DD 范围格式
                 if "/" in date_str and "-" in date_str:
-                    # 格式: 2025/12/29-2025/12/31，取第一个日期
                     date_parts = date_str.split("-")[0].split("/")
                     trans_date = date(int(date_parts[0]), int(date_parts[1]), int(date_parts[2]))
                 elif "/" in date_str:
@@ -691,9 +683,11 @@ class CSVParser:
             elif trans["type"] == "sell":
                 cashflows.append({"amount": trans["amount"], "days": trans_days})
 
-        # 添加当前金额作为最终现金流
-        if current_amount:
-            cashflows.append({"amount": float(current_amount), "days": total_days})
+        final_amount = float(current_amount or 0)
+        if interest_payment:
+            final_amount += float(interest_payment)
+        if final_amount:
+            cashflows.append({"amount": final_amount, "days": total_days})
 
         return cashflows
 
@@ -705,6 +699,7 @@ class CSVParser:
         current_amount: Decimal,
         total_days: int,
         initial_amount: Decimal,
+        interest_payment: Decimal | None = None,
     ) -> list[dict]:
         """
         计算定投产品的现金流（使用初始金额作为净投入）
@@ -714,6 +709,7 @@ class CSVParser:
             current_amount: 当前金额
             total_days: 总投资天数
             initial_amount: 初始金额（净投入）
+            interest_payment: 利息发放（分红等）
         Returns:
             现金流列表，格式为 [{"amount": float, "days": int}, ...]
         """
@@ -722,12 +718,13 @@ class CSVParser:
         if not start_date:
             return cashflows
 
-        # 定投产品：第一笔投入为初始金额（负数表示流出）
         cashflows.append({"amount": -float(initial_amount), "days": 0})
 
-        # 添加当前金额作为最终现金流
-        if current_amount:
-            cashflows.append({"amount": float(current_amount), "days": total_days})
+        final_amount = float(current_amount or 0)
+        if interest_payment:
+            final_amount += float(interest_payment)
+        if final_amount:
+            cashflows.append({"amount": final_amount, "days": total_days})
 
         return cashflows
 
