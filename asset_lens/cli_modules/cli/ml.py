@@ -759,19 +759,10 @@ def train_adaptive(model_type: str):
     from rich.console import Console
 
     from asset_lens.ml.adaptive_trainer import adaptive_trainer
-    from asset_lens.strategy.ai_analyzer import LegacyAIAnalyzer
 
     console = Console()
-    ai_analyzer = LegacyAIAnalyzer()
-    initial_tokens = ai_analyzer.total_tokens_used
-    initial_cost = ai_analyzer.total_cost
 
     result = adaptive_trainer.analyze_and_train(model_type=model_type)
-
-    final_tokens = ai_analyzer.total_tokens_used
-    final_cost = ai_analyzer.total_cost
-    session_tokens = final_tokens - initial_tokens
-    session_cost = final_cost - initial_cost
 
     if "error" in result:
         console.print(f"[red]❌ {result['error']}[/red]")
@@ -782,12 +773,14 @@ def train_adaptive(model_type: str):
     console.print(f"   准确率: {training_result.get('accuracy', 0):.2%}")
     console.print(f"   AUC: {training_result.get('auc', 0):.2%}")
 
-    console.print("\n📊 AI 资源消耗统计")
-    console.print("=" * 60)
-    console.print(f"  本次 Tokens: {session_tokens:,}")
-    console.print(f"  本次费用: ${session_cost:.6f}")
-    console.print(f"  累计 Tokens: {final_tokens:,}")
-    console.print(f"  累计费用: ${final_cost:.6f}")
+    ai_stats = result.get("ai_stats", {})
+    if ai_stats:
+        console.print("\n📊 AI 资源消耗统计")
+        console.print("=" * 60)
+        console.print(f"  本次 Tokens: {ai_stats.get('session_tokens', 0):,}")
+        console.print(f"  本次费用: ${ai_stats.get('session_cost', 0):.6f}")
+        console.print(f"  累计 Tokens: {ai_stats.get('total_tokens', 0):,}")
+        console.print(f"  累计费用: ${ai_stats.get('total_cost', 0):.6f}")
 
 
 @ml.command()
@@ -829,28 +822,11 @@ def trade():
     from rich.console import Console
 
     from asset_lens.ml.ai_trader import AISimulatedTrader
-    from asset_lens.strategy.ai_analyzer import LegacyAIAnalyzer
 
     console = Console()
-    ai_analyzer = LegacyAIAnalyzer()
-    initial_tokens = ai_analyzer.total_tokens_used
-    initial_cost = ai_analyzer.total_cost
 
     trader = AISimulatedTrader()
     trader.run_trading_session()
-
-    final_tokens = ai_analyzer.total_tokens_used
-    final_cost = ai_analyzer.total_cost
-
-    session_tokens = final_tokens - initial_tokens
-    session_cost = final_cost - initial_cost
-
-    console.print("\n📊 AI 资源消耗统计")
-    console.print("=" * 60)
-    console.print(f"  输入 Tokens: {session_tokens:,}")
-    console.print(f"  估算费用: ${session_cost:.6f}")
-    console.print(f"  累计 Tokens: {final_tokens:,}")
-    console.print(f"  累计费用: ${final_cost:.6f}")
 
     console.print("\n✅ 交易会话完成!")
 
