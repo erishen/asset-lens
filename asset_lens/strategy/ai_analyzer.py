@@ -49,14 +49,14 @@ class AIAnalysisResult:
     total_tokens: int = 0  # 总 token 数
 
 
-class LegacyAIAnalyzer:
-    """AI 分析器 (已废弃，请使用 asset_lens.core.ai_analyzer.AIAnalyzer)"""
+class StockAIAnalyzer:
+    """AI 股票分析器 - 基于AI的单只股票分析"""
 
     SYSTEM_PROMPT = '你是股票分析师，输出JSON格式: {"d":"buy/sell/hold/wait","c":0-100,"r":"理由","rl":"low/medium/high","kf":["因素"],"ms":"乐观/中性/悲观","sl":止损价,"tp":止盈价}'
 
     def __init__(self, *args, **kwargs):
         warnings.warn(
-            "LegacyAIAnalyzer 已废弃，请使用 asset_lens.core.ai_analyzer.AIAnalyzer",
+            "StockAIAnalyzer 用于单只股票分析，组合分析请使用 asset_lens.core.ai_analyzer.AIAnalyzer",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -254,7 +254,7 @@ class AITradingAdvisor:
     """AI 交易顾问"""
 
     def __init__(self):
-        self.analyzer = LegacyAIAnalyzer()
+        self.analyzer = StockAIAnalyzer()
 
     def evaluate_buy_signal(
         self,
@@ -422,5 +422,5 @@ class AITradingAdvisor:
         return {"action": "hold", "reason": f"持仓{holding_days}天，盈亏{profit_rate:.2f}%，继续持有"}
 
 
-ai_analyzer = LegacyAIAnalyzer()
+ai_analyzer = StockAIAnalyzer()
 ai_trading_advisor = AITradingAdvisor()
