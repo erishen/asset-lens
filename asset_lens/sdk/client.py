@@ -80,14 +80,16 @@ class AssetLensClient:
             投资组合分析数据
         """
         try:
-            from asset_lens.config import config
-            from asset_lens.core.analyzer import PortfolioAnalyzer
+            from asset_lens.analysis.portfolio_analyzer import PortfolioAnalyzer
 
-            analyzer = PortfolioAnalyzer(config)
-            data = analyzer.get_summary()
+            analyzer = PortfolioAnalyzer()
+            data = analyzer.analyze_portfolio_health([])
             return {
                 "success": True,
-                "data": data,
+                "data": {
+                    "health_score": data.health_score if hasattr(data, "health_score") else None,
+                    "status": data.status if hasattr(data, "status") else None,
+                },
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }
         except Exception as e:
@@ -99,17 +101,19 @@ class AssetLensClient:
         股票筛选
 
         Args:
-            strategy: 策略类型（momentum, value, reversal, dividend）
+            strategy: 策略类型（fundamental, technical, comprehensive）
             limit: 返回数量
 
         Returns:
             筛选结果
         """
         try:
-            from asset_lens.strategy.screening import StockScreener
+            from asset_lens.strategy.screener import StockScreener
 
             screener = StockScreener()
-            data = screener.screen(strategy=strategy, limit=limit)
+            data = screener.screen(filter_type=strategy)
+            if isinstance(data, list) and limit:
+                data = data[:limit]
             return {
                 "success": True,
                 "data": data,
