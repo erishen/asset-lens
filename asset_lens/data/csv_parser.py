@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, ClassVar
 
 from ..config import config
+from ..core.exceptions import DataLoadError, DataParseError
 from ..data.models import InvestmentProduct, InvestmentType, RiskLevel
 from .parser_utils import parse_date as _parse_date
 from .parser_utils import parse_decimal as _parse_decimal
@@ -185,7 +186,7 @@ class CSVParser:
 
             return default_usd, default_hkd
 
-        except Exception as e:
+        except (OSError, ValueError, csv.Error) as e:
             logger.error(f"加载汇率失败: {data_dir}", exc_info=True, extra={"error": str(e)})
             return default_usd, default_hkd
 
@@ -388,7 +389,7 @@ class CSVParser:
 
             return product
 
-        except Exception as e:
+        except (ValueError, KeyError, IndexError, TypeError) as e:
             logger.error(f"解析行数据时出错: {e}, 行数据: {row}")
             return None
 
@@ -823,9 +824,7 @@ class CSVParser:
                         products.append(product)
                     # 不再打印警告，因为空行和小计行是正常情况
 
-        except Exception as e:
-            from ..core.exceptions import DataLoadError
-
+        except (OSError, csv.Error, DataParseError) as e:
             raise DataLoadError(f"读取 CSV 文件失败: {e}", file_path=str(csv_path)) from e
 
         return products
@@ -927,7 +926,7 @@ class CSVParser:
                                 f"成功加载 {len(products)} 个投资产品, 美元汇率: {usd_rate}, 港元汇率: {hkd_rate}"
                             )
                             return products
-                        except Exception as e:
+                        except (OSError, DataLoadError, DataParseError) as e:
                             logger.error(f"加载数据失败: {e}", exc_info=True)
                             raise
 
