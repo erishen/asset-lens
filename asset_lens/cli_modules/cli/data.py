@@ -676,7 +676,8 @@ def register_data_commands(cli: click.Group) -> None:
                 console.print(f"\n📊 行业资金流向分析 (数据来源: {data_source})")
 
                 if "新浪" in str(data_source):
-                    console.print("   说明: 显示各行业涨跌及成交额分布，正值=上涨，负值=下跌，单位：亿元")
+                    console.print("   [yellow]⚠️ 注意: 此数据为全市场行业涨跌代理，非北向资金数据[/yellow]")
+                    console.print("   说明: 正值=行业上涨，负值=行业下跌，单位：亿元")
                 elif "5日" in str(data_source):
                     console.print("   说明: 显示北向资金近5日在各行业的净流入变化，单位：亿元")
                     console.print("   计算: 5日净流入 = 今日持仓 - 5日前持仓")
