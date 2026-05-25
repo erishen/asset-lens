@@ -1,20 +1,16 @@
 """
-Comparison compatibility module.
-对比分析兼容模块 - 提供 portfolio_comparator 功能
+Portfolio Comparator - 投资组合快照对比模块
 """
 
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
-from ..core.comparison import ComparisonAnalyzer
-
 
 class PortfolioComparator:
     """投资组合对比器 - 提供快照对比功能"""
 
     def __init__(self):
-        self.analyzer = ComparisonAnalyzer()
         self._snapshots: list[dict[str, Any]] = []
 
     def compare_weekly(self) -> dict[str, Any] | None:
