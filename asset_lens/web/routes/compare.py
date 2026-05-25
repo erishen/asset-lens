@@ -4,7 +4,7 @@ Compare API Routes - 对比分析相关 API
 
 from fastapi import APIRouter, Query
 
-from ...data.comparison import portfolio_comparator
+from ...core.portfolio_comparator import portfolio_comparator
 from ...data.csv_parser import CSVParser
 from ...data.snapshot import snapshot_manager
 
