@@ -32,7 +32,6 @@ from pathlib import Path
 from asset_lens.data.fundamental_fetcher import EnhancedFeatureBuilder, FundamentalFetcher, MoneyFlowFetcher
 from asset_lens.db.database import db_manager
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
