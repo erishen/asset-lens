@@ -49,11 +49,8 @@ class ReturnCalculator:
             self._calculate_dca_simple_return(product, transactions)
         elif total_buy > 0:
             current_value = float(product.current_amount or 0)
-            if product.profit_amount is not None and product.profit_amount != 0 and product.initial_amount:
-                simple_return = float(product.profit_amount) / float(product.initial_amount)
-            else:
-                net_gain = current_value + total_sell - total_buy
-                simple_return = net_gain / total_buy
+            net_gain = current_value + total_sell - total_buy
+            simple_return = net_gain / total_buy
             product.return_rate = Decimal(str(round(simple_return * 100, 2)))
         elif product.initial_amount and product.initial_amount > 0:
             initial_value = float(product.initial_amount)
@@ -89,10 +86,10 @@ class ReturnCalculator:
             )
 
         current_value = float(product.current_amount or 0)
-        if product.profit_amount is not None and product.profit_amount != 0:
-            simple_return = float(product.profit_amount) / initial_value
+        if net_invest > 0:
+            simple_return = (current_value - net_invest) / net_invest
         else:
-            simple_return = (current_value - initial_value) / initial_value
+            simple_return = (current_value - initial_value) / initial_value if initial_value > 0 else 0
         product.return_rate = Decimal(str(round(simple_return * 100, 2)))
 
     def _calculate_annual_return(self, product: InvestmentProduct, transactions: list[dict], total_days: int) -> None:

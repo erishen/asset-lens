@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from ..config import config
+from ..utils.http_client import get_session_without_proxy
 from .providers.cache import UnifiedCache
 
 logger = logging.getLogger(__name__)
@@ -23,33 +24,29 @@ logger = logging.getLogger(__name__)
 @contextmanager
 def timeout_context(seconds: int, message: str = "操作超时"):
     """
-    超时上下文管理器（跨平台，使用 threading）
+    超时上下文管理器（使用 signal.alarm，仅限 Unix/macOS）
 
     Args:
         seconds: 超时秒数
         message: 超时消息
     """
-    import threading
+    import signal
 
-    timer_expired = threading.Event()
+    def _timeout_handler(signum, frame):
+        raise TimeoutError(message)
 
-    def _timeout_handler():
-        timer_expired.set()
-
-    timer = threading.Timer(seconds, _timeout_handler)
-    timer.daemon = True
+    old_handler = signal.signal(signal.SIGALRM, _timeout_handler)
+    signal.alarm(seconds)
     try:
-        timer.start()
         yield
-        if timer_expired.is_set():
-            raise TimeoutError(message)
     except TimeoutError:
         raise
     except Exception as e:
         logger.debug(f"忽略异常: {e}")
         raise
     finally:
-        timer.cancel()
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old_handler)
 
 
 class FundDataFetcher:
@@ -115,9 +112,9 @@ class FundDataFetcher:
         self._fund_codes_map = {}
         return {}
 
-    def fetch_fund_quote_akshare(self, fund_code: str, timeout: int = 10) -> dict[str, Any] | None:
+    def fetch_fund_quote_akshare(self, fund_code: str, timeout: int = 15) -> dict[str, Any] | None:
         """
-        获取基金净值（AkShare）
+        获取基金净值（AkShare + 东方财富API 双源，自动重试）
 
         Args:
             fund_code: 基金代码（如 000001, 110022）
@@ -126,46 +123,98 @@ class FundDataFetcher:
         Returns:
             基金净值数据
         """
+        for attempt in range(2):
+            try:
+                with timeout_context(timeout, f"获取基金 {fund_code} 超时"):
+                    df = self.akshare.fund_open_fund_info_em(symbol=fund_code, indicator="单位净值走势")
+
+                    if df is None or df.empty:
+                        break
+
+                    if not hasattr(df, "iloc"):
+                        break
+
+                    latest = df.iloc[-1]
+
+                    if len(df) > 1:
+                        prev = df.iloc[-2]
+                        prev_nav = float(prev.get("单位净值", 0))
+                    else:
+                        prev_nav = float(latest.get("单位净值", 0))
+
+                    current_nav = float(latest.get("单位净值", 0))
+                    change_percent = ((current_nav - prev_nav) / prev_nav * 100) if prev_nav > 0 else 0
+
+                    return {
+                        "code": fund_code,
+                        "name": fund_code,
+                        "current_nav": current_nav,
+                        "prev_nav": prev_nav,
+                        "nav_date": str(latest.get("净值日期", "")),
+                        "estimate_nav": current_nav,
+                        "estimate_time": str(latest.get("净值日期", "")),
+                        "change_percent": round(change_percent, 2),
+                        "fund_type": "开放式基金",
+                        "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "source": "AkShare",
+                    }
+
+            except TimeoutError as e:
+                logger.warning(f"获取基金净值超时 (第{attempt + 1}次): {e}")
+                if attempt == 0:
+                    import time
+                    time.sleep(1)
+                    continue
+            except Exception as e:
+                logger.error(f"获取基金净值失败 {fund_code}: {e}")
+                if attempt == 0:
+                    import time
+                    time.sleep(1)
+                    continue
+
+        return self._fetch_fund_quote_eastmoney_api(fund_code)
+
+    def _fetch_fund_quote_eastmoney_api(self, fund_code: str) -> dict[str, Any] | None:
+        """使用东方财富基金详情API获取净值（AkShare超时时的备用方案）"""
         try:
-            with timeout_context(timeout, f"获取基金 {fund_code} 超时"):
-                df = self.akshare.fund_open_fund_info_em(symbol=fund_code, indicator="单位净值走势")
+            url = f"https://fundgz.1234567.com.cn/js/{fund_code}.js"
+            session = get_session_without_proxy()
+            response = session.get(url, timeout=10)
+            response.raise_for_status()
 
-                if df is None or df.empty:
-                    return None
+            text = response.text
+            if not text or "jsonpgz" not in text:
+                return None
 
-                if not hasattr(df, "iloc"):
-                    return None
+            import json
+            json_str = text.replace("jsonpgz(", "").rstrip(")")
+            data = json.loads(json_str)
 
-                latest = df.iloc[-1]
+            current_nav = float(data.get("gsz", 0))
+            prev_nav = float(data.get("dwjz", 0))
+            change_percent = float(data.get("gszzl", 0))
 
-                if len(df) > 1:
-                    prev = df.iloc[-2]
-                    prev_nav = float(prev.get("单位净值", 0))
-                else:
-                    prev_nav = float(latest.get("单位净值", 0))
+            if current_nav == 0 and prev_nav == 0:
+                return None
 
-                current_nav = float(latest.get("单位净值", 0))
-                change_percent = ((current_nav - prev_nav) / prev_nav * 100) if prev_nav > 0 else 0
+            if current_nav == 0:
+                current_nav = prev_nav
 
-                return {
-                    "code": fund_code,
-                    "name": fund_code,
-                    "current_nav": current_nav,
-                    "prev_nav": prev_nav,
-                    "nav_date": str(latest.get("净值日期", "")),
-                    "estimate_nav": current_nav,
-                    "estimate_time": str(latest.get("净值日期", "")),
-                    "change_percent": round(change_percent, 2),
-                    "fund_type": "开放式基金",
-                    "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "source": "AkShare",
-                }
-
-        except TimeoutError as e:
-            logger.warning(f"获取基金净值超时: {e}")
-            return None
+            return {
+                "code": fund_code,
+                "name": data.get("name", fund_code),
+                "current_nav": current_nav,
+                "prev_nav": prev_nav,
+                "nav_date": data.get("jzrq", ""),
+                "estimate_nav": current_nav,
+                "estimate_time": data.get("gztime", ""),
+                "change_percent": change_percent,
+                "fund_type": "开放式基金",
+                "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "source": "EastMoney-API",
+            }
         except Exception as e:
-            logger.error(f"获取基金净值失败 {fund_code}: {e}")
+            logger.error(f"东方财富API获取基金 {fund_code} 净值失败: {e}")
             return None
 
     def fetch_fund_quote_eastmoney(self, fund_code: str) -> dict[str, Any] | None:

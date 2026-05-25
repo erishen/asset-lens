@@ -63,8 +63,6 @@ def register_analyze_commands(cli: click.Group) -> None:
 
         from asset_lens.cli_modules.cli.helpers import setup_data_mode
         from asset_lens.config import config
-        from asset_lens.core.dca_parser import dca_parser
-        from asset_lens.core.irr_calculator import irr_calculator
         from asset_lens.data.csv_parser import CSVParser
         from asset_lens.data.models import Portfolio
         from asset_lens.data.sell_record_parser import SellRecordParser
@@ -99,37 +97,10 @@ def register_analyze_commands(cli: click.Group) -> None:
         print("\n🔢 正在计算收益率...")
         reference_date = datetime.now()
 
-        for product in portfolio.products:
-            if product.transaction_records:
-                transactions = dca_parser.parse_transaction_record(
-                    product.transaction_records,
-                    reference_date=reference_date,
-                )
-                product.transactions = transactions
+        from asset_lens.data.parsers.investment_calculator import InvestmentCalculator
 
-                if transactions and product.current_amount:
-                    irr = irr_calculator.calculate_annualized_irr(
-                        transactions=transactions,
-                        current_value=product.current_amount,
-                        reference_date=reference_date,
-                    )
-                    product.annualized_return_irr = irr
-                else:
-                    if product.initial_amount and product.current_amount and product.investment_days:
-                        simple_return = irr_calculator.calculate_simple_annual_return(
-                            initial_amount=product.initial_amount,
-                            current_amount=product.current_amount,
-                            days=product.investment_days,
-                        )
-                        product.annualized_return_irr = simple_return
-            else:
-                if product.initial_amount and product.current_amount and product.investment_days:
-                    simple_return = irr_calculator.calculate_simple_annual_return(
-                        initial_amount=product.initial_amount,
-                        current_amount=product.current_amount,
-                        days=product.investment_days,
-                    )
-                    product.annualized_return_irr = simple_return
+        for product in portfolio.products:
+            InvestmentCalculator.calculate_product_returns(product, reference_date)
 
         print("✅ 收益率计算完成")
 
@@ -164,8 +135,6 @@ def register_analyze_commands(cli: click.Group) -> None:
         from datetime import datetime
 
         from asset_lens.config import config
-        from asset_lens.core.dca_parser import dca_parser
-        from asset_lens.core.irr_calculator import irr_calculator
         from asset_lens.data.csv_parser import CSVParser
         from asset_lens.data.models import Portfolio
         from asset_lens.report.calculate_report import calculate_report_generator
@@ -201,29 +170,10 @@ def register_analyze_commands(cli: click.Group) -> None:
         print("\n🔢 正在计算收益率...")
         reference_date = datetime.now()
 
-        for product in portfolio.products:
-            if product.transaction_records:
-                transactions = dca_parser.parse_transaction_record(
-                    product.transaction_records,
-                    reference_date=reference_date,
-                )
-                product.transactions = transactions
+        from asset_lens.data.parsers.investment_calculator import InvestmentCalculator
 
-                if transactions and product.current_amount:
-                    irr = irr_calculator.calculate_annualized_irr(
-                        transactions=transactions,
-                        current_value=product.current_amount,
-                        reference_date=reference_date,
-                    )
-                    product.annualized_return_irr = irr
-                else:
-                    if product.initial_amount and product.current_amount and product.investment_days:
-                        simple_return = irr_calculator.calculate_simple_annual_return(
-                            initial_amount=product.initial_amount,
-                            current_amount=product.current_amount,
-                            days=product.investment_days,
-                        )
-                        product.annualized_return_irr = simple_return
+        for product in portfolio.products:
+            InvestmentCalculator.calculate_product_returns(product, reference_date)
         print("✅ 收益率计算完成")
         print("\n📝 正在生成计算报告...")
         report = calculate_report_generator.generate_calculate_report(portfolio)

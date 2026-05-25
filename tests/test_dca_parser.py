@@ -37,10 +37,10 @@ class TestDCAParserParseInvestmentType:
         assert base == Decimal("200")
 
     def test_range_amount(self):
-        """Test parsing range amount (智能定投格式: 金额~天数)"""
+        """Test parsing range amount (智能定投格式: 最小~最大)"""
         invest_type, base, max_amt = DCAParser.parse_investment_type("30~105")
         assert invest_type == DCAInvestmentType.RANGE
-        assert base == Decimal("0")  # 智能定投的 base 设为 0
+        assert base == Decimal("67.5")  # 智能定投使用平均值
         assert max_amt == Decimal("105")
 
     def test_range_amount_normal(self):

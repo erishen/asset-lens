@@ -187,7 +187,7 @@ def parse_period_record(
                 min_amount = Decimal(amount_parts[0])
                 max_amount = Decimal(amount_parts[1])
                 daily_amount = (min_amount + max_amount) / 2
-                total_amount = Decimal("0")
+                total_amount = daily_amount * work_days
                 investment_type = InvestmentType.SMART
             except (ValueError, InvalidOperation):
                 return transactions

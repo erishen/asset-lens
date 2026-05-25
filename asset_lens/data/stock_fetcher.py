@@ -533,25 +533,70 @@ class StockDataFetcher:
 
     def fetch_us_stock_quote(self, symbol: str) -> dict[str, Any] | None:
         """
-        获取美股实时行情（Finnhub 正规 API）
+        获取美股实时行情
+
+        优先级: yfinance -> Finnhub -> 东方财富 -> AkShare
 
         Args:
-            symbol: 股票代码（如 AAPL, TSLA）
+            symbol: 股票代码（如 AAPL, TSLA, QQQ, KO）
 
         Returns:
             股票行情数据
-
-        Raises:
-            ConfigurationError: 如果 API 密钥未配置
         """
+        result = self._fetch_us_stock_quote_yfinance(symbol)
+        if result:
+            return result
 
+        result = self._fetch_us_stock_quote_finnhub(symbol)
+        if result:
+            return result
+
+        result = self._fetch_us_stock_quote_eastmoney(symbol)
+        if result:
+            return result
+
+        return self._fetch_us_stock_quote_akshare_full(symbol)
+
+    def _fetch_us_stock_quote_yfinance(self, symbol: str) -> dict[str, Any] | None:
+        """使用 yfinance 获取美股实时行情（首选方案）"""
         try:
-            if not config.finnhub_api_key:
-                logger.warning("FINNHUB_API_KEY 未配置，无法获取美股行情")
+            import yfinance as yf
+
+            ticker = yf.Ticker(symbol)
+            info = ticker.fast_info
+
+            current_price = float(info.last_price or 0)
+            prev_close = float(info.previous_close or 0)
+
+            if current_price == 0 or prev_close == 0:
                 return None
 
-            if len(config.finnhub_api_key) < 10:
-                logger.warning("FINNHUB_API_KEY 格式不正确，密钥长度应该至少 10 个字符")
+            change_amount = current_price - prev_close
+            change_percent = (change_amount / prev_close * 100) if prev_close > 0 else 0
+
+            return {
+                "code": symbol,
+                "name": symbol,
+                "current_price": current_price,
+                "open": float(info.open or 0),
+                "prev_close": prev_close,
+                "high": float(info.day_high or 0),
+                "low": float(info.day_low or 0),
+                "volume": float(info.last_volume or 0),
+                "amount": 0,
+                "change_amount": round(change_amount, 2),
+                "change_percent": round(change_percent, 2),
+                "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "source": "yfinance",
+            }
+        except Exception as e:
+            logger.debug(f"yfinance 获取美股 {symbol} 失败: {e}")
+            return None
+
+    def _fetch_us_stock_quote_finnhub(self, symbol: str) -> dict[str, Any] | None:
+        """使用 Finnhub API 获取美股实时行情"""
+        try:
+            if not config.finnhub_api_key or len(config.finnhub_api_key) < 10:
                 return None
 
             headers = {
@@ -567,36 +612,28 @@ class StockDataFetcher:
             response = session.get(url, params=params, headers=headers, timeout=10)
 
             if response.status_code != 200:
-                logger.warning(f"获取美股行情失败: {symbol}, HTTP {response.status_code}")
                 return None
 
             data = response.json()
-
-            if data is None:
+            if not data:
                 return None
 
             current_price = float(data.get("c", 0))
             prev_close = float(data.get("pc", 0))
-            high = float(data.get("h", 0))
-            low = float(data.get("l", 0))
-            open_price = float(data.get("o", 0))
-
             if current_price == 0 or prev_close == 0:
                 return None
 
             change_amount = current_price - prev_close
             change_percent = (change_amount / prev_close * 100) if prev_close > 0 else 0
 
-            logger.debug(f"成功获取美股行情: {symbol}")
-
             return {
                 "code": symbol,
                 "name": symbol,
                 "current_price": current_price,
-                "open": open_price,
+                "open": float(data.get("o", 0)),
                 "prev_close": prev_close,
-                "high": high,
-                "low": low,
+                "high": float(data.get("h", 0)),
+                "low": float(data.get("l", 0)),
                 "volume": 0,
                 "amount": 0,
                 "change_amount": change_amount,
@@ -604,9 +641,88 @@ class StockDataFetcher:
                 "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "source": "Finnhub",
             }
-
         except Exception as e:
-            logger.error(f"获取美股行情失败 {symbol}: {e}", exc_info=True)
+            logger.debug(f"Finnhub 获取美股 {symbol} 失败: {e}")
+            return None
+
+    def _fetch_us_stock_quote_eastmoney(self, symbol: str) -> dict[str, Any] | None:
+        """使用东方财富API获取美股实时行情（回退方案）"""
+        try:
+            secid = f"105.{symbol}"
+            url = "https://push2.eastmoney.com/api/qt/stock/get"
+            params = {
+                "secid": secid,
+                "fields": "f43,f44,f45,f46,f47,f48,f50,f51,f52,f55,f57,f58,f60,f116,f117,f169,f170",
+                "ut": "fa5fd1943c7b386f172d6893dbfba10b",
+            }
+            session = get_session_without_proxy()
+            response = session.get(url, params=params, timeout=10)
+            response.raise_for_status()
+
+            data = response.json()
+            d = data.get("data")
+            if not d:
+                logger.debug(f"东方财富未返回 {symbol} 数据，尝试 AkShare")
+                return self._fetch_us_stock_quote_akshare_full(symbol)
+
+            current_price = float(d.get("f43", 0)) / 100 if d.get("f43") else 0
+            prev_close = float(d.get("f60", 0)) / 100 if d.get("f60") else 0
+            if current_price == 0 or prev_close == 0:
+                return self._fetch_us_stock_quote_akshare_full(symbol)
+
+            change_amount = current_price - prev_close
+            change_percent = (change_amount / prev_close * 100) if prev_close > 0 else 0
+
+            return {
+                "code": symbol,
+                "name": str(d.get("f58", symbol)),
+                "current_price": current_price,
+                "change_percent": round(change_percent, 2),
+                "change_amount": round(change_amount, 2),
+                "volume": float(d.get("f47", 0)) if d.get("f47") else 0,
+                "amount": float(d.get("f48", 0)) if d.get("f48") else 0,
+                "high": float(d.get("f44", 0)) / 100 if d.get("f44") else 0,
+                "low": float(d.get("f45", 0)) / 100 if d.get("f45") else 0,
+                "open": float(d.get("f46", 0)) / 100 if d.get("f46") else 0,
+                "prev_close": prev_close,
+                "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "source": "EastMoney",
+            }
+        except Exception as e:
+            logger.debug(f"东方财富API获取美股 {symbol} 失败: {e}，尝试 AkShare")
+            return self._fetch_us_stock_quote_akshare_full(symbol)
+
+    def _fetch_us_stock_quote_akshare_full(self, symbol: str) -> dict[str, Any] | None:
+        """使用 AkShare 获取美股实时行情（最终回退方案）"""
+        try:
+            import akshare as ak
+
+            df = ak.stock_us_spot_em()
+            if df is None or df.empty:
+                return None
+
+            row = df[df["代码"] == symbol]
+            if row.empty:
+                return None
+
+            row = row.iloc[0]
+            return {
+                "code": str(row.get("代码", "")),
+                "name": str(row.get("名称", "")),
+                "current_price": float(row.get("最新价", 0)),
+                "change_percent": float(row.get("涨跌幅", 0)),
+                "change_amount": float(row.get("涨跌额", 0)),
+                "volume": float(row.get("成交量", 0)) if row.get("成交量") else 0,
+                "amount": float(row.get("成交额", 0)) if row.get("成交额") else 0,
+                "high": float(row.get("最高", 0)),
+                "low": float(row.get("最低", 0)),
+                "open": float(row.get("今开", 0)),
+                "prev_close": float(row.get("昨收", 0)),
+                "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "source": "AkShare",
+            }
+        except Exception as e:
+            logger.error(f"AkShare 获取美股 {symbol} 行情失败: {e}")
             return None
 
     def fetch_multiple_stocks(self, stock_codes: list[str]) -> dict[str, Any]:
