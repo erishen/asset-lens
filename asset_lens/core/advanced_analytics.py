@@ -70,7 +70,7 @@ class VolatilityResult:
 
 
 @dataclass
-class PortfolioAnalytics:
+class PortfolioAnalyticsResult:
     """投资组合分析结果"""
 
     total_value: Decimal
@@ -260,7 +260,7 @@ class AdvancedAnalytics:
         portfolio: Portfolio,
         historical_values: list[Decimal] | None = None,
         historical_dates: list[date] | None = None,
-    ) -> PortfolioAnalytics:
+    ) -> PortfolioAnalyticsResult:
         total_value = portfolio.total_value or Decimal("0")
         total_initial = portfolio.total_initial or Decimal("0")
         total_profit = portfolio.total_profit or Decimal("0")
@@ -279,7 +279,7 @@ class AdvancedAnalytics:
                 sharpe_ratio = self.calculate_sharpe_ratio(returns)
                 volatility = self.calculate_volatility(returns)
 
-        return PortfolioAnalytics(
+        return PortfolioAnalyticsResult(
             total_value=total_value,
             total_initial=total_initial,
             total_profit=total_profit,

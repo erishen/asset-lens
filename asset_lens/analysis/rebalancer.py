@@ -71,7 +71,7 @@ class RebalanceSuggestion:
 
 
 @dataclass
-class PortfolioHealth:
+class RebalanceHealth:
     """持仓健康度"""
 
     overall_score: float
@@ -87,7 +87,7 @@ class PortfolioHealth:
 class RebalanceReport:
     """调仓报告"""
 
-    portfolio_health: PortfolioHealth
+    portfolio_health: RebalanceHealth
     rebalance_suggestions: list[RebalanceSuggestion]
     industry_allocation: dict[str, float]
     risk_exposure: dict[str, float]
@@ -110,13 +110,13 @@ class PortfolioRebalancer:
         self.cache_path.mkdir(parents=True, exist_ok=True)
         self.history_file = self.cache_path / "rebalance_history.json"
 
-    def analyze_portfolio(self, holdings: list[dict[str, Any]]) -> PortfolioHealth:
+    def analyze_portfolio(self, holdings: list[dict[str, Any]]) -> RebalanceHealth:
         """分析持仓健康度"""
         issues: list[str] = []
         suggestions: list[str] = []
 
         if not holdings:
-            return PortfolioHealth(
+            return RebalanceHealth(
                 overall_score=0,
                 diversification_score=0,
                 risk_score=0,
@@ -151,7 +151,7 @@ class PortfolioRebalancer:
 
         overall_score = (diversification_score + risk_score + performance_score + efficiency_score) / 4
 
-        return PortfolioHealth(
+        return RebalanceHealth(
             overall_score=overall_score,
             diversification_score=diversification_score,
             risk_score=risk_score,
@@ -431,7 +431,7 @@ class PortfolioRebalancer:
         efficiency: float = float(min(100, avg_value / 100))
         return efficiency
 
-    def _estimate_improvement(self, health: PortfolioHealth, suggestions: list[RebalanceSuggestion]) -> float:
+    def _estimate_improvement(self, health: RebalanceHealth, suggestions: list[RebalanceSuggestion]) -> float:
         """预估改善幅度"""
         if not suggestions:
             return 0
