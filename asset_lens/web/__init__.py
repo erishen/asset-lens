@@ -2,6 +2,9 @@
 Web module for asset-lens.
 """
 
-from .api import app
+try:
+    from .api import app
 
-__all__ = ["app"]
+    __all__ = ["app"]
+except ImportError:
+    pass
