@@ -1289,12 +1289,12 @@ test-collect: ## 收集测试用例（诊断用）
 .PHONY: lint
 lint: ## 运行代码检查（使用 ruff 和 mypy）
 	@echo "🔍 运行代码检查..."
-	@uv run ruff check asset_lens/ tests/ --exit-zero
+	@uv run ruff check asset_lens/ tests/
 	@uv run mypy asset_lens/ --ignore-missing-imports --no-error-summary || true
 	@echo "✅ 代码检查完成"
 
 .PHONY: format
-format: ## 格式化代码（使用 black 和 isort）
+format: ## 格式化代码（使用 ruff format 和 ruff check --fix）
 	@echo "🎨 格式化代码..."
 	@uv run ruff format asset_lens/ tests/
 	@uv run ruff check asset_lens/ tests/ --fix
