@@ -22,7 +22,14 @@ from .backtest_reporter import (
     StrategyGrade,
     backtest_reporter,
 )
-from .black_swan import BlackSwanMonitor, MarketRiskAssessment, RiskAlert, RiskLevel, RiskType, black_swan_monitor
+from .black_swan import (
+    BlackSwanMonitor,
+    BlackSwanRiskLevel,
+    MarketRiskAssessment,
+    RiskAlert,
+    RiskType,
+    black_swan_monitor,
+)
 from .dashboard import (
     ChartData,
     ChartType,
@@ -63,6 +70,7 @@ from .premarket_analyzer import PreMarketAnalyzer, PreMarketReport, premarket_an
 from .rebalancer import (
     PortfolioRebalancer,
     RebalanceAction,
+    RebalanceHealth,
     RebalanceReason,
     RebalanceReport,
     RebalanceSuggestion,
@@ -115,6 +123,7 @@ __all__ = [
     "BacktestReport",
     "BacktestReporter",
     "BlackSwanMonitor",
+    "BlackSwanRiskLevel",
     "ChartData",
     "ChartType",
     "ClosedPosition",
@@ -152,6 +161,7 @@ __all__ = [
     "QAResponse",
     "QuestionType",
     "RebalanceAction",
+    "RebalanceHealth",
     "RebalanceReason",
     "RebalanceReport",
     "RebalanceSuggestion",
@@ -160,7 +170,6 @@ __all__ = [
     "RetrainingResult",
     "ReviewReport",
     "RiskAlert",
-    "RiskLevel",
     "RiskType",
     "SectorAllocation",
     "Signal",

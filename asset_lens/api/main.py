@@ -39,7 +39,7 @@ class FundNav(BaseModel):
     update_date: str
 
 
-class PortfolioAnalysis(BaseModel):
+class PortfolioAnalysisResponse(BaseModel):
     total_assets: float
     total_profit: float
     profit_rate: float
@@ -165,7 +165,7 @@ async def get_fund_nav(code: str, api_info: dict = Depends(check_rate_limit)):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
-@router.get("/portfolio/analysis", response_model=PortfolioAnalysis)
+@router.get("/portfolio/analysis", response_model=PortfolioAnalysisResponse)
 async def get_portfolio_analysis(api_info: dict = Depends(check_rate_limit)):
     try:
         from asset_lens.config import config
@@ -173,7 +173,7 @@ async def get_portfolio_analysis(api_info: dict = Depends(check_rate_limit)):
 
         analyzer = PortfolioAnalyzer(config)
         summary = analyzer.get_summary()
-        return PortfolioAnalysis(
+        return PortfolioAnalysisResponse(
             total_assets=summary.get("total_assets", 0),
             total_profit=summary.get("total_profit", 0),
             profit_rate=summary.get("profit_rate", 0),

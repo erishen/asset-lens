@@ -17,6 +17,8 @@ from dotenv import load_dotenv
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 
+from .core.platform_loader import PlatformConfig
+
 load_dotenv()
 
 
@@ -108,17 +110,6 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-
-
-class PlatformConfig:
-    """平台配置类"""
-
-    def __init__(self, platform_data: dict[str, Any]):
-        self.id: str = platform_data.get("id", "")
-        self.name: str = platform_data.get("name", "")
-        self.field: str = platform_data.get("field", "")
-        self.type: str = platform_data.get("type", "")
-        self.description: str = platform_data.get("description", "")
 
 
 class RiskLevelConfig:
@@ -213,7 +204,7 @@ class Config:
             with open(config_file, encoding="utf-8") as f:
                 data = json.load(f)
 
-            self._platforms = [PlatformConfig(p) for p in data.get("platforms", [])]
+            self._platforms = [PlatformConfig(**p) for p in data.get("platforms", [])]
             self._platform_types = data.get("platform_types", {})
         except (OSError, json.JSONDecodeError):
             self._platforms = []
