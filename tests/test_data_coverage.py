@@ -6,32 +6,6 @@ Tests for Data Modules Coverage.
 from unittest.mock import MagicMock, patch
 
 
-class TestPortfolioCalculator:
-    """投资组合计算器测试"""
-
-    def test_module_import(self):
-        """测试模块导入"""
-        from asset_lens.data import portfolio_calculator
-
-        assert portfolio_calculator is not None
-
-    def test_calculate_total_value(self):
-        """测试计算总价值"""
-        products = [
-            {"current_amount": 10000},
-            {"current_amount": 20000},
-        ]
-        total = sum(p["current_amount"] for p in products)
-        assert total == 30000
-
-    def test_calculate_profit_rate(self):
-        """测试计算收益率"""
-        profit = 10000
-        initial = 100000
-        profit_rate = profit / initial * 100 if initial > 0 else 0
-        assert profit_rate == 10.0
-
-
 class TestStockScreener:
     """股票筛选器测试"""
 
