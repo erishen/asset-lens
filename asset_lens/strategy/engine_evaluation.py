@@ -11,14 +11,14 @@ class StrategyEvaluationMixin:
             return {"error": f"策略 {strategy_name} 不存在"}
 
         conditions_met = 0
-        total_conditions = len(strategy.conditions)
+        total_conditions = len(strategy.buy_conditions)
         details = []
 
-        for condition in strategy.conditions:
-            field_name = condition.get("field", "")
-            operator = condition.get("operator", "")
-            target = condition.get("value", 0)
-            weight = condition.get("weight", 1.0)
+        for condition in strategy.buy_conditions:
+            field_name = condition.field
+            operator = condition.operator
+            target = condition.value
+            weight = condition.weight
 
             value = self._get_field_value(stock, field_name)
             met = self._evaluate_condition(value, operator, target)
@@ -36,7 +36,7 @@ class StrategyEvaluationMixin:
                 }
             )
 
-        total_weight = sum(c.get("weight", 1.0) for c in strategy.conditions)
+        total_weight = sum(c.weight for c in strategy.buy_conditions)
         score = conditions_met / total_weight if total_weight > 0 else 0
 
         recommendation = "强烈推荐" if score >= 0.8 else "推荐" if score >= 0.6 else "观望" if score >= 0.4 else "不推荐"
@@ -227,9 +227,9 @@ class StrategyEvaluationMixin:
 
     def _generate_param_ranges(self, strategy: Any) -> dict[str, list]:
         ranges = {}
-        for i, condition in enumerate(strategy.conditions):
-            field = condition.get("field", "")
-            value = condition.get("value", 0)
+        for i, condition in enumerate(strategy.buy_conditions):
+            field = condition.field
+            value = condition.value
 
             if isinstance(value, (int, float)):
                 ranges[f"condition_{i}_value"] = [
@@ -322,9 +322,14 @@ class StrategyEvaluationMixin:
 
         combined_conditions = []
         for strategy, weight in zip(strategies, weights):
-            for condition in strategy.conditions:
-                combined_condition = condition.copy()
-                combined_condition["weight"] = condition.get("weight", 1.0) * weight
+            for condition in strategy.buy_conditions:
+                combined_condition = {
+                    "name": condition.name,
+                    "field": condition.field,
+                    "operator": condition.operator,
+                    "value": condition.value,
+                    "weight": condition.weight * weight,
+                }
                 combined_conditions.append(combined_condition)
 
         combined_name = "+".join(strategy_names)
