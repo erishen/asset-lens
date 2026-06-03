@@ -64,10 +64,9 @@ def register_db_sync_commands(db_group: click.Group) -> None:
     @db_group.command("auto-sync")
     @click.option("--days", default=250, help="历史天数")
     @click.option("--daily-limit", default=100, type=int, help="每日同步限制")
-    @click.option("--update-limit", default=50, type=int, help="更新限制")
     @click.option("--delay", default=0.3, type=float, help="请求间隔（秒）")
     @click.option("--fast", is_flag=True, help="快速模式")
-    def auto_sync(days: int, daily_limit: int, update_limit: int, delay: float, fast: bool):
+    def auto_sync(days: int, daily_limit: int, delay: float, fast: bool):
         from rich.console import Console
         from rich.table import Table
 
@@ -83,7 +82,6 @@ def register_db_sync_commands(db_group: click.Group) -> None:
                 fast=fast,
                 days=days,
                 daily_limit=daily_limit,
-                update_limit=update_limit,
             )
 
             synced = sync_result.get("synced", 0)

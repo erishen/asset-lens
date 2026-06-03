@@ -168,8 +168,6 @@ class CSVDataLoaderMixin:
 
         products = cls.parse_csv_file(csv_path)
 
-        from datetime import datetime
-
         reference_date = datetime.now()
         products = cls._calculate_irr_for_products(
             products, reference_date, float(config.default_usd_rate), float(config.default_hkd_rate)
