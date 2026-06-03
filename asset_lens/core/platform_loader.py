@@ -5,7 +5,7 @@ Platform configuration loader.
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import ClassVar, Optional
+from typing import ClassVar, Optional, Self
 
 
 @dataclass
@@ -35,10 +35,10 @@ class PlatformLoader:
     _platform_types: ClassVar[dict[str, str]] = {}
     _loaded: bool = False
 
-    def __new__(cls):
+    def __new__(cls) -> Self:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-        return cls._instance
+        return cls._instance  # type: ignore[return-value]
 
     @classmethod
     def load(cls, config_path: Path | None = None, data_mode: str | None = None) -> None:

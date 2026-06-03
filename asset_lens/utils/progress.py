@@ -1,9 +1,12 @@
+logger = logging.getLogger(__name__)
+
 """
 Progress bar utility for asset-lens.
 进度条工具模块
 """
 
 import sys
+import logging
 
 
 class ProgressBar:
@@ -81,7 +84,7 @@ class ProgressBar:
         sys.stdout.write("\n")
 
         if message:
-            print(message)
+            logger.info(message)
 
 
 def create_progress_bar(
@@ -138,9 +141,9 @@ class Spinner:
         sys.stdout.flush()
 
         if message:
-            print(f"✓ {message}")
+            logger.info(f"✓ {message}")
         else:
-            print(f"✓ {self.message} completed")
+            logger.info(f"✓ {self.message} completed")
 
 
 class TaskProgress:
@@ -164,7 +167,7 @@ class TaskProgress:
         Args:
             task_name: 任务名称
         """
-        print(f"\n▶ {task_name}...")
+        logger.info(f"▶ {task_name}...")
 
     def complete_task(self, task_name: str, success: bool = True) -> None:
         """
@@ -175,13 +178,13 @@ class TaskProgress:
             success: 是否成功
         """
         status = "✓" if success else "✗"
-        print(f"  {status} {task_name} {'完成' if success else '失败'}")
+        logger.error(f"  {status} {task_name} {'完成' if success else '失败'}")
         self.completed.append(task_name)
 
     def summary(self) -> None:
         """打印任务摘要"""
         total = len(self.tasks)
         completed = len(self.completed)
-        print(f"\n{'=' * 50}")
-        print(f"任务完成: {completed}/{total}")
-        print(f"{'=' * 50}")
+        logger.info(f"{'=' * 50}")
+        logger.info(f"任务完成: {completed}/{total}")
+        logger.info(f"{'=' * 50}")

@@ -7,6 +7,8 @@ import math
 from dataclasses import dataclass
 from typing import Any
 
+from investkit_utils.types.models import RiskMetrics
+
 
 @dataclass
 class PortfolioMetrics:
@@ -21,18 +23,6 @@ class PortfolioMetrics:
     profit_loss_ratio: float  # 盈亏比
     calmar_ratio: float  # 卡玛比率
     sortino_ratio: float  # 索提诺比率
-
-
-@dataclass
-class RiskMetrics:
-    """风险指标"""
-
-    value_at_risk_95: float  # 95% VaR
-    value_at_risk_99: float  # 99% VaR
-    expected_shortfall: float  # 预期亏损 (CVaR)
-    beta: float  # 贝塔系数
-    tracking_error: float  # 跟踪误差
-    information_ratio: float  # 信息比率
 
 
 class PortfolioAnalytics:
@@ -134,8 +124,8 @@ class PortfolioAnalytics:
         """
         if not returns:
             return RiskMetrics(
-                value_at_risk_95=0.0,
-                value_at_risk_99=0.0,
+                var_95=0.0,
+                var_99=0.0,
                 expected_shortfall=0.0,
                 beta=1.0,
                 tracking_error=0.0,
@@ -159,8 +149,8 @@ class PortfolioAnalytics:
         information_ratio = self._calculate_information_ratio(returns, benchmark_returns) if benchmark_returns else 0.0
 
         return RiskMetrics(
-            value_at_risk_95=var_95,
-            value_at_risk_99=var_99,
+            var_95=var_95,
+            var_99=var_99,
             expected_shortfall=es,
             beta=beta,
             tracking_error=tracking_error,
@@ -356,8 +346,8 @@ class PortfolioAnalytics:
                 "sortino_ratio": f"{metrics.sortino_ratio:.2f}",
             },
             "risk": {
-                "var_95": f"{risk_metrics.value_at_risk_95:.2f}%",
-                "var_99": f"{risk_metrics.value_at_risk_99:.2f}%",
+                "var_95": f"{risk_metrics.var_95:.2f}%",
+                "var_99": f"{risk_metrics.var_99:.2f}%",
                 "expected_shortfall": f"{risk_metrics.expected_shortfall:.2f}%",
                 "beta": f"{risk_metrics.beta:.2f}",
                 "tracking_error": f"{risk_metrics.tracking_error:.2f}%",

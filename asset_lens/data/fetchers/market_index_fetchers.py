@@ -55,7 +55,10 @@ class DomesticIndexFetcher:
                 "amount": float(row.get("成交额", 0)),
                 "source": "akshare_spot",
             }
-        except Exception as e:
+        except (ValueError, KeyError, TypeError) as e:
+            logger.warning(f"AkShare spot data parsing failed: {e}")
+            return None
+        except (ConnectionError, RuntimeError, OSError) as e:
             logger.warning(f"AkShare spot fetch failed: {e}")
             return None
 
@@ -104,7 +107,13 @@ class DomesticIndexFetcher:
                 "change_pct": change_pct,
                 "source": "sina",
             }
-        except Exception as e:
+        except requests.RequestException as e:
+            logger.warning(f"Sina network error: {e}")
+            return None
+        except (ValueError, IndexError) as e:
+            logger.warning(f"Sina data parsing failed: {e}")
+            return None
+        except (OSError, RuntimeError) as e:
             logger.warning(f"Sina fetch failed: {e}")
             return None
 
@@ -157,7 +166,13 @@ class DomesticIndexFetcher:
                 "amount": float(parts[37]) if parts[37] else 0,
                 "source": "tencent",
             }
-        except Exception as e:
+        except requests.RequestException as e:
+            logger.warning(f"Tencent network error: {e}")
+            return None
+        except (ValueError, IndexError) as e:
+            logger.warning(f"Tencent data parsing failed: {e}")
+            return None
+        except (OSError, RuntimeError) as e:
             logger.warning(f"Tencent fetch failed: {e}")
             return None
 
@@ -202,7 +217,10 @@ class ForeignIndexFetcher:
                 "change_pct": float(row.get("涨跌幅", 0)),
                 "source": "akshare_global",
             }
-        except Exception as e:
+        except (ValueError, KeyError, TypeError) as e:
+            logger.warning(f"AkShare global data parsing failed: {e}")
+            return None
+        except (ConnectionError, RuntimeError, OSError) as e:
             logger.warning(f"AkShare global fetch failed: {e}")
             return None
 
@@ -248,6 +266,12 @@ class ForeignIndexFetcher:
                 "change_pct": change_pct,
                 "source": "eastmoney",
             }
-        except Exception as e:
+        except requests.RequestException as e:
+            logger.warning(f"Eastmoney network error: {e}")
+            return None
+        except (ValueError, KeyError) as e:
+            logger.warning(f"Eastmoney data parsing failed: {e}")
+            return None
+        except (OSError, RuntimeError) as e:
             logger.warning(f"Eastmoney fetch failed: {e}")
             return None

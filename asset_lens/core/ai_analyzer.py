@@ -14,6 +14,8 @@ from typing import Any, ClassVar
 
 from dotenv import load_dotenv
 
+from ..utils.json_cache import read_json_cache, write_json_cache
+
 load_dotenv()
 
 logger = logging.getLogger(__name__)
@@ -150,7 +152,7 @@ class AIAnalyzer:
 
             return result
 
-        except Exception as e:
+        except (ConnectionError, TimeoutError, ValueError, RuntimeError) as e:
             logger.error(f"AI 分析失败: {e}", exc_info=True)
             return self._rule_based_analyze(portfolio_data)
 
@@ -248,8 +250,8 @@ class AIAnalyzer:
                     score=result.get("score", 60),
                     raw_analysis=ai_response,
                 )
-        except (json.JSONDecodeError, ValueError):
-            pass
+        except (json.JSONDecodeError, ValueError) as e:
+            logger.debug("AI响应JSON解析失败: %s", e)
 
         return self._rule_based_analyze(data)
 
@@ -275,6 +277,7 @@ class AIAnalyzer:
         total_value = float(data.get("total_value", 1))
 
         high_risk_ratio = 0.0
+        mid_risk_ratio = 0.0
         low_risk_ratio = 0.0
 
         for risk_name, stats in risk_dist.items():
@@ -282,7 +285,7 @@ class AIAnalyzer:
             if risk_name == "高":
                 high_risk_ratio = ratio
             elif risk_name == "中":
-                pass
+                mid_risk_ratio = ratio
             elif risk_name == "低":
                 low_risk_ratio = ratio
 
@@ -400,28 +403,23 @@ class AIAnalyzer:
             return None
 
         cache_file = self.cache_dir / f"{key}.json"
-        if not cache_file.exists():
+        cached = read_json_cache(cache_file)
+        if not cached:
             return None
 
-        try:
-            with open(cache_file, encoding="utf-8") as f:
-                cached = json.load(f)
-
-            cache_time = datetime.fromisoformat(cached.get("timestamp", "2000-01-01"))
-            if (datetime.now() - cache_time).total_seconds() > self.cache_ttl:
-                return None
-
-            data = cached.get("data", {})
-            return AIAnalysisResult(
-                summary=data.get("summary", ""),
-                risk_assessment=data.get("risk_assessment", ""),
-                suggestions=data.get("suggestions", []),
-                warnings=data.get("warnings", []),
-                score=data.get("score", 0),
-                raw_analysis=data.get("raw_analysis"),
-            )
-        except (json.JSONDecodeError, ValueError):
+        cache_time = datetime.fromisoformat(cached.get("timestamp", "2000-01-01"))
+        if (datetime.now() - cache_time).total_seconds() > self.cache_ttl:
             return None
+
+        data = cached.get("data", {})
+        return AIAnalysisResult(
+            summary=data.get("summary", ""),
+            risk_assessment=data.get("risk_assessment", ""),
+            suggestions=data.get("suggestions", []),
+            warnings=data.get("warnings", []),
+            score=data.get("score", 0),
+            raw_analysis=data.get("raw_analysis"),
+        )
 
     def _save_cache(self, key: str, data: AIAnalysisResult) -> None:
         """保存缓存"""
@@ -429,26 +427,18 @@ class AIAnalyzer:
             return
 
         cache_file = self.cache_dir / f"{key}.json"
-        try:
-            with open(cache_file, "w", encoding="utf-8") as f:
-                json.dump(
-                    {
-                        "timestamp": datetime.now().isoformat(),
-                        "data": {
-                            "summary": data.summary,
-                            "risk_assessment": data.risk_assessment,
-                            "suggestions": data.suggestions,
-                            "warnings": data.warnings,
-                            "score": data.score,
-                            "raw_analysis": data.raw_analysis,
-                        },
-                    },
-                    f,
-                    ensure_ascii=False,
-                    indent=2,
-                )
-        except Exception as e:
-            logger.debug(f"忽略异常: {e}")
+        cache_data = {
+            "timestamp": datetime.now().isoformat(),
+            "data": {
+                "summary": data.summary,
+                "risk_assessment": data.risk_assessment,
+                "suggestions": data.suggestions,
+                "warnings": data.warnings,
+                "score": data.score,
+                "raw_analysis": data.raw_analysis,
+            },
+        }
+        write_json_cache(cache_file, cache_data)
 
     def generate_investment_advice(
         self,

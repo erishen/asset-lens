@@ -35,74 +35,45 @@ class FetcherCacheMixin:
     """
     Fetcher 缓存混入类
 
-    提供统一的缓存接口，替代各 Fetcher 中手写的 json.load/dump 缓存逻辑。
-    内部使用 UnifiedCache，支持内存 + 文件双级缓存、TTL、批量操作。
-
-    用法:
-        class MyFetcher(FetcherCacheMixin, BaseFetcher):
-            def __init__(self):
-                super().__init__(cache_path=Path("/path/to/cache"))
-                # 保存缓存
-                self.cache_save("my_data.json", {"data": results}, ttl=3600)
-                # 加载缓存
-                data = self.cache_load("my_data.json")
-                # 检查缓存有效性
-                if self.cache_is_valid("my_data.json", max_age=86400):
-                    ...
+    提供统一的缓存接口和 AkShare 懒加载属性，
+    替代各 Fetcher 中手写的缓存逻辑和重复的 akshare property。
     """
 
     _cache: UnifiedCache
+    _akshare_raise_on_missing: bool = True
 
     def _init_cache(self, cache_path: Path | None = None, default_ttl: int = 3600) -> None:
-        """初始化缓存（在 __init__ 中调用）"""
         self._cache = UnifiedCache(cache_dir=cache_path, default_ttl=default_ttl)
 
     @property
     def cache(self) -> UnifiedCache:
-        """获取缓存实例"""
         if not hasattr(self, "_cache") or self._cache is None:
             self._cache = UnifiedCache()
         return self._cache
 
     @property
     def cache_path(self) -> Path:
-        """获取缓存目录路径"""
         return self.cache.cache_dir
 
-    def cache_save(self, filename: str, data: dict[str, Any], ttl: int | None = None) -> None:
-        """
-        保存缓存到命名文件
+    @property
+    def akshare(self):
+        from ...utils.akshare_loader import get_akshare
 
-        Args:
-            filename: 文件名（如 "stock_quotes.json"）
-            data: 要缓存的数据
-            ttl: 缓存时间（秒），None 使用默认值
-        """
+        return get_akshare(raise_on_missing=self._akshare_raise_on_missing)
+
+    def cache_save(self, filename: str, data: dict[str, Any], ttl: int | None = None) -> None:
         self.cache.save_file(filename, data, ttl=ttl)
 
     def cache_load(self, filename: str, max_age: int | None = None) -> dict[str, Any] | None:
-        """
-        从命名文件加载缓存
-
-        Args:
-            filename: 文件名（如 "stock_quotes.json"）
-            max_age: 最大缓存时间（秒），None 使用文件中的 TTL
-
-        Returns:
-            缓存数据，不存在或过期返回 None
-        """
         return self.cache.load_file(filename, max_age=max_age)
 
     def cache_is_valid(self, filename: str, max_age: int | None = None) -> bool:
-        """检查缓存文件是否有效"""
         return self.cache.is_file_valid(filename, max_age=max_age)
 
     def cache_delete(self, filename: str) -> bool:
-        """删除缓存文件"""
         return self.cache.delete_file(filename)
 
     def cache_clear(self) -> None:
-        """清空所有缓存"""
         self.cache.clear()
 
 

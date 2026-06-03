@@ -11,7 +11,7 @@ class TestAIDecision:
 
     def test_ai_decision_values(self):
         """测试 AI 决策枚举值"""
-        from asset_lens.strategy.ai_analyzer import AIDecision
+        from asset_lens.strategy.stock_ai_analyzer import AIDecision
 
         assert AIDecision.BUY.value == "buy"
         assert AIDecision.SELL.value == "sell"
@@ -24,9 +24,9 @@ class TestAIAnalysisResult:
 
     def test_ai_analysis_result_default(self):
         """测试默认值"""
-        from asset_lens.strategy.ai_analyzer import AIAnalysisResult, AIDecision
+        from asset_lens.strategy.stock_ai_analyzer import AIDecision, StrategyAIAnalysisResult
 
-        result = AIAnalysisResult(
+        result = StrategyAIAnalysisResult(
             decision=AIDecision.WAIT,
             confidence=50,
             reasoning="test",
@@ -42,9 +42,9 @@ class TestAIAnalysisResult:
 
     def test_ai_analysis_result_full(self):
         """测试完整值"""
-        from asset_lens.strategy.ai_analyzer import AIAnalysisResult, AIDecision
+        from asset_lens.strategy.stock_ai_analyzer import AIDecision, StrategyAIAnalysisResult
 
-        result = AIAnalysisResult(
+        result = StrategyAIAnalysisResult(
             decision=AIDecision.BUY,
             confidence=80,
             reasoning="强烈买入信号",
@@ -74,7 +74,7 @@ class TestAIAnalyzer:
     def test_ai_analyzer_init_no_api_key(self):
         """测试无 API Key 初始化"""
         with patch.dict("os.environ", {}, clear=True):
-            from asset_lens.strategy.ai_analyzer import StockAIAnalyzer
+            from asset_lens.strategy.stock_ai_analyzer import StockAIAnalyzer
 
             analyzer = StockAIAnalyzer()
             assert analyzer.enabled is False
@@ -82,7 +82,7 @@ class TestAIAnalyzer:
     def test_ai_analyzer_init_with_api_key(self):
         """测试有 API Key 初始化"""
         with patch.dict("os.environ", {"DEEPSEEK_API_KEY": "test_key"}):
-            from asset_lens.strategy.ai_analyzer import StockAIAnalyzer
+            from asset_lens.strategy.stock_ai_analyzer import StockAIAnalyzer
 
             analyzer = StockAIAnalyzer()
             assert analyzer.enabled is True
@@ -91,7 +91,7 @@ class TestAIAnalyzer:
     def test_build_analysis_prompt(self):
         """测试构建分析提示词"""
         with patch.dict("os.environ", {}, clear=True):
-            from asset_lens.strategy.ai_analyzer import StockAIAnalyzer
+            from asset_lens.strategy.stock_ai_analyzer import StockAIAnalyzer
 
             analyzer = StockAIAnalyzer()
 
@@ -113,7 +113,7 @@ class TestAIAnalyzer:
     def test_build_analysis_prompt_with_market_data(self):
         """测试构建分析提示词（含市场数据）"""
         with patch.dict("os.environ", {}, clear=True):
-            from asset_lens.strategy.ai_analyzer import StockAIAnalyzer
+            from asset_lens.strategy.stock_ai_analyzer import StockAIAnalyzer
 
             analyzer = StockAIAnalyzer()
 
@@ -126,7 +126,7 @@ class TestAIAnalyzer:
     def test_build_analysis_prompt_with_strategy_signal(self):
         """测试构建分析提示词（含策略信号）"""
         with patch.dict("os.environ", {}, clear=True):
-            from asset_lens.strategy.ai_analyzer import StockAIAnalyzer
+            from asset_lens.strategy.stock_ai_analyzer import StockAIAnalyzer
 
             analyzer = StockAIAnalyzer()
 
@@ -138,7 +138,7 @@ class TestAIAnalyzer:
     def test_default_result(self):
         """测试默认结果"""
         with patch.dict("os.environ", {}, clear=True):
-            from asset_lens.strategy.ai_analyzer import AIDecision, StockAIAnalyzer
+            from asset_lens.strategy.stock_ai_analyzer import AIDecision, StockAIAnalyzer
 
             analyzer = StockAIAnalyzer()
 
@@ -150,7 +150,7 @@ class TestAIAnalyzer:
 
     def test_parse_response_valid_json(self):
         """测试解析有效 JSON 响应"""
-        from asset_lens.strategy.ai_analyzer import AIDecision, StockAIAnalyzer
+        from asset_lens.strategy.stock_ai_analyzer import AIDecision, StockAIAnalyzer
 
         analyzer = StockAIAnalyzer()
 
@@ -168,7 +168,7 @@ class TestAIAnalyzer:
 
     def test_parse_response_invalid_json(self):
         """测试解析无效 JSON 响应"""
-        from asset_lens.strategy.ai_analyzer import AIDecision, StockAIAnalyzer
+        from asset_lens.strategy.stock_ai_analyzer import AIDecision, StockAIAnalyzer
 
         analyzer = StockAIAnalyzer()
 
@@ -181,7 +181,7 @@ class TestAIAnalyzer:
     def test_analyze_stock_sync_disabled(self):
         """测试同步分析（未启用）"""
         with patch.dict("os.environ", {}, clear=True):
-            from asset_lens.strategy.ai_analyzer import AIDecision, StockAIAnalyzer
+            from asset_lens.strategy.stock_ai_analyzer import AIDecision, StockAIAnalyzer
 
             analyzer = StockAIAnalyzer()
 
@@ -192,7 +192,7 @@ class TestAIAnalyzer:
     def test_batch_analyze(self):
         """测试批量分析"""
         with patch.dict("os.environ", {}, clear=True):
-            from asset_lens.strategy.ai_analyzer import StockAIAnalyzer
+            from asset_lens.strategy.stock_ai_analyzer import StockAIAnalyzer
 
             analyzer = StockAIAnalyzer()
 
@@ -212,7 +212,7 @@ class TestAITradingAdvisor:
 
     def test_advisor_init(self):
         """测试初始化"""
-        from asset_lens.strategy.ai_analyzer import AITradingAdvisor
+        from asset_lens.strategy.stock_ai_analyzer import AITradingAdvisor
 
         advisor = AITradingAdvisor()
         assert advisor.analyzer is not None
@@ -220,7 +220,7 @@ class TestAITradingAdvisor:
     def test_evaluate_buy_signal_disabled(self):
         """测试评估买入信号（未启用）"""
         with patch.dict("os.environ", {}, clear=True):
-            from asset_lens.strategy.ai_analyzer import AITradingAdvisor
+            from asset_lens.strategy.stock_ai_analyzer import AITradingAdvisor
 
             advisor = AITradingAdvisor()
 
@@ -230,11 +230,11 @@ class TestAITradingAdvisor:
 
     def test_combine_decisions_buy_high_score(self):
         """测试组合决策（高分买入）"""
-        from asset_lens.strategy.ai_analyzer import AIAnalysisResult, AIDecision, AITradingAdvisor
+        from asset_lens.strategy.stock_ai_analyzer import AIDecision, AITradingAdvisor, StrategyAIAnalysisResult
 
         advisor = AITradingAdvisor()
 
-        ai_result = AIAnalysisResult(
+        ai_result = StrategyAIAnalysisResult(
             decision=AIDecision.BUY,
             confidence=80,
             reasoning="强烈买入",
@@ -248,11 +248,11 @@ class TestAITradingAdvisor:
 
     def test_combine_decisions_wait(self):
         """测试组合决策（观望）"""
-        from asset_lens.strategy.ai_analyzer import AIAnalysisResult, AIDecision, AITradingAdvisor
+        from asset_lens.strategy.stock_ai_analyzer import AIDecision, AITradingAdvisor, StrategyAIAnalysisResult
 
         advisor = AITradingAdvisor()
 
-        ai_result = AIAnalysisResult(
+        ai_result = StrategyAIAnalysisResult(
             decision=AIDecision.WAIT,
             confidence=50,
             reasoning="等待时机",
@@ -266,11 +266,11 @@ class TestAITradingAdvisor:
 
     def test_combine_sell_decisions_stop_loss(self):
         """测试卖出决策（止损）"""
-        from asset_lens.strategy.ai_analyzer import AIAnalysisResult, AIDecision, AITradingAdvisor
+        from asset_lens.strategy.stock_ai_analyzer import AIDecision, AITradingAdvisor, StrategyAIAnalysisResult
 
         advisor = AITradingAdvisor()
 
-        ai_result = AIAnalysisResult(
+        ai_result = StrategyAIAnalysisResult(
             decision=AIDecision.HOLD,
             confidence=50,
             reasoning="继续持有",
@@ -285,11 +285,11 @@ class TestAITradingAdvisor:
 
     def test_combine_sell_decisions_take_profit(self):
         """测试卖出决策（止盈）"""
-        from asset_lens.strategy.ai_analyzer import AIAnalysisResult, AIDecision, AITradingAdvisor
+        from asset_lens.strategy.stock_ai_analyzer import AIDecision, AITradingAdvisor, StrategyAIAnalysisResult
 
         advisor = AITradingAdvisor()
 
-        ai_result = AIAnalysisResult(
+        ai_result = StrategyAIAnalysisResult(
             decision=AIDecision.HOLD,
             confidence=50,
             reasoning="继续持有",
@@ -305,7 +305,7 @@ class TestAITradingAdvisor:
     def test_evaluate_sell_signal_disabled(self):
         """测试评估卖出信号（未启用）"""
         with patch.dict("os.environ", {}, clear=True):
-            from asset_lens.strategy.ai_analyzer import AITradingAdvisor
+            from asset_lens.strategy.stock_ai_analyzer import AITradingAdvisor
 
             advisor = AITradingAdvisor()
 
@@ -319,14 +319,13 @@ class TestAITradingAdvisor:
 class TestGlobalInstances:
     """全局实例测试"""
 
-    def test_ai_analyzer_instance(self):
-        """测试全局 AI 分析器实例"""
-        from asset_lens.strategy.ai_analyzer import ai_analyzer
+    def test_stock_ai_analyzer_instance(self):
+        from asset_lens.strategy.stock_ai_analyzer import stock_ai_analyzer
 
-        assert ai_analyzer is not None
+        assert stock_ai_analyzer is not None
 
     def test_ai_trading_advisor_instance(self):
         """测试全局 AI 交易顾问实例"""
-        from asset_lens.strategy.ai_analyzer import ai_trading_advisor
+        from asset_lens.strategy.stock_ai_analyzer import ai_trading_advisor
 
         assert ai_trading_advisor is not None

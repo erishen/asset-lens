@@ -61,7 +61,7 @@ async def get_portfolio_summary():
             position_count=len(portfolio.products),
         )
 
-    except Exception as e:
+    except (ValueError, KeyError, TypeError, OSError, RuntimeError) as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
@@ -114,7 +114,7 @@ async def get_portfolio_items(
             "items": items,
         }
 
-    except Exception as e:
+    except (ValueError, KeyError, TypeError, OSError, RuntimeError) as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
@@ -161,5 +161,5 @@ async def get_portfolio_performance(
             "analysis_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
 
-    except Exception as e:
+    except (ValueError, KeyError, TypeError, OSError, RuntimeError) as e:
         raise HTTPException(status_code=500, detail=str(e)) from e

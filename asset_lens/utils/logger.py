@@ -8,7 +8,7 @@ import os
 import sys
 from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
 from pathlib import Path
-from typing import ClassVar, Literal
+from typing import Any, ClassVar, Literal
 
 
 class SensitiveInfoFilter(logging.Filter):
@@ -56,7 +56,7 @@ class ColoredFormatter(logging.Formatter):
 class ContextFilter(logging.Filter):
     """添加上下文信息的日志过滤器"""
 
-    def __init__(self, context: dict | None = None):
+    def __init__(self, context: dict[str, Any] | None = None):
         super().__init__()
         self.context = context or {}
 
@@ -96,7 +96,7 @@ def setup_logger(
     rotation: Literal["size", "time", "none"] = "none",
     max_bytes: int = 10 * 1024 * 1024,
     backup_count: int = 5,
-    context: dict | None = None,
+    context: dict[str, Any] | None = None,
 ) -> logging.Logger:
     """
     设置并返回日志记录器

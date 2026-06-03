@@ -44,12 +44,12 @@ class TestRiskAlertItem:
 
     def test_alert_item_creation(self):
         """测试预警项创建"""
-        from asset_lens.monitoring.risk_alert import AlertLevel, AlertType, RiskAlertItem
+        from asset_lens.monitoring.risk_alert import AlertLevel, RiskAlertItem, RiskAlertType
 
         alert = RiskAlertItem(
             id="test_001",
             level=AlertLevel.WARNING,
-            type=AlertType.MAX_DRAWDOWN,
+            type=RiskAlertType.MAX_DRAWDOWN,
             title="测试预警",
             message="这是一个测试预警",
             value=15.5,
@@ -60,17 +60,17 @@ class TestRiskAlertItem:
 
         assert alert.id == "test_001"
         assert alert.level == AlertLevel.WARNING
-        assert alert.type == AlertType.MAX_DRAWDOWN
+        assert alert.type == RiskAlertType.MAX_DRAWDOWN
         assert alert.value == 15.5
 
     def test_alert_item_to_dict(self):
         """测试预警项转换为字典"""
-        from asset_lens.monitoring.risk_alert import AlertLevel, AlertType, RiskAlertItem
+        from asset_lens.monitoring.risk_alert import AlertLevel, RiskAlertItem, RiskAlertType
 
         alert = RiskAlertItem(
             id="test_001",
             level=AlertLevel.WARNING,
-            type=AlertType.MAX_DRAWDOWN,
+            type=RiskAlertType.MAX_DRAWDOWN,
             title="测试预警",
             message="这是一个测试预警",
             value=15.5,
@@ -355,10 +355,10 @@ class TestAlertType:
 
     def test_alert_type_values(self):
         """测试预警类型值"""
-        from asset_lens.monitoring.risk_alert import AlertType
+        from asset_lens.monitoring.risk_alert import RiskAlertType
 
-        assert AlertType.MAX_DRAWDOWN.value == "max_drawdown"
-        assert AlertType.VOLATILITY.value == "volatility"
-        assert AlertType.CONCENTRATION.value == "concentration"
-        assert AlertType.STOP_LOSS.value == "stop_loss"
-        assert AlertType.TAKE_PROFIT.value == "take_profit"
+        assert RiskAlertType.MAX_DRAWDOWN.value == "max_drawdown"
+        assert RiskAlertType.VOLATILITY.value == "volatility"
+        assert RiskAlertType.CONCENTRATION.value == "concentration"
+        assert RiskAlertType.STOP_LOSS.value == "stop_loss"
+        assert RiskAlertType.TAKE_PROFIT.value == "take_profit"

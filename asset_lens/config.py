@@ -133,7 +133,7 @@ class InvestmentTypeConfig:
         self.examples: list[str] = type_data.get("examples", [])
 
 
-class Config:
+class AssetLensConfig:
     """Configuration class for asset-lens."""
 
     def __init__(self) -> None:
@@ -393,4 +393,4 @@ class Config:
 
 
 # 全局配置实例
-config = Config()
+config = AssetLensConfig()

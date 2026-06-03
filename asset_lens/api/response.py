@@ -43,7 +43,7 @@ API 响应模型 - 统一响应格式
 """
 
 from datetime import datetime
-from typing import Any, ClassVar
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -56,10 +56,11 @@ class APIResponse(BaseModel):
     error: dict[str, Any] | None = None
     timestamp: str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    class Config:
-        json_schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = {
+        "json_schema_extra": {
             "example": {"success": True, "data": {"key": "value"}, "error": None, "timestamp": "2024-01-01 12:00:00"}
         }
+    }
 
 
 class ErrorResponse(BaseModel):

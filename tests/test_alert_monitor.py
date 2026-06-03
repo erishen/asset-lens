@@ -10,8 +10,8 @@ import pytest
 from asset_lens.analysis.alert_monitor import (
     AlertMonitor,
     AlertThreshold,
-    AlertType,
-    StockAlert,
+    MarketAlertType,
+    MarketStockAlert,
     StockSnapshot,
     alert_monitor,
 )
@@ -121,10 +121,10 @@ class TestStockAlert:
 
     def test_create_alert(self):
         """测试创建异动"""
-        alert = StockAlert(
+        alert = MarketStockAlert(
             code="sh600519",
             name="贵州茅台",
-            alert_type=AlertType.PRICE_UP,
+            alert_type=MarketAlertType.PRICE_UP,
             current_price=1800.0,
             change_percent=5.5,
             description="涨幅超过阈值",
@@ -132,7 +132,7 @@ class TestStockAlert:
         )
 
         assert alert.code == "sh600519"
-        assert alert.alert_type == AlertType.PRICE_UP
+        assert alert.alert_type == MarketAlertType.PRICE_UP
 
 
 class TestAlertMonitor:
@@ -163,7 +163,7 @@ class TestAlertMonitor:
         alert = monitor.check_price_alert(snapshot)
 
         assert alert is not None
-        assert alert.alert_type == AlertType.PRICE_UP
+        assert alert.alert_type == MarketAlertType.PRICE_UP
         assert "涨幅" in alert.description
 
     def test_check_price_alert_down(self, tmp_path):
@@ -186,7 +186,7 @@ class TestAlertMonitor:
         alert = monitor.check_price_alert(snapshot)
 
         assert alert is not None
-        assert alert.alert_type == AlertType.PRICE_DOWN
+        assert alert.alert_type == MarketAlertType.PRICE_DOWN
         assert "跌幅" in alert.description
 
     def test_check_price_alert_no_alert(self, tmp_path):
@@ -230,7 +230,7 @@ class TestAlertMonitor:
         alert = monitor.check_volume_alert(snapshot, avg_volume=1000000)
 
         assert alert is not None
-        assert alert.alert_type == AlertType.VOLUME_SURGE
+        assert alert.alert_type == MarketAlertType.VOLUME_SURGE
 
     def test_check_volume_alert_shrink(self, tmp_path):
         """测试缩量异动"""
@@ -252,7 +252,7 @@ class TestAlertMonitor:
         alert = monitor.check_volume_alert(snapshot, avg_volume=1000000)
 
         assert alert is not None
-        assert alert.alert_type == AlertType.VOLUME_SHRINK
+        assert alert.alert_type == MarketAlertType.VOLUME_SHRINK
 
     def test_check_limit_alert_up(self, tmp_path):
         """测试涨停异动"""
@@ -274,7 +274,7 @@ class TestAlertMonitor:
         alert = monitor.check_limit_alert(snapshot)
 
         assert alert is not None
-        assert alert.alert_type == AlertType.LIMIT_UP
+        assert alert.alert_type == MarketAlertType.LIMIT_UP
 
     def test_check_limit_alert_down(self, tmp_path):
         """测试跌停异动"""
@@ -296,7 +296,7 @@ class TestAlertMonitor:
         alert = monitor.check_limit_alert(snapshot)
 
         assert alert is not None
-        assert alert.alert_type == AlertType.LIMIT_DOWN
+        assert alert.alert_type == MarketAlertType.LIMIT_DOWN
 
     def test_check_price_level_support_break(self, tmp_path):
         """测试跌破支撑"""
@@ -318,7 +318,7 @@ class TestAlertMonitor:
         alert = monitor.check_price_level_alert(snapshot, support_level=1750.0)
 
         assert alert is not None
-        assert alert.alert_type == AlertType.SUPPORT_BREAK
+        assert alert.alert_type == MarketAlertType.SUPPORT_BREAK
 
     def test_check_price_level_resistance_break(self, tmp_path):
         """测试突破阻力"""
@@ -340,7 +340,7 @@ class TestAlertMonitor:
         alert = monitor.check_price_level_alert(snapshot, resistance_level=1820.0)
 
         assert alert is not None
-        assert alert.alert_type == AlertType.RESISTANCE_BREAK
+        assert alert.alert_type == MarketAlertType.RESISTANCE_BREAK
 
     def test_monitor_returns_alerts(self, tmp_path):
         """测试监控返回异动"""
@@ -369,10 +369,10 @@ class TestAlertMonitor:
 
         monitor = AlertMonitor(cache_path=tmp_path)
 
-        alert = StockAlert(
+        alert = MarketStockAlert(
             code="sh600519",
             name="贵州茅台",
-            alert_type=AlertType.PRICE_UP,
+            alert_type=MarketAlertType.PRICE_UP,
             current_price=1800.0,
             change_percent=6.5,
             description="涨幅超过阈值",
@@ -396,10 +396,10 @@ class TestAlertMonitor:
         monitor = AlertMonitor(cache_path=tmp_path)
 
         for i in range(5):
-            alert = StockAlert(
+            alert = MarketStockAlert(
                 code=f"sh60051{i}",
                 name=f"股票{i}",
-                alert_type=AlertType.PRICE_UP,
+                alert_type=MarketAlertType.PRICE_UP,
                 current_price=10.0 + i,
                 change_percent=5.0,
                 description="测试",
@@ -426,8 +426,8 @@ class TestAlertTypeEnum:
 
     def test_alert_types(self):
         """测试所有异动类型"""
-        assert AlertType.PRICE_UP.value == "price_up"
-        assert AlertType.PRICE_DOWN.value == "price_down"
-        assert AlertType.VOLUME_SURGE.value == "volume_surge"
-        assert AlertType.LIMIT_UP.value == "limit_up"
-        assert AlertType.LIMIT_DOWN.value == "limit_down"
+        assert MarketAlertType.PRICE_UP.value == "price_up"
+        assert MarketAlertType.PRICE_DOWN.value == "price_down"
+        assert MarketAlertType.VOLUME_SURGE.value == "volume_surge"
+        assert MarketAlertType.LIMIT_UP.value == "limit_up"
+        assert MarketAlertType.LIMIT_DOWN.value == "limit_down"

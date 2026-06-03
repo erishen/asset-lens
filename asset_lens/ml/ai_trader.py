@@ -1,67 +1,19 @@
-"""
-AI-driven simulated trading system.
-AI驱动的模拟交易系统
-
-整合:
-1. AI市场分析
-2. ML预测模型
-3. 自适应策略
-4. 模拟交易执行
-"""
-
-# pylint: disable=no-value-for-parameter,no-member
-
-import json
 import logging
-from dataclasses import dataclass, field
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
 
 from ..config import config
-from ..trading.stock_pool import StockPool, StockPosition
+from ..utils.json_cache import read_json_cache, write_json_cache
+from ..trading.stock_pool import StockPool
+from .ai_trader_execution import AITraderExecutionMixin
+from .ai_trader_models import AITradeRecord, TradeSignal
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class TradeSignal:
-    """交易信号"""
-
-    code: str
-    name: str
-    action: str  # buy, sell, hold
-    confidence: float
-    price: float
-    reason: str
-    market_condition: str
-    strategy: str
-    timestamp: str = field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-
-
-@dataclass
-class TradeRecord:
-    """交易记录"""
-
-    code: str
-    name: str
-    action: str
-    price: float
-    shares: int
-    amount: float
-    confidence: float
-    market_condition: str
-    strategy: str
-    reason: str
-    timestamp: str
-    profit_rate: float | None = None
-
-
-class AISimulatedTrader:
-    """AI模拟交易员"""
-
+class AISimulatedTrader(AITraderExecutionMixin):
     def __init__(self, pool_name: str = "ai_trading"):
         self.pool_name = pool_name
         self.stock_pool = StockPool(pool_name)
@@ -78,66 +30,51 @@ class AISimulatedTrader:
         self.current_strategy = "value"
         self.initial_capital = 100000.0
         self.current_capital = self.initial_capital
-        self.position_ratio = 0.2  # 单只股票最大仓位比例
-        self.min_confidence = 0.55  # 最小置信度阈值
-        self.max_positions = 10  # 最大持仓数量
+        self.position_ratio = 0.2
+        self.min_confidence = 0.55
+        self.max_positions = 10
 
         self._load_history()
         self._load_state()
 
     def _load_history(self) -> None:
-        """加载历史数据"""
-        if self.signals_file.exists():
-            with open(self.signals_file, encoding="utf-8") as f:
-                self.signals = json.load(f)
+        signals = read_json_cache(self.signals_file)
+        if signals:
+            self.signals = signals
 
-        if self.trades_file.exists():
-            with open(self.trades_file, encoding="utf-8") as f:
-                self.trades = json.load(f)
+        trades = read_json_cache(self.trades_file)
+        if trades:
+            self.trades = trades
 
     def _load_state(self) -> None:
-        """加载交易状态"""
-        if self.state_file.exists():
-            with open(self.state_file, encoding="utf-8") as f:
-                state = json.load(f)
-                self.current_capital = state.get("current_capital", self.initial_capital)
+        state = read_json_cache(self.state_file)
+        if state:
+            self.current_capital = state.get("current_capital", self.initial_capital)
 
     def _save_state(self) -> None:
-        """保存交易状态"""
+        from datetime import datetime
+
         state = {
             "current_capital": self.current_capital,
             "initial_capital": self.initial_capital,
             "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
-        with open(self.state_file, "w", encoding="utf-8") as f:
-            json.dump(state, f, ensure_ascii=False, indent=2)
+        write_json_cache(self.state_file, state)
 
     def _save_signals(self) -> None:
-        """保存信号"""
-        with open(self.signals_file, "w", encoding="utf-8") as f:
-            json.dump(self.signals[-100:], f, ensure_ascii=False, indent=2)
+        write_json_cache(self.signals_file, self.signals[-100:])
 
     def _save_trades(self) -> None:
-        """保存交易记录"""
-        with open(self.trades_file, "w", encoding="utf-8") as f:
-            json.dump(self.trades, f, ensure_ascii=False, indent=2)
+        write_json_cache(self.trades_file, self.trades)
 
     def analyze_and_generate_signals(self) -> list[TradeSignal]:
-        """
-        分析市场并生成交易信号
-
-        Returns:
-            交易信号列表
-        """
         from .adaptive_trainer import AdaptiveStrategyConfig, AIMarketAnalyzer
 
-        console_print = print
+        logger.info("=" * 60)
+        logger.info("  AI模拟交易系统")
+        logger.info("=" * 60)
 
-        console_print("\n" + "=" * 60)
-        console_print("  🤖 AI模拟交易系统")
-        console_print("=" * 60)
-
-        console_print("\n📊 第一步: AI分析市场...")
+        logger.info("第一步: AI分析市场...")
         analyzer = AIMarketAnalyzer()
         analysis = analyzer.analyze_market()
 
@@ -150,7 +87,7 @@ class AISimulatedTrader:
 
         strategy_config = AdaptiveStrategyConfig.get_config(analysis.condition)
 
-        console_print("\n🎯 第二步: 筛选候选股票...")
+        logger.info("第二步: 筛选候选股票...")
         candidates = self._get_candidate_stocks(strategy_config)
         console_print(f"  候选股票: {len(candidates)} 只")
 
@@ -174,12 +111,11 @@ class AISimulatedTrader:
 
         self._save_signals()
 
-        console_print(f"\n✅ 生成 {len(signals)} 个交易信号")
+        logger.info(f"生成 {len(signals)} 个交易信号")
 
         return signals
 
     def _get_candidate_stocks(self, config: dict) -> list[dict[str, Any]]:
-        """获取候选股票"""
         from ..data.market_stock_fetcher import MarketStockFetcher
 
         fetcher = MarketStockFetcher()
@@ -224,7 +160,6 @@ class AISimulatedTrader:
         config: dict,
         analysis,
     ) -> list[TradeSignal]:
-        """生成交易信号"""
         signals = []
 
         try:
@@ -282,15 +217,15 @@ class AISimulatedTrader:
                             )
                         )
 
-                except Exception as e:
+                except (ValueError, KeyError, RuntimeError) as e:
                     logger.debug(f"预测 {code} 失败: {e}")
                     continue
 
-        except Exception as e:
-            print(f"  [yellow]ML预测失败，使用规则策略: {e}[/yellow]")
+        except (ValueError, KeyError, RuntimeError, ConnectionError) as e:
+            logger.warning(f"ML预测失败，使用规则策略: {e}")
 
         if not signals:
-            print("  [yellow]ML未生成信号，使用规则策略补充[/yellow]")
+            logger.warning("ML未生成信号，使用规则策略补充")
             rule_signals = self._rule_based_signals(candidates, config, analysis)
             signals.extend(rule_signals)
 
@@ -303,7 +238,6 @@ class AISimulatedTrader:
         config: dict,
         analysis,
     ) -> list[TradeSignal]:
-        """基于规则的信号生成"""
         signals = []
 
         for candidate in candidates:
@@ -317,14 +251,10 @@ class AISimulatedTrader:
                 if change > 2 and turnover > 3:
                     signals.append(
                         TradeSignal(
-                            code=code,
-                            name=name,
-                            action="buy",
-                            confidence=0.6 + min(change / 20, 0.3),
-                            price=price,
+                            code=code, name=name, action="buy",
+                            confidence=0.6 + min(change / 20, 0.3), price=price,
                             reason=f"牛市动量策略: 涨幅{change:.1f}%, 换手{turnover:.1f}%",
-                            market_condition=self.market_condition,
-                            strategy=self.current_strategy,
+                            market_condition=self.market_condition, strategy=self.current_strategy,
                         )
                     )
 
@@ -332,14 +262,10 @@ class AISimulatedTrader:
                 if change < -3 and turnover < 3:
                     signals.append(
                         TradeSignal(
-                            code=code,
-                            name=name,
-                            action="sell",
-                            confidence=0.6 + min(abs(change) / 20, 0.3),
-                            price=price,
+                            code=code, name=name, action="sell",
+                            confidence=0.6 + min(abs(change) / 20, 0.3), price=price,
                             reason=f"熊市防御策略: 跌幅{change:.1f}%",
-                            market_condition=self.market_condition,
-                            strategy=self.current_strategy,
+                            market_condition=self.market_condition, strategy=self.current_strategy,
                         )
                     )
 
@@ -347,184 +273,45 @@ class AISimulatedTrader:
                 if change < -5:
                     signals.append(
                         TradeSignal(
-                            code=code,
-                            name=name,
-                            action="buy",
-                            confidence=0.65,
-                            price=price,
+                            code=code, name=name, action="buy", confidence=0.65, price=price,
                             reason=f"反转策略: 超跌反弹机会 (跌幅{change:.1f}%)",
-                            market_condition=self.market_condition,
-                            strategy=self.current_strategy,
+                            market_condition=self.market_condition, strategy=self.current_strategy,
                         )
                     )
                 elif change < -3:
                     signals.append(
                         TradeSignal(
-                            code=code,
-                            name=name,
-                            action="buy",
-                            confidence=0.58,
-                            price=price,
+                            code=code, name=name, action="buy", confidence=0.58, price=price,
                             reason=f"反转策略: 跌幅较大可能有反弹 (跌幅{change:.1f}%)",
-                            market_condition=self.market_condition,
-                            strategy=self.current_strategy,
+                            market_condition=self.market_condition, strategy=self.current_strategy,
                         )
                     )
 
             elif self.market_condition == "sideways" and -2 < change < 2 and turnover > 2:
                 signals.append(
                     TradeSignal(
-                        code=code,
-                        name=name,
-                        action="buy",
-                        confidence=0.55,
-                        price=price,
+                        code=code, name=name, action="buy", confidence=0.55, price=price,
                         reason="震荡市策略: 横盘整理后可能突破",
-                        market_condition=self.market_condition,
-                        strategy=self.current_strategy,
+                        market_condition=self.market_condition, strategy=self.current_strategy,
                     )
                 )
 
         return signals[:10]
 
-    def execute_signals(self, signals: list[TradeSignal]) -> list[TradeRecord]:
-        """
-        执行交易信号
-
-        Args:
-            signals: 交易信号列表
-
-        Returns:
-            交易记录列表
-        """
-        print("\n💼 第四步: 执行交易...")
-
-        trades = []
-        holding_count = len([p for p in self.stock_pool.positions.values() if p.status == "holding"])
-
-        buy_signals = [s for s in signals if s.action == "buy"]
-        sell_signals = [s for s in signals if s.action == "sell"]
-
-        for signal in sell_signals[:5]:
-            if signal.code in self.stock_pool.positions:
-                sell_pos = self.stock_pool.positions[signal.code]
-                if sell_pos.status == "holding":
-                    success, _ = self.stock_pool.sell_stock(signal.code, signal.price)
-                    if success:
-                        profit_rate = (signal.price - sell_pos.buy_price) / sell_pos.buy_price * 100
-                        trade = TradeRecord(
-                            code=signal.code,
-                            name=signal.name,
-                            action="sell",
-                            price=signal.price,
-                            shares=sell_pos.shares,
-                            amount=signal.price * sell_pos.shares,
-                            confidence=signal.confidence,
-                            market_condition=signal.market_condition,
-                            strategy=signal.strategy,
-                            reason=signal.reason,
-                            timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                            profit_rate=profit_rate,
-                        )
-                        trades.append(trade)
-                        self.trades.append(
-                            {
-                                "code": trade.code,
-                                "name": trade.name,
-                                "action": trade.action,
-                                "price": trade.price,
-                                "shares": trade.shares,
-                                "amount": trade.amount,
-                                "confidence": trade.confidence,
-                                "market_condition": trade.market_condition,
-                                "strategy": trade.strategy,
-                                "reason": trade.reason,
-                                "timestamp": trade.timestamp,
-                                "profit_rate": trade.profit_rate,
-                            }
-                        )
-                        print(f"  🔴 卖出 {signal.code} {signal.name} @ {signal.price:.2f} (收益: {profit_rate:+.2f}%)")
-
-        for signal in buy_signals:
-            if holding_count >= self.max_positions:
-                break
-
-            if signal.code not in self.stock_pool.positions:
-                self.stock_pool.add_stock(
-                    signal.code,
-                    signal.name,
-                    signal.price,
-                    "watching",
-                    signal.reason,
-                )
-
-            pos: StockPosition | None = self.stock_pool.positions.get(signal.code)
-            if pos and pos.status != "holding":
-                position_amount = self.current_capital * self.position_ratio
-                shares = int(position_amount / signal.price / 100) * 100
-
-                if shares >= 100:
-                    success, _ = self.stock_pool.buy_stock(signal.code, signal.price, shares)
-                    if success:
-                        cost = signal.price * shares
-                        self.current_capital -= cost
-                        self._save_state()
-                        trade = TradeRecord(
-                            code=signal.code,
-                            name=signal.name,
-                            action="buy",
-                            price=signal.price,
-                            shares=shares,
-                            amount=signal.price * shares,
-                            confidence=signal.confidence,
-                            market_condition=signal.market_condition,
-                            strategy=signal.strategy,
-                            reason=signal.reason,
-                            timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        )
-                        trades.append(trade)
-                        self.trades.append(
-                            {
-                                "code": trade.code,
-                                "name": trade.name,
-                                "action": trade.action,
-                                "price": trade.price,
-                                "shares": trade.shares,
-                                "amount": trade.amount,
-                                "confidence": trade.confidence,
-                                "market_condition": trade.market_condition,
-                                "strategy": trade.strategy,
-                                "reason": trade.reason,
-                                "timestamp": trade.timestamp,
-                            }
-                        )
-                        holding_count += 1
-                        print(f"  🟢 买入 {signal.code} {signal.name} @ {signal.price:.2f} x {shares}股")
-
-        self._save_trades()
-
-        return trades
-
     def run_trading_session(self) -> dict[str, Any]:
-        """
-        运行一次完整的交易会话
-
-        Returns:
-            交易会话结果
-        """
         signals = self.analyze_and_generate_signals()
         trades = self.execute_signals(signals)
 
         summary = self.get_portfolio_summary()
 
-        print("\n📊 交易会话总结:")
-        print(f"  市场状态: {self.market_condition.upper()}")
-        print(f"  使用策略: {self.current_strategy}")
-        print(f"  生成信号: {len(signals)} 个")
-        print(f"  执行交易: {len(trades)} 笔")
-        print(f"  当前持仓: {summary['holding_count']} 只")
-        print(f"  总资产: ¥{summary['total_value']:,.2f}")
-        print(f"  总收益: {summary['total_profit_rate']:+.2f}%")
+        logger.info("交易会话总结:")
+        logger.info(f"  市场状态: {self.market_condition.upper()}")
+        logger.info(f"  使用策略: {self.current_strategy}")
+        logger.info(f"  生成信号: {len(signals)} 个")
+        logger.info(f"  执行交易: {len(trades)} 笔")
+        logger.info(f"  当前持仓: {summary['holding_count']} 只")
+        logger.info(f"  总资产: ¥{summary['total_value']:,.2f}")
+        logger.info(f"  总收益: {summary['total_profit_rate']:+.2f}%")
 
         return {
             "market_condition": self.market_condition,
@@ -534,76 +321,6 @@ class AISimulatedTrader:
             "trades": trades,
             "portfolio": summary,
         }
-
-    def get_portfolio_summary(self) -> dict[str, Any]:
-        """获取投资组合摘要"""
-        holding_stocks = []
-        total_market_value = 0.0
-        total_profit = 0.0
-        total_cost = 0.0
-
-        for code, pos in self.stock_pool.positions.items():
-            if pos.status == "holding":
-                market_value = pos.current_price * pos.shares
-                cost = pos.buy_price * pos.shares
-                profit = (pos.current_price - pos.buy_price) * pos.shares
-                profit_rate = (pos.current_price - pos.buy_price) / pos.buy_price * 100
-
-                holding_stocks.append(
-                    {
-                        "code": code,
-                        "name": pos.name,
-                        "buy_price": pos.buy_price,
-                        "current_price": pos.current_price,
-                        "shares": pos.shares,
-                        "market_value": market_value,
-                        "profit": profit,
-                        "profit_rate": profit_rate,
-                    }
-                )
-
-                total_market_value += market_value
-                total_profit += profit
-                total_cost += cost
-
-        total_value = self.current_capital + total_market_value
-        total_profit_rate = (total_value - self.initial_capital) / self.initial_capital * 100
-
-        return {
-            "initial_capital": self.initial_capital,
-            "current_capital": self.current_capital,
-            "total_market_value": total_market_value,
-            "total_cost": total_cost,
-            "total_value": total_value,
-            "total_profit": total_profit,
-            "total_profit_rate": total_profit_rate,
-            "holding_count": len(holding_stocks),
-            "holdings": holding_stocks,
-        }
-
-    def show_trading_history(self, days: int = 7) -> None:
-        """显示交易历史"""
-        from datetime import timedelta
-
-        print(f"\n📜 交易历史 (最近{days}天)")
-        print("=" * 60)
-
-        cutoff = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
-        recent_trades = [t for t in self.trades if t.get("timestamp", "") >= cutoff]
-
-        if not recent_trades:
-            print("  暂无交易记录")
-            return
-
-        for trade in recent_trades[-20:]:
-            action_icon = "🟢" if trade["action"] == "buy" else "🔴"
-            profit_str = ""
-            if trade.get("profit_rate") is not None:
-                profit_str = f" (收益: {trade['profit_rate']:+.2f}%)"
-
-            print(f"  {action_icon} {trade['timestamp']} {trade['code']} {trade['name']}")
-            print(f"     {trade['action'].upper()} @ ¥{trade['price']:.2f} x {trade['shares']}股{profit_str}")
-            print(f"     原因: {trade['reason']}")
 
 
 ai_trader = AISimulatedTrader()

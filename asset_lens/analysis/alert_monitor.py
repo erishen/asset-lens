@@ -10,9 +10,10 @@ Stock Alert Monitor Module.
 5. 涨跌停监控
 """
 
-import json
 from dataclasses import dataclass, field
 from datetime import datetime
+
+from ..utils.json_cache import read_json_cache, write_json_cache
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -21,7 +22,7 @@ from ..config import config
 from .signal_pusher import Priority, Signal, SignalPusher, SignalType
 
 
-class AlertType(Enum):
+class MarketAlertType(Enum):
     """异动类型"""
 
     PRICE_UP = "price_up"  # 涨幅异动
@@ -82,12 +83,12 @@ class StockSnapshot:
 
 
 @dataclass
-class StockAlert:
+class MarketStockAlert:
     """股票异动"""
 
     code: str
     name: str
-    alert_type: AlertType
+    alert_type: MarketAlertType
     current_price: float
     change_percent: float
     description: str
@@ -114,13 +115,13 @@ class AlertMonitor:
         self._prev_snapshots: dict[str, StockSnapshot] = {}
         self._avg_volumes: dict[str, float] = {}
 
-    def check_price_alert(self, snapshot: StockSnapshot) -> StockAlert | None:
+    def check_price_alert(self, snapshot: StockSnapshot) -> MarketStockAlert | None:
         """检查价格异动"""
         if snapshot.change_percent >= self.threshold.price_up_percent:
-            return StockAlert(
+            return MarketStockAlert(
                 code=snapshot.code,
                 name=snapshot.name,
-                alert_type=AlertType.PRICE_UP,
+                alert_type=MarketAlertType.PRICE_UP,
                 current_price=snapshot.price,
                 change_percent=snapshot.change_percent,
                 description=f"涨幅 {snapshot.change_percent:.2f}% 超过阈值 {self.threshold.price_up_percent}%",
@@ -129,10 +130,10 @@ class AlertMonitor:
             )
 
         if snapshot.change_percent <= self.threshold.price_down_percent:
-            return StockAlert(
+            return MarketStockAlert(
                 code=snapshot.code,
                 name=snapshot.name,
-                alert_type=AlertType.PRICE_DOWN,
+                alert_type=MarketAlertType.PRICE_DOWN,
                 current_price=snapshot.price,
                 change_percent=snapshot.change_percent,
                 description=f"跌幅 {abs(snapshot.change_percent):.2f}% 超过阈值 {abs(self.threshold.price_down_percent)}%",
@@ -142,7 +143,7 @@ class AlertMonitor:
 
         return None
 
-    def check_volume_alert(self, snapshot: StockSnapshot, avg_volume: float | None = None) -> StockAlert | None:
+    def check_volume_alert(self, snapshot: StockSnapshot, avg_volume: float | None = None) -> MarketStockAlert | None:
         """检查成交量异动"""
         if avg_volume is None:
             avg_volume = self._avg_volumes.get(snapshot.code, snapshot.volume)
@@ -151,10 +152,10 @@ class AlertMonitor:
             volume_ratio = snapshot.volume / avg_volume
 
             if volume_ratio >= self.threshold.volume_surge_ratio:
-                return StockAlert(
+                return MarketStockAlert(
                     code=snapshot.code,
                     name=snapshot.name,
-                    alert_type=AlertType.VOLUME_SURGE,
+                    alert_type=MarketAlertType.VOLUME_SURGE,
                     current_price=snapshot.price,
                     change_percent=snapshot.change_percent,
                     description=f"成交量放大 {volume_ratio:.1f} 倍",
@@ -163,10 +164,10 @@ class AlertMonitor:
                 )
 
             if volume_ratio <= self.threshold.volume_shrink_ratio:
-                return StockAlert(
+                return MarketStockAlert(
                     code=snapshot.code,
                     name=snapshot.name,
-                    alert_type=AlertType.VOLUME_SHRINK,
+                    alert_type=MarketAlertType.VOLUME_SHRINK,
                     current_price=snapshot.price,
                     change_percent=snapshot.change_percent,
                     description=f"成交量萎缩至 {volume_ratio:.1%}",
@@ -176,13 +177,13 @@ class AlertMonitor:
 
         return None
 
-    def check_limit_alert(self, snapshot: StockSnapshot) -> StockAlert | None:
+    def check_limit_alert(self, snapshot: StockSnapshot) -> MarketStockAlert | None:
         """检查涨跌停"""
         if snapshot.is_limit_up:
-            return StockAlert(
+            return MarketStockAlert(
                 code=snapshot.code,
                 name=snapshot.name,
-                alert_type=AlertType.LIMIT_UP,
+                alert_type=MarketAlertType.LIMIT_UP,
                 current_price=snapshot.price,
                 change_percent=snapshot.change_percent,
                 description="涨停",
@@ -191,10 +192,10 @@ class AlertMonitor:
             )
 
         if snapshot.is_limit_down:
-            return StockAlert(
+            return MarketStockAlert(
                 code=snapshot.code,
                 name=snapshot.name,
-                alert_type=AlertType.LIMIT_DOWN,
+                alert_type=MarketAlertType.LIMIT_DOWN,
                 current_price=snapshot.price,
                 change_percent=snapshot.change_percent,
                 description="跌停",
@@ -209,13 +210,13 @@ class AlertMonitor:
         snapshot: StockSnapshot,
         support_level: float | None = None,
         resistance_level: float | None = None,
-    ) -> StockAlert | None:
+    ) -> MarketStockAlert | None:
         """检查关键价位"""
         if support_level and snapshot.price < support_level:
-            return StockAlert(
+            return MarketStockAlert(
                 code=snapshot.code,
                 name=snapshot.name,
-                alert_type=AlertType.SUPPORT_BREAK,
+                alert_type=MarketAlertType.SUPPORT_BREAK,
                 current_price=snapshot.price,
                 change_percent=snapshot.change_percent,
                 description=f"跌破支撑位 {support_level:.2f}",
@@ -224,10 +225,10 @@ class AlertMonitor:
             )
 
         if resistance_level and snapshot.price > resistance_level:
-            return StockAlert(
+            return MarketStockAlert(
                 code=snapshot.code,
                 name=snapshot.name,
-                alert_type=AlertType.RESISTANCE_BREAK,
+                alert_type=MarketAlertType.RESISTANCE_BREAK,
                 current_price=snapshot.price,
                 change_percent=snapshot.change_percent,
                 description=f"突破阻力位 {resistance_level:.2f}",
@@ -237,7 +238,7 @@ class AlertMonitor:
 
         return None
 
-    def monitor(self, snapshot: StockSnapshot, **kwargs) -> list[StockAlert]:
+    def monitor(self, snapshot: StockSnapshot, **kwargs) -> list[MarketStockAlert]:
         """监控股票异动"""
         alerts = []
 
@@ -277,7 +278,7 @@ class AlertMonitor:
         snapshots: list[StockSnapshot],
         price_levels: dict[str, dict[str, float]] | None = None,
         avg_volumes: dict[str, float] | None = None,
-    ) -> list[StockAlert]:
+    ) -> list[MarketStockAlert]:
         """批量监控"""
         all_alerts = []
 
@@ -295,7 +296,7 @@ class AlertMonitor:
 
         return all_alerts
 
-    def _push_alert(self, alert: StockAlert) -> None:
+    def _push_alert(self, alert: MarketStockAlert) -> None:
         """推送异动"""
         signal = Signal(
             code=alert.code,
@@ -311,48 +312,41 @@ class AlertMonitor:
 
         self.pusher.push(signal)
 
-    def _alert_to_signal_type(self, alert_type: AlertType) -> SignalType:
+    def _alert_to_signal_type(self, alert_type: MarketAlertType) -> SignalType:
         """转换异动类型到信号类型"""
         mapping = {
-            AlertType.PRICE_UP: SignalType.PRICE_ALERT,
-            AlertType.PRICE_DOWN: SignalType.PRICE_ALERT,
-            AlertType.VOLUME_SURGE: SignalType.VOLUME_ALERT,
-            AlertType.VOLUME_SHRINK: SignalType.VOLUME_ALERT,
-            AlertType.LIMIT_UP: SignalType.PRICE_ALERT,
-            AlertType.LIMIT_DOWN: SignalType.PRICE_ALERT,
-            AlertType.BIG_BUY: SignalType.PRICE_ALERT,
-            AlertType.BIG_SELL: SignalType.PRICE_ALERT,
-            AlertType.SUPPORT_BREAK: SignalType.PRICE_ALERT,
-            AlertType.RESISTANCE_BREAK: SignalType.PRICE_ALERT,
+            MarketAlertType.PRICE_UP: SignalType.PRICE_ALERT,
+            MarketAlertType.PRICE_DOWN: SignalType.PRICE_ALERT,
+            MarketAlertType.VOLUME_SURGE: SignalType.VOLUME_ALERT,
+            MarketAlertType.VOLUME_SHRINK: SignalType.VOLUME_ALERT,
+            MarketAlertType.LIMIT_UP: SignalType.PRICE_ALERT,
+            MarketAlertType.LIMIT_DOWN: SignalType.PRICE_ALERT,
+            MarketAlertType.BIG_BUY: SignalType.PRICE_ALERT,
+            MarketAlertType.BIG_SELL: SignalType.PRICE_ALERT,
+            MarketAlertType.SUPPORT_BREAK: SignalType.PRICE_ALERT,
+            MarketAlertType.RESISTANCE_BREAK: SignalType.PRICE_ALERT,
         }
         return mapping.get(alert_type, SignalType.PRICE_ALERT)
 
-    def _get_suggestion(self, alert_type: AlertType) -> str:
+    def _get_suggestion(self, alert_type: MarketAlertType) -> str:
         """获取建议"""
         suggestions = {
-            AlertType.PRICE_UP: "关注是否需要止盈",
-            AlertType.PRICE_DOWN: "关注是否需要止损",
-            AlertType.VOLUME_SURGE: "关注资金动向，可能有大动作",
-            AlertType.VOLUME_SHRINK: "成交量萎缩，观望为主",
-            AlertType.LIMIT_UP: "涨停，关注封单情况",
-            AlertType.LIMIT_DOWN: "跌停，注意风险",
-            AlertType.BIG_BUY: "大单买入，关注后续走势",
-            AlertType.BIG_SELL: "大单卖出，注意风险",
-            AlertType.SUPPORT_BREAK: "跌破支撑，考虑止损",
-            AlertType.RESISTANCE_BREAK: "突破阻力，关注确认情况",
+            MarketAlertType.PRICE_UP: "关注是否需要止盈",
+            MarketAlertType.PRICE_DOWN: "关注是否需要止损",
+            MarketAlertType.VOLUME_SURGE: "关注资金动向，可能有大动作",
+            MarketAlertType.VOLUME_SHRINK: "成交量萎缩，观望为主",
+            MarketAlertType.LIMIT_UP: "涨停，关注封单情况",
+            MarketAlertType.LIMIT_DOWN: "跌停，注意风险",
+            MarketAlertType.BIG_BUY: "大单买入，关注后续走势",
+            MarketAlertType.BIG_SELL: "大单卖出，注意风险",
+            MarketAlertType.SUPPORT_BREAK: "跌破支撑，考虑止损",
+            MarketAlertType.RESISTANCE_BREAK: "突破阻力，关注确认情况",
         }
         return suggestions.get(alert_type, "关注后续走势")
 
-    def _save_alert(self, alert: StockAlert) -> None:
+    def _save_alert(self, alert: MarketStockAlert) -> None:
         """保存异动历史"""
-        history = []
-
-        if self.alert_history_file.exists():
-            try:
-                with open(self.alert_history_file, encoding="utf-8") as f:
-                    history = json.load(f)
-            except (ValueError, KeyError, TypeError):
-                history = []
+        history = read_json_cache(self.alert_history_file) or []
 
         history.append(
             {
@@ -370,20 +364,14 @@ class AlertMonitor:
         if len(history) > 1000:
             history = history[-1000:]
 
-        with open(self.alert_history_file, "w", encoding="utf-8") as f:
-            json.dump(history, f, ensure_ascii=False, indent=2)
+        write_json_cache(self.alert_history_file, history)
 
     def get_recent_alerts(self, limit: int = 20) -> list[dict[str, Any]]:
         """获取最近异动"""
-        if not self.alert_history_file.exists():
-            return []
-
-        try:
-            with open(self.alert_history_file, encoding="utf-8") as f:
-                history: list[dict[str, Any]] = json.load(f)
+        history = read_json_cache(self.alert_history_file)
+        if history:
             return history[-limit:]
-        except (ValueError, KeyError, TypeError):
-            return []
+        return []
 
 
 alert_monitor = AlertMonitor()

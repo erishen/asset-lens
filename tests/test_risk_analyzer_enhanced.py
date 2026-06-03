@@ -161,12 +161,12 @@ class TestRiskMetrics:
 
     def test_default_metrics(self):
         metrics = RiskMetrics()
-        assert metrics.volatility == 0.0
-        assert metrics.max_drawdown == 0.0
-        assert metrics.sharpe_ratio == 0.0
-        assert metrics.beta == 0.0
-        assert metrics.var_95 == 0.0
-        assert metrics.concentration_risk == 0.0
+        assert metrics.volatility is None
+        assert metrics.max_drawdown is None
+        assert metrics.sharpe_ratio is None
+        assert metrics.beta is None
+        assert metrics.var_95 is None
+        assert metrics.concentration_risk is None
 
     def test_custom_metrics(self):
         metrics = RiskMetrics(

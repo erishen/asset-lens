@@ -1,124 +1,13 @@
-"""
-Performance Dashboard Module.
-绩效看板模块 - 可视化展示
-
-功能:
-1. 投资绩效总览
-2. 收益曲线展示
-3. 持仓分布图
-4. 策略对比图
-5. 风险指标展示
-"""
-
-import json
-from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from enum import Enum
 from pathlib import Path
 from typing import Any
 
 from ..config import config
-
-
-class ChartType(Enum):
-    """图表类型"""
-
-    LINE = "line"
-    BAR = "bar"
-    PIE = "pie"
-    AREA = "area"
-    SCATTER = "scatter"
-
-
-class MetricType(Enum):
-    """指标类型"""
-
-    RETURN = "return"
-    RISK = "risk"
-    SHARPE = "sharpe"
-    WIN_RATE = "win_rate"
-    DRAWDOWN = "drawdown"
-
-
-@dataclass
-class ChartData:
-    """图表数据"""
-
-    chart_type: ChartType
-    title: str
-    labels: list[str]
-    datasets: list[dict[str, Any]]
-    options: dict[str, Any] = field(default_factory=dict)
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "chart_type": self.chart_type.value,
-            "title": self.title,
-            "labels": self.labels,
-            "datasets": self.datasets,
-            "options": self.options,
-        }
-
-
-@dataclass
-class MetricCard:
-    """指标卡片"""
-
-    title: str
-    value: str
-    change: str
-    change_type: str
-    icon: str
-    color: str
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "title": self.title,
-            "value": self.value,
-            "change": self.change,
-            "change_type": self.change_type,
-            "icon": self.icon,
-            "color": self.color,
-        }
-
-
-@dataclass
-class DashboardSection:
-    """看板区块"""
-
-    title: str
-    cards: list[MetricCard]
-    charts: list[ChartData]
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "title": self.title,
-            "cards": [c.to_dict() for c in self.cards],
-            "charts": [c.to_dict() for c in self.charts],
-        }
-
-
-@dataclass
-class PerformanceDashboard:
-    """绩效看板"""
-
-    dashboard_id: str
-    title: str
-    sections: list[DashboardSection]
-    generated_at: str = field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "dashboard_id": self.dashboard_id,
-            "title": self.title,
-            "sections": [s.to_dict() for s in self.sections],
-            "generated_at": self.generated_at,
-        }
+from ..utils.json_cache import read_json_cache, write_json_cache
+from .dashboard_models import ChartData, ChartType, DashboardSection, MetricCard, PerformanceDashboard
 
 
 class DashboardGenerator:
-    """看板生成器"""
-
     DASHBOARD_FILE = "performance_dashboard.json"
 
     def __init__(self, cache_path: Path | None = None):
@@ -132,7 +21,6 @@ class DashboardGenerator:
         trades: list[dict[str, Any]] | None = None,
         strategies: list[str] | None = None,
     ) -> PerformanceDashboard:
-        """生成绩效看板"""
         sections: list[DashboardSection] = []
 
         overview_section = self._generate_overview_section(holdings, trades)
@@ -162,7 +50,6 @@ class DashboardGenerator:
         holdings: list[dict[str, Any]] | None,
         trades: list[dict[str, Any]] | None,
     ) -> DashboardSection:
-        """生成概览区块"""
         cards: list[MetricCard] = []
 
         total_value = sum(h.get("current_value", h.get("amount", 0)) for h in (holdings or []))
@@ -239,7 +126,6 @@ class DashboardGenerator:
         self,
         holdings: list[dict[str, Any]] | None,
     ) -> DashboardSection:
-        """生成持仓区块"""
         cards: list[MetricCard] = []
 
         holding_count = len(holdings or [])
@@ -330,7 +216,6 @@ class DashboardGenerator:
         self,
         strategies: list[str] | None,
     ) -> DashboardSection:
-        """生成策略区块"""
         cards: list[MetricCard] = []
 
         strategies = strategies or ["value", "momentum", "reversal", "dividend"]
@@ -388,7 +273,6 @@ class DashboardGenerator:
         self,
         holdings: list[dict[str, Any]] | None,
     ) -> DashboardSection:
-        """生成风险区块"""
         cards: list[MetricCard] = []
 
         import random
@@ -459,23 +343,15 @@ class DashboardGenerator:
         )
 
     def _save_dashboard(self, dashboard: PerformanceDashboard) -> None:
-        """保存看板"""
-        with open(self.dashboard_file, "w", encoding="utf-8") as f:
-            json.dump(dashboard.to_dict(), f, ensure_ascii=False, indent=2)
+        write_json_cache(self.dashboard_file, dashboard.to_dict())
 
     def load_dashboard(self) -> PerformanceDashboard | None:
-        """加载看板"""
-        if not self.dashboard_file.exists():
-            return None
-        try:
-            with open(self.dashboard_file, encoding="utf-8") as f:
-                data: dict[str, Any] = json.load(f)
-                return self._dict_to_dashboard(data)
-        except (ValueError, KeyError, TypeError):
-            return None
+        data = read_json_cache(self.dashboard_file)
+        if data:
+            return self._dict_to_dashboard(data)
+        return None
 
     def _dict_to_dashboard(self, data: dict[str, Any]) -> PerformanceDashboard:
-        """字典转看板对象"""
         sections: list[DashboardSection] = []
         for s in data.get("sections", []):
             cards = [
@@ -515,7 +391,6 @@ class DashboardGenerator:
         )
 
     def format_dashboard(self, dashboard: PerformanceDashboard) -> str:
-        """格式化看板"""
         lines = [
             f"\n📊 {dashboard.title}",
             "=" * 70,
@@ -552,7 +427,6 @@ class DashboardGenerator:
         return "\n".join(lines)
 
     def export_html(self, dashboard: PerformanceDashboard) -> str:
-        """导出 HTML 格式"""
         html = f"""
 <!DOCTYPE html>
 <html>

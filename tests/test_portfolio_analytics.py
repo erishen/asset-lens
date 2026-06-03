@@ -33,15 +33,15 @@ class TestRiskMetrics:
     def test_creation(self):
         """Test creating RiskMetrics"""
         metrics = RiskMetrics(
-            value_at_risk_95=2.0,
-            value_at_risk_99=3.0,
+            var_95=2.0,
+            var_99=3.0,
             expected_shortfall=2.5,
             beta=1.2,
             tracking_error=5.0,
             information_ratio=0.3,
         )
 
-        assert metrics.value_at_risk_95 == 2.0
+        assert metrics.var_95 == 2.0
         assert metrics.beta == 1.2
 
 
@@ -127,7 +127,7 @@ class TestPortfolioAnalytics:
         analytics = PortfolioAnalytics()
         metrics = analytics.calculate_risk_metrics([])
 
-        assert metrics.value_at_risk_95 == 0.0
+        assert metrics.var_95 == 0.0
         assert metrics.beta == 1.0
 
     def test_calculate_var(self):
@@ -175,8 +175,8 @@ class TestPortfolioAnalytics:
         )
 
         risk_metrics = RiskMetrics(
-            value_at_risk_95=2.0,
-            value_at_risk_99=3.0,
+            var_95=2.0,
+            var_99=3.0,
             expected_shortfall=2.5,
             beta=1.0,
             tracking_error=0.0,

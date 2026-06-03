@@ -42,9 +42,9 @@ class TestNotificationMessage:
 
     def test_message_creation(self):
         """测试消息创建"""
-        from asset_lens.notification.enhanced_notification import NotificationMessage
+        from asset_lens.notification.enhanced_notification import EnhancedNotificationMessage
 
-        message = NotificationMessage(
+        message = EnhancedNotificationMessage(
             title="测试标题",
             content="测试内容",
             level="info",
@@ -57,9 +57,9 @@ class TestNotificationMessage:
 
     def test_message_to_dict(self):
         """测试消息转换为字典"""
-        from asset_lens.notification.enhanced_notification import NotificationMessage
+        from asset_lens.notification.enhanced_notification import EnhancedNotificationMessage
 
-        message = NotificationMessage(
+        message = EnhancedNotificationMessage(
             title="测试标题",
             content="测试内容",
             level="warning",
@@ -94,15 +94,15 @@ class TestEnhancedNotificationService:
     def test_send_console_notification(self):
         """测试发送控制台通知"""
         from asset_lens.notification.enhanced_notification import (
+            EnhancedNotificationMessage,
             EnhancedNotificationService,
             NotificationConfig,
-            NotificationMessage,
         )
 
         config = NotificationConfig()
         service = EnhancedNotificationService(config)
 
-        message = NotificationMessage(
+        message = EnhancedNotificationMessage(
             title="测试通知",
             content="这是一条测试消息",
             level="info",
@@ -116,15 +116,15 @@ class TestEnhancedNotificationService:
     def test_send_disabled_service(self):
         """测试禁用服务时发送"""
         from asset_lens.notification.enhanced_notification import (
+            EnhancedNotificationMessage,
             EnhancedNotificationService,
             NotificationConfig,
-            NotificationMessage,
         )
 
         config = NotificationConfig(enabled=False)
         service = EnhancedNotificationService(config)
 
-        message = NotificationMessage(
+        message = EnhancedNotificationMessage(
             title="测试通知",
             content="测试内容",
         )
@@ -191,15 +191,15 @@ class TestEnhancedNotificationService:
     def test_get_history(self):
         """测试获取通知历史"""
         from asset_lens.notification.enhanced_notification import (
+            EnhancedNotificationMessage,
             EnhancedNotificationService,
             NotificationConfig,
-            NotificationMessage,
         )
 
         config = NotificationConfig()
         service = EnhancedNotificationService(config)
 
-        message = NotificationMessage(
+        message = EnhancedNotificationMessage(
             title="测试通知",
             content="测试内容",
         )
@@ -223,15 +223,15 @@ class TestEnhancedNotificationService:
     def test_cooldown_mechanism(self):
         """测试冷却机制"""
         from asset_lens.notification.enhanced_notification import (
+            EnhancedNotificationMessage,
             EnhancedNotificationService,
             NotificationConfig,
-            NotificationMessage,
         )
 
         config = NotificationConfig(cooldown_minutes=60)
         service = EnhancedNotificationService(config)
 
-        message = NotificationMessage(
+        message = EnhancedNotificationMessage(
             title="测试通知",
             content="测试内容",
             level="warning",
@@ -249,13 +249,13 @@ class TestNotificationChannel:
 
     def test_channel_values(self):
         """测试通知渠道值"""
-        from asset_lens.notification.enhanced_notification import NotificationChannel
+        from asset_lens.notification.enhanced_notification import EnhancedNotificationChannel
 
-        assert NotificationChannel.CONSOLE.value == "console"
-        assert NotificationChannel.DINGTALK.value == "dingtalk"
-        assert NotificationChannel.WECOM.value == "wecom"
-        assert NotificationChannel.TELEGRAM.value == "telegram"
-        assert NotificationChannel.FEISHU.value == "feishu"
+        assert EnhancedNotificationChannel.CONSOLE.value == "console"
+        assert EnhancedNotificationChannel.DINGTALK.value == "dingtalk"
+        assert EnhancedNotificationChannel.WECOM.value == "wecom"
+        assert EnhancedNotificationChannel.TELEGRAM.value == "telegram"
+        assert EnhancedNotificationChannel.FEISHU.value == "feishu"
 
 
 class TestNotificationHistory:
@@ -277,12 +277,12 @@ class TestNotificationHistory:
         import tempfile
         from pathlib import Path
 
-        from asset_lens.notification.enhanced_notification import NotificationHistory, NotificationMessage
+        from asset_lens.notification.enhanced_notification import EnhancedNotificationMessage, NotificationHistory
 
         with tempfile.TemporaryDirectory() as tmpdir:
             history = NotificationHistory(Path(tmpdir))
 
-            message = NotificationMessage(
+            message = EnhancedNotificationMessage(
                 title="测试",
                 content="内容",
             )
@@ -295,12 +295,12 @@ class TestNotificationHistory:
         import tempfile
         from pathlib import Path
 
-        from asset_lens.notification.enhanced_notification import NotificationHistory, NotificationMessage
+        from asset_lens.notification.enhanced_notification import EnhancedNotificationMessage, NotificationHistory
 
         with tempfile.TemporaryDirectory() as tmpdir:
             history = NotificationHistory(Path(tmpdir))
 
-            message = NotificationMessage(
+            message = EnhancedNotificationMessage(
                 title="测试",
                 content="内容",
             )

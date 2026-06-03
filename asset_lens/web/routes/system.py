@@ -16,17 +16,16 @@ async def get_provider_health():
     try:
         summary = provider_registry.get_health_summary()
         return {"success": True, **summary}
-    except Exception as e:
+    except (ValueError, KeyError, RuntimeError) as e:
         return {"success": False, "error": str(e)}
 
 
 @router.get("/api/cache/stats")
 async def get_cache_stats():
-    """获取缓存统计"""
     try:
         stats = provider_cache.stats()
         return {"success": True, **stats}
-    except Exception as e:
+    except (ValueError, KeyError, RuntimeError) as e:
         return {"success": False, "error": str(e)}
 
 

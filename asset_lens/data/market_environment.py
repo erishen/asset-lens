@@ -9,13 +9,13 @@ Market environment analyzer for asset-lens.
 4. 参数动态调整 - 根据环境调整策略参数
 """
 
-import json
 import logging
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
 from ..config import config
+from .providers.cache import UnifiedCache
 
 logger = logging.getLogger(__name__)
 
@@ -54,38 +54,36 @@ class MarketEnvironmentAnalyzer:
 
     def __init__(self):
         self.cache_path = config.cache_path
-        self.cache_file = self.cache_path / "market_environment.json"
+        self._cache = UnifiedCache(cache_dir=self.cache_path)
         self.history: list[MarketEnvironment] = []
         self._load_history()
 
     def _load_history(self) -> None:
-        """加载历史记录"""
-        if self.cache_file.exists():
-            try:
-                with open(self.cache_file, encoding="utf-8") as f:
-                    data = json.load(f)
-                    self.history = [
-                        MarketEnvironment(
-                            date=e.get("date", ""),
-                            market_type=e.get("market_type", "oscillation"),
-                            index_change_5d=e.get("index_change_5d", 0),
-                            index_change_20d=e.get("index_change_20d", 0),
-                            index_change_60d=e.get("index_change_60d", 0),
-                            volatility=e.get("volatility", 0),
-                            volume_trend=e.get("volume_trend", "stable"),
-                            sentiment=e.get("sentiment", "neutral"),
-                            hot_sectors=e.get("hot_sectors", []),
-                            cold_sectors=e.get("cold_sectors", []),
-                            recommended_strategies=e.get("recommended_strategies", []),
-                            risk_level=e.get("risk_level", "medium"),
-                        )
-                        for e in data.get("history", [])
-                    ]
-            except Exception as e:
-                logger.warning(f"加载市场环境历史失败: {e}")
+        data = self._cache.load_file("market_environment.json")
+        if data is None:
+            return
+        try:
+            self.history = [
+                MarketEnvironment(
+                    date=e.get("date", ""),
+                    market_type=e.get("market_type", "oscillation"),
+                    index_change_5d=e.get("index_change_5d", 0),
+                    index_change_20d=e.get("index_change_20d", 0),
+                    index_change_60d=e.get("index_change_60d", 0),
+                    volatility=e.get("volatility", 0),
+                    volume_trend=e.get("volume_trend", "stable"),
+                    sentiment=e.get("sentiment", "neutral"),
+                    hot_sectors=e.get("hot_sectors", []),
+                    cold_sectors=e.get("cold_sectors", []),
+                    recommended_strategies=e.get("recommended_strategies", []),
+                    risk_level=e.get("risk_level", "medium"),
+                )
+                for e in data.get("history", [])
+            ]
+        except (json.JSONDecodeError, OSError, ValueError, KeyError) as e:
+            logger.warning(f"加载市场环境历史失败: {e}")
 
     def _save_history(self) -> None:
-        """保存历史记录"""
         data = {
             "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "history": [
@@ -103,11 +101,10 @@ class MarketEnvironmentAnalyzer:
                     "recommended_strategies": e.recommended_strategies,
                     "risk_level": e.risk_level,
                 }
-                for e in self.history[-30:]  # 只保留最近30天
+                for e in self.history[-30:]
             ],
         }
-        with open(self.cache_file, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+        self._cache.save_file("market_environment.json", data, ttl=0)
 
     def analyze_environment(
         self,

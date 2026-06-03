@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from ..config import config
+from ..utils.json_cache import read_json_cache
 
 logger = logging.getLogger(__name__)
 
@@ -128,30 +129,27 @@ class StockScreener:
                 max_results=data.get("max_results", 20),
                 min_score=data.get("min_score", 60.0),
             )
-        except Exception as e:
+        except (json.JSONDecodeError, OSError, ValueError, KeyError) as e:
             logger.debug(f"忽略异常: {e}")
             return ScreenerConfig()
 
     def _load_market_stocks(self) -> list[dict[str, Any]]:
         """加载市场股票数据"""
         market_file = self.cache_path / "market_stocks.json"
-        if market_file.exists():
-            with open(market_file, encoding="utf-8") as f:
-                data: dict[str, Any] = json.load(f)
-                stocks_list: list[dict[str, Any]] = data.get("data", [])
-                return stocks_list
+        data = read_json_cache(market_file)
+        if data:
+            return data.get("data", [])
         return []
 
     def _load_stock_history(self, code: str) -> dict[str, Any] | None:
         """加载股票历史数据"""
         history_file = self.cache_path / "stock_history_baostock.json"
-        if history_file.exists():
-            with open(history_file, encoding="utf-8") as f:
-                data: dict[str, Any] = json.load(f)
-                history_data: dict[str, Any] = data.get("data", {})
-                if history_data and isinstance(history_data, dict):
-                    history: dict[str, Any] | None = history_data.get(code)
-                    return history
+        data = read_json_cache(history_file)
+        if data:
+            history_data: dict[str, Any] = data.get("data", {})
+            if history_data and isinstance(history_data, dict):
+                history: dict[str, Any] | None = history_data.get(code)
+                return history
         return None
 
     def filter_by_fundamental(self, stocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -398,27 +396,23 @@ class StockScreener:
         if not stocks:
             return []
 
-        print(f"📊 开始筛选 {len(stocks)} 只股票...")
-        print(f"   筛选类型: {filter_type}")
+        logger.info(f" 开始筛选 {len(stocks)} 只股票...")
+        logger.info(f"   筛选类型: {filter_type}")
 
         if filter_type == "fundamental":
             results = self.filter_by_fundamental(stocks)
         elif filter_type == "technical":
             histories = {}
             history_file = self.cache_path / "stock_history_baostock.json"
-            if history_file.exists():
-                with open(history_file, encoding="utf-8") as f:
-                    data = json.load(f)
-                    histories = data.get("data", {})
+            history_data = read_json_cache(history_file)
+            histories = history_data.get("data", {}) if history_data else {}
             results = self.filter_by_technical(stocks, histories)
         else:
             fundamental_results = self.filter_by_fundamental(stocks)
             histories = {}
             history_file = self.cache_path / "stock_history_baostock.json"
-            if history_file.exists():
-                with open(history_file, encoding="utf-8") as f:
-                    data = json.load(f)
-                    histories = data.get("data", {})
+            history_data = read_json_cache(history_file)
+            histories = history_data.get("data", {}) if history_data else {}
             results = self.filter_by_technical(fundamental_results, histories)
 
         scored_results = []
@@ -455,7 +449,7 @@ class StockScreener:
         if strategy is None:
             strategy = {}
 
-        print(f"📊 使用自定义策略筛选 {len(stocks)} 只股票...")
+        logger.info(f" 使用自定义策略筛选 {len(stocks)} 只股票...")
 
         results = []
         for stock in stocks:

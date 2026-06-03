@@ -8,7 +8,7 @@ from pydantic import BaseModel
 router = APIRouter(prefix="/api/recommendations", tags=["recommendations"])
 
 
-class StockRecommendation(BaseModel):
+class WebStockRecommendation(BaseModel):
     """股票推荐模型"""
 
     code: str
@@ -20,7 +20,7 @@ class StockRecommendation(BaseModel):
     confidence: float = 0
 
 
-class StrategyRecommendation(BaseModel):
+class WebStrategyRecommendation(BaseModel):
     """策略推荐模型"""
 
     strategy_name: str

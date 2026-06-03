@@ -5,7 +5,7 @@ Tests for config module.
 
 from pathlib import Path
 
-from asset_lens.config import Config, config
+from asset_lens.config import AssetLensConfig, config
 
 
 class TestConfig:
@@ -230,15 +230,15 @@ class TestConfigInitialization:
 
     def test_config_initialization(self):
         """Test that config can be initialized"""
-        test_config = Config()
+        test_config = AssetLensConfig()
         assert test_config is not None
 
     def test_config_loads_platform_config(self):
         """Test that config loads platform config"""
-        test_config = Config()
+        test_config = AssetLensConfig()
         assert test_config.platforms is not None
 
     def test_config_loads_investment_type_config(self):
         """Test that config loads investment type config"""
-        test_config = Config()
+        test_config = AssetLensConfig()
         assert test_config.investment_types is not None

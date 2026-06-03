@@ -13,18 +13,18 @@ from .stock_pool_builder import (
     StockPoolBuilder,
     stock_pool_builder,
 )
-from .strategy_simulator import (
+from .simulator_models import (
     RebalanceFrequency,
+    StopLossType,
+)
+from .strategy_simulator import (
     SimulatedPosition,
     SimulatedTrade,
     SimulationConfig,
     SimulationResult,
-    StopLossType,
     StrategySimulator,
     strategy_simulator,
 )
-
-stock_pool_manager = stock_pool
 
 __all__ = [
     "AutoTrader",
@@ -47,6 +47,5 @@ __all__ = [
     "risk_manager",
     "stock_pool",
     "stock_pool_builder",
-    "stock_pool_manager",
     "strategy_simulator",
 ]

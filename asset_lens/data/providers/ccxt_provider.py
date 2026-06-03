@@ -71,7 +71,7 @@ class CCXTProvider(BaseProvider):
 
         try:
             return self._fetch_ticker(symbol)
-        except Exception as e:
+        except (ValueError, KeyError, ConnectionError, RuntimeError) as e:
             logger.debug(f"忽略异常: {e}")
             return None
 

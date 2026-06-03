@@ -158,7 +158,7 @@ class MarketSentimentAnalyzer:
                                 total_score += score * weight
                                 descriptions.append(f"{name}{desc}({change_pct:+.2f}%)")
                                 count += 1
-                except Exception as e:
+                except (ValueError, KeyError, ConnectionError, TimeoutError) as e:
                     logger.debug(f"忽略异常: {e}")
                     continue
 
@@ -184,7 +184,7 @@ class MarketSentimentAnalyzer:
                 description="; ".join(descriptions[:3]),
             )
 
-        except Exception as e:
+        except (ValueError, KeyError, ConnectionError, TimeoutError) as e:
             return SentimentIndicator(
                 name="指数趋势",
                 value=50,
@@ -265,7 +265,7 @@ class MarketSentimentAnalyzer:
                 description=desc,
             )
 
-        except Exception as e:
+        except (ValueError, KeyError, OSError) as e:
             return SentimentIndicator(
                 name="板块热度",
                 value=50,
@@ -339,7 +339,7 @@ class MarketSentimentAnalyzer:
                 description=desc,
             )
 
-        except Exception as e:
+        except (ValueError, KeyError, OSError) as e:
             return SentimentIndicator(
                 name="资金流向",
                 value=50,
@@ -400,7 +400,7 @@ class MarketSentimentAnalyzer:
                 description=desc,
             )
 
-        except Exception as e:
+        except (ValueError, KeyError, OSError) as e:
             return SentimentIndicator(
                 name="选股效果",
                 value=50,

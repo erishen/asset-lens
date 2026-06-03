@@ -15,21 +15,18 @@ Fundamental Data Updater.
     python update_fundamental_data.py --mode daily    # 每日更新
 """
 
-import warnings
+from ..utils.warnings_config import suppress_common_warnings
 
-warnings.filterwarnings("ignore", message="Pandas requires version")
-warnings.filterwarnings("ignore", message=".*unclosed.*socket.*")
-warnings.filterwarnings("ignore", category=ResourceWarning)
-warnings.filterwarnings("ignore", category=DeprecationWarning)
+suppress_common_warnings()
 
 import argparse
-import json
 import logging
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
 from asset_lens.data.fundamental_fetcher import EnhancedFeatureBuilder, FundamentalFetcher, MoneyFlowFetcher
+from asset_lens.data.providers.cache import UnifiedCache
 from asset_lens.db.database import db_manager
 
 logger = logging.getLogger(__name__)
@@ -46,11 +43,11 @@ class FundamentalDataUpdater:
         self.money_flow_fetcher = MoneyFlowFetcher(cache_path=self.cache_dir)
         self.feature_builder = EnhancedFeatureBuilder()
 
-        self.status_file = self.cache_dir / "update_status.json"
+        self._cache = UnifiedCache(cache_dir=self.cache_dir)
+        self._status_filename = "update_status.json"
         self._load_status()
 
     def _load_status(self):
-        """加载更新状态"""
         self.status: dict[str, str | int | None] = {
             "last_full_update": None,
             "last_incremental_update": None,
@@ -59,17 +56,15 @@ class FundamentalDataUpdater:
             "updated_stocks": 0,
         }
 
-        if self.status_file.exists():
+        data = self._cache.load_file(self._status_filename)
+        if data is not None:
             try:
-                with open(self.status_file, encoding="utf-8") as f:
-                    self.status.update(json.load(f))
-            except Exception as e:
+                self.status.update(data)
+            except (ValueError, TypeError, KeyError) as e:
                 logger.warning(f"加载状态文件失败: {e}")
 
     def _save_status(self):
-        """保存更新状态"""
-        with open(self.status_file, "w", encoding="utf-8") as f:
-            json.dump(self.status, f, indent=2, default=str)
+        self._cache.save_file(self._status_filename, self.status, ttl=0)
 
     def get_all_stock_codes(self) -> list[str]:
         """获取所有股票代码"""
@@ -77,7 +72,7 @@ class FundamentalDataUpdater:
             codes = db_manager.get_stock_codes()
             logger.info(f"获取到 {len(codes)} 只股票代码")
             return codes
-        except Exception as e:
+        except (ValueError, KeyError, ConnectionError) as e:
             logger.error(f"获取股票代码失败: {e}")
             return []
 
@@ -107,7 +102,7 @@ class FundamentalDataUpdater:
                     logger.info(f"进度: {i + 1}/{total} ({(i + 1) / total * 100:.1f}%)")
                     self.fundamental_fetcher._save_cache()
 
-            except Exception as e:
+            except (ValueError, KeyError, ConnectionError) as e:
                 failed += 1
                 logger.debug(f"更新 {code} 失败: {e}")
 
@@ -144,7 +139,7 @@ class FundamentalDataUpdater:
                 if (i + 1) % 100 == 0:
                     logger.info(f"进度: {i + 1}/{total} ({(i + 1) / total * 100:.1f}%)")
 
-            except Exception as e:
+            except (ValueError, KeyError, ConnectionError) as e:
                 logger.debug(f"更新 {code} 资金流向失败: {e}")
 
         self.money_flow_fetcher._save_money_flow_cache()
@@ -188,7 +183,7 @@ class FundamentalDataUpdater:
                 if mtime < cutoff:
                     cache_file.unlink()
                     cleaned += 1
-            except Exception as e:
+            except OSError as e:
                 logger.debug(f"清理 {cache_file} 失败: {e}")
 
         logger.info(f"清理完成: 删除 {cleaned} 个过期缓存文件")
@@ -236,10 +231,10 @@ def main():
 
     elif args.mode == "status":
         summary = updater.get_update_summary()
-        print("\n📊 基本面数据更新状态:")
-        print("-" * 40)
+        logger.info(f" 基本面数据更新状态:")
+        logger.info("-" * 40)
         for key, value in summary.items():
-            print(f"  {key}: {value}")
+            logger.info(f"  {key}: {value}")
 
     elif args.mode == "cleanup":
         updater.cleanup_old_cache(days=args.days)

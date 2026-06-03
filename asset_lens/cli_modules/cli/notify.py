@@ -75,11 +75,11 @@ def send(title, content, channel):
         asset-lens notify send "测试标题" "测试内容"
         asset-lens notify send "预警" "价格异常" -c dingtalk -c telegram
     """
-    from asset_lens.notification.enhanced_notification import NotificationMessage, enhanced_notification_service
+    from asset_lens.notification.enhanced_notification import EnhancedNotificationMessage, enhanced_notification_service
 
     channels = list(channel) if channel else None
 
-    message = NotificationMessage(
+    message = EnhancedNotificationMessage(
         title=title,
         content=content,
         level="info",

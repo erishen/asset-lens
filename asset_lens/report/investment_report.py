@@ -16,7 +16,7 @@ from typing import Any
 
 from ..config import config
 from ..trading.stock_pool import StockPool
-from .report_html import HTMLReportGenerator
+from .report_html import SimpleHTMLReportGenerator
 from .report_printer import ReportPrinter
 
 
@@ -543,7 +543,7 @@ class InvestmentReportGenerator:
 
         filepath = self.report_path / output_file
 
-        html_generator = HTMLReportGenerator()
+        html_generator = SimpleHTMLReportGenerator()
         html_content = html_generator.generate_html(report, include_charts)
 
         with open(filepath, "w", encoding="utf-8") as f:

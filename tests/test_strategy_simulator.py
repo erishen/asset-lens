@@ -13,11 +13,13 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from asset_lens.trading.strategy_simulator import (
+from asset_lens.trading.simulator_models import (
     RebalanceFrequency,
+    StopLossType,
+)
+from asset_lens.trading.strategy_simulator import (
     SimulatedPosition,
     SimulationConfig,
-    StopLossType,
     StrategySimulator,
 )
 

@@ -9,7 +9,6 @@ Auto backup system for asset-lens.
 4. 备份清理
 """
 
-import json
 import logging
 import shutil
 import tarfile
@@ -17,6 +16,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from ..config import config
+from .providers.cache import UnifiedCache
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +27,11 @@ class BackupManager:
     def __init__(self):
         self.backup_path = config.cache_path / "backups"
         self.backup_path.mkdir(parents=True, exist_ok=True)
-        self.config_file = self.backup_path / "backup_config.json"
+        self._cache = UnifiedCache(cache_dir=self.backup_path)
+        self._config_filename = "backup_config.json"
         self.config = self._load_config()
 
     def _load_config(self) -> dict[str, Any]:
-        """加载备份配置"""
         default_config = {
             "auto_backup_enabled": True,
             "backup_interval_days": 1,
@@ -50,20 +50,17 @@ class BackupManager:
             "last_backup_time": None,
         }
 
-        if self.config_file.exists():
+        saved_config = self._cache.load_file(self._config_filename)
+        if saved_config is not None:
             try:
-                with open(self.config_file, encoding="utf-8") as f:
-                    saved_config = json.load(f)
-                    default_config.update(saved_config)
-            except (ValueError, KeyError, TypeError):
-                pass
+                default_config.update(saved_config)
+            except (ValueError, KeyError, TypeError) as e:
+                logger.debug("备份数据解析失败: %s", e)
 
         return default_config
 
     def _save_config(self) -> None:
-        """保存备份配置"""
-        with open(self.config_file, "w", encoding="utf-8") as f:
-            json.dump(self.config, f, ensure_ascii=False, indent=2)
+        self._cache.save_file(self._config_filename, self.config, ttl=0)
 
     def create_backup(
         self,
@@ -136,7 +133,7 @@ class BackupManager:
 
             self._cleanup_old_backups()
 
-        except Exception as e:
+        except (OSError, shutil.Error, ValueError) as e:
             result["errors"].append(str(e))
 
         return result
@@ -212,7 +209,7 @@ class BackupManager:
 
             result["success"] = True
 
-        except Exception as e:
+        except (OSError, shutil.Error, ValueError) as e:
             result["errors"].append(str(e))
 
         return result
@@ -239,7 +236,7 @@ class BackupManager:
                         "modified_at": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
                     }
                 )
-            except Exception as e:
+            except OSError as e:
                 logger.debug(f"忽略异常: {e}")
                 continue
 
@@ -267,7 +264,7 @@ class BackupManager:
             try:
                 backup_file.unlink()
                 result["success"] = True
-            except Exception as e:
+            except OSError as e:
                 result["error"] = str(e)
         else:
             result["error"] = "备份文件不存在"
@@ -290,7 +287,7 @@ class BackupManager:
             try:
                 oldest.unlink()
                 deleted_count += 1
-            except Exception as e:
+            except OSError as e:
                 logger.debug(f"忽略异常: {e}")
                 continue
 

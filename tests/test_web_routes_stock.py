@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "asset_lens"))
 
-from asset_lens.web.routes.stock import StockQuote, router
+from asset_lens.web.routes.stock import WebStockQuote, router
 
 
 @pytest.fixture
@@ -35,7 +35,7 @@ class TestStockQuote:
 
     def test_stock_quote_model(self):
         """测试股票行情模型"""
-        quote = StockQuote(
+        quote = WebStockQuote(
             code="sh600519",
             name="贵州茅台",
             current_price=1800.0,

@@ -1,70 +1,16 @@
-"""
-Chat API Router for Invest Assistant.
-投资助手 API - 整合多个数据源
-"""
-
 import contextlib
 import logging
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from fastapi import HTTPException
+
+from .chat_models import ChatRequest, ChatResponse, RAGRequest, RAGResponse, SignalsRequest, router
 
 logger = logging.getLogger(__name__)
-
-router = APIRouter(prefix="/api/chat", tags=["chat"])
-
-
-class ChatRequest(BaseModel):
-    """聊天请求"""
-
-    message: str
-    context: dict[str, Any] | None = None
-    use_rag: bool = True
-    use_signals: bool = False
-    use_portfolio: bool = False
-    fast_mode: bool = True  # 默认使用快速模式
-
-
-class ChatResponse(BaseModel):
-    """聊天响应"""
-
-    response: str
-    sources: list[str]
-    confidence: float
-    suggestions: list[str]
-    related_questions: list[str]
-
-
-class SignalsRequest(BaseModel):
-    """信号请求"""
-
-    signal_type: str | None = None
-    min_score: int = 50
-    limit: int = 10
-
-
-class RAGRequest(BaseModel):
-    """RAG 请求"""
-
-    query: str
-    k: int = 5
-
-
-class RAGResponse(BaseModel):
-    """RAG 响应"""
-
-    results: list[dict[str, Any]]
-    total: int
 
 
 @router.post("/qa", response_model=ChatResponse)
 async def chat_qa(request: ChatRequest):
-    """
-    投资问答
-
-    整合 AI 问答引擎和 RAG 知识库
-    """
     try:
         from pathlib import Path
 
@@ -79,7 +25,6 @@ async def chat_qa(request: ChatRequest):
                 content = r.get("content", "")[:500]
                 rag_context += f"- {content}\n"
 
-        # 快速模式：直接使用后备答案
         if request.fast_mode:
             response_text = _generate_fallback_answer(request.message, rag_results)
         else:
@@ -105,7 +50,7 @@ async def chat_qa(request: ChatRequest):
             response_text = None
 
             try:
-                from ..http_client import async_get, async_post
+                from ..aiohttp_session import async_get, async_post
 
                 ollama_models = ["gemma4", "llama3", "qwen2.5", "deepseek-r1"]
                 ollama_model = None
@@ -120,7 +65,7 @@ async def chat_qa(request: ChatRequest):
                                 if m in model_names:
                                     ollama_model = m
                                     break
-                except Exception as e:
+                except (ConnectionError, TimeoutError, ValueError) as e:
                     logger.debug(f"忽略异常: {e}")
 
                 if ollama_model:
@@ -145,7 +90,7 @@ async def chat_qa(request: ChatRequest):
                                     response_text = thinking
                             if not response_text:
                                 logger.warning(f"Ollama returned empty response: {result}")
-            except Exception as e:
+            except (ConnectionError, TimeoutError, ValueError, RuntimeError) as e:
                 logger.warning(f"Ollama generation failed: {e}")
 
             if not response_text:
@@ -162,55 +107,29 @@ async def chat_qa(request: ChatRequest):
             related_questions=related_questions,
         )
 
-    except Exception as e:
+    except (ValueError, KeyError, RuntimeError, ConnectionError) as e:
         logger.error(f"Chat QA error: {e}")
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 def _generate_suggestions(question: str) -> list[str]:
-    """根据问题生成建议问题"""
     question_lower = question.lower()
 
     if "风险" in question_lower:
-        return [
-            "如何设置止损点？",
-            "如何分散投资风险？",
-            "什么是仓位管理？",
-        ]
+        return ["如何设置止损点？", "如何分散投资风险？", "什么是仓位管理？"]
     elif "止损" in question_lower:
-        return [
-            "止损后如何重新入场？",
-            "如何避免频繁止损？",
-            "止损比例设置多少合适？",
-        ]
+        return ["止损后如何重新入场？", "如何避免频繁止损？", "止损比例设置多少合适？"]
     elif "趋势" in question_lower or "市场" in question_lower:
-        return [
-            "如何判断市场顶部和底部？",
-            "当前市场适合入场吗？",
-            "如何利用均线判断趋势？",
-        ]
+        return ["如何判断市场顶部和底部？", "当前市场适合入场吗？", "如何利用均线判断趋势？"]
     elif "仓位" in question_lower or "配置" in question_lower:
-        return [
-            "如何动态调整仓位？",
-            "不同市场环境如何配置？",
-            "仓位和止损如何配合？",
-        ]
+        return ["如何动态调整仓位？", "不同市场环境如何配置？", "仓位和止损如何配合？"]
     elif "止盈" in question_lower:
-        return [
-            "止盈后如何再入场？",
-            "如何设置移动止盈？",
-            "止盈和止损如何平衡？",
-        ]
+        return ["止盈后如何再入场？", "如何设置移动止盈？", "止盈和止损如何平衡？"]
     else:
-        return [
-            "如何控制投资风险？",
-            "当前市场趋势如何？",
-            "如何制定投资计划？",
-        ]
+        return ["如何控制投资风险？", "当前市场趋势如何？", "如何制定投资计划？"]
 
 
 def _generate_related_questions(question: str) -> list[str]:
-    """生成相关问题"""
     question_lower = question.lower()
 
     if "风险" in question_lower:
@@ -226,7 +145,6 @@ def _generate_related_questions(question: str) -> list[str]:
 
 
 def _generate_fallback_answer(question: str, rag_results: list) -> str:
-    """生成后备答案"""
     if rag_results:
         sources = set()
         contents = []
@@ -265,11 +183,6 @@ def _generate_fallback_answer(question: str, rag_results: list) -> str:
 
 @router.get("/portfolio")
 async def get_portfolio_analysis():
-    """
-    获取投资组合分析
-
-    整合 asset-lens 投资数据
-    """
     try:
         from pathlib import Path
 
@@ -345,7 +258,7 @@ async def get_portfolio_analysis():
             "score": analysis.score,
         }
 
-    except Exception as e:
+    except (ValueError, KeyError, RuntimeError) as e:
         logger.error(f"Portfolio analysis error: {e}")
         return {
             "success": False,
@@ -360,11 +273,6 @@ async def get_portfolio_analysis():
 
 @router.post("/signals")
 async def get_signals(request: SignalsRequest):
-    """
-    获取技术信号
-
-    整合 stock-analyzer 信号扫描
-    """
     try:
         import sys
         from pathlib import Path
@@ -422,18 +330,13 @@ async def get_signals(request: SignalsRequest):
             "summary": result.summary,
         }
 
-    except Exception as e:
+    except (ValueError, KeyError, RuntimeError, ImportError) as e:
         logger.error(f"Signals error: {e}")
         return {"success": False, "error": str(e), "signals": []}
 
 
 @router.get("/timing")
 async def get_market_timing():
-    """
-    获取大盘择时
-
-    整合 stock-analyzer 大盘择时
-    """
     try:
         import sys
         from pathlib import Path
@@ -473,29 +376,23 @@ async def get_market_timing():
             },
         }
 
-    except Exception as e:
+    except (ValueError, KeyError, RuntimeError, ImportError) as e:
         logger.error(f"Market timing error: {e}")
         return {"success": False, "error": str(e)}
 
 
 @router.post("/rag", response_model=RAGResponse)
 async def query_rag(request: RAGRequest):
-    """
-    RAG 知识库查询
-
-    整合 langchain-llm-toolkit RAG 系统
-    """
     try:
         results = await _query_rag(request.query, request.k)
         return RAGResponse(results=results, total=len(results))
 
-    except Exception as e:
+    except (ValueError, KeyError, RuntimeError, ImportError) as e:
         logger.error(f"RAG query error: {e}")
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 async def _query_rag(query: str, k: int = 5) -> list[dict[str, Any]]:
-    """查询 RAG 知识库"""
     try:
         import os
         import sys
@@ -540,18 +437,13 @@ async def _query_rag(query: str, k: int = 5) -> list[dict[str, Any]]:
 
         return results
 
-    except Exception as e:
+    except (ValueError, KeyError, RuntimeError, ImportError) as e:
         logger.warning(f"RAG query failed: {e}")
         return []
 
 
 @router.get("/config")
 async def get_config():
-    """
-    获取配置信息
-
-    整合 lobster 配置
-    """
     try:
         import json
         from pathlib import Path
@@ -583,6 +475,6 @@ async def get_config():
             },
         }
 
-    except Exception as e:
+    except (ValueError, KeyError, OSError) as e:
         logger.error(f"Config error: {e}")
         raise HTTPException(status_code=500, detail=str(e)) from e

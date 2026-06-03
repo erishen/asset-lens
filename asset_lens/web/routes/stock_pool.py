@@ -92,5 +92,5 @@ async def get_stock_pool():
             "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
 
-    except Exception as e:
+    except (ValueError, KeyError, TypeError, OSError, RuntimeError) as e:
         return {"stocks": [], "count": 0, "error": str(e)}

@@ -10,107 +10,29 @@ Portfolio Analysis Module.
 5. 调仓建议
 """
 
-from dataclasses import dataclass, field
-from datetime import datetime
-from enum import Enum
 from pathlib import Path
 from typing import Any
 
 from ..config import config
+from .portfolio_models import (
+    HealthLevel,
+    PortfolioHealth,
+    Position,
+    SectorAllocation,
+    StockDiagnosis,
+    TrendDirection,
+)
 
-
-class HealthLevel(Enum):
-    """健康度等级"""
-
-    EXCELLENT = "excellent"  # 优秀 (>80)
-    GOOD = "good"  # 良好 (60-80)
-    FAIR = "fair"  # 一般 (40-60)
-    POOR = "poor"  # 较差 (20-40)
-    CRITICAL = "critical"  # 危险 (<20)
-
-
-class TrendDirection(Enum):
-    """趋势方向"""
-
-    STRONG_UP = "strong_up"  # 强势上涨
-    UP = "up"  # 上涨
-    SIDEWAYS = "sideways"  # 横盘
-    DOWN = "down"  # 下跌
-    STRONG_DOWN = "strong_down"  # 强势下跌
-
-
-@dataclass
-class Position:
-    """持仓"""
-
-    code: str
-    name: str
-    shares: float
-    cost_price: float
-    current_price: float
-    market_value: float
-    profit_loss: float
-    profit_loss_percent: float
-    weight: float  # 占比
-    industry: str = ""
-    sector: str = ""
-
-
-@dataclass
-class StockDiagnosis:
-    """个股诊断"""
-
-    code: str
-    name: str
-    current_price: float
-    trend: TrendDirection
-    health_score: float
-    health_level: HealthLevel
-
-    technical_score: float = 0.0
-    fundamental_score: float = 0.0
-    sentiment_score: float = 0.0
-
-    strengths: list[str] = field(default_factory=list)
-    weaknesses: list[str] = field(default_factory=list)
-    suggestions: list[str] = field(default_factory=list)
-
-    support_levels: list[float] = field(default_factory=list)
-    resistance_levels: list[float] = field(default_factory=list)
-
-    timestamp: str = field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-
-
-@dataclass
-class PortfolioHealth:
-    """持仓健康度"""
-
-    total_value: float
-    total_profit_loss: float
-    total_profit_loss_percent: float
-
-    health_score: float
-    health_level: HealthLevel
-
-    diversification_score: float  # 分散度
-    concentration_risk: float  # 集中度风险
-    sector_balance: float  # 行业平衡度
-
-    top_positions: list[Position]
-    risk_positions: list[Position]
-
-    suggestions: list[str] = field(default_factory=list)
-
-
-@dataclass
-class SectorAllocation:
-    """行业配置"""
-
-    sector: str
-    weight: float
-    profit_loss: float
-    profit_loss_percent: float
-    positions: list[Position]
+__all__ = [
+    "HealthLevel",
+    "PortfolioAnalyzer",
+    "PortfolioHealth",
+    "Position",
+    "SectorAllocation",
+    "StockDiagnosis",
+    "TrendDirection",
+    "portfolio_analyzer",
+]
 
 
 class PortfolioAnalyzer:

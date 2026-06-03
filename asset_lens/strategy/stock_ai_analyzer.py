@@ -31,7 +31,7 @@ class AIDecision(Enum):
 
 
 @dataclass
-class AIAnalysisResult:
+class StrategyAIAnalysisResult:
     """AI 分析结果"""
 
     decision: AIDecision
@@ -112,7 +112,7 @@ class StockAIAnalyzer:
         market_data: dict[str, Any] | None = None,
         strategy_signal: str | None = None,
         additional_context: str | None = None,
-    ) -> AIAnalysisResult:
+    ) -> StrategyAIAnalysisResult:
         """同步分析股票"""
 
         if not self.enabled:
@@ -164,7 +164,7 @@ class StockAIAnalyzer:
 
     def _parse_response(
         self, content: str, prompt_tokens: int = 0, completion_tokens: int = 0, total_tokens: int = 0
-    ) -> AIAnalysisResult:
+    ) -> StrategyAIAnalysisResult:
         """解析 AI 响应（支持简短格式和完整格式）"""
         try:
             json_start = content.find("{")
@@ -192,7 +192,7 @@ class StockAIAnalyzer:
                 take_profit = data.get("tp", data.get("take_profit"))
                 holding_period = data.get("hp", data.get("holding_period"))
 
-                return AIAnalysisResult(
+                return StrategyAIAnalysisResult(
                     decision=decision,
                     confidence=confidence,
                     reasoning=reasoning,
@@ -212,9 +212,9 @@ class StockAIAnalyzer:
 
         return self._default_result("解析 AI 响应失败")
 
-    def _default_result(self, reason: str) -> AIAnalysisResult:
+    def _default_result(self, reason: str) -> StrategyAIAnalysisResult:
         """返回默认结果"""
-        return AIAnalysisResult(
+        return StrategyAIAnalysisResult(
             decision=AIDecision.WAIT,
             confidence=0,
             reasoning=reason,
@@ -228,7 +228,7 @@ class StockAIAnalyzer:
         stocks: list[dict[str, Any]],
         market_data: dict[str, Any] | None = None,
         strategy_signals: dict[str, str] | None = None,
-    ) -> dict[str, AIAnalysisResult]:
+    ) -> dict[str, StrategyAIAnalysisResult]:
         """批量分析股票"""
         results = {}
 
@@ -361,7 +361,7 @@ class AITradingAdvisor:
     def _combine_decisions(
         self,
         strategy_score: float,
-        ai_decision: AIAnalysisResult,
+        ai_decision: StrategyAIAnalysisResult,
     ) -> dict[str, Any]:
         """组合策略和 AI 决策"""
 
@@ -400,7 +400,7 @@ class AITradingAdvisor:
         self,
         profit_rate: float,
         holding_days: int,
-        ai_decision: AIAnalysisResult,
+        ai_decision: StrategyAIAnalysisResult,
     ) -> dict[str, Any]:
         """组合卖出决策"""
 
@@ -422,5 +422,5 @@ class AITradingAdvisor:
         return {"action": "hold", "reason": f"持仓{holding_days}天，盈亏{profit_rate:.2f}%，继续持有"}
 
 
-ai_analyzer = StockAIAnalyzer()
+stock_ai_analyzer = StockAIAnalyzer()
 ai_trading_advisor = AITradingAdvisor()

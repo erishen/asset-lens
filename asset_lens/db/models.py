@@ -11,9 +11,11 @@ from investkit_utils.db.models import (
     MLModel,
     NorthIndustryFlow,
     PredictionRecord,
-    StockInfo,
     StockKline,
     init_database,
+)
+from investkit_utils.db.models import (
+    DBStockInfo as StockInfo,
 )
 
 __all__ = [

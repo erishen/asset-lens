@@ -1,13 +1,11 @@
-"""
-Sector ML prediction module.
-板块ML预测模块 - 使用机器学习预测板块走势
-"""
-
 import logging
 from dataclasses import dataclass
+from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any
 
-import numpy as np
+import joblib
+import lightgbm as lgb
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -19,7 +17,7 @@ class SectorPrediction:
 
     sector_name: str
     current_strength: float
-    predicted_direction: int  # 1=上涨, 0=下跌
+    predicted_direction: int  # 1=上涨, 0=下跌, -1=中性
     predicted_change: float
     confidence: float
     recommendation: str
@@ -28,6 +26,8 @@ class SectorPrediction:
 
 class SectorMLPredictor:
     """板块ML预测器"""
+
+    MODEL_PATH = Path(__file__).parent.parent.parent / "cache" / "ml" / "sector_predictor_model.joblib"
 
     SECTOR_ETF_MAPPING = {
         "科技": ["科技ETF", "芯片ETF", "半导体ETF", "5GETF", "人工智能ETF"],
@@ -48,158 +48,217 @@ class SectorMLPredictor:
         "环保": ["环保ETF"],
     }
 
+    _industry_cache: dict[str, str | None] = {}
+
+    @staticmethod
+    def _map_industry_to_sector(industry: str) -> str | None:
+        from asset_lens.ml.sector_rotation import SECTOR_MAPPING
+
+        if industry in SectorMLPredictor._industry_cache:
+            return SectorMLPredictor._industry_cache[industry]
+
+        for sector, keywords in SECTOR_MAPPING.items():
+            if any(kw in industry for kw in keywords):
+                SectorMLPredictor._industry_cache[industry] = sector
+                return sector
+
+        SectorMLPredictor._industry_cache[industry] = None
+        return None
+
     def __init__(self):
-        self.model = None
-        self.feature_names = []
-        self.sector_history: dict[str, pd.DataFrame] = {}
+        self.model: lgb.LGBMRegressor | None = None
+        self.feature_names: list[str] = []
+        if self.MODEL_PATH.exists():
+            self._load_model()
 
-    def prepare_sector_features(self, sector_stats: dict) -> pd.DataFrame:
-        """
-        准备板块特征
+    def train(self, dataset_path: str = "sector_ml_dataset.csv"):
+        """训练板块预测模型"""
+        logger.info(f"Loading dataset from {dataset_path}...")
+        try:
+            df = pd.read_csv(dataset_path)
+        except FileNotFoundError:
+            logger.error(f"Dataset not found at {dataset_path}. Please run SectorDataBuilder first.")
+            return
 
-        Args:
-            sector_stats: 板块统计数据
+        df = df.dropna()
+        if df.empty:
+            logger.error("Dataset is empty after dropping NaNs.")
+            return
 
-        Returns:
-            特征DataFrame
-        """
-        features = []
+        self.feature_names = [col for col in df.columns if col not in ["date", "sector", "future_return"]]
+        X = df[self.feature_names]
+        y = df["future_return"]
 
-        for sector_name, stats in sector_stats.items():
-            feature_row = {
-                "sector": sector_name,
-                "avg_change": stats.get("avg_change", 0),
-                "avg_turnover": stats.get("avg_turnover", 0),
-                "up_ratio": stats.get("up_ratio", 0),
-                "strength_score": stats.get("strength_score", 0),
-                "count": stats.get("count", 0),
-                "volatility": abs(stats.get("avg_change", 0)),
+        logger.info(f"Training model with {len(X)} samples and {len(self.feature_names)} features...")
+
+        self.model = lgb.LGBMRegressor(random_state=42)
+        self.model.fit(X, y)
+
+        self._save_model()
+        logger.info("Model training complete and saved.")
+
+    def _save_model(self):
+        """保存模型"""
+        if self.model is None:
+            return
+
+        self.MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+        model_data = {
+            "model": self.model,
+            "feature_names": self.feature_names,
+        }
+        joblib.dump(model_data, self.MODEL_PATH)
+        logger.info(f"Model saved to {self.MODEL_PATH}")
+
+    def _load_model(self):
+        """加载模型"""
+        if not self.MODEL_PATH.exists():
+            logger.warning("Model file not found.")
+            return
+
+        model_data = joblib.load(self.MODEL_PATH)
+        self.model = model_data["model"]
+        self.feature_names = model_data["feature_names"]
+        logger.info(f"Model loaded from {self.MODEL_PATH}")
+
+    def _get_daily_features(self) -> dict[str, dict[str, float]]:
+        """获取当天所有板块的最新特征"""
+        from asset_lens.data.money_flow_fetcher import MoneyFlowFetcher
+        from asset_lens.db.database import db_manager
+        from asset_lens.ml.sector_rotation import SECTOR_MAPPING
+
+        logger.info("Getting daily features for all sectors...")
+
+        today = datetime.now().strftime("%Y-%m-%d")
+        yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+        market_klines = db_manager.get_klines(code="sh000300", start_date=yesterday, end_date=today, limit=2)
+        market_change = market_klines[-1].get("change_percent", 0) if market_klines else 0
+
+        north_flow_df = MoneyFlowFetcher().get_north_flow_by_industry()
+
+        latest_date_in_db = db_manager.get_statistics().get("latest_date")
+        if not latest_date_in_db:
+            return {}
+
+        klines_dict = db_manager.get_klines_for_ml(days=2)
+
+        all_klines = [pd.DataFrame(klines).assign(code=code) for code, klines in klines_dict.items()]
+        stock_klines = pd.concat(all_klines, ignore_index=True)
+        stock_klines["date"] = pd.to_datetime(stock_klines["date"])
+
+        latest_klines = stock_klines[stock_klines["date"] == stock_klines["date"].max()].copy()
+
+        stock_info_list = [db_manager.get_stock_info(code) for code in latest_klines["code"].unique()]
+        stock_to_sector = {
+            info["code"]: self._map_industry_to_sector(info["industry"])
+            for info in stock_info_list
+            if info and info.get("industry")
+        }
+        latest_klines["sector"] = latest_klines["code"].map(stock_to_sector)
+        latest_klines.dropna(subset=["sector"], inplace=True)
+
+        features_by_sector = {}
+        for sector in SECTOR_MAPPING:
+            sector_stocks = latest_klines[latest_klines["sector"] == sector]
+            if sector_stocks.empty:
+                continue
+
+            avg_change = sector_stocks["change_percent"].mean()
+            avg_turnover = sector_stocks["turnover_rate"].mean()
+            up_count = (sector_stocks["change_percent"] > 0).sum()
+            down_count = (sector_stocks["change_percent"] < 0).sum()
+            up_ratio = up_count / (up_count + down_count) if (up_count + down_count) > 0 else 0.5
+            strength_score = avg_change * 10 + up_ratio * 20 + avg_turnover * 2
+
+            sector_keywords = SECTOR_MAPPING.get(sector, [])
+            if sector_keywords and not north_flow_df.empty:
+                captured_keywords = list(sector_keywords)
+                mask = north_flow_df["industry"].apply(lambda x, kws=captured_keywords: any(kw in str(x) for kw in kws))
+                north_flow_sector = north_flow_df[mask]
+                north_net_inflow = north_flow_sector["net_inflow"].sum() if not north_flow_sector.empty else 0
+            else:
+                north_net_inflow = 0
+
+            features_by_sector[sector] = {
+                "avg_change": avg_change,
+                "avg_turnover": avg_turnover,
+                "up_ratio": up_ratio,
+                "strength_score": strength_score,
+                "north_net_inflow": north_net_inflow,
+                "market_change": market_change,
             }
 
-            feature_row["momentum_1d"] = stats.get("avg_change", 0)
-            feature_row["breadth"] = stats.get("up_ratio", 0) - 0.5
-            feature_row["activity"] = stats.get("avg_turnover", 0) / 5.0
-
-            feature_row["strength_rank"] = 0
-            sorted_sectors = sorted(sector_stats.items(), key=lambda x: x[1].get("strength_score", 0), reverse=True)
-            for rank, (name, _) in enumerate(sorted_sectors):
-                if name == sector_name:
-                    feature_row["strength_rank"] = rank + 1
-                    break
-
-            feature_row["relative_strength"] = feature_row["strength_score"] - np.mean(
-                [s.get("strength_score", 0) for s in sector_stats.values()]
-            )
-
-            features.append(feature_row)
-
-        return pd.DataFrame(features)
+        return features_by_sector
 
     def predict_sector(
         self,
         sector_name: str,
-        sector_stats: dict,
-        market_condition: str = "sideways",
+        sector_features: dict[str, float],
     ) -> SectorPrediction:
         """
-        预测板块走势
-
-        Args:
-            sector_name: 板块名称
-            sector_stats: 板块统计数据
-            market_condition: 市场状态
-
-        Returns:
-            板块预测结果
+        使用ML模型预测板块走势
         """
-        stats = sector_stats.get(sector_name, {})
+        if self.model is None or not self.feature_names:
+            raise RuntimeError("Model is not trained or loaded. Please run the train() method first.")
 
-        current_strength = stats.get("strength_score", 0)
-        avg_change = stats.get("avg_change", 0)
-        up_ratio = stats.get("up_ratio", 0.5)
-        turnover = stats.get("avg_turnover", 0)
+        feature_vector = pd.DataFrame([sector_features], columns=self.feature_names)
 
-        prediction_score = 0.0
-        confidence = 0.5
+        for col in self.feature_names:
+            if col not in feature_vector.columns:
+                feature_vector[col] = 0
+        feature_vector = feature_vector[self.feature_names]
 
-        if current_strength > 20:
-            prediction_score += 2.0
-            confidence += 0.1
-        elif current_strength > 0:
-            prediction_score += 1.0
-        elif current_strength < -20:
-            prediction_score -= 2.0
-            confidence += 0.1
-        elif current_strength < 0:
-            prediction_score -= 1.0
+        predicted_change = self.model.predict(feature_vector)[0]
 
-        if up_ratio > 0.6:
-            prediction_score += 1.0
-            confidence += 0.05
-        elif up_ratio < 0.4:
-            prediction_score -= 1.0
-            confidence += 0.05
+        predicted_direction = 1 if predicted_change > 0.1 else (0 if predicted_change < -0.1 else -1)
 
-        if turnover > 5:
-            prediction_score += 0.5
-        elif turnover < 1:
-            prediction_score -= 0.5
-
-        if market_condition == "bull":
-            if current_strength > 0:
-                prediction_score += 1.0
-        elif market_condition == "bear" and current_strength < 0:
-            prediction_score -= 1.0
-
-        predicted_direction = 1 if prediction_score > 0 else 0
-        predicted_change = avg_change * (1 + prediction_score * 0.1)
-        confidence = min(0.9, max(0.4, confidence + abs(prediction_score) * 0.05))
+        abs_prediction = abs(predicted_change)
+        if abs_prediction > 2.0:
+            confidence = 0.8
+        elif abs_prediction > 1.0:
+            confidence = 0.7
+        elif abs_prediction > 0.5:
+            confidence = 0.6
+        else:
+            confidence = 0.5
 
         if predicted_direction == 1 and confidence > 0.6:
-            recommendation = "建议关注，可能走强"
+            recommendation = "建议关注，ML模型预测可能走强"
         elif predicted_direction == 0 and confidence > 0.6:
-            recommendation = "建议回避，可能走弱"
+            recommendation = "建议回避，ML模型预测可能走弱"
         else:
-            recommendation = "观望为主，趋势不明"
+            recommendation = "观望为主，ML模型预测趋势不明"
+
+        current_strength = sector_features.get("strength_score", 0)
 
         return SectorPrediction(
             sector_name=sector_name,
             current_strength=current_strength,
             predicted_direction=predicted_direction,
-            predicted_change=predicted_change,
+            predicted_change=float(predicted_change),
             confidence=confidence,
             recommendation=recommendation,
-            factors={
-                "strength_score": current_strength,
-                "up_ratio": up_ratio,
-                "turnover": turnover,
-                "prediction_score": prediction_score,
-            },
+            factors=sector_features,
         )
 
-    def predict_all_sectors(
-        self,
-        sector_stats: dict,
-        market_condition: str = "sideways",
-    ) -> list[SectorPrediction]:
+    def predict_all_sectors(self) -> list[SectorPrediction]:
         """
-        预测所有板块
-
-        Args:
-            sector_stats: 板块统计数据
-            market_condition: 市场状态
-
-        Returns:
-            所有板块预测结果
+        使用ML模型预测所有板块的走势
         """
+        features_by_sector = self._get_daily_features()
+        if not features_by_sector:
+            logger.warning("Could not generate daily features. Aborting prediction.")
+            return []
+
         predictions = []
+        for sector_name, features in features_by_sector.items():
+            try:
+                pred = self.predict_sector(sector_name, features)
+                predictions.append(pred)
+            except (ValueError, KeyError, RuntimeError) as e:
+                logger.error(f"Failed to predict sector {sector_name}: {e}")
 
-        for sector_name in sector_stats:
-            pred = self.predict_sector(sector_name, sector_stats, market_condition)
-            predictions.append(pred)
-
-        predictions.sort(key=lambda x: x.confidence * x.predicted_direction, reverse=True)
-
+        predictions.sort(key=lambda x: x.predicted_change, reverse=True)
         return predictions
 
     def get_sector_rotation_suggestion(
@@ -208,15 +267,8 @@ class SectorMLPredictor:
     ) -> dict[str, Any]:
         """
         获取板块轮动建议
-
-        Args:
-            predictions: 板块预测列表
-
-        Returns:
-            轮动建议
         """
         strong_sectors = [p for p in predictions if p.predicted_direction == 1 and p.confidence > 0.55]
-
         weak_sectors = [p for p in predictions if p.predicted_direction == 0 and p.confidence > 0.55]
 
         rotation_from = [s.sector_name for s in weak_sectors[:3]]

@@ -22,5 +22,5 @@ async def get_risk_summary():
             "warnings": summary.get("warnings", []),
             "suggestions": summary.get("suggestions", []),
         }
-    except Exception as e:
+    except (ValueError, KeyError, RuntimeError) as e:
         return {"error": str(e)}

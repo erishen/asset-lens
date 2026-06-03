@@ -1,6 +1,7 @@
 """全产品收益估算模块"""
 
 from decimal import Decimal
+from typing import Any
 
 from asset_lens.data.models import InvestmentProduct
 
@@ -30,7 +31,7 @@ class DailyEstimateResult:
         self.risk_level = risk_level
         self.investment_type = investment_type
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         return {
             "product_name": self.product_name,
             "product_type": self.product_type,

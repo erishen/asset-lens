@@ -90,9 +90,7 @@ class TestAssetLensClient:
 
     def test_screen_stocks_with_limit(self):
         mock_screener = MagicMock()
-        mock_screener.screen.return_value = [
-            {"code": f"code_{i}", "name": f"stock_{i}"} for i in range(20)
-        ]
+        mock_screener.screen.return_value = [{"code": f"code_{i}", "name": f"stock_{i}"} for i in range(20)]
 
         with patch("asset_lens.strategy.screener.StockScreener", return_value=mock_screener):
             result = self.client.screen_stocks(strategy="fundamental", limit=5)

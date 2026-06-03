@@ -9,10 +9,11 @@ Strategy Backtest Report Module.
 4. 历史对比
 """
 
-import json
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
+
+from ..utils.json_cache import read_json_cache, write_json_cache
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -383,19 +384,12 @@ class BacktestReporter:
         reports = self._load_reports()
         reports.append(report.to_dict())
 
-        with open(self.reports_file, "w", encoding="utf-8") as f:
-            json.dump(reports[-50:], f, ensure_ascii=False, indent=2)
+        write_json_cache(self.reports_file, reports[-50:])
 
     def _load_reports(self) -> list[dict[str, Any]]:
         """加载报告"""
-        if not self.reports_file.exists():
-            return []
-        try:
-            with open(self.reports_file, encoding="utf-8") as f:
-                data: list[dict[str, Any]] = json.load(f)
-                return data
-        except (ValueError, KeyError, TypeError):
-            return []
+        data = read_json_cache(self.reports_file)
+        return data if data else []
 
     def get_recent_reports(self, limit: int = 10) -> list[dict[str, Any]]:
         """获取最近报告"""

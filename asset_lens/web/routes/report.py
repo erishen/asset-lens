@@ -117,5 +117,5 @@ async def export_report():
             },
         )
 
-    except Exception as e:
+    except (ValueError, KeyError, TypeError, OSError, RuntimeError) as e:
         return {"error": str(e)}

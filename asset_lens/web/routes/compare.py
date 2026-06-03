@@ -19,7 +19,7 @@ async def compare_weekly():
         if result is None:
             return {"success": False, "message": "数据不足，无法进行周度对比"}
         return {"success": True, "comparison": result}
-    except Exception as e:
+    except (ValueError, KeyError, RuntimeError) as e:
         return {"success": False, "error": str(e)}
 
 
@@ -34,7 +34,7 @@ async def compare_periods(
         if result is None:
             return {"success": False, "message": f"找不到 {date1} 或 {date2} 的快照数据"}
         return {"success": True, "comparison": result}
-    except Exception as e:
+    except (ValueError, KeyError, RuntimeError) as e:
         return {"success": False, "error": str(e)}
 
 
@@ -44,7 +44,7 @@ async def get_trend_analysis(days: int = Query(30, description="分析天数")):
     try:
         result = portfolio_comparator.get_trend_analysis(days)
         return {"success": True, "trend": result}
-    except Exception as e:
+    except (ValueError, KeyError, RuntimeError) as e:
         return {"success": False, "error": str(e)}
 
 
@@ -83,7 +83,7 @@ async def create_snapshot():
             "timestamp": snapshot.timestamp,
             "total_assets": snapshot.total_assets,
         }
-    except Exception as e:
+    except (ValueError, KeyError, TypeError, OSError, RuntimeError) as e:
         return {"success": False, "error": str(e)}
 
 
@@ -106,5 +106,5 @@ async def list_snapshots(count: int = Query(7, description="返回数量")):
                 for s in snapshots
             ],
         }
-    except Exception as e:
+    except (ValueError, KeyError, OSError, RuntimeError) as e:
         return {"success": False, "error": str(e)}

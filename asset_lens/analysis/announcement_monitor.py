@@ -108,7 +108,7 @@ class AnnouncementMonitor:
 
         except ImportError:
             pass
-        except Exception as e:
+        except (ValueError, KeyError, ConnectionError) as e:
             logger.debug(f"忽略异常: {e}")
 
         return announcements
@@ -134,7 +134,7 @@ class AnnouncementMonitor:
                 action_required=impact in [ImpactLevel.POSITIVE_HIGH, ImpactLevel.NEGATIVE_HIGH],
                 action_suggestion=self._get_action_suggestion(impact, ann_type),
             )
-        except Exception as e:
+        except (ValueError, KeyError, TypeError) as e:
             logger.debug(f"忽略异常: {e}")
             return None
 

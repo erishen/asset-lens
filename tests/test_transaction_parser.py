@@ -23,9 +23,9 @@ class TestTransactionModule:
 
     def test_investment_type_enum(self):
         """测试投资类型枚举"""
-        from asset_lens.data.transaction_parser import DCAInvestmentType
+        from asset_lens.data.transaction_parser import TransactionDCAInvestmentType
 
-        assert DCAInvestmentType is not None
+        assert TransactionDCAInvestmentType is not None
 
 
 class TestTransactionRecord:

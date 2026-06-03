@@ -294,9 +294,8 @@ class TestFetchHistoryAkshare:
         )
         mock_ak.stock_zh_a_hist_tx.return_value = mock_df
 
-        fetcher._akshare = mock_ak
-
-        result = fetcher.fetch_history_akshare("sh600519", 60)
+        with patch("asset_lens.utils.akshare_loader._AKSHARE_INSTANCE", mock_ak):
+            result = fetcher.fetch_history_akshare("sh600519", 60)
 
         assert result is not None
         assert result["code"] == "sh600519"
@@ -308,9 +307,8 @@ class TestFetchHistoryAkshare:
         mock_df = pd.DataFrame()
         mock_ak.stock_zh_a_hist_tx.return_value = mock_df
 
-        fetcher._akshare = mock_ak
-
-        result = fetcher.fetch_history_akshare("sh600519", 60)
+        with patch("asset_lens.utils.akshare_loader._AKSHARE_INSTANCE", mock_ak):
+            result = fetcher.fetch_history_akshare("sh600519", 60)
         assert result is None
 
     def test_fetch_history_akshare_exception(self, fetcher):
@@ -318,9 +316,8 @@ class TestFetchHistoryAkshare:
         mock_ak = MagicMock()
         mock_ak.stock_zh_a_hist_tx.side_effect = Exception("API error")
 
-        fetcher._akshare = mock_ak
-
-        result = fetcher.fetch_history_akshare("sh600519", 60)
+        with patch("asset_lens.utils.akshare_loader._AKSHARE_INSTANCE", mock_ak):
+            result = fetcher.fetch_history_akshare("sh600519", 60)
         assert result is None
 
 
@@ -620,9 +617,8 @@ class TestGetStockRealtimeQuote:
         )
         mock_ak.stock_zh_a_spot_em.return_value = mock_df
 
-        fetcher._akshare = mock_ak
-
-        result = fetcher.get_stock_realtime_quote("sh600519")
+        with patch("asset_lens.utils.akshare_loader._AKSHARE_INSTANCE", mock_ak):
+            result = fetcher.get_stock_realtime_quote("sh600519")
 
         assert result is not None
         assert result["code"] == "sh600519"
@@ -639,9 +635,8 @@ class TestGetStockRealtimeQuote:
         )
         mock_ak.stock_zh_a_spot_em.return_value = mock_df
 
-        fetcher._akshare = mock_ak
-
-        result = fetcher.get_stock_realtime_quote("sh600519")
+        with patch("asset_lens.utils.akshare_loader._AKSHARE_INSTANCE", mock_ak):
+            result = fetcher.get_stock_realtime_quote("sh600519")
         assert result is None
 
     def test_get_stock_realtime_quote_exception(self, fetcher):
@@ -649,9 +644,8 @@ class TestGetStockRealtimeQuote:
         mock_ak = MagicMock()
         mock_ak.stock_zh_a_spot_em.side_effect = Exception("API error")
 
-        fetcher._akshare = mock_ak
-
-        result = fetcher.get_stock_realtime_quote("sh600519")
+        with patch("asset_lens.utils.akshare_loader._AKSHARE_INSTANCE", mock_ak):
+            result = fetcher.get_stock_realtime_quote("sh600519")
         assert result is None
 
 

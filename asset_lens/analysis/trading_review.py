@@ -10,115 +10,34 @@ Trading Review Module.
 5. 周报/月报自动生成
 """
 
-import json
-from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from enum import Enum
 from pathlib import Path
+
+from ..utils.json_cache import read_json_cache, write_json_cache
 from typing import Any
 
 from ..config import config
+from .review_models import (
+    AttributionAnalysis,
+    ClosedPosition,
+    PerformanceMetrics,
+    ReviewReport,
+    ReviewTradeRecord,
+    ReviewTradeResult,
+    TradeType,
+)
 
-
-class TradeType(Enum):
-    """交易类型"""
-
-    BUY = "buy"
-    SELL = "sell"
-    DIVIDEND = "dividend"
-    BONUS = "bonus"
-
-
-class TradeResult(Enum):
-    """交易结果"""
-
-    PROFIT = "profit"
-    LOSS = "loss"
-    BREAK_EVEN = "break_even"
-
-
-@dataclass
-class TradeRecord:
-    """交易记录"""
-
-    code: str
-    name: str
-    trade_type: TradeType
-    shares: float
-    price: float
-    amount: float
-    commission: float
-    timestamp: str
-    reason: str = ""
-    strategy: str = ""
-    notes: str = ""
-
-
-@dataclass
-class ClosedPosition:
-    """已平仓记录"""
-
-    code: str
-    name: str
-    buy_price: float
-    sell_price: float
-    shares: float
-    profit_loss: float
-    profit_loss_percent: float
-    hold_days: int
-    buy_date: str
-    sell_date: str
-    strategy: str = ""
-    result: TradeResult = TradeResult.PROFIT
-
-
-@dataclass
-class PerformanceMetrics:
-    """绩效指标"""
-
-    total_trades: int
-    winning_trades: int
-    losing_trades: int
-    win_rate: float
-    total_profit: float
-    total_loss: float
-    net_profit: float
-    avg_profit: float
-    avg_loss: float
-    profit_factor: float
-    avg_hold_days: float
-    max_profit_trade: float
-    max_loss_trade: float
-    sharpe_ratio: float = 0.0
-    max_drawdown: float = 0.0
-
-
-@dataclass
-class AttributionAnalysis:
-    """归因分析"""
-
-    sector_contribution: dict[str, float]
-    strategy_contribution: dict[str, float]
-    time_contribution: dict[str, float]
-    top_winners: list[ClosedPosition]
-    top_losers: list[ClosedPosition]
-
-
-@dataclass
-class ReviewReport:
-    """复盘报告"""
-
-    period_start: str
-    period_end: str
-    report_type: str  # daily, weekly, monthly
-    performance: PerformanceMetrics
-    attribution: AttributionAnalysis
-    trades: list[dict[str, Any]]
-    closed_positions: list[ClosedPosition]
-    suggestions: list[str]
-    lessons_learned: list[str]
-    next_period_plan: list[str]
-    timestamp: str = field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+__all__ = [
+    "AttributionAnalysis",
+    "ClosedPosition",
+    "PerformanceMetrics",
+    "ReviewReport",
+    "ReviewTradeRecord",
+    "ReviewTradeResult",
+    "TradeType",
+    "TradingReview",
+    "trading_review",
+]
 
 
 class TradingReview:
@@ -142,9 +61,9 @@ class TradingReview:
         reason: str = "",
         strategy: str = "",
         notes: str = "",
-    ) -> TradeRecord:
+    ) -> ReviewTradeRecord:
         """记录交易"""
-        record = TradeRecord(
+        record = ReviewTradeRecord(
             code=code,
             name=name,
             trade_type=trade_type,
@@ -181,7 +100,9 @@ class TradingReview:
         hold_days = (sell_dt - buy_dt).days
 
         result = (
-            TradeResult.PROFIT if profit_loss > 0 else (TradeResult.LOSS if profit_loss < 0 else TradeResult.BREAK_EVEN)
+            ReviewTradeResult.PROFIT
+            if profit_loss > 0
+            else (ReviewTradeResult.LOSS if profit_loss < 0 else ReviewTradeResult.BREAK_EVEN)
         )
 
         position = ClosedPosition(
@@ -232,8 +153,8 @@ class TradingReview:
         if end_date:
             filtered = [p for p in filtered if p.sell_date <= end_date]
 
-        winning = [p for p in filtered if p.result == TradeResult.PROFIT]
-        losing = [p for p in filtered if p.result == TradeResult.LOSS]
+        winning = [p for p in filtered if p.result == ReviewTradeResult.PROFIT]
+        losing = [p for p in filtered if p.result == ReviewTradeResult.LOSS]
 
         total_profit = sum(p.profit_loss for p in winning)
         total_loss = abs(sum(p.profit_loss for p in losing))
@@ -355,7 +276,7 @@ class TradingReview:
                 f"大亏损教训: {big_losers[0].code} 亏损 {abs(big_losers[0].profit_loss_percent):.1f}%，需加强止损"
             )
 
-        quick_trades = [p for p in positions if p.hold_days <= 3 and p.result == TradeResult.LOSS]
+        quick_trades = [p for p in positions if p.hold_days <= 3 and p.result == ReviewTradeResult.LOSS]
         if len(quick_trades) > len(positions) * 0.3:
             lessons.append("短线交易亏损较多，建议减少频繁交易")
 
@@ -462,7 +383,7 @@ class TradingReview:
 
         return "\n".join(lines)
 
-    def _save_trade(self, record: TradeRecord) -> None:
+    def _save_trade(self, record: ReviewTradeRecord) -> None:
         """保存交易记录"""
         trades = self._load_trades()
         trades.append(
@@ -480,19 +401,12 @@ class TradingReview:
             }
         )
 
-        with open(self.trades_file, "w", encoding="utf-8") as f:
-            json.dump(trades, f, ensure_ascii=False, indent=2)
+        write_json_cache(self.trades_file, trades)
 
     def _load_trades(self) -> list[dict[str, Any]]:
         """加载交易记录"""
-        if not self.trades_file.exists():
-            return []
-        try:
-            with open(self.trades_file, encoding="utf-8") as f:
-                data: list[dict[str, Any]] = json.load(f)
-                return data
-        except (ValueError, KeyError, TypeError):
-            return []
+        data = read_json_cache(self.trades_file)
+        return data if data else []
 
     def _save_closed_position(self, position: ClosedPosition) -> None:
         """保存平仓记录"""
@@ -514,8 +428,7 @@ class TradingReview:
             }
         )
 
-        with open(self.closed_positions_file, "w", encoding="utf-8") as f:
-            json.dump(positions_data, f, ensure_ascii=False, indent=2)
+        write_json_cache(self.closed_positions_file, positions_data)
 
     def _load_closed_positions(self) -> list[ClosedPosition]:
         """加载平仓记录"""
@@ -533,7 +446,7 @@ class TradingReview:
                 buy_date=item["buy_date"],
                 sell_date=item["sell_date"],
                 strategy=item.get("strategy", ""),
-                result=TradeResult(item.get("result", "profit")),
+                result=ReviewTradeResult(item.get("result", "profit")),
             )
             for item in data
         ]
@@ -542,24 +455,15 @@ class TradingReview:
 
     def _load_closed_positions_data(self) -> list[dict[str, Any]]:
         """加载平仓记录原始数据"""
-        if not self.closed_positions_file.exists():
-            return []
-        try:
-            with open(self.closed_positions_file, encoding="utf-8") as f:
-                data: list[dict[str, Any]] = json.load(f)
-                return data
-        except (ValueError, KeyError, TypeError):
-            return []
+        data = read_json_cache(self.closed_positions_file)
+        return data if data else []
 
     def _save_report(self, report: ReviewReport) -> None:
         """保存报告"""
         reports = []
-        if self.reports_file.exists():
-            try:
-                with open(self.reports_file, encoding="utf-8") as f:
-                    reports = json.load(f)
-            except (ValueError, KeyError, TypeError):
-                reports = []
+        reports_data = read_json_cache(self.reports_file)
+        if reports_data:
+            reports = reports_data
 
         reports.append(
             {
@@ -578,8 +482,7 @@ class TradingReview:
         if len(reports) > 100:
             reports = reports[-100:]
 
-        with open(self.reports_file, "w", encoding="utf-8") as f:
-            json.dump(reports, f, ensure_ascii=False, indent=2)
+        write_json_cache(self.reports_file, reports)
 
 
 trading_review = TradingReview()

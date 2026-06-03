@@ -266,6 +266,7 @@ class InvestmentCalculator:
         total_sell = sum(t["amount"] for t in transactions if t["type"] == "sell") if transactions else 0
 
         is_dca_product = cls.is_dca_product(product)
+        precise_simple_return = None
         if is_dca_product and product.initial_amount and product.initial_amount > 0:
             net_invest = total_buy - total_sell
             if net_invest > 0 and abs(net_invest - float(product.initial_amount)) > 1:
@@ -275,17 +276,20 @@ class InvestmentCalculator:
             interest = float(product.interest_payment or 0)
             initial_value = float(product.initial_amount)
             simple_return = (current_value + interest - initial_value) / initial_value
+            precise_simple_return = simple_return
             product.return_rate = Decimal(str(round(simple_return * 100, 2)))
         elif total_buy > 0:
             current_value = float(product.current_amount or 0)
             interest = float(product.interest_payment or 0)
             net_gain = current_value + interest + total_sell - total_buy
             simple_return = net_gain / total_buy
+            precise_simple_return = simple_return
             product.return_rate = Decimal(str(round(simple_return * 100, 2)))
         elif product.initial_amount and product.initial_amount > 0:
             current_value = float(product.current_amount or 0)
             initial_value = float(product.initial_amount)
             simple_return = (current_value - initial_value) / initial_value
+            precise_simple_return = simple_return
             product.return_rate = Decimal(str(round(simple_return * 100, 2)))
 
         total_days = product.investment_days or 0
@@ -301,6 +305,7 @@ class InvestmentCalculator:
                     initial_value = float(product.initial_amount)
                     net_gain = current_value + interest - initial_value
                     simple_return = net_gain / initial_value
+                    precise_simple_return = simple_return
                     product.return_rate = Decimal(str(round(simple_return * 100, 2)))
                     simple_annualized = (1 + simple_return) ** (360 / total_days) - 1
                     product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
@@ -318,16 +323,20 @@ class InvestmentCalculator:
                     if len(cashflows) >= 2:
                         irr = irr_calculator.calculate_irr_with_days(cashflows)
                         if irr is not None and -1 < irr < 10:
+                            if precise_simple_return is not None:
+                                simple_annualized = (1 + precise_simple_return) ** (360 / total_days) - 1
+                                if abs(irr - simple_annualized) > 0.5:
+                                    irr = simple_annualized
                             product.annual_return = Decimal(str(round(irr * 100, 2)))
                             return product
 
-                if product.return_rate is not None:
-                    simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
+                if precise_simple_return is not None:
+                    simple_annualized = (1 + precise_simple_return) ** (360 / total_days) - 1
                     product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
             else:
                 if total_days < 180:
-                    if product.return_rate is not None:
-                        simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
+                    if precise_simple_return is not None:
+                        simple_annualized = (1 + precise_simple_return) ** (360 / total_days) - 1
                         product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
                 elif transactions and len(transactions) > 1 and total_buy > 0:
                     cashflows = cls.calculate_cashflows_with_days(
@@ -336,10 +345,10 @@ class InvestmentCalculator:
                     if cashflows and len(cashflows) > 1:
                         irr = irr_calculator.calculate_irr_with_days(cashflows)
                         if irr is not None and -1 < irr < 10:
-                            if product.return_rate is not None:
-                                simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
+                            if precise_simple_return is not None:
+                                simple_annualized = (1 + precise_simple_return) ** (360 / total_days) - 1
                                 diff = abs(irr - simple_annualized)
-                                if diff > 1:
+                                if diff > 0.5:
                                     product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
                                 else:
                                     product.annual_return = Decimal(str(round(irr * 100, 2)))
@@ -347,11 +356,11 @@ class InvestmentCalculator:
                                 product.annual_return = Decimal(str(round(irr * 100, 2)))
                             return product
 
-                    if product.return_rate is not None:
-                        simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
+                    if precise_simple_return is not None:
+                        simple_annualized = (1 + precise_simple_return) ** (360 / total_days) - 1
                         product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
-                elif product.return_rate is not None:
-                    simple_annualized = (1 + float(product.return_rate) / 100) ** (360 / total_days) - 1
+                elif precise_simple_return is not None:
+                    simple_annualized = (1 + precise_simple_return) ** (360 / total_days) - 1
                     product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
 
         return product

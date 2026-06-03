@@ -71,7 +71,7 @@ class AlphaVantageProvider(BaseProvider):
                 return self._fetch_index_quote(symbol)
             else:
                 return None
-        except Exception as e:
+        except (ValueError, KeyError, ConnectionError, RuntimeError) as e:
             logger.debug(f"忽略异常: {e}")
             return None
 

@@ -97,7 +97,7 @@ class DataMigration:
                     else:
                         result["failed_count"] += 1
 
-                except Exception as e:
+                except (ValueError, KeyError, OSError, RuntimeError) as e:
                     result["failed_count"] += 1
                     result["errors"].append({"code": code, "error": str(e)})
 
@@ -187,7 +187,7 @@ class DataMigration:
                     else:
                         result["failed"] += 1
 
-                except Exception as e:
+                except (ValueError, KeyError, OSError, RuntimeError) as e:
                     result["failed"] += 1
                     result["errors"].append({"code": code, "error": str(e)})
 
@@ -267,7 +267,7 @@ class DataMigration:
                 else:
                     history = fetcher.fetch_history(code, days)
                 return (code, history, None)
-            except Exception as e:
+            except (ValueError, KeyError, ConnectionError, RuntimeError) as e:
                 return (code, None, str(e))
 
         log_id = self.db.log_sync(
@@ -328,7 +328,7 @@ class DataMigration:
 
         return result
 
-    def show_statistics(self):
+    def show_statistics(self) -> None:
         """显示数据库统计信息"""
         stats = self.db.get_statistics()
 
@@ -399,13 +399,13 @@ class DataMigration:
         return result
 
 
-def migrate_from_json():
+def migrate_from_json() -> dict[str, Any]:
     """从JSON缓存迁移到数据库"""
     migration = DataMigration()
     return migration.migrate_history_cache()
 
 
-def fetch_history_to_db(codes: list[str], days: int = 250, data_source: str = "auto"):
+def fetch_history_to_db(codes: list[str], days: int = 250, data_source: str = "auto") -> dict[str, Any]:
     """获取历史数据并存储到数据库"""
     migration = DataMigration()
     return migration.fetch_and_store_history(codes, days, data_source)

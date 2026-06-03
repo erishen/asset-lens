@@ -23,15 +23,15 @@ class TestTrainingResult:
 
     def test_module_import(self):
         """测试模块导入"""
-        from asset_lens.ml.advanced_trainer import TrainingResult
+        from asset_lens.ml.advanced_trainer import AdvancedTrainingResult
 
-        assert TrainingResult is not None
+        assert AdvancedTrainingResult is not None
 
     def test_training_result_creation(self):
         """测试训练结果创建"""
-        from asset_lens.ml.advanced_trainer import TrainingResult
+        from asset_lens.ml.advanced_trainer import AdvancedTrainingResult
 
-        result = TrainingResult(
+        result = AdvancedTrainingResult(
             model_type="lightgbm",
             accuracy=0.85,
             precision=0.83,
@@ -48,9 +48,9 @@ class TestTrainingResult:
 
     def test_training_result_to_dict(self):
         """测试训练结果转换为字典"""
-        from asset_lens.ml.advanced_trainer import TrainingResult
+        from asset_lens.ml.advanced_trainer import AdvancedTrainingResult
 
-        result = TrainingResult(
+        result = AdvancedTrainingResult(
             model_type="lightgbm",
             accuracy=0.85,
             precision=0.83,
@@ -177,12 +177,12 @@ class TestAdvancedMLTrainer:
 
     def test_save_results(self):
         """测试保存结果"""
-        from asset_lens.ml.advanced_trainer import AdvancedMLTrainer, TrainingResult
+        from asset_lens.ml.advanced_trainer import AdvancedMLTrainer, AdvancedTrainingResult
 
         with tempfile.TemporaryDirectory() as tmpdir:
             trainer = AdvancedMLTrainer(output_dir=Path(tmpdir))
 
-            result = TrainingResult(
+            result = AdvancedTrainingResult(
                 model_type="lightgbm",
                 accuracy=0.85,
                 precision=0.83,

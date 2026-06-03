@@ -9,10 +9,11 @@ ML 预测历史记录模块 - 追踪模型效果
 4. 生成效果报告
 """
 
-import json
 import logging
 from dataclasses import dataclass
 from datetime import datetime
+
+from ..utils.json_cache import read_json_cache, write_json_cache
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -324,16 +325,14 @@ class MLPredictionTracker:
     def _save_all_predictions(self, predictions: list[PredictionRecord]) -> None:
         """保存所有预测"""
         data = [p.to_dict() for p in predictions]
-        with open(self.predictions_file, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+        write_json_cache(self.predictions_file, data)
 
     def _load_predictions(self) -> list[PredictionRecord]:
         """加载预测记录"""
-        if not self.predictions_file.exists():
+        data = read_json_cache(self.predictions_file)
+        if not data:
             return []
         try:
-            with open(self.predictions_file, encoding="utf-8") as f:
-                data: list[dict[str, Any]] = json.load(f)
                 return [
                     PredictionRecord(
                         id=p["id"],
@@ -351,7 +350,7 @@ class MLPredictionTracker:
                     )
                     for p in data
                 ]
-        except Exception as e:
+        except (json.JSONDecodeError, OSError, ValueError, KeyError) as e:
             logger.debug(f"忽略异常: {e}")
             return []
 

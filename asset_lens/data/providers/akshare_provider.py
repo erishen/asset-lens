@@ -32,19 +32,13 @@ class AkshareProvider(BaseProvider):
                 DataType.INDEX,
             ],
         )
-        self._akshare = None
 
     @property
     def akshare(self):
         """延迟加载 AkShare"""
-        if self._akshare is None:
-            try:
-                import akshare as ak
+        from ...utils.akshare_loader import get_akshare
 
-                self._akshare = ak
-            except ImportError:
-                pass
-        return self._akshare
+        return get_akshare(raise_on_missing=False)
 
     def _check_availability(self) -> bool:
         """检查 AkShare 是否可用"""
@@ -71,7 +65,7 @@ class AkshareProvider(BaseProvider):
                 return self._fetch_index_quote(symbol)
             else:
                 return None
-        except Exception as e:
+        except (ValueError, KeyError, ConnectionError, RuntimeError) as e:
             logger.debug(f"忽略异常: {e}")
             return None
 

@@ -44,7 +44,7 @@ class AssetLensClient:
                 "data": data,
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }
-        except Exception as e:
+        except (ValueError, KeyError, ConnectionError, RuntimeError) as e:
             logger.error(f"获取股票行情失败: {code}, {e}")
             return {"success": False, "error": str(e), "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
@@ -68,7 +68,7 @@ class AssetLensClient:
                 "data": data,
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }
-        except Exception as e:
+        except (ValueError, KeyError, ConnectionError, RuntimeError) as e:
             logger.error(f"获取基金净值失败: {code}, {e}")
             return {"success": False, "error": str(e), "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
@@ -92,7 +92,7 @@ class AssetLensClient:
                 },
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, RuntimeError) as e:
             logger.error(f"分析投资组合失败: {e}")
             return {"success": False, "error": str(e), "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
@@ -119,7 +119,7 @@ class AssetLensClient:
                 "data": data,
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }
-        except Exception as e:
+        except (ValueError, KeyError, RuntimeError) as e:
             logger.error(f"股票筛选失败: {strategy}, {e}")
             return {"success": False, "error": str(e), "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
@@ -140,7 +140,7 @@ class AssetLensClient:
                     results[name] = result
 
             return {"success": True, "data": results, "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-        except Exception as e:
+        except (ValueError, KeyError, ConnectionError, RuntimeError) as e:
             logger.error(f"获取市场指数失败: {e}")
             return {"success": False, "error": str(e), "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
@@ -169,7 +169,7 @@ class AssetLensClient:
                 },
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, RuntimeError) as e:
             logger.error(f"计算风险指标失败: {e}")
             return {"success": False, "error": str(e), "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
@@ -196,7 +196,7 @@ class AssetLensClient:
                 report = monitor.generate_daily_report()
 
             return {"success": True, "data": report, "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, OSError, RuntimeError) as e:
             logger.error(f"生成报告失败: {report_type}, {e}")
             return {"success": False, "error": str(e), "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
@@ -221,7 +221,7 @@ class AssetLensClient:
                 "message": f"股票 {code} 已添加到股票池",
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }
-        except Exception as e:
+        except (ValueError, KeyError, RuntimeError) as e:
             logger.error(f"添加股票到股票池失败: {code}, {e}")
             return {"success": False, "error": str(e), "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
@@ -242,7 +242,7 @@ class AssetLensClient:
                 "data": {"codes": codes, "statistics": stats},
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }
-        except Exception as e:
+        except (ValueError, KeyError, RuntimeError) as e:
             logger.error(f"获取股票池状态失败: {e}")
             return {"success": False, "error": str(e), "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 

@@ -12,33 +12,51 @@ from rich.table import Table
 
 
 def _get_data_dirs() -> list[Path]:
-    data_dir = Path("data")
-    real_dir = data_dir / "real"
     ts_demo_data_dir = Path("../ts-demo/data")
+    ts_demo_backup_dir = Path("../ts-demo/data/backup")
 
     data_dirs = []
-    if real_dir.exists():
-        data_dirs = sorted([d for d in real_dir.iterdir() if d.is_dir()], key=lambda x: x.name)
+    seen_names = set()
 
-    if len(data_dirs) < 2 and ts_demo_data_dir.exists():
-        ts_dirs = sorted(
-            [d for d in ts_demo_data_dir.iterdir() if d.is_dir() and d.name.startswith("money_csv_")],
-            key=lambda x: x.name,
-        )
-        existing_names = {d.name for d in data_dirs}
-        for d in ts_dirs:
-            if d.name not in existing_names:
+    def _scan_dir(base_dir: Path):
+        if not base_dir.exists():
+            return
+        for d in sorted(base_dir.iterdir(), key=lambda x: x.name):
+            if d.is_dir() and d.name.startswith("money_csv_") and d.name not in seen_names:
                 data_dirs.append(d)
-        data_dirs.sort(key=lambda x: x.name)
+                seen_names.add(d.name)
 
+    _scan_dir(ts_demo_data_dir)
+    _scan_dir(ts_demo_backup_dir)
+
+    if len(data_dirs) < 2:
+        real_dir = Path("data") / "real"
+        if real_dir.exists():
+            real_dirs = sorted([d for d in real_dir.iterdir() if d.is_dir()], key=lambda x: x.name)
+            for d in real_dirs:
+                if d.name not in seen_names:
+                    data_dirs.append(d)
+                    seen_names.add(d.name)
+
+    data_dirs.sort(key=lambda x: x.name)
     return data_dirs
 
 
 def _load_products_with_returns(data_dir: Path) -> dict[str, dict]:
+    from datetime import datetime
+
     from asset_lens.data.csv_parser import CSVParser
     from asset_lens.data.parsers.investment_calculator import InvestmentCalculator
 
-    products = CSVParser.load_data_from_dir(data_dir)
+    dir_date_str = data_dir.name.split("_")[-1]
+    try:
+        from datetime import datetime
+
+        reference_date = datetime.strptime(dir_date_str, "%Y%m%d")
+    except ValueError:
+        reference_date = None
+
+    products = CSVParser.load_data_from_dir(data_dir, reference_date=reference_date)
     result = {}
 
     for p in products:
@@ -47,11 +65,15 @@ def _load_products_with_returns(data_dir: Path) -> dict[str, dict]:
 
         InvestmentCalculator.calculate_product_returns(p)
 
+        annual_return_value = (
+            float(p.compound_return) if p.compound_return else (float(p.annual_return) if p.annual_return else 0)
+        )
+
         key = f"{p.name}@{_get_main_platform(p)}"
         result[key] = {
             "name": p.name,
             "platform": _get_main_platform(p),
-            "annual_return": float(p.annual_return) if p.annual_return else 0,
+            "annual_return": annual_return_value,
             "return_rate": float(p.return_rate) if p.return_rate else 0,
             "current_amount": float(p.current_amount or 0),
             "initial_amount": float(p.initial_amount or 0),
@@ -71,7 +93,21 @@ def _get_main_platform(product) -> str:
     elif product.investment_type in [InvestmentType.HK_STOCK, InvestmentType.HK_CASH, InvestmentType.HK_DIVIDEND_FUND]:
         return "港招"
 
-    platform_fields = ["微信", "中金", "支付宝", "富途", "招商", "港招", "交通", "浦发", "建设", "中信", "民生", "工商", "中银"]
+    platform_fields = [
+        "微信",
+        "中金",
+        "支付宝",
+        "富途",
+        "招商",
+        "港招",
+        "交通",
+        "浦发",
+        "建设",
+        "中信",
+        "民生",
+        "工商",
+        "中银",
+    ]
     for field in platform_fields:
         val = getattr(product, field, None)
         if val and float(val) > 0:
@@ -95,7 +131,7 @@ def register_compare_commands(cli: click.Group) -> None:
     @click.option("--after", type=str, help="对比后日期 (YYYYMMDD)")
     @click.option("--days", type=int, default=7, help="对比天数（默认7天）")
     @click.option("--trend", is_flag=True, default=False, help="显示所有时间点收益率趋势")
-    @click.option("--limit", type=int, default=10, help="趋势分析最多使用的时间点数（默认10）")
+    @click.option("--limit", type=int, default=0, help="趋势分析最多使用的时间点数（默认0=全部）")
     def compare(data_mode: str | None, before: str | None, after: str | None, days: int, trend: bool, limit: int):
         """投资组合对比分析（收益率趋势对比）"""
         from asset_lens.cli_modules.cli.helpers import setup_data_mode
@@ -107,15 +143,20 @@ def register_compare_commands(cli: click.Group) -> None:
         data_dirs = _get_data_dirs()
 
         if (trend or (not before and not after)) and len(data_dirs) >= 2:
-            _show_trend_analysis(console, data_dirs[-limit:], before, after)
+            dirs_to_analyze = data_dirs[-limit:] if limit > 0 else data_dirs
+            _show_trend_analysis(console, dirs_to_analyze, before, after)
             return
 
         if len(data_dirs) >= 2:
             before_dir = (
-                data_dirs[-2] if not before else next((d for d in data_dirs if before.replace("-", "") in d.name), data_dirs[-2])
+                data_dirs[-2]
+                if not before
+                else next((d for d in data_dirs if before.replace("-", "") in d.name), data_dirs[-2])
             )
             after_dir = (
-                data_dirs[-1] if not after else next((d for d in data_dirs if after.replace("-", "") in d.name), data_dirs[-1])
+                data_dirs[-1]
+                if not after
+                else next((d for d in data_dirs if after.replace("-", "") in d.name), data_dirs[-1])
             )
 
             _show_two_date_comparison(console, before_dir, after_dir)
@@ -207,8 +248,7 @@ def _show_trend_analysis(console: Console, data_dirs: list[Path], before: str | 
         for key, first, last, change in consistently_improving[:5]:
             name = key.split("@")[0]
             console.print(
-                f"  • {name:<20s} {_format_return(first)} → {_format_return(last)} "
-                f"[red](总上涨+{change:.2f}%)[/red]"
+                f"  • {name:<20s} {_format_return(first)} → {_format_return(last)} [red](总上涨+{change:.2f}%)[/red]"
             )
 
     if consistently_deteriorating:
@@ -216,8 +256,7 @@ def _show_trend_analysis(console: Console, data_dirs: list[Path], before: str | 
         for key, first, last, change in consistently_deteriorating[:5]:
             name = key.split("@")[0]
             console.print(
-                f"  • {name:<20s} {_format_return(first)} → {_format_return(last)} "
-                f"[green](总下跌{change:.2f}%)[/green]"
+                f"  • {name:<20s} {_format_return(first)} → {_format_return(last)} [green](总下跌{change:.2f}%)[/green]"
             )
 
     for i in range(1, len(dir_dates)):
@@ -228,8 +267,8 @@ def _show_trend_analysis(console: Console, data_dirs: list[Path], before: str | 
 
         improving = 0
         deteriorating = 0
-        max_improving = ("", 0)
-        max_deteriorating = ("", 0)
+        max_improving: tuple[str, float] = ("", 0)
+        max_deteriorating: tuple[str, float] = ("", 0)
 
         for key, info in current_data.items():
             if key in previous_data:
@@ -244,9 +283,7 @@ def _show_trend_analysis(console: Console, data_dirs: list[Path], before: str | 
                         max_deteriorating = (info["name"], change)
 
         console.print(f"\n[bold cyan]时间段: {previous_date} → {current_date}[/bold cyan]")
-        console.print(
-            f"  上涨: [red]{improving}个[/red], 下跌: [green]{deteriorating}个[/green]"
-        )
+        console.print(f"  上涨: [red]{improving}个[/red], 下跌: [green]{deteriorating}个[/green]")
         if max_improving[0]:
             console.print(f"  最大上涨: {max_improving[0]} [red]+{max_improving[1]:.2f}%[/red]")
         if max_deteriorating[0]:
@@ -318,24 +355,28 @@ def _show_two_date_comparison(console: Console, before_dir: Path, after_dir: Pat
             else:
                 stable.append(entry)
         else:
-            new_products.append({
-                "name": after_info["name"],
-                "platform": after_info["platform"],
-                "return": after_info["annual_return"],
-                "days": after_info["investment_days"],
-                "current_amount": after_info["current_amount"],
-                "type": after_info["type"],
-            })
+            new_products.append(
+                {
+                    "name": after_info["name"],
+                    "platform": after_info["platform"],
+                    "return": after_info["annual_return"],
+                    "days": after_info["investment_days"],
+                    "current_amount": after_info["current_amount"],
+                    "type": after_info["type"],
+                }
+            )
 
     for key, before_info in before_data.items():
         if key not in after_data:
-            sold_products.append({
-                "name": before_info["name"],
-                "platform": before_info["platform"],
-                "return": before_info["annual_return"],
-                "initial_amount": before_info["initial_amount"],
-                "type": before_info["type"],
-            })
+            sold_products.append(
+                {
+                    "name": before_info["name"],
+                    "platform": before_info["platform"],
+                    "return": before_info["annual_return"],
+                    "initial_amount": before_info["initial_amount"],
+                    "type": before_info["type"],
+                }
+            )
 
     if improving:
         improving.sort(key=lambda x: x["change"], reverse=True)
@@ -358,20 +399,24 @@ def _show_two_date_comparison(console: Console, before_dir: Path, after_dir: Pat
     if new_products:
         console.print(f"\n[bold cyan]🆕 新增投资产品[/bold cyan] ({len(new_products)}个):")
         for item in new_products[:5]:
-            amount_str = f"{item['current_amount'] / 10000:.1f}万元" if item['current_amount'] >= 10000 else f"¥{item['current_amount']:,.0f}"
+            amount_str = (
+                f"{item['current_amount'] / 10000:.1f}万元"
+                if item["current_amount"] >= 10000
+                else f"¥{item['current_amount']:,.0f}"
+            )
             console.print(
-                f"  • {item['name']:<20s} {_format_return(item['return'])} ({item['days']}天) "
-                f"金额: {amount_str}"
+                f"  • {item['name']:<20s} {_format_return(item['return'])} ({item['days']}天) 金额: {amount_str}"
             )
 
     if sold_products:
         console.print(f"\n[bold yellow]💰 已卖出产品[/bold yellow] ({len(sold_products)}个):")
         for item in sold_products[:5]:
-            amount_str = f"{item['initial_amount'] / 10000:.1f}万元" if item['initial_amount'] >= 10000 else f"¥{item['initial_amount']:,.0f}"
-            console.print(
-                f"  • {item['name']:<20s} 卖出时收益 {_format_return(item['return'])} "
-                f"投入: {amount_str}"
+            amount_str = (
+                f"{item['initial_amount'] / 10000:.1f}万元"
+                if item["initial_amount"] >= 10000
+                else f"¥{item['initial_amount']:,.0f}"
             )
+            console.print(f"  • {item['name']:<20s} 卖出时收益 {_format_return(item['return'])} 投入: {amount_str}")
 
     console.print(f"\n[gray bold]⚖️  收益稳定产品[/gray bold]: {len(stable)}个")
 
@@ -432,9 +477,7 @@ def _show_initial_comparison(console: Console):
         pass
 
     analyzer = ComparisonAnalyzer()
-    result = analyzer.generate_comparison_report(
-        products_before, products_after, "初始投资对比", usd_rate, hkd_rate
-    )
+    result = analyzer.generate_comparison_report(products_before, products_after, "初始投资对比", usd_rate, hkd_rate)
 
     trend = result["comparison"]["trend"]
     console.print("\n💰 总体变化:")

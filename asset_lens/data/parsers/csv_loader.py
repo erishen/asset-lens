@@ -35,7 +35,7 @@ class CSVLoader:
                     product = ProductParser.parse_row(row, reference_date)
                     if product:
                         products.append(product)
-        except Exception as e:
+        except (OSError, ValueError, KeyError) as e:
             logger.error(f"解析文件 {file_path} 失败: {e}")
 
         return products

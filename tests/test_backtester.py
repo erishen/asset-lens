@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from asset_lens.strategy.backtester import Backtester, BacktestResult, BacktestTrade
+from asset_lens.strategy.backtester import Backtester, BacktestTrade, StrategyBacktestResult
 
 
 class TestBacktestTrade:
@@ -56,12 +56,12 @@ class TestBacktestTrade:
         assert trade.reason == "止盈卖出"
 
 
-class TestBacktestResult:
-    """BacktestResult 测试"""
+class TestStrategyBacktestResult:
+    """StrategyBacktestResult 测试"""
 
     def test_default_values(self):
         """测试默认值"""
-        result = BacktestResult(
+        result = StrategyBacktestResult(
             strategy_name="test_strategy",
             start_date="2024-01-01",
             end_date="2024-12-31",
@@ -97,7 +97,7 @@ class TestBacktestResult:
             shares=100,
             amount=180000,
         )
-        result = BacktestResult(
+        result = StrategyBacktestResult(
             strategy_name="test_strategy",
             start_date="2024-01-01",
             end_date="2024-12-31",
@@ -174,7 +174,7 @@ class TestBacktester:
 
     def test_save_backtest(self, backtester):
         """测试保存回测结果"""
-        result = BacktestResult(
+        result = StrategyBacktestResult(
             strategy_name="test_strategy",
             start_date="2024-01-01",
             end_date="2024-12-31",
@@ -209,7 +209,7 @@ class TestBacktester:
             shares=100,
             amount=180000,
         )
-        result = BacktestResult(
+        result = StrategyBacktestResult(
             strategy_name="test_strategy",
             start_date="2024-01-01",
             end_date="2024-12-31",

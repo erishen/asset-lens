@@ -25,7 +25,7 @@ def _get_model():
         if MODEL_PATH.exists():
             return StockPredictor(model_path=MODEL_PATH)
         return None
-    except Exception as e:
+    except (ImportError, OSError, ValueError, RuntimeError) as e:
         logger.error(f"加载模型失败: {e}")
         return None
 
@@ -64,7 +64,7 @@ def _get_stock_features(code: str) -> dict[str, Any]:
         }
 
         return features
-    except Exception as e:
+    except (ValueError, KeyError, ConnectionError, RuntimeError) as e:
         logger.error(f"获取股票特征失败 {code}: {e}")
         return {}
 
@@ -127,7 +127,7 @@ async def get_ml_signals() -> dict[str, Any]:
                     "timestamp": result.timestamp,
                 }
                 signals.append(signal)
-            except Exception as e:
+            except (ValueError, KeyError, RuntimeError) as e:
                 logger.warning(f"预测股票 {code} 失败: {e}")
                 continue
 
@@ -140,7 +140,7 @@ async def get_ml_signals() -> dict[str, Any]:
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
 
-    except Exception as e:
+    except (ValueError, KeyError, RuntimeError, OSError) as e:
         logger.error(f"获取 ML 信号失败: {e}")
         return {
             "signals": [],
@@ -197,7 +197,7 @@ async def get_stock_signal(code: str) -> dict[str, Any]:
             "model_status": "loaded",
             "timestamp": result.timestamp,
         }
-    except Exception as e:
+    except (ValueError, KeyError, RuntimeError) as e:
         logger.error(f"预测股票 {code} 失败: {e}")
         return {
             "code": code,
@@ -288,7 +288,7 @@ async def get_signal_history(days: int = 30) -> dict[str, Any]:
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }
 
-    except Exception as e:
+    except (ValueError, KeyError, RuntimeError, OSError) as e:
         logger.error(f"获取历史信号失败: {e}")
         return {
             "history": [],

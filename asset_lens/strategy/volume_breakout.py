@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from ..config import config
+from ..utils.json_cache import read_json_cache, write_json_cache
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +74,7 @@ class VolumeBreakoutFilter:
                 max_results=data.get("max_results", 30),
                 use_api_history=data.get("use_api_history", True),
             )
-        except Exception as e:
+        except (json.JSONDecodeError, OSError, ValueError, KeyError) as e:
             logger.debug(f"忽略异常: {e}")
             return VolumeBreakoutConfig()
 
@@ -87,23 +88,19 @@ class VolumeBreakoutFilter:
 
     def _load_market_stocks(self) -> list[dict[str, Any]]:
         """加载市场股票数据"""
-        if self.market_stock_file.exists():
-            with open(self.market_stock_file, encoding="utf-8") as f:
-                data = json.load(f)
-                return cast(list[dict[str, Any]], data.get("data", []))
+        data = read_json_cache(self.market_stock_file)
+        if data:
+            return cast(list[dict[str, Any]], data.get("data", []))
         return []
 
     def _load_history(self) -> dict[str, Any]:
         """加载历史数据"""
-        if self.history_file.exists():
-            with open(self.history_file, encoding="utf-8") as f:
-                return cast(dict[str, Any], json.load(f))
-        return {}
+        data = read_json_cache(self.history_file)
+        return cast(dict[str, Any], data) if data else {}
 
     def _save_history(self, history: dict[str, Any]) -> None:
         """保存历史数据"""
-        with open(self.history_file, "w", encoding="utf-8") as f:
-            json.dump(history, f, ensure_ascii=False, indent=2)
+        write_json_cache(self.history_file, history)
 
     def update_history(self, stocks: list[dict[str, Any]]) -> None:
         """更新历史数据（每日运行时调用）"""
@@ -297,7 +294,7 @@ class VolumeBreakoutFilter:
             return []
 
         # 第一步：先根据当前市场数据进行预筛选
-        print(f"📊 第一步：预筛选 {len(stocks)} 只股票...")
+        logger.info(f" 第一步：预筛选 {len(stocks)} 只股票...")
         pre_filtered = []
         for stock in stocks:
             name = stock.get("name", "")
@@ -327,13 +324,13 @@ class VolumeBreakoutFilter:
             if turnover > 3 or amount > 100000000:
                 pre_filtered.append(stock)
 
-        print(f"   预筛选后剩余 {len(pre_filtered)} 只股票")
+        logger.info(f"   预筛选后剩余 {len(pre_filtered)} 只股票")
 
         if not pre_filtered:
             return []
 
         # 第二步：只获取预筛选后股票的历史数据
-        print(f"📡 第二步：获取 {len(pre_filtered)} 只股票的 {days} 日历史数据...")
+        logger.info(f"📡 第二步：获取 {len(pre_filtered)} 只股票的 {days} 日历史数据...")
         stocks_with_history = stock_history_fetcher.get_stocks_with_history(pre_filtered, days)
 
         hot_industries = self.get_hot_industries(stocks)

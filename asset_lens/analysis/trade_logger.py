@@ -9,7 +9,6 @@ Enhanced Trading Log Module.
 4. 执行结果追踪
 """
 
-import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -17,11 +16,10 @@ from pathlib import Path
 from typing import Any
 
 from ..config import config
+from ..utils.json_cache import read_json_cache, write_json_cache
 
 
-class TradeAction(Enum):
-    """交易动作"""
-
+class LogTradeAction(Enum):
     BUY = "buy"
     SELL = "sell"
     HOLD = "hold"
@@ -38,7 +36,7 @@ class TradeSource(Enum):
     AI = "ai"
 
 
-class TradeResult(Enum):
+class LogTradeResult(Enum):
     """交易结果"""
 
     SUCCESS = "success"
@@ -102,9 +100,9 @@ class EnhancedTradeLog:
     id: str
     code: str
     name: str
-    action: TradeAction
+    action: LogTradeAction
     source: TradeSource
-    result: TradeResult
+    result: LogTradeResult
     price: float
     shares: int
     amount: float
@@ -164,9 +162,9 @@ class EnhancedTradeLogger:
         self,
         code: str,
         name: str,
-        action: TradeAction,
+        action: LogTradeAction,
         source: TradeSource,
-        result: TradeResult,
+        result: LogTradeResult,
         price: float,
         shares: int,
         context: TradeContext,
@@ -235,9 +233,9 @@ class EnhancedTradeLogger:
         return self.log_trade(
             code=code,
             name=name,
-            action=TradeAction.BUY,
+            action=LogTradeAction.BUY,
             source=source,
-            result=TradeResult.SUCCESS,
+            result=LogTradeResult.SUCCESS,
             price=price,
             shares=shares,
             context=context,
@@ -281,9 +279,9 @@ class EnhancedTradeLogger:
         return self.log_trade(
             code=code,
             name=name,
-            action=TradeAction.SELL,
+            action=LogTradeAction.SELL,
             source=source,
-            result=TradeResult.SUCCESS,
+            result=LogTradeResult.SUCCESS,
             price=price,
             shares=shares,
             context=context,
@@ -341,7 +339,7 @@ class EnhancedTradeLogger:
     def search_logs(
         self,
         code: str | None = None,
-        action: TradeAction | None = None,
+        action: LogTradeAction | None = None,
         source: TradeSource | None = None,
         start_date: str | None = None,
         end_date: str | None = None,
@@ -370,19 +368,12 @@ class EnhancedTradeLogger:
         logs = self._load_logs()
         logs.append(log.to_dict())
 
-        with open(self.log_file, "w", encoding="utf-8") as f:
-            json.dump(logs[-1000:], f, ensure_ascii=False, indent=2)
+        write_json_cache(self.log_file, logs[-1000:])
 
     def _load_logs(self) -> list[dict[str, Any]]:
         """加载日志"""
-        if not self.log_file.exists():
-            return []
-        try:
-            with open(self.log_file, encoding="utf-8") as f:
-                data: list[dict[str, Any]] = json.load(f)
-                return data
-        except (ValueError, KeyError, TypeError):
-            return []
+        data = read_json_cache(self.log_file)
+        return data if data else []
 
     def format_statistics_report(self, stats: TradeStatistics) -> str:
         """格式化统计报告"""

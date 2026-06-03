@@ -280,7 +280,7 @@ class HTTPClient:
 
                 return response
 
-            except Exception as e:
+            except (ConnectionError, TimeoutError, ValueError, OSError, RuntimeError) as e:
                 error_type = self._classify_error(e)
                 self.stats.last_error = str(e)
                 self.stats.last_error_type = error_type

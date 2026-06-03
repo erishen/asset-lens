@@ -10,13 +10,13 @@ Pre-market Analysis Module.
 5. 当日操作建议
 """
 
-import json
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
 from ..config import config
+from ..utils.json_cache import write_json_cache
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ class HotSector:
 
 
 @dataclass
-class StockAlert:
+class PremarketStockAlert:
     """股票预警"""
 
     code: str
@@ -64,7 +64,7 @@ class PreMarketReport:
     date: str
     market_trends: list[MarketTrend] = field(default_factory=list)
     hot_sectors: list[HotSector] = field(default_factory=list)
-    alerts: list[StockAlert] = field(default_factory=list)
+    alerts: list[PremarketStockAlert] = field(default_factory=list)
     risk_warnings: list[str] = field(default_factory=list)
     suggestions: list[str] = field(default_factory=list)
     overall_sentiment: str = "neutral"  # bullish, bearish, neutral
@@ -110,12 +110,12 @@ class PreMarketAnalyzer:
                                     )
                                 )
                                 break
-                except Exception as e:
+                except (ValueError, KeyError, ConnectionError) as e:
                     logger.debug(f"忽略异常: {e}")
                     continue
 
-        except Exception as e:
-            print(f"⚠️ 获取市场趋势失败: {e}")
+        except (ValueError, KeyError, ConnectionError, ImportError) as e:
+            logger.error(f" 获取市场趋势失败: {e}")
 
         return trends
 
@@ -148,15 +148,14 @@ class PreMarketAnalyzer:
 
         return hot_sector_data
 
-    def check_stock_alerts(self, holdings: list[str] | None = None) -> list[StockAlert]:
-        """检查持仓个股预警"""
-        alerts: list[StockAlert] = []
+    def check_stock_alerts(self, holdings: list[str] | None = None) -> list[PremarketStockAlert]:
+        """检查持仓个股预警（待实现：需接入实时行情数据源）"""
+        alerts: list[PremarketStockAlert] = []
 
         if not holdings:
             holdings = []
 
-        for _code in holdings:
-            pass
+        # TODO: 接入实时行情数据源，检查持仓个股的涨跌幅、成交量等预警指标
 
         return alerts
 
@@ -201,7 +200,7 @@ class PreMarketAnalyzer:
 
     def generate_report(self, holdings: list[str] | None = None) -> PreMarketReport:
         """生成完整盘前报告"""
-        print("📊 生成盘前分析报告...")
+        logger.info(" 生成盘前分析报告...")
 
         market_trends = self.analyze_market_trends()
         hot_sectors = self.identify_hot_sectors()
@@ -271,8 +270,7 @@ class PreMarketAnalyzer:
             "suggestions": report.suggestions,
         }
 
-        with open(report_file, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+        write_json_cache(report_file, data)
 
     def format_report(self, report: PreMarketReport) -> str:
         """格式化报告为文本"""

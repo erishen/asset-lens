@@ -12,11 +12,11 @@ import time
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 from ..config import config
 from ..utils.http_client import get_session_without_proxy
-from .providers.cache import UnifiedCache
+from .fetchers.base import FetcherCacheMixin
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ def timeout_context(seconds: int, message: str = "操作超时"):
         yield
     except TimeoutError:
         raise
-    except Exception as e:
+    except (ValueError, RuntimeError, OSError) as e:
         logger.debug(f"忽略异常: {e}")
         raise
     finally:
@@ -49,40 +49,17 @@ def timeout_context(seconds: int, message: str = "操作超时"):
         signal.signal(signal.SIGALRM, old_handler)
 
 
-class FundDataFetcher:
-    """基金数据获取器 - 使用 AkShare 开源库"""
-
+class FundDataFetcher(FetcherCacheMixin):
     def __init__(self, cache_path: Path | None = None):
-        self._cache = UnifiedCache(
-            cache_dir=cache_path or config.cache_path,
+        self._init_cache(
+            cache_path or config.cache_path,
             default_ttl=3600,
         )
         self._fund_codes_map: dict[str, str] | None = None
-        self._akshare = None
-
-    @property
-    def cache_path(self) -> Path:
-        return self._cache.cache_dir
 
     @property
     def fund_cache_file(self) -> Path:
-        return self._cache.cache_dir / "fund_quotes.json"
-
-    @property
-    def akshare(self):
-        """延迟加载 AkShare"""
-        if self._akshare is None:
-            try:
-                import akshare as ak
-
-                self._akshare = ak
-            except ImportError:
-                raise ImportError(
-                    "请先安装 AkShare: pip install akshare\n"
-                    "AkShare 是一个开源免费的金融数据接口，无需注册\n"
-                    "GitHub: https://github.com/akfamily/akshare"
-                ) from None
-        return self._akshare
+        return self.cache_path / "fund_quotes.json"
 
     def _load_fund_codes_config(self) -> dict[str, str]:
         if self._fund_codes_map is not None:
@@ -106,7 +83,7 @@ class FundDataFetcher:
 
                 self._fund_codes_map = result
                 return result
-            except Exception as e:
+            except (json.JSONDecodeError, OSError, ValueError) as e:
                 logger.warning(f"加载基金代码配置失败: {e}")
 
         self._fund_codes_map = {}
@@ -163,12 +140,14 @@ class FundDataFetcher:
                 logger.warning(f"获取基金净值超时 (第{attempt + 1}次): {e}")
                 if attempt == 0:
                     import time
+
                     time.sleep(1)
                     continue
-            except Exception as e:
+            except (ValueError, KeyError, ConnectionError) as e:
                 logger.error(f"获取基金净值失败 {fund_code}: {e}")
                 if attempt == 0:
                     import time
+
                     time.sleep(1)
                     continue
 
@@ -187,6 +166,7 @@ class FundDataFetcher:
                 return None
 
             import json
+
             json_str = text.replace("jsonpgz(", "").rstrip(")")
             data = json.loads(json_str)
 
@@ -213,7 +193,7 @@ class FundDataFetcher:
                 "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "source": "EastMoney-API",
             }
-        except Exception as e:
+        except (ValueError, KeyError, ConnectionError) as e:
             logger.error(f"东方财富API获取基金 {fund_code} 净值失败: {e}")
             return None
 
@@ -253,8 +233,8 @@ class FundDataFetcher:
                 "source": "AkShare",
             }
 
-        except Exception as e:
-            print(f"获取基金信息失败 {fund_code}: {e}")
+        except (ValueError, KeyError, ConnectionError) as e:
+            logger.error(f"获取基金信息失败 {fund_code}: {e}")
             return None
 
     def fetch_fund_historical_nav(
@@ -290,8 +270,8 @@ class FundDataFetcher:
 
             return result
 
-        except Exception as e:
-            print(f"获取基金历史净值失败 {fund_code}: {e}")
+        except (ValueError, KeyError, ConnectionError) as e:
+            logger.error(f"获取基金历史净值失败 {fund_code}: {e}")
             return None
 
     def fetch_multiple_funds(self, fund_codes: list[str]) -> dict[str, Any]:
@@ -307,15 +287,15 @@ class FundDataFetcher:
         results = {}
 
         for code in fund_codes:
-            print(f"正在获取基金 {code} 净值...")
+            logger.info(f"正在获取基金 {code} 净值...")
 
             data = self.fetch_fund_quote_akshare(code)
 
             if data:
                 results[code] = data
-                print(f"  ✅ {data['name']}: {data['change_percent']:+.2f}%")
+                logger.info(f"   {data['name']}: {data['change_percent']:+.2f}%")
             else:
-                print(f"  ❌ {code}: 获取失败")
+                logger.error(f"   {code}: 获取失败")
 
             time.sleep(0.1)
 
@@ -332,7 +312,7 @@ class FundDataFetcher:
         """获取缓存的基金数据"""
         data = self._cache.load_file("fund_quotes.json")
         if data is not None:
-            return cast(dict[str, Any], data)
+            return data
         return {}
 
     def search_fund(self, keyword: str) -> list[dict[str, Any]]:
@@ -372,8 +352,8 @@ class FundDataFetcher:
 
             return result
 
-        except Exception as e:
-            print(f"搜索基金失败: {e}")
+        except (ValueError, KeyError, ConnectionError) as e:
+            logger.error(f"搜索基金失败: {e}")
             return []
 
 
@@ -471,7 +451,7 @@ def fetch_portfolio_fund_quotes() -> dict[str, Any]:
     """
     from .csv_parser import CSVParser
 
-    print("📊 正在加载投资产品数据...")
+    logger.info(" 正在加载投资产品数据...")
     products = CSVParser.load_data()
 
     fund_products = []
@@ -483,12 +463,12 @@ def fetch_portfolio_fund_quotes() -> dict[str, Any]:
             fund_products.append(name)
 
     if not fund_products:
-        print("❌ 没有找到基金类产品")
+        logger.info(" 没有找到基金类产品")
         return {}
 
-    print(f"📋 找到 {len(fund_products)} 个基金类产品")
+    logger.info(f"📋 找到 {len(fund_products)} 个基金类产品")
 
-    print("\n🔍 正在匹配基金代码...")
+    logger.info(f"🔍 正在匹配基金代码...")
     fund_codes_map = auto_match_fund_codes(fund_products)
 
     matched_codes = []
@@ -497,19 +477,19 @@ def fetch_portfolio_fund_quotes() -> dict[str, Any]:
     for name, code in fund_codes_map.items():
         if code:
             matched_codes.append(code)
-            print(f"  ✅ {name} -> {code}")
+            logger.info(f"   {name} -> {code}")
         else:
             unmatched_names.append(name)
-            print(f"  ❌ {name} -> 未匹配")
+            logger.info(f"   {name} -> 未匹配")
 
     if unmatched_names:
-        print(f"\n⚠️  有 {len(unmatched_names)} 个产品未能匹配基金代码:")
+        logger.info(f"  有 {len(unmatched_names)} 个产品未能匹配基金代码:")
         for name in unmatched_names:
-            print(f"  - {name}")
+            logger.info(f"  - {name}")
 
     if not matched_codes:
-        print("\n❌ 没有匹配到任何基金代码")
+        logger.info(f" 没有匹配到任何基金代码")
         return {}
 
-    print(f"\n📊 正在获取 {len(matched_codes)} 只基金的净值...")
+    logger.info(f" 正在获取 {len(matched_codes)} 只基金的净值...")
     return fund_fetcher.fetch_multiple_funds(matched_codes)
