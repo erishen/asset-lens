@@ -14,6 +14,7 @@ from datetime import datetime
 from typing import Any
 
 from ..config import config
+from .providers.cache import UnifiedCache
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +53,7 @@ class IntelligentRecommender:
         self.cache_path = config.cache_path
         self.recommendation_path = self.cache_path / "recommendations"
         self.recommendation_path.mkdir(parents=True, exist_ok=True)
+        self._cache = UnifiedCache(cache_dir=self.recommendation_path)
 
     def recommend_strategy(
         self,
@@ -230,7 +232,7 @@ class IntelligentRecommender:
                         "max_drawdown": validation.get("max_drawdown", 0),
                     }
 
-            except Exception as e:
+            except (ValueError, KeyError, TypeError) as e:
                 logger.debug(f"忽略异常: {e}")
 
         risk_score = self._calculate_risk_compatibility(
@@ -517,7 +519,7 @@ class IntelligentRecommender:
                 "risk_level": env.risk_level,
                 "sentiment": env.sentiment,
             }
-        except Exception as e:
+        except (ValueError, KeyError, ConnectionError) as e:
             logger.debug(f"忽略异常: {e}")
             return {
                 "market_type": "震荡",
@@ -530,14 +532,9 @@ class IntelligentRecommender:
         recommendations: list[Any],
         filename: str | None = None,
     ) -> str:
-        """保存推荐结果"""
-        import json
-
         if filename is None:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"recommendations_{timestamp}.json"
-
-        filepath = self.recommendation_path / filename
 
         data = {
             "generate_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -550,10 +547,9 @@ class IntelligentRecommender:
             ],
         }
 
-        with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+        self._cache.save_file(filename, data, ttl=0)
 
-        return str(filepath)
+        return str(self.recommendation_path / filename)
 
 
 intelligent_recommender = IntelligentRecommender()

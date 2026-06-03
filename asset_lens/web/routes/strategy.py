@@ -92,7 +92,7 @@ async def evaluate_stock(strategy_name: str, code: str):
             "code": code,
             "result": result,
         }
-    except Exception as e:
+    except (ValueError, KeyError, RuntimeError) as e:
         raise HTTPException(status_code=500, detail=f"评估失败: {e!s}") from e
 
 
@@ -117,5 +117,5 @@ async def recommend_stocks(
             "count": len(stocks[:limit]),
             "recommendations": stocks[:limit],
         }
-    except Exception as e:
+    except (ValueError, KeyError, RuntimeError) as e:
         raise HTTPException(status_code=500, detail=f"获取推荐失败: {e!s}") from e

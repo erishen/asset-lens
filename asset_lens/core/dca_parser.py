@@ -5,19 +5,10 @@ DCA (Dollar Cost Average) strategy parser for asset-lens.
 
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
-from enum import Enum
 
 from ..data.models import Currency, InvestmentType, Transaction
+from ..types.trading import DCAInvestmentType
 from .holidays import calculate_fund_trading_days, calculate_working_days, get_last_fund_trading_day, parse_stop_periods
-
-
-class DCAInvestmentType(str, Enum):
-    """定投类型"""
-
-    FIXED = "fixed"
-    RANGE = "range"
-    FLOAT = "float"
-    VALUATION = "valuation"
 
 
 class DCAParser:

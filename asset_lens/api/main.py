@@ -5,8 +5,12 @@ Asset-Lens REST API.
 此模块提供带认证的 API 路由，挂载到 web.api 的主应用上
 """
 
+import logging
 import os
+import time
+from collections import defaultdict
 from datetime import datetime
+from threading import Lock
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -15,6 +19,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
 from asset_lens.api.response import ERROR_CODES, create_error_response, create_success_response
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1", tags=["API v1"])
 
@@ -48,7 +54,7 @@ class PortfolioAnalysisResponse(BaseModel):
     update_time: str
 
 
-class RiskMetrics(BaseModel):
+class RiskMetricsResponse(BaseModel):
     volatility: float
     max_drawdown: float
     sharpe_ratio: float
@@ -72,15 +78,11 @@ def _load_api_keys() -> dict[str, dict[str, Any]]:
             result: dict[str, dict[str, Any]] = json.loads(api_keys_str)
             return result
         except json.JSONDecodeError:
-            pass
+            logger.debug("API密钥JSON解析失败")
     return {"demo_key": {"user": "demo", "rate_limit": 100}}
 
 
 API_KEYS = _load_api_keys()
-
-import time
-from collections import defaultdict
-from threading import Lock
 
 _request_counts_lock = Lock()
 _request_counts: dict[str, int] = defaultdict(int)
@@ -141,7 +143,7 @@ async def get_stock_quote(code: str, api_info: dict = Depends(check_rate_limit))
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Stock not found: {code}")
     except HTTPException:
         raise
-    except Exception as e:
+    except (ValueError, KeyError, TypeError, ConnectionError, RuntimeError, OSError) as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
@@ -161,7 +163,7 @@ async def get_fund_nav(code: str, api_info: dict = Depends(check_rate_limit)):
                 update_date=nav_data.get("date", ""),
             )
         return FundNav(code=code, name="", nav=0.0, accumulated_nav=0.0, update_date="")
-    except Exception as e:
+    except (ValueError, KeyError, TypeError, ConnectionError, RuntimeError) as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
@@ -181,15 +183,15 @@ async def get_portfolio_analysis(api_info: dict = Depends(check_rate_limit)):
             risk_level=summary.get("risk_level", "未知"),
             update_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
-    except Exception as e:
+    except (ValueError, KeyError, TypeError, RuntimeError) as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
-@router.get("/risk/metrics", response_model=RiskMetrics)
+@router.get("/risk/metrics", response_model=RiskMetricsResponse)
 async def get_risk_metrics(api_info: dict = Depends(check_rate_limit)):
     try:
-        return RiskMetrics(volatility=0.0, max_drawdown=0.0, sharpe_ratio=0.0, beta=0.0, var_95=0.0)
-    except Exception as e:
+        return RiskMetricsResponse(volatility=0.0, max_drawdown=0.0, sharpe_ratio=0.0, beta=0.0, var_95=0.0)
+    except (ValueError, RuntimeError) as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
@@ -205,7 +207,7 @@ async def get_monitor_report(
             content="",
             alerts=[],
         )
-    except Exception as e:
+    except (ValueError, KeyError, RuntimeError) as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
@@ -219,7 +221,7 @@ async def screen_stocks(
         return create_success_response(
             {"strategy": strategy, "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "stocks": []}
         )
-    except Exception as e:
+    except (ValueError, KeyError, RuntimeError) as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 
@@ -227,7 +229,7 @@ async def screen_stocks(
 async def get_market_indices(api_info: dict = Depends(check_rate_limit)):
     try:
         return create_success_response({"timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "indices": []})
-    except Exception as e:
+    except (ValueError, KeyError, ConnectionError, RuntimeError) as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
 

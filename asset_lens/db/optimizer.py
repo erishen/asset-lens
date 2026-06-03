@@ -78,7 +78,7 @@ class DatabaseOptimizer:
                     result["status"] = "failed"
                     result["message"] = f"WAL 模式启用失败: {after}"
 
-        except Exception as e:
+        except (sqlite3.Error, OSError) as e:
             result["status"] = "error"
             result["message"] = str(e)
 
@@ -119,7 +119,7 @@ class DatabaseOptimizer:
 
                 result["message"] = f"已优化 {len(pragmas)} 个 PRAGMA 设置"
 
-        except Exception as e:
+        except (sqlite3.Error, OSError) as e:
             result["status"] = "error"
             result["message"] = str(e)
 
@@ -175,7 +175,7 @@ class DatabaseOptimizer:
                     session.commit()
                     result["created"].append(idx_name)
 
-            except Exception as e:
+            except (sqlite3.Error, OSError) as e:
                 result["failed"].append({"name": idx_name, "error": str(e)})
 
         result["message"] = f"创建 {len(result['created'])} 个索引, 跳过 {len(result['skipped'])} 个已存在索引"
@@ -212,13 +212,13 @@ class DatabaseOptimizer:
                 try:
                     session.execute(text(f"ANALYZE {table}"))
                     result["tables"].append(table)
-                except Exception as e:
+                except (sqlite3.Error, OSError) as e:
                     logger.debug(f"忽略异常: {e}")
 
             session.commit()
             result["message"] = f"已分析 {len(result['tables'])} 个表"
 
-        except Exception as e:
+        except (sqlite3.Error, OSError) as e:
             result["status"] = "error"
             result["message"] = str(e)
 
@@ -259,7 +259,7 @@ class DatabaseOptimizer:
 
             result["message"] = f"已清理数据库，释放 {result['freed_mb']} MB 空间"
 
-        except Exception as e:
+        except (sqlite3.Error, OSError) as e:
             result["status"] = "error"
             result["message"] = str(e)
 
@@ -285,7 +285,7 @@ class DatabaseOptimizer:
                 for row in result
             ]
             return indexes
-        except Exception as e:
+        except (sqlite3.Error, OSError) as e:
             logger.debug(f"忽略异常: {e}")
             return []
 
@@ -306,7 +306,7 @@ class DatabaseOptimizer:
                 row = result.fetchone()
                 count = row[0] if row else 0
                 stats[table] = {"row_count": count}
-            except Exception as e:
+            except (sqlite3.Error, OSError) as e:
                 logger.debug(f"忽略异常: {e}")
                 stats[table] = {"row_count": 0}
 
@@ -333,7 +333,7 @@ class DatabaseOptimizer:
                 session.commit()
                 elapsed = time.perf_counter() - start
                 times.append(elapsed)
-            except Exception as e:
+            except (sqlite3.Error, OSError) as e:
                 logger.debug(f"忽略异常: {e}")
                 times.append(-1)
 

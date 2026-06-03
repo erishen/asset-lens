@@ -5,6 +5,7 @@
 
 from pathlib import Path
 
+from ..core.exceptions import DataLoadError
 from ..data.models import RiskLevel, SellRecord
 from .parser_utils import SELL_RECORD_FIELDS, parse_date, parse_decimal
 
@@ -87,8 +88,8 @@ class SellRecordParser:
                 transaction_records=row.get("交易记录", "").strip(),
                 default_order=cls.parse_int(row.get("默认顺序", "")),
             )
-        except Exception as e:
-            print(f"解析卖出记录行数据时出错: {e}, 行数据: {row}")
+        except (ValueError, TypeError, KeyError) as e:
+            logger.info(f"解析卖出记录行数据时出错: {e}, 行数据: {row}")
             return None
 
     @classmethod
@@ -122,8 +123,7 @@ class SellRecordParser:
                         if record:
                             records.append(record)
 
-        except Exception as e:
-            from ..core.exceptions import DataLoadError
+        except (OSError, ValueError, KeyError) as e:
 
             raise DataLoadError(f"读取卖出记录 CSV 文件失败: {e}", file_path=str(csv_path)) from e
 

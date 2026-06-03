@@ -10,7 +10,7 @@ CLI 工具函数
 """
 
 import functools
-import json
+import logging
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -19,6 +19,9 @@ from typing import Any
 import click
 
 from asset_lens.config import config
+from asset_lens.utils.json_cache import read_json_cache
+
+logger = logging.getLogger(__name__)
 
 
 def handle_errors(func: Callable) -> Callable:
@@ -37,7 +40,7 @@ def handle_errors(func: Callable) -> Callable:
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, OSError, RuntimeError) as e:
             click.echo(f"❌ 操作失败: {e}", err=True)
             return None
 
@@ -69,7 +72,7 @@ def load_portfolio_data(data_mode: str = "sample") -> tuple[dict | None, str | N
             hkd_rate=Decimal(str(config.default_hkd_rate)),
         )
         return {"portfolio": portfolio, "products": products}, None
-    except Exception as e:
+    except (ValueError, KeyError, TypeError, OSError, RuntimeError) as e:
         return None, f"加载数据失败: {e}"
 
 
@@ -218,8 +221,8 @@ def check_data_freshness(
         return True, None
 
     try:
-        with open(file_path, encoding="utf-8") as f:
-            data = json.load(f)
+        data = read_json_cache(file_path)
+        if data:
             update_time_str = data.get(time_key, "")
             if update_time_str:
                 update_time = datetime.strptime(update_time_str, "%Y-%m-%d %H:%M:%S")
@@ -228,8 +231,8 @@ def check_data_freshness(
                 if age > timedelta(hours=max_age_hours):
                     return True, update_time_str
                 return False, update_time_str
-    except ValueError:
-        pass
+    except ValueError as e:
+        logger.debug("CLI参数解析失败: %s", e)
 
     return True, None
 

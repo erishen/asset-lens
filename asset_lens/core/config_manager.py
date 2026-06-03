@@ -12,7 +12,7 @@ from typing import Any, ClassVar
 logger = logging.getLogger(__name__)
 
 try:
-    import yaml
+    import yaml  # type: ignore[import-untyped]
 
     YAML_AVAILABLE = True
 except ImportError:
@@ -125,7 +125,7 @@ class ConfigManager:
                     else:
                         self.config = json.load(f)
                 logger.info(f"配置文件加载成功: {self.config_path}")
-            except Exception as e:
+            except (OSError, json.JSONDecodeError, ValueError) as e:
                 logger.error(f"加载配置文件失败: {e}")
                 self.config = self.DEFAULT_CONFIG.copy()
         else:
@@ -147,7 +147,7 @@ class ConfigManager:
                 else:
                     json.dump(self.config, f, indent=2, ensure_ascii=False)
             logger.info(f"默认配置文件已创建: {self.config_path}")
-        except Exception as e:
+        except OSError as e:
             logger.error(f"创建默认配置文件失败: {e}")
 
     def get(self, key: str, default: Any = None) -> Any:
@@ -240,7 +240,7 @@ class ConfigManager:
                     json.dump(self.config, f, indent=2, ensure_ascii=False)
             logger.info(f"配置文件已保存: {self.config_path}")
             return True
-        except Exception as e:
+        except OSError as e:
             logger.error(f"保存配置文件失败: {e}")
             return False
 

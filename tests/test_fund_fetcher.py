@@ -51,7 +51,6 @@ class TestFundDataFetcher:
         """测试初始化"""
         assert fetcher.cache_path == temp_cache_path
         assert fetcher._fund_codes_map is None
-        assert fetcher._akshare is None
 
     def test_init_with_cache_path(self, temp_cache_path):
         """测试带缓存路径初始化"""
@@ -67,9 +66,11 @@ class TestFundDataFetcher:
 
     def test_akshare_import_error(self, fetcher):
         """测试 AkShare 未安装"""
-        with patch.dict("sys.modules", {"akshare": None}):
-            with patch("builtins.__import__", side_effect=ImportError("No module")):
-                fetcher._akshare = None
+        with patch("asset_lens.utils.akshare_loader._AKSHARE_INSTANCE", None):
+            with patch(
+                "asset_lens.utils.akshare_loader.get_akshare",
+                side_effect=ImportError("请先安装 AkShare: pip install akshare"),
+            ):
                 with pytest.raises(ImportError) as exc_info:
                     _ = fetcher.akshare
                 assert "请先安装 AkShare" in str(exc_info.value)

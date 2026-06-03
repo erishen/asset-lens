@@ -76,7 +76,7 @@ class ConfigValidator:
                 warnings,
             )
 
-        except Exception as e:
+        except OSError as e:
             return ValidationResult(
                 False,
                 [f"读取 .env 文件失败: {e}"],
@@ -121,7 +121,7 @@ class ConfigValidator:
         if not cache_path.exists():
             try:
                 cache_path.mkdir(parents=True, exist_ok=True)
-            except Exception as e:
+            except OSError as e:
                 return ValidationResult(False, [f"无法创建缓存路径: {e}"], [])
 
         return ValidationResult(True, [], [])

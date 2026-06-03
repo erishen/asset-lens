@@ -10,15 +10,19 @@ Real-time Signal Pusher.
 5. 关键价位提醒
 """
 
-import json
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
+
+from ..utils.json_cache import read_json_cache, write_json_cache
 from enum import Enum
 from pathlib import Path
 from typing import Any
 
 from ..config import config
+
+logger = logging.getLogger(__name__)
 
 
 class SignalType(Enum):
@@ -103,8 +107,8 @@ class SignalPusher:
             try:
                 handler(signal)
                 results.append(True)
-            except Exception as e:
-                print(f"⚠️ 自定义处理器执行失败: {e}")
+            except (ValueError, TypeError, RuntimeError) as e:
+                logger.error(f" 自定义处理器执行失败: {e}")
 
         return any(results)
 
@@ -124,12 +128,12 @@ class SignalPusher:
         emoji = emoji_map.get(signal.signal_type, "📌")
         priority_emoji = "❗" if signal.priority == Priority.HIGH else ""
 
-        print(f"\n{emoji} {priority_emoji}【{signal.signal_type.value.upper()}】{signal.name} ({signal.code})")
-        print(f"   价格: {signal.price:.2f} ({signal.change_percent:+.2f}%)")
-        print(f"   置信度: {signal.confidence:.1%}")
-        print(f"   原因: {signal.reason}")
-        print(f"   建议: {signal.suggestion}")
-        print(f"   时间: {signal.timestamp}")
+        logger.info(f"{emoji} {priority_emoji}【{signal.signal_type.value.upper()}】{signal.name} ({signal.code})")
+        logger.info(f"   价格: {signal.price:.2f} ({signal.change_percent:+.2f}%)")
+        logger.info(f"   置信度: {signal.confidence:.1%}")
+        logger.info(f"   原因: {signal.reason}")
+        logger.info(f"   建议: {signal.suggestion}")
+        logger.info(f"   时间: {signal.timestamp}")
 
         return True
 
@@ -154,8 +158,8 @@ class SignalPusher:
             r = requests.post(self.config.webhook_url, json=payload, timeout=10)
             return r.status_code == 200
 
-        except Exception as e:
-            print(f"⚠️ Webhook 推送失败: {e}")
+        except (ConnectionError, TimeoutError, ValueError) as e:
+            logger.error(f" Webhook 推送失败: {e}")
             return False
 
     def _push_to_dingtalk(self, signal: Signal) -> bool:
@@ -190,20 +194,17 @@ class SignalPusher:
             r = requests.post(url, json=payload, timeout=10)
             return r.status_code == 200
 
-        except Exception as e:
-            print(f"⚠️ 钉钉推送失败: {e}")
+        except (ConnectionError, TimeoutError, ValueError) as e:
+            logger.error(f" 钉钉推送失败: {e}")
             return False
 
     def _save_signal(self, signal: Signal) -> None:
         """保存信号历史"""
         history = []
 
-        if self.signal_history_file.exists():
-            try:
-                with open(self.signal_history_file, encoding="utf-8") as f:
-                    history = json.load(f)
-            except (ValueError, KeyError, TypeError):
-                history = []
+        history_data = read_json_cache(self.signal_history_file)
+        if history_data:
+            history = history_data
 
         history.append(
             {
@@ -223,20 +224,14 @@ class SignalPusher:
         if len(history) > 1000:
             history = history[-1000:]
 
-        with open(self.signal_history_file, "w", encoding="utf-8") as f:
-            json.dump(history, f, ensure_ascii=False, indent=2)
+        write_json_cache(self.signal_history_file, history)
 
     def get_recent_signals(self, limit: int = 20) -> list[dict[str, Any]]:
         """获取最近信号"""
-        if not self.signal_history_file.exists():
+        history_data = read_json_cache(self.signal_history_file)
+        if not history_data:
             return []
-
-        try:
-            with open(self.signal_history_file, encoding="utf-8") as f:
-                history: list[dict[str, Any]] = json.load(f)
-            return history[-limit:]
-        except (ValueError, KeyError, TypeError):
-            return []
+        return history_data[-limit:]
 
 
 class SignalGenerator:

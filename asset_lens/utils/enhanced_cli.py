@@ -1,9 +1,12 @@
+logger = logging.getLogger(__name__)
+
 """
 Enhanced CLI Utilities with colors and progress bars.
 增强版 CLI 工具 - 支持彩色输出和进度条
 """
 
 import sys
+import logging
 from collections.abc import Iterator, Sized
 from dataclasses import dataclass
 from enum import Enum
@@ -13,7 +16,7 @@ try:
     from rich import print as rprint
     from rich.console import Console
     from rich.panel import Panel
-    from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
+    from rich.progress import BarColumn, Progress, SpinnerColumn, TaskID, TaskProgressColumn, TextColumn
     from rich.syntax import Syntax
     from rich.table import Table
 
@@ -76,7 +79,7 @@ class EnhancedCLI:
             click_style = click.style(message, fg=color.value, bold=bold)
             click.echo(click_style)
         else:
-            print(message)
+            logger.info(message)
 
     def print_success(self, message: str):
         """打印成功消息"""
@@ -99,9 +102,9 @@ class EnhancedCLI:
         if RICH_AVAILABLE and self.console:
             self.console.print(Panel(title, width=width, style="bold cyan"))
         else:
-            print("\n" + "=" * width)
-            print(title.center(width))
-            print("=" * width + "\n")
+            logger.info(f"" + "=" * width)
+            logger.info(title.center(width))
+            logger.info("=" * width + "\n")
 
     def print_subheader(self, title: str, width: int = 60):
         """打印子标题"""
@@ -109,9 +112,9 @@ class EnhancedCLI:
             self.console.print(f"\n[bold]{title}[/bold]", style="cyan")
             self.console.print("─" * width, style="dim")
         else:
-            print("\n" + "-" * width)
-            print(title)
-            print("-" * width + "\n")
+            logger.info(f"" + "-" * width)
+            logger.info(title)
+            logger.info("-" * width + "\n")
 
     def print_table(self, title: str, headers: list[str], rows: list[list[str]]):
         """打印表格"""
@@ -123,13 +126,13 @@ class EnhancedCLI:
                 table.add_row(*row)
             self.console.print(table)
         else:
-            print(f"\n{title}")
-            print("-" * 60)
-            print(" | ".join(headers))
-            print("-" * 60)
+            logger.info(f"{title}")
+            logger.info("-" * 60)
+            logger.info(" | ".join(headers))
+            logger.info("-" * 60)
             for row in rows:
-                print(" | ".join(row))
-            print("-" * 60 + "\n")
+                logger.info(" | ".join(row))
+            logger.info("-" * 60 + "\n")
 
     def print_key_value(self, key: str, value: Any, indent: int = 0, color: Color | None = None):
         """打印键值对"""
@@ -137,7 +140,7 @@ class EnhancedCLI:
         if color:
             self.print_colored(f"{prefix}{key}: {value}", color)
         else:
-            print(f"{prefix}{key}: {value}")
+            logger.info(f"{prefix}{key}: {value}")
 
     def print_json(self, data: dict[str, Any], title: str | None = None):
         """打印 JSON 数据"""
@@ -151,7 +154,7 @@ class EnhancedCLI:
             syntax = Syntax(json_str, "json", theme="monokai", line_numbers=False)
             self.console.print(syntax)
         else:
-            print(json.dumps(data, indent=2, ensure_ascii=False))
+            logger.info(json.dumps(data, indent=2, ensure_ascii=False))
 
     def create_progress_bar(self, config: ProgressBarConfig):
         """创建进度条"""
@@ -227,7 +230,7 @@ class RichProgressBar:
         self.config = config
         self.console = console
         self.progress: Progress | None = None
-        self.task: int | None = None
+        self.task: TaskID | None = None
 
     def __enter__(self):
         self.progress = Progress(
@@ -248,12 +251,12 @@ class RichProgressBar:
     def update(self, advance: int = 1):
         """更新进度"""
         if self.progress and self.task is not None:
-            self.progress.advance(self.task, advance)  # type: ignore[arg-type]
+            self.progress.advance(self.task, advance)
 
     def set_description(self, description: str):
         """设置描述"""
         if self.progress and self.task is not None:
-            self.progress.update(self.task, description=description)  # type: ignore[arg-type]
+            self.progress.update(self.task, description=description)
 
 
 class TqdmProgressBar:
@@ -291,17 +294,17 @@ class SimpleProgressBar:
 
     def __enter__(self):
         self.current = 0
-        print(f"{self.config.description}: 0/{self.config.total}")
+        logger.info(f"{self.config.description}: 0/{self.config.total}")
         return self
 
     def __exit__(self, *args):
-        print(f"{self.config.description}: {self.current}/{self.config.total} ✓")
+        logger.info(f"{self.config.description}: {self.current}/{self.config.total} ✓")
 
     def update(self, advance: int = 1):
         """更新进度"""
         self.current += advance
         percent = (self.current / self.config.total * 100) if self.config.total > 0 else 0
-        print(f"{self.config.description}: {self.current}/{self.config.total} ({percent:.1f}%)")
+        logger.info(f"{self.config.description}: {self.current}/{self.config.total} ({percent:.1f}%)")
 
     def set_description(self, description: str):
         """设置描述"""

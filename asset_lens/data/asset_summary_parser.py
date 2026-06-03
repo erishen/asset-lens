@@ -1,9 +1,12 @@
+logger = logging.getLogger(__name__)
+
 """
 资产汇总数据解析器
 解析备份-表格 1.csv 文件
 """
 
 import csv
+import logging
 from decimal import Decimal
 from pathlib import Path
 
@@ -60,8 +63,8 @@ class AssetSummaryParser:
                 property_value=parse_decimal(row.get("房产总价", "")) or Decimal("0"),
                 return_rate=parse_decimal(row.get("收益率", "")) or Decimal("0"),
             )
-        except Exception as e:
-            print(f"解析资产汇总行数据时出错: {e}, 行数据: {row}")
+        except (ValueError, TypeError, KeyError) as e:
+            logger.info(f"解析资产汇总行数据时出错: {e}, 行数据: {row}")
             return None
 
     @classmethod
@@ -87,9 +90,9 @@ class AssetSummaryParser:
                     if summary:
                         summaries.append(summary)
                     else:
-                        print(f"警告: 第 {row_num} 行资产汇总数据解析失败")
+                        logger.error(f"警告: 第 {row_num} 行资产汇总数据解析失败")
 
-        except Exception as e:
+        except (OSError, ValueError, KeyError) as e:
             raise Exception(f"读取资产汇总 CSV 文件失败: {e}") from e
 
         return summaries

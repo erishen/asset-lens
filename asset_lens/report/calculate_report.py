@@ -288,7 +288,11 @@ class CalculateReportGenerator:
         if product.investment_type in [InvestmentType.US_STOCK, InvestmentType.USD_FUND]:
             rate = product.usd_rate or usd_rate
             return (product.current_amount or Decimal("0")) * rate
-        elif product.investment_type in [InvestmentType.HK_STOCK, InvestmentType.HK_CASH, InvestmentType.HK_DIVIDEND_FUND]:
+        elif product.investment_type in [
+            InvestmentType.HK_STOCK,
+            InvestmentType.HK_CASH,
+            InvestmentType.HK_DIVIDEND_FUND,
+        ]:
             rate = product.hkd_rate or hkd_rate
             return (product.current_amount or Decimal("0")) * rate
         return product.current_amount or Decimal("0")

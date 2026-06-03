@@ -29,12 +29,9 @@ Asset Lens - 投资组合管理系统
 - 1.0.0: 初始版本
 """
 
-import warnings
+from .utils.warnings_config import suppress_common_warnings
 
-warnings.filterwarnings("ignore", message="Pandas requires version")
-warnings.filterwarnings("ignore", message=".*unclosed.*socket.*")
-warnings.filterwarnings("ignore", category=ResourceWarning)
-warnings.filterwarnings("ignore", category=DeprecationWarning)
+suppress_common_warnings()
 
 __version__ = "1.0.0"
 __author__ = "Asset Lens Team"

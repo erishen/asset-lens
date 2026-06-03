@@ -35,7 +35,7 @@ class ConnectionManager:
         for connection in self.active_connections:
             try:
                 await connection.send_json(message)
-            except Exception as e:
+            except (OSError, RuntimeError) as e:
                 logger.debug(f"Failed to send message: {e}")
                 disconnected.add(connection)
 
@@ -76,7 +76,7 @@ async def handle_market_websocket(websocket: WebSocket):
                 await asyncio.sleep(30)
                 try:
                     await websocket.send_json({"type": "ping"})
-                except Exception as e:
+                except (OSError, RuntimeError) as e:
                     logger.debug(f"忽略异常: {e}")
                     break
 
@@ -131,7 +131,7 @@ async def handle_market_websocket(websocket: WebSocket):
 
     except WebSocketDisconnect:
         pass
-    except Exception as e:
+    except (OSError, RuntimeError, ConnectionError) as e:
         logger.error(f"WebSocket error: {e}")
     finally:
         if heartbeat_task:
@@ -141,7 +141,7 @@ async def handle_market_websocket(websocket: WebSocket):
 
 async def _get_market_indexes_async():
     """获取市场指数数据（异步版本）"""
-    from .http_client import async_get
+    from .aiohttp_session import async_get
 
     indexes = []
     index_codes = [
@@ -192,7 +192,7 @@ async def _get_market_indexes_async():
                                 logger.debug(f"Failed to parse index {code}: {e}")
         except asyncio.TimeoutError:
             logger.debug(f"Timeout fetching index {code}")
-        except Exception as e:
+        except (ConnectionError, TimeoutError, ValueError, KeyError, OSError) as e:
             logger.debug(f"Error fetching index {code}: {e}")
 
     return indexes
@@ -200,7 +200,7 @@ async def _get_market_indexes_async():
 
 async def _get_stock_quotes_async(codes: list[str]):
     """获取股票行情数据（异步版本）"""
-    from .http_client import async_get
+    from .aiohttp_session import async_get
 
     quotes = []
     headers = {
@@ -245,7 +245,7 @@ async def _get_stock_quotes_async(codes: list[str]):
                                 logger.debug(f"Failed to parse quote {code}: {e}")
         except asyncio.TimeoutError:
             logger.debug(f"Timeout fetching quote {code}")
-        except Exception as e:
+        except (ConnectionError, TimeoutError, ValueError, KeyError, OSError) as e:
             logger.debug(f"Error fetching quote {code}: {e}")
 
     return quotes

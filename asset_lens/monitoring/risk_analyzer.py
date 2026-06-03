@@ -22,7 +22,6 @@ Risk Analyzer System - 风险分析系统
     regime = analyzer.detect_market_regime(index_returns)
 """
 
-import json
 import logging
 from dataclasses import dataclass
 from datetime import datetime
@@ -31,6 +30,9 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from investkit_utils.types.models import RiskMetrics
+
+from ..utils.json_cache import read_json_cache, write_json_cache
 
 logger = logging.getLogger(__name__)
 
@@ -42,18 +44,6 @@ class MarketRegime(Enum):
     BEAR = "bear"  # 熊市 - 下跌趋势
     SIDEWAYS = "sideways"  # 震荡 - 横盘整理
     CRISIS = "crisis"  # 危机 - 极端波动
-
-
-@dataclass
-class RiskMetrics:
-    """风险指标"""
-
-    volatility: float = 0.0
-    max_drawdown: float = 0.0
-    sharpe_ratio: float = 0.0
-    beta: float = 0.0
-    var_95: float = 0.0
-    concentration_risk: float = 0.0
 
 
 @dataclass
@@ -86,7 +76,7 @@ class RiskAnalyzer:
             returns_array = np.array(returns)
             volatility = np.std(returns_array) * np.sqrt(252)
             return float(volatility)
-        except Exception as e:
+        except (ValueError, TypeError, ZeroDivisionError) as e:
             logger.error(f"计算波动率失败: {e}")
             return 0.0
 
@@ -108,7 +98,7 @@ class RiskAnalyzer:
                     max_dd = dd
 
             return float(max_dd * 100)
-        except Exception as e:
+        except (ValueError, TypeError, ZeroDivisionError) as e:
             logger.error(f"计算最大回撤失败: {e}")
             return 0.0
 
@@ -126,7 +116,7 @@ class RiskAnalyzer:
 
             sharpe = np.mean(excess_returns) / np.std(excess_returns) * np.sqrt(252)
             return float(sharpe)
-        except Exception as e:
+        except (ValueError, TypeError, ZeroDivisionError) as e:
             logger.error(f"计算夏普比率失败: {e}")
             return 0.0
 
@@ -147,7 +137,7 @@ class RiskAnalyzer:
 
             beta = covariance / market_variance
             return float(beta)
-        except Exception as e:
+        except (ValueError, TypeError, ZeroDivisionError) as e:
             logger.error(f"计算贝塔系数失败: {e}")
             return 0.0
 
@@ -160,7 +150,7 @@ class RiskAnalyzer:
             returns_array = np.array(returns)
             var_95 = np.percentile(returns_array, 5)
             return float(abs(var_95))
-        except Exception as e:
+        except (ValueError, TypeError, IndexError) as e:
             logger.error(f"计算VaR失败: {e}")
             return 0.0
 
@@ -178,7 +168,7 @@ class RiskAnalyzer:
             herfindahl_index = sum(w**2 for w in weights)
 
             return float(herfindahl_index * 100)
-        except Exception as e:
+        except (ValueError, TypeError, ZeroDivisionError) as e:
             logger.error(f"计算集中度风险失败: {e}")
             return 0.0
 
@@ -310,20 +300,11 @@ class RiskAnalyzer:
         self.risk_history.append(metrics_data)
 
         history_file = self._cache_path / "risk_history.json"
-        history_data = []
-
-        if history_file.exists():
-            try:
-                with open(history_file, encoding="utf-8") as f:
-                    history_data = json.load(f)
-            except (json.JSONDecodeError, OSError) as e:
-                logger.warning(f"加载历史数据失败: {e}")
-                history_data = []
+        history_data = read_json_cache(history_file) or []
 
         history_data.append(metrics_data)
 
-        with open(history_file, "w", encoding="utf-8") as f:
-            json.dump(history_data, f, ensure_ascii=False, indent=2)
+        write_json_cache(history_file, history_data)
 
     def detect_market_regime(
         self,
@@ -372,7 +353,7 @@ class RiskAnalyzer:
 
             return MarketRegime.SIDEWAYS
 
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, RuntimeError) as e:
             logger.error(f"判断市场环境失败: {e}")
             return MarketRegime.SIDEWAYS
 

@@ -3,11 +3,12 @@ Portfolio Snapshot - 投资组合快照
 用于存储历史数据，支持差异对比
 """
 
-import json
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
+
+from .providers.cache import UnifiedCache
 
 
 @dataclass
@@ -31,15 +32,14 @@ class PortfolioSnapshot:
 
 
 class SnapshotManager:
-    """快照管理器"""
 
     def __init__(self, storage_path: Path | None = None):
         self.storage_path = storage_path or Path.home() / ".asset_lens" / "snapshots"
         self.storage_path.mkdir(parents=True, exist_ok=True)
+        self._cache = UnifiedCache(cache_dir=self.storage_path)
 
-    def _get_snapshot_file(self, date_str: str) -> Path:
-        """获取快照文件路径"""
-        return self.storage_path / f"snapshot_{date_str}.json"
+    def _get_snapshot_filename(self, date_str: str) -> str:
+        return f"snapshot_{date_str}.json"
 
     def create_snapshot(
         self,
@@ -89,42 +89,25 @@ class SnapshotManager:
         return snapshot
 
     def _save_snapshot(self, snapshot: PortfolioSnapshot) -> None:
-        """保存快照"""
         date_str = snapshot.timestamp[:10]
-        file_path = self._get_snapshot_file(date_str)
+        filename = self._get_snapshot_filename(date_str)
 
-        snapshots: list[dict[str, Any]] = []
-        if file_path.exists():
-            try:
-                with open(file_path, encoding="utf-8") as f:
-                    snapshots = json.load(f)
-            except (ValueError, KeyError, TypeError):
-                snapshots = []
+        existing = self._cache.load_file(filename)
+        snapshots = existing.get("items", []) if existing else []
 
         snapshots.append(snapshot.to_dict())
 
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(snapshots, f, ensure_ascii=False, indent=2)
+        self._cache.save_file(filename, {"items": snapshots}, ttl=0)
 
     def get_snapshot(self, date_str: str) -> PortfolioSnapshot | None:
-        """
-        获取指定日期的最新快照
+        filename = self._get_snapshot_filename(date_str)
 
-        Args:
-            date_str: 日期字符串 (YYYY-MM-DD)
-
-        Returns:
-            快照对象
-        """
-        file_path = self._get_snapshot_file(date_str)
-
-        if not file_path.exists():
+        data = self._cache.load_file(filename)
+        if data is None:
             return None
 
         try:
-            with open(file_path, encoding="utf-8") as f:
-                snapshots = json.load(f)
-
+            snapshots = data.get("items", [])
             if not snapshots:
                 return None
 

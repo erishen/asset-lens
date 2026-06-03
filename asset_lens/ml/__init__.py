@@ -9,7 +9,7 @@ Machine Learning Module for asset-lens.
 """
 
 from .advanced_trainer import AdvancedMLTrainer
-from .backtest import BacktestConfig, BacktestEngine, BacktestResult, SignalValidator, generate_backtest_report
+from .backtest import BacktestConfig, BacktestEngine, MLBacktestResult, SignalValidator, generate_backtest_report
 from .features import FeatureEngineer
 from .predictor import StockPredictor
 from .trainer import ModelTrainer
@@ -18,8 +18,8 @@ __all__ = [
     "AdvancedMLTrainer",
     "BacktestConfig",
     "BacktestEngine",
-    "BacktestResult",
     "FeatureEngineer",
+    "MLBacktestResult",
     "ModelTrainer",
     "SignalValidator",
     "StockPredictor",

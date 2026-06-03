@@ -7,65 +7,25 @@ import hashlib
 import json
 import logging
 import time
-from dataclasses import dataclass
-from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from .cache_models import CacheConfig, CacheEntry, CacheLevel, DEFAULT_CACHE_CONFIG
+
 logger = logging.getLogger(__name__)
 
-
-class CacheLevel(Enum):
-    """缓存级别"""
-
-    HOT = "hot"  # 热缓存 - 内存，TTL 5分钟
-    WARM = "warm"  # 温缓存 - 文件，TTL 1小时
-    COLD = "cold"  # 冷缓存 - 文件，TTL 1天
-
-
-@dataclass
-class CacheConfig:
-    """缓存配置"""
-
-    ttl: int  # 缓存时间（秒）
-    backend: str  # 存储后端: memory, file
-    max_size: int = 1000  # 最大缓存条目数（仅内存缓存）
-
-
-DEFAULT_CACHE_CONFIG: dict[str, CacheConfig] = {
-    "stock_quote": CacheConfig(ttl=300, backend="memory", max_size=500),  # 5分钟
-    "stock_history": CacheConfig(ttl=3600, backend="file"),  # 1小时
-    "fund_nav": CacheConfig(ttl=3600, backend="file"),  # 1小时
-    "fund_history": CacheConfig(ttl=86400, backend="file"),  # 1天
-    "index_quote": CacheConfig(ttl=300, backend="memory", max_size=100),  # 5分钟
-    "macro_data": CacheConfig(ttl=86400, backend="file"),  # 1天
-    "crypto_quote": CacheConfig(ttl=60, backend="memory", max_size=200),  # 1分钟
-}
-
-
-@dataclass
-class CacheEntry:
-    """缓存条目"""
-
-    key: str
-    value: Any
-    created_at: float
-    ttl: int
-    hits: int = 0
-
-    def is_expired(self) -> bool:
-        """检查是否过期"""
-        return time.time() - self.created_at > self.ttl
-
-    def to_dict(self) -> dict[str, Any]:
-        """转换为字典"""
-        return {
-            "key": self.key,
-            "value": self.value,
-            "created_at": self.created_at,
-            "ttl": self.ttl,
-            "hits": self.hits,
-        }
+__all__ = [
+    "DEFAULT_CACHE_CONFIG",
+    "CacheConfig",
+    "CacheEntry",
+    "CacheLevel",
+    "FileCache",
+    "MemoryCache",
+    "ProviderCache",
+    "UnifiedCache",
+    "provider_cache",
+    "unified_cache",
+]
 
 
 class MemoryCache:
@@ -173,7 +133,7 @@ class FileCache:
                 json.dump(entry.to_dict(), f, ensure_ascii=False, indent=2)
 
             return entry
-        except Exception as e:
+        except (json.JSONDecodeError, OSError, ValueError) as e:
             logger.debug(f"忽略异常: {e}")
             return None
 
@@ -446,7 +406,7 @@ class UnifiedCache:
         try:
             with open(file_path, "w", encoding="utf-8") as f:
                 json.dump(cache_data, f, ensure_ascii=False, indent=2)
-        except Exception as e:
+        except (OSError, json.JSONDecodeError) as e:
             logger.warning(f"保存缓存文件失败 {filename}: {e}")
 
     def load_file(self, filename: str, max_age: int | None = None) -> dict[str, Any] | None:
@@ -495,12 +455,12 @@ class UnifiedCache:
                         age_seconds = (datetime.now() - update_time).total_seconds()
                         if age_seconds > max_age:
                             return None
-                    except (ValueError, TypeError):
-                        pass
+                    except (ValueError, TypeError) as e:
+                        logger.debug("缓存数据解析失败: %s", e)
 
             return data
 
-        except Exception as e:
+        except (json.JSONDecodeError, OSError, ValueError) as e:
             logger.warning(f"加载缓存文件失败 {filename}: {e}")
             return None
 
@@ -548,17 +508,3 @@ unified_cache = UnifiedCache()
 
 
 provider_cache = ProviderCache()
-
-
-__all__ = [
-    "DEFAULT_CACHE_CONFIG",
-    "CacheConfig",
-    "CacheEntry",
-    "CacheLevel",
-    "FileCache",
-    "MemoryCache",
-    "ProviderCache",
-    "UnifiedCache",
-    "provider_cache",
-    "unified_cache",
-]

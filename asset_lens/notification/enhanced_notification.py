@@ -21,78 +21,29 @@ import logging
 import time
 import urllib.parse
 from collections.abc import Callable
-from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
 from pathlib import Path
 from typing import Any
 
 import requests
 
+from ..utils.json_cache import read_json_cache, write_json_cache
+from .notification_models import (
+    EnhancedNotificationChannel,
+    EnhancedNotificationMessage,
+    NotificationConfig,
+)
+
 logger = logging.getLogger(__name__)
 
-
-class NotificationChannel(Enum):
-    """通知渠道"""
-
-    CONSOLE = "console"
-    EMAIL = "email"
-    DINGTALK = "dingtalk"
-    WECOM = "wecom"
-    TELEGRAM = "telegram"
-    FEISHU = "feishu"
-    SERVERCHAN = "serverchan"
-    WEBHOOK = "webhook"
-
-
-@dataclass
-class NotificationConfig:
-    """通知配置"""
-
-    enabled: bool = True
-
-    dingtalk_webhook: str = ""
-    dingtalk_secret: str = ""
-
-    wecom_webhook: str = ""
-
-    telegram_bot_token: str = ""
-    telegram_chat_id: str = ""
-
-    feishu_webhook: str = ""
-    feishu_secret: str = ""
-
-    email_smtp_server: str = "smtp.gmail.com"
-    email_smtp_port: int = 587
-    email_username: str = ""
-    email_password: str = ""
-    email_recipients: list[str] = field(default_factory=list)
-
-    serverchan_key: str = ""
-
-    default_channels: list[str] = field(default_factory=lambda: ["console"])
-
-    cooldown_minutes: int = 60
-
-
-@dataclass
-class NotificationMessage:
-    """通知消息"""
-
-    title: str
-    content: str
-    level: str = "info"
-    timestamp: str = field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    metadata: dict[str, Any] = field(default_factory=dict)
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "title": self.title,
-            "content": self.content,
-            "level": self.level,
-            "timestamp": self.timestamp,
-            "metadata": self.metadata,
-        }
+__all__ = [
+    "EnhancedNotificationChannel",
+    "EnhancedNotificationMessage",
+    "EnhancedNotificationService",
+    "NotificationConfig",
+    "NotificationHistory",
+    "enhanced_notification_service",
+]
 
 
 class NotificationHistory:
@@ -103,21 +54,14 @@ class NotificationHistory:
         self.history: list[dict[str, Any]] = self._load_history()
 
     def _load_history(self) -> list[dict[str, Any]]:
-        if self.history_file.exists():
-            try:
-                with open(self.history_file, encoding="utf-8") as f:
-                    data = json.load(f)
-                    return data if isinstance(data, list) else []
-            except (json.JSONDecodeError, OSError):
-                return []
-        return []
+        data = read_json_cache(self.history_file)
+        return data if isinstance(data, list) else []
 
     def _save_history(self):
         self.history_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.history_file, "w", encoding="utf-8") as f:
-            json.dump(self.history[-500:], f, ensure_ascii=False, indent=2)
+        write_json_cache(self.history_file, self.history[-500:])
 
-    def add(self, message: NotificationMessage, channels: list[str], results: dict[str, bool]):
+    def add(self, message: EnhancedNotificationMessage, channels: list[str], results: dict[str, bool]):
         """添加通知记录"""
         record = {
             "title": message.title,
@@ -144,13 +88,13 @@ class EnhancedNotificationService:
         self._cache_path.mkdir(parents=True, exist_ok=True)
         self._history = NotificationHistory(self._cache_path)
         self._last_sent: dict[str, str] = {}
-        self._handlers: dict[NotificationChannel, Callable] = {
-            NotificationChannel.CONSOLE: self._send_console,
-            NotificationChannel.DINGTALK: self._send_dingtalk,
-            NotificationChannel.WECOM: self._send_wecom,
-            NotificationChannel.TELEGRAM: self._send_telegram,
-            NotificationChannel.FEISHU: self._send_feishu,
-            NotificationChannel.SERVERCHAN: self._send_serverchan,
+        self._handlers: dict[EnhancedNotificationChannel, Callable] = {
+            EnhancedNotificationChannel.CONSOLE: self._send_console,
+            EnhancedNotificationChannel.DINGTALK: self._send_dingtalk,
+            EnhancedNotificationChannel.WECOM: self._send_wecom,
+            EnhancedNotificationChannel.TELEGRAM: self._send_telegram,
+            EnhancedNotificationChannel.FEISHU: self._send_feishu,
+            EnhancedNotificationChannel.SERVERCHAN: self._send_serverchan,
         }
 
     def _should_send(self, key: str) -> bool:
@@ -175,7 +119,7 @@ class EnhancedNotificationService:
 
     def send(
         self,
-        message: NotificationMessage,
+        message: EnhancedNotificationMessage,
         channels: list[str] | None = None,
         skip_cooldown: bool = False,
     ) -> dict[str, bool]:
@@ -206,7 +150,7 @@ class EnhancedNotificationService:
 
         for channel_str in channels:
             try:
-                channel = NotificationChannel(channel_str)
+                channel = EnhancedNotificationChannel(channel_str)
 
                 if channel in self._handlers:
                     success = self._handlers[channel](message)
@@ -218,7 +162,7 @@ class EnhancedNotificationService:
             except ValueError:
                 logger.warning(f"无效的通知渠道: {channel_str}")
                 results[channel_str] = False
-            except Exception as e:
+            except (ValueError, RuntimeError, ConnectionError) as e:
                 logger.error(f"发送通知失败 [{channel_str}]: {e}")
                 results[channel_str] = False
 
@@ -229,7 +173,7 @@ class EnhancedNotificationService:
 
         return results
 
-    def _send_console(self, message: NotificationMessage) -> bool:
+    def _send_console(self, message: EnhancedNotificationMessage) -> bool:
         """发送到控制台"""
         level_emoji = {
             "info": "ℹ️",
@@ -239,12 +183,12 @@ class EnhancedNotificationService:
             "critical": "🚨",
         }
         emoji = level_emoji.get(message.level, "📢")
-        print(f"\n{emoji} {message.title}")
-        print(f"   {message.content}")
-        print(f"   时间: {message.timestamp}")
+        logger.info(f"{emoji} {message.title}")
+        logger.info(f"   {message.content}")
+        logger.info(f"   时间: {message.timestamp}")
         return True
 
-    def _send_dingtalk(self, message: NotificationMessage) -> bool:
+    def _send_dingtalk(self, message: EnhancedNotificationMessage) -> bool:
         """发送到钉钉机器人"""
         if not self.config.dingtalk_webhook:
             logger.warning("钉钉 Webhook 未配置")
@@ -282,11 +226,11 @@ class EnhancedNotificationService:
                 logger.error(f"钉钉通知发送失败: {result.get('errmsg', 'Unknown error')}")
                 return False
 
-        except Exception as e:
+        except (ConnectionError, TimeoutError, ValueError) as e:
             logger.error(f"钉钉通知发送失败: {e}")
             return False
 
-    def _send_wecom(self, message: NotificationMessage) -> bool:
+    def _send_wecom(self, message: EnhancedNotificationMessage) -> bool:
         """发送到企业微信机器人"""
         if not self.config.wecom_webhook:
             logger.warning("企业微信 Webhook 未配置")
@@ -310,11 +254,11 @@ class EnhancedNotificationService:
                 logger.error(f"企业微信通知发送失败: {result.get('errmsg', 'Unknown error')}")
                 return False
 
-        except Exception as e:
+        except (ConnectionError, TimeoutError, ValueError) as e:
             logger.error(f"企业微信通知发送失败: {e}")
             return False
 
-    def _send_telegram(self, message: NotificationMessage) -> bool:
+    def _send_telegram(self, message: EnhancedNotificationMessage) -> bool:
         """发送到 Telegram Bot"""
         if not self.config.telegram_bot_token or not self.config.telegram_chat_id:
             logger.warning("Telegram Bot 配置不完整")
@@ -350,11 +294,11 @@ class EnhancedNotificationService:
                 logger.error(f"Telegram 通知发送失败: {result.get('description', 'Unknown error')}")
                 return False
 
-        except Exception as e:
+        except (ConnectionError, TimeoutError, ValueError) as e:
             logger.error(f"Telegram 通知发送失败: {e}")
             return False
 
-    def _send_feishu(self, message: NotificationMessage) -> bool:
+    def _send_feishu(self, message: EnhancedNotificationMessage) -> bool:
         """发送到飞书机器人"""
         if not self.config.feishu_webhook:
             logger.warning("飞书 Webhook 未配置")
@@ -404,11 +348,11 @@ class EnhancedNotificationService:
                 logger.error(f"飞书通知发送失败: {result}")
                 return False
 
-        except Exception as e:
+        except (ConnectionError, TimeoutError, ValueError) as e:
             logger.error(f"飞书通知发送失败: {e}")
             return False
 
-    def _send_serverchan(self, message: NotificationMessage) -> bool:
+    def _send_serverchan(self, message: EnhancedNotificationMessage) -> bool:
         """发送到 Server酱（微信）"""
         if not self.config.serverchan_key:
             logger.warning("Server酱 Key 未配置")
@@ -431,7 +375,7 @@ class EnhancedNotificationService:
                 logger.error(f"Server酱通知发送失败: {result.get('message', 'Unknown error')}")
                 return False
 
-        except Exception as e:
+        except (ConnectionError, TimeoutError, ValueError) as e:
             logger.error(f"Server酱通知发送失败: {e}")
             return False
 
@@ -468,7 +412,7 @@ class EnhancedNotificationService:
         if suggestion:
             content += f"\n\n**建议**: {suggestion}"
 
-        notification = NotificationMessage(
+        notification = EnhancedNotificationMessage(
             title=f"{emoji} 风险预警 - {alert_type}",
             content=content,
             level=level if level in ["info", "warning", "error", "success", "critical"] else "warning",
@@ -506,7 +450,7 @@ class EnhancedNotificationService:
         if reason:
             content += f"\n\n**原因**: {reason}"
 
-        notification = NotificationMessage(
+        notification = EnhancedNotificationMessage(
             title=f"{signal_emoji} 交易信号 - {name}",
             content=content,
             level="info",
@@ -541,7 +485,7 @@ class EnhancedNotificationService:
 
 **日期**: {datetime.now().strftime("%Y-%m-%d")}"""
 
-        notification = NotificationMessage(
+        notification = EnhancedNotificationMessage(
             title=f"📊 每日投资报告 {profit_emoji}",
             content=content,
             level="success" if total_profit >= 0 else "warning",
@@ -555,7 +499,7 @@ class EnhancedNotificationService:
 
     def test_channel(self, channel: str) -> bool:
         """测试通知渠道"""
-        message = NotificationMessage(
+        message = EnhancedNotificationMessage(
             title="🧪 通知测试",
             content="这是一条测试消息，如果您收到此消息，说明通知渠道配置正确。",
             level="info",

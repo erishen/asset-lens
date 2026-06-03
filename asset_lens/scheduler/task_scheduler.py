@@ -128,39 +128,31 @@ class TaskScheduler:
     def _load_history(self):
         """加载任务历史"""
         history_file = self._cache_path / "task_history.json"
-        if history_file.exists():
-            try:
-                with open(history_file, encoding="utf-8") as f:
-                    data = json.load(f)
-                for name, hist in data.items():
-                    self._history[name] = TaskHistory(
-                        task_name=name,
-                        last_run=hist.get("last_run"),
-                        next_run=hist.get("next_run"),
-                        total_runs=hist.get("total_runs", 0),
-                        success_count=hist.get("success_count", 0),
-                        fail_count=hist.get("fail_count", 0),
-                    )
-            except (json.JSONDecodeError, OSError):
-                pass
+        data = read_json_cache(history_file)
+        if data:
+            for name, hist in data.items():
+                self._history[name] = TaskHistory(
+                    task_name=name,
+                    last_run=hist.get("last_run"),
+                    next_run=hist.get("next_run"),
+                    total_runs=hist.get("total_runs", 0),
+                    success_count=hist.get("success_count", 0),
+                    fail_count=hist.get("fail_count", 0),
+                )
 
     def _save_history(self):
         """保存任务历史"""
         history_file = self._cache_path / "task_history.json"
-        try:
-            data = {}
-            for name, hist in self._history.items():
-                data[name] = {
-                    "last_run": hist.last_run,
-                    "next_run": hist.next_run,
-                    "total_runs": hist.total_runs,
-                    "success_count": hist.success_count,
-                    "fail_count": hist.fail_count,
-                }
-            with open(history_file, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-        except OSError as e:
-            logger.error(f"保存任务历史失败: {e}")
+        data = {}
+        for name, hist in self._history.items():
+            data[name] = {
+                "last_run": hist.last_run,
+                "next_run": hist.next_run,
+                "total_runs": hist.total_runs,
+                "success_count": hist.success_count,
+                "fail_count": hist.fail_count,
+            }
+        write_json_cache(history_file, data)
 
     def register_task(self, config: TaskConfig) -> None:
         """注册任务"""

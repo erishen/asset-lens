@@ -54,7 +54,7 @@ class SinaQuoteParser:
                 "change_percent": change_percent,
                 "source": "sina",
             }
-        except Exception as e:
+        except (ValueError, KeyError, TypeError) as e:
             logger.error(f"解析新浪数据失败: {e}")
             return None
 
@@ -111,7 +111,7 @@ class BaostockQuoteParser:
                 "change_percent": change_percent,
                 "source": "baostock",
             }
-        except Exception as e:
+        except (ValueError, KeyError, IndexError, TypeError) as e:
             logger.error(f"解析Baostock数据失败: {e}")
             return None
 
@@ -158,7 +158,7 @@ class TencentQuoteParser:
                 "change_percent": change_percent,
                 "source": "tencent",
             }
-        except Exception as e:
+        except (ValueError, KeyError, IndexError, TypeError) as e:
             logger.error(f"解析腾讯数据失败: {e}")
             return None
 
@@ -200,6 +200,6 @@ class JoinquantQuoteParser:
                 "change_percent": change_percent,
                 "source": "joinquant",
             }
-        except Exception as e:
+        except (ValueError, KeyError, TypeError) as e:
             logger.error(f"解析JoinQuant数据失败: {e}")
             return None

@@ -68,7 +68,7 @@ class DataCoverageAnalyzer:
                         f"{category}: 覆盖率 {report.coverage_rate:.1f}%，"
                         f"缺失 {report.total_expected - report.total_actual} 条数据"
                     )
-            except Exception as e:
+            except (ValueError, KeyError, TypeError, RuntimeError, OSError) as e:
                 logger.error(f"检查 {category} 覆盖率失败: {e}")
                 results[category] = CoverageReport()
 
@@ -124,7 +124,7 @@ class DataCoverageAnalyzer:
 
             report.calculate_coverage()
 
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, OSError, RuntimeError) as e:
             logger.error(f"检查交易记录覆盖率失败: {e}")
             report.total_expected = 1
             report.total_actual = 1
@@ -150,7 +150,7 @@ class DataCoverageAnalyzer:
 
             report.calculate_coverage()
 
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, OSError, RuntimeError) as e:
             logger.error(f"检查持仓数据覆盖率失败: {e}")
             report.total_expected = 1
             report.total_actual = 0
@@ -179,7 +179,7 @@ class DataCoverageAnalyzer:
 
             report.calculate_coverage()
 
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, OSError, RuntimeError) as e:
             logger.error(f"检查价格数据覆盖率失败: {e}")
             report.total_expected = 1
             report.total_actual = 1
@@ -209,7 +209,7 @@ class DataCoverageAnalyzer:
 
             report.calculate_coverage()
 
-        except Exception as e:
+        except (ValueError, OSError, RuntimeError) as e:
             logger.error(f"检查汇率数据覆盖率失败: {e}")
             report.total_expected = 2
             report.total_actual = 1
@@ -234,7 +234,7 @@ class DataCoverageAnalyzer:
 
             report.calculate_coverage()
 
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, OSError, RuntimeError) as e:
             logger.error(f"检查分红数据覆盖率失败: {e}")
             report.total_expected = 1
             report.total_actual = 1
@@ -290,7 +290,7 @@ class DataCoverageEnhancer:
                 improvement = self._execute_action(action)
                 if improvement:
                     result["improvements"].append(improvement)
-            except Exception as e:
+            except (ValueError, KeyError, RuntimeError) as e:
                 logger.error(f"执行动作失败: {action} - {e}")
 
         after = self.analyzer.analyze()
@@ -337,36 +337,35 @@ class DataCoverageEnhancer:
     def _fetch_missing_prices(self) -> str:
         """获取缺失的价格数据"""
         try:
-            from asset_lens.data.asset_summary_parser import AssetSummaryParser
+            from asset_lens.data.csv_parser import CSVParser
             from asset_lens.data.stock_history_fetcher import StockHistoryFetcher
 
-            parser = AssetSummaryParser()
-            holdings = parser.parse_all()  # type: ignore[attr-defined]  # pylint: disable=no-member
+            products = CSVParser.load_data()
             fetcher = StockHistoryFetcher()
 
             count = 0
-            for h in holdings[:5]:
-                if h.code and h.code.startswith(("sh", "sz")):
+            for p in products[:5]:
+                code = getattr(p, "code", None)
+                if code and code.startswith(("sh", "sz")):
                     try:
-                        fetcher.fetch(h.code, days=30)  # type: ignore[attr-defined]  # pylint: disable=no-member
+                        fetcher.fetch_history(code, days=30)
                         count += 1
-                    except Exception as e:
+                    except (ValueError, KeyError, ConnectionError, RuntimeError) as e:
                         logger.debug(f"忽略异常: {e}")
 
             return f"已获取 {count} 只股票的价格数据"
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, OSError, RuntimeError) as e:
             return f"获取价格数据失败: {e}"
 
     def _update_exchange_rates(self) -> str:
         """更新汇率数据"""
         try:
-            from asset_lens.data.exchange_rate_parser import ExchangeRateParser
+            from asset_lens.data.csv_parser import CSVParser
 
-            parser = ExchangeRateParser()
-            rates = parser.parse_all()  # type: ignore[attr-defined]  # pylint: disable=no-member
+            rates = CSVParser.load_data()
 
             return f"已更新 {len(rates)} 个汇率数据"
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, OSError, RuntimeError) as e:
             return f"更新汇率失败: {e}"
 
     def _fetch_dividends(self) -> str:

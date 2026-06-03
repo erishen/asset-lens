@@ -7,20 +7,11 @@ import logging
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal, InvalidOperation
-from enum import Enum
 
 from ..core.holidays import calculate_fund_trading_days, calculate_working_days, get_last_fund_trading_day
+from ..types.trading import TransactionDCAInvestmentType
 
 logger = logging.getLogger(__name__)
-
-
-class DCAInvestmentType(Enum):
-    """定投类型"""
-
-    FIXED = "fixed"
-    SMART = "smart"
-    FLOATING = "floating"
-    VALUATION = "valuation"
 
 
 @dataclass
@@ -33,7 +24,7 @@ class DCATransaction:
     is_period_investment: bool = False
     work_days: int = 0
     daily_amount: Decimal = Decimal("0")
-    investment_type: DCAInvestmentType = DCAInvestmentType.FIXED
+    investment_type: TransactionDCAInvestmentType = TransactionDCAInvestmentType.FIXED
     original_record: str = ""
 
 
@@ -175,7 +166,7 @@ def parse_period_record(
                 normal_valuation = Decimal(amounts[1])
                 daily_amount = normal_valuation
                 total_amount = normal_valuation * work_days
-                investment_type = DCAInvestmentType.VALUATION
+                investment_type = TransactionDCAInvestmentType.VALUATION
             except (ValueError, InvalidOperation):
                 return transactions
         else:
@@ -188,7 +179,7 @@ def parse_period_record(
                 max_amount = Decimal(amount_parts[1])
                 daily_amount = (min_amount + max_amount) / 2
                 total_amount = daily_amount * work_days
-                investment_type = DCAInvestmentType.SMART
+                investment_type = TransactionDCAInvestmentType.SMART
             except (ValueError, InvalidOperation):
                 return transactions
         else:
@@ -199,14 +190,14 @@ def parse_period_record(
             base_amount = Decimal(base_str)
             daily_amount = base_amount
             total_amount = base_amount * work_days
-            investment_type = DCAInvestmentType.FLOATING
+            investment_type = TransactionDCAInvestmentType.FLOATING
         except (ValueError, InvalidOperation):
             return transactions
     else:
         try:
             daily_amount = Decimal(amount_str)
             total_amount = daily_amount * work_days
-            investment_type = DCAInvestmentType.FIXED
+            investment_type = TransactionDCAInvestmentType.FIXED
         except (ValueError, InvalidOperation):
             return transactions
 
@@ -323,13 +314,13 @@ def calculate_net_invest_from_transactions(
     parsed = parse_transactions(transaction_string, suffix, is_qdii)
 
     # 检查是否有智能定投（totalAmount = 0 的情况）
-    has_smart_investment = any(tx.investment_type == DCAInvestmentType.SMART for tx in parsed.transactions)
+    has_smart_investment = any(tx.investment_type == TransactionDCAInvestmentType.SMART for tx in parsed.transactions)
 
     # 智能定投使用 CSV 初始金额
     if has_smart_investment and initial_amount:
         return initial_amount
 
-    if parsed.net_invest > 0:
+    if parsed.net_invest != 0:
         return parsed.net_invest
 
     return initial_amount or Decimal("0")

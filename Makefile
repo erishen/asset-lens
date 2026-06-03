@@ -57,7 +57,7 @@ menu: ## 显示交互式菜单
 	@echo ""
 	@echo "  📈 投资策略:"
 	@echo "    make strategy-list    📋 查看策略列表"
-	@echo "    make stock-pool-list  📊 查看股票池"
+	@echo "    make stock-pool  📊 查看股票池"
 	@echo "    make backtest         📊 策略回测"
 	@echo ""
 	@echo "  🏭 北向资金分析:"
@@ -144,13 +144,10 @@ help: ## 显示帮助信息
 	@echo "    make filter-stocks          筛选自己投资的股票"
 	@echo "    make filter-market-stocks   从市场获取股票列表并筛选"
 	@echo "    make volume-breakout        筛选放量突破股票"
-	@echo "    make volume-breakout-update 更新历史数据并筛选放量突破"
 	@echo "    make screen-stocks          股票综合筛选（推荐）"
-	@echo "    make screen-stocks-update   获取最新数据并筛选"
 	@echo "    make screen-fundamental     仅基本面筛选"
 	@echo "    make screen-technical       仅技术面筛选"
 	@echo "    make predict-etf            根据股票活跃度预测ETF表现"
-	@echo "    make predict-etf-portfolio  分析投资组合中的ETF相关产品并预测"
 	@echo ""
 	@echo "  🤖 机器学习:"
 	@echo "    make ml-status        查看 ML 模块状态"
@@ -169,7 +166,7 @@ help: ## 显示帮助信息
 	@echo "    make db-verify        验证数据完整性"
 	@echo ""
 	@echo "  📊 投资策略系统:"
-	@echo "    make stock-pool-list        列出股票池中的股票"
+	@echo "    make stock-pool              查看股票池中的股票"
 	@echo "    make strategy-list          列出所有可用策略"
 	@echo "    make strategy-show          显示策略详情 (NAME=value)"
 	@echo "    make strategy-set           设置当前策略 (NAME=value)"
@@ -181,12 +178,10 @@ help: ## 显示帮助信息
 	@echo "    make investment-report      生成投资报告"
 	@echo "    make optimize-strategy      策略优化（找出最佳策略）"
 	@echo "    make market-environment     分析市场环境"
-	@echo "    make adapt-strategy         适配策略参数 (STRATEGY=value)"
-	@echo "    make personal-data-load     加载个人每周数据"
-	@echo "    make personal-data-summary  显示个人数据市场概况"
+	@echo "    make personal-data          加载个人数据"
 	@echo "    make run-daily-tasks        运行每日任务（立即执行）"
-	@echo "    make start-scheduler        启动定时调度器（每日 09:30）"
-	@echo "    make task-status            查看任务状态"
+	@echo "    make scheduler-start        启动定时调度器"
+	@echo "    make scheduler-status       查看调度器状态"
 	@echo ""
 	@echo "  ⚙️  配置管理:"
 	@echo "    make mode-sample      切换到 sample 模式"
@@ -903,6 +898,21 @@ ai-portfolio: ## 查看AI模拟交易投资组合
 ml-retrain: ## ML 模型重训练（保持新鲜度）
 	@echo "🔄 ML 模型重训练..."
 	$(PY) ml-retrain
+
+.PHONY: ml-build-sector-dataset
+ml-build-sector-dataset: ## 构建板块预测模型的数据集
+	@echo "🏗️ 构建板块ML数据集..."
+	uv run python scripts/build_sector_dataset.py
+
+.PHONY: ml-train-sector-model
+ml-train-sector-model: ## 训练板块预测模型
+	@echo "🎓 训练板块ML模型..."
+	uv run python scripts/train_sector_model.py
+
+.PHONY: ml-optimize-hyperparams
+ml-optimize-hyperparams: ## 运行超参数优化 (Optuna)
+	@echo "⚙️ 运行超参数优化..."
+	uv run python scripts/optimize_hyperparams.py
 
 .PHONY: trade-stats
 trade-stats: ## 交易日志统计

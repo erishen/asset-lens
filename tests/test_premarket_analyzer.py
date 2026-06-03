@@ -11,7 +11,7 @@ from asset_lens.analysis.premarket_analyzer import (
     MarketTrend,
     PreMarketAnalyzer,
     PreMarketReport,
-    StockAlert,
+    PremarketStockAlert,
     premarket_analyzer,
 )
 
@@ -85,7 +85,7 @@ class TestStockAlert:
 
     def test_create_stock_alert(self):
         """测试创建股票预警"""
-        alert = StockAlert(
+        alert = PremarketStockAlert(
             code="sh600519",
             name="贵州茅台",
             alert_type="announcement",

@@ -5,7 +5,7 @@ Tests for market_stock_fetcher.py
 import json
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
@@ -82,9 +82,8 @@ class TestMarketStockFetcher:
         mock_ak = MagicMock()
         mock_ak.stock_zh_a_spot_em.return_value = mock_df
 
-        fetcher._akshare = mock_ak
-
-        result = fetcher.fetch_cn_stock_list(page=1, page_size=100)
+        with patch("asset_lens.utils.akshare_loader._AKSHARE_INSTANCE", mock_ak):
+            result = fetcher.fetch_cn_stock_list(page=1, page_size=100)
         assert len(result) == 1
         assert result[0]["code"] == "sh600519"
         assert result[0]["name"] == "贵州茅台"
@@ -96,9 +95,8 @@ class TestMarketStockFetcher:
         mock_ak = MagicMock()
         mock_ak.stock_zh_a_spot_em.return_value = mock_df
 
-        fetcher._akshare = mock_ak
-
-        result = fetcher.fetch_cn_stock_list()
+        with patch("asset_lens.utils.akshare_loader._AKSHARE_INSTANCE", mock_ak):
+            result = fetcher.fetch_cn_stock_list()
         assert result == []
 
     def test_fetch_cn_stock_list_exception(self, fetcher):
@@ -106,9 +104,8 @@ class TestMarketStockFetcher:
         mock_ak = MagicMock()
         mock_ak.stock_zh_a_spot_em.side_effect = Exception("网络错误")
 
-        fetcher._akshare = mock_ak
-
-        result = fetcher.fetch_cn_stock_list()
+        with patch("asset_lens.utils.akshare_loader._AKSHARE_INSTANCE", mock_ak):
+            result = fetcher.fetch_cn_stock_list()
         assert result == []
 
     def test_fetch_all_cn_stocks_with_mock(self, fetcher):
@@ -166,9 +163,8 @@ class TestMarketStockFetcher:
         mock_ak = MagicMock()
         mock_ak.stock_zh_a_spot_em.return_value = mock_df
 
-        fetcher._akshare = mock_ak
-
-        result = fetcher.fetch_cn_stock_list()
+        with patch("asset_lens.utils.akshare_loader._AKSHARE_INSTANCE", mock_ak):
+            result = fetcher.fetch_cn_stock_list()
         assert len(result) == 1
         assert result[0]["code"] == "sz000001"
 
@@ -190,9 +186,8 @@ class TestMarketStockFetcher:
         mock_ak = MagicMock()
         mock_ak.stock_zh_a_spot_em.return_value = mock_df
 
-        fetcher._akshare = mock_ak
-
-        result = fetcher.fetch_cn_stock_list()
+        with patch("asset_lens.utils.akshare_loader._AKSHARE_INSTANCE", mock_ak):
+            result = fetcher.fetch_cn_stock_list()
         assert len(result) == 1
         assert result[0]["code"] == "sh688001"
 
@@ -214,10 +209,8 @@ class TestMarketStockFetcher:
         mock_ak = MagicMock()
         mock_ak.stock_zh_a_spot_em.return_value = mock_df
 
-        fetcher._akshare = mock_ak
-
-        result = fetcher.fetch_cn_stock_list()
-        # 无效代码（不以 6/0/3/68 开头）会被跳过
+        with patch("asset_lens.utils.akshare_loader._AKSHARE_INSTANCE", mock_ak):
+            result = fetcher.fetch_cn_stock_list()
         assert len(result) == 0
 
     def test_fetch_cn_stock_list_skip_empty_name(self, fetcher):
@@ -238,10 +231,8 @@ class TestMarketStockFetcher:
         mock_ak = MagicMock()
         mock_ak.stock_zh_a_spot_em.return_value = mock_df
 
-        fetcher._akshare = mock_ak
-
-        result = fetcher.fetch_cn_stock_list()
-        # 空名称的股票会被跳过
+        with patch("asset_lens.utils.akshare_loader._AKSHARE_INSTANCE", mock_ak):
+            result = fetcher.fetch_cn_stock_list()
         assert len(result) == 0
 
     def test_fetch_cn_stock_list_value_error(self, fetcher):
@@ -262,10 +253,8 @@ class TestMarketStockFetcher:
         mock_ak = MagicMock()
         mock_ak.stock_zh_a_spot_em.return_value = mock_df
 
-        fetcher._akshare = mock_ak
-
-        result = fetcher.fetch_cn_stock_list()
-        # 无效值会被转换为 0，所以结果不为空
+        with patch("asset_lens.utils.akshare_loader._AKSHARE_INSTANCE", mock_ak):
+            result = fetcher.fetch_cn_stock_list()
         assert len(result) == 1
         assert result[0]["current_price"] == 0
         assert result[0]["change_percent"] == 0
@@ -275,9 +264,8 @@ class TestMarketStockFetcher:
         mock_ak = MagicMock()
         mock_ak.stock_zh_a_spot_em.return_value = None
 
-        fetcher._akshare = mock_ak
-
-        result = fetcher.fetch_cn_stock_list()
+        with patch("asset_lens.utils.akshare_loader._AKSHARE_INSTANCE", mock_ak):
+            result = fetcher.fetch_cn_stock_list()
         assert result == []
 
     def test_fetch_all_cn_stocks_none_data(self, fetcher):
@@ -310,9 +298,8 @@ class TestMarketStockFetcher:
         mock_ak = MagicMock()
         mock_ak.stock_zh_a_spot_em.return_value = mock_df
 
-        fetcher._akshare = mock_ak
-
-        result = fetcher.fetch_cn_stock_list()
+        with patch("asset_lens.utils.akshare_loader._AKSHARE_INSTANCE", mock_ak):
+            result = fetcher.fetch_cn_stock_list()
         assert len(result) == 1
         assert result[0]["code"] == "sz300001"
 
@@ -334,9 +321,8 @@ class TestMarketStockFetcher:
         mock_ak = MagicMock()
         mock_ak.stock_zh_a_spot_em.return_value = mock_df
 
-        fetcher._akshare = mock_ak
-
-        result = fetcher.fetch_cn_stock_list()
+        with patch("asset_lens.utils.akshare_loader._AKSHARE_INSTANCE", mock_ak):
+            result = fetcher.fetch_cn_stock_list()
         assert len(result) == 1
         assert result[0]["code"] == "sh600519"
 
@@ -358,8 +344,7 @@ class TestMarketStockFetcher:
         mock_ak = MagicMock()
         mock_ak.stock_zh_a_spot_em.return_value = mock_df
 
-        fetcher._akshare = mock_ak
-
-        result = fetcher.fetch_cn_stock_list()
+        with patch("asset_lens.utils.akshare_loader._AKSHARE_INSTANCE", mock_ak):
+            result = fetcher.fetch_cn_stock_list()
         assert len(result) == 1
         assert result[0]["current_price"] == 0

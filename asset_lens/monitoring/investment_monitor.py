@@ -3,7 +3,6 @@ Investment Monitoring System - 实时投资监控系统
 整合多维度监控、风险管理、报告生成
 """
 
-import json
 import logging
 import subprocess
 import sys
@@ -13,6 +12,10 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+from ..utils.json_cache import read_json_cache, write_json_cache
+
+from ..core.config_manager import MonitorConfig
 
 logging.raiseExceptions = False
 
@@ -34,20 +37,8 @@ def _safe_log(level: str, msg: str):
         log_func = getattr(logger, level, None)
         if log_func:
             log_func(msg)
-    except Exception as e:
+    except (ValueError, TypeError, OSError, RuntimeError) as e:
         logger.debug(f"忽略异常: {e}")
-
-
-@dataclass
-class MonitorConfig:
-    """监控配置"""
-
-    price_threshold: float = 5.0
-    volatility_threshold: float = 20.0
-    max_drawdown_threshold: float = 10.0
-    concentration_threshold: float = 30.0
-    check_interval: int = 300
-    enable_alerts: bool = True
 
 
 @dataclass
@@ -96,7 +87,7 @@ class InvestmentMonitor:
                 return {"success": True, "output": result.stdout}
             else:
                 return {"success": False, "error": result.stderr}
-        except Exception as e:
+        except (OSError, subprocess.SubprocessError, ValueError, RuntimeError) as e:
             _safe_log("error", f"运行命令失败: {command}, {e}")
             return {"success": False, "error": str(e)}
 
@@ -274,15 +265,7 @@ class InvestmentMonitor:
         self.alerts.append(alert)
 
         alert_file = self._cache_path / "alerts.json"
-        alerts_data = []
-
-        if alert_file.exists():
-            try:
-                with open(alert_file, encoding="utf-8") as f:
-                    alerts_data = json.load(f)
-            except (json.JSONDecodeError, OSError) as e:
-                _safe_log("warning", f"加载告警历史失败: {e}")
-                alerts_data = []
+        alerts_data: list[dict[str, Any]] = read_json_cache(alert_file) or []
 
         alerts_data.append(
             {
@@ -294,8 +277,7 @@ class InvestmentMonitor:
             }
         )
 
-        with open(alert_file, "w", encoding="utf-8") as f:
-            json.dump(alerts_data, f, ensure_ascii=False, indent=2)
+        write_json_cache(alert_file, alerts_data)
 
     def run_continuous_monitoring(self):
         """运行持续监控"""
@@ -314,7 +296,7 @@ class InvestmentMonitor:
 
                     time.sleep(self.config.check_interval)
 
-                except Exception as e:
+                except (ValueError, KeyError, ConnectionError, RuntimeError, OSError) as e:
                     _safe_log("error", f"监控任务异常: {e}")
                     time.sleep(60)
 

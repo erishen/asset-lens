@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    from .http_client import close_session
+    from .aiohttp_session import close_session
 
     yield
     await close_session()
@@ -198,7 +198,7 @@ async def websocket_market(websocket: WebSocket):
 
 async def _get_market_indexes():
     """获取市场指数数据"""
-    from .http_client import async_get
+    from .aiohttp_session import async_get
 
     indexes = []
     index_codes = [
@@ -241,15 +241,15 @@ async def _get_market_indexes():
                                     else 0,
                                 }
                             )
-        except (ValueError, TypeError):
-            pass
+        except (ValueError, TypeError) as e:
+            logger.debug("参数解析失败: %s", e)
 
     return indexes
 
 
 async def _get_stock_quotes(codes: list[str]):
     """获取股票行情数据"""
-    from .http_client import async_get
+    from .aiohttp_session import async_get
 
     quotes = []
     headers = {
@@ -275,9 +275,7 @@ async def _get_stock_quotes(codes: list[str]):
                         if len(parts) >= 32:
                             current_price = float(parts[3]) if parts[3] else 0
                             prev_close = float(parts[2]) if parts[2] else 0
-                            change_percent = (
-                                ((current_price - prev_close) / prev_close * 100) if prev_close > 0 else 0
-                            )
+                            change_percent = ((current_price - prev_close) / prev_close * 100) if prev_close > 0 else 0
 
                             quotes.append(
                                 {
@@ -289,8 +287,8 @@ async def _get_stock_quotes(codes: list[str]):
                                     "amount": float(parts[9]) if parts[9] else 0,
                                 }
                             )
-        except (ValueError, TypeError):
-            pass
+        except (ValueError, TypeError) as e:
+            logger.debug("参数解析失败: %s", e)
 
     return quotes
 

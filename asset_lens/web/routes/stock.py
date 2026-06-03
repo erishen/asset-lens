@@ -10,7 +10,7 @@ from pydantic import BaseModel
 router = APIRouter(prefix="/api/stock", tags=["stock"])
 
 
-class StockQuote(BaseModel):
+class WebStockQuote(BaseModel):
     """股票行情模型"""
 
     code: str
@@ -26,7 +26,7 @@ class StockQuote(BaseModel):
     prev_close: float = 0
 
 
-@router.get("/quote/{code}", response_model=StockQuote)
+@router.get("/quote/{code}", response_model=WebStockQuote)
 async def get_stock_quote(code: str):
     """
     获取股票行情 - 使用新浪财经接口
@@ -35,20 +35,18 @@ async def get_stock_quote(code: str):
         code: 股票代码（如 sh600519）
     """
     try:
-        from ...utils.http_client import safe_get
+        from ..aiohttp_session import async_get
 
         url = f"http://hq.sinajs.cn/list={code}"
         headers = {
             "Referer": "http://finance.sina.com.cn",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         }
-        response = safe_get(url, headers=headers, timeout=10)
+        async with await async_get(url, headers=headers, timeout=10) as response:
+            if response.status != 200:
+                raise HTTPException(status_code=503, detail="服务暂时不可用，请稍后重试")
 
-        if response is None:
-            raise HTTPException(status_code=503, detail="服务暂时不可用，请稍后重试")
-
-        if response.status_code == 200:
-            content = response.text
+            content = await response.text()
             pattern = f'var hq_str_{code}="'
             start = content.find(pattern)
 
@@ -76,7 +74,7 @@ async def get_stock_quote(code: str):
                 change_amount = current_price - prev_close if prev_close > 0 else 0
                 change_percent = (change_amount / prev_close * 100) if prev_close > 0 else 0
 
-                return StockQuote(
+                return WebStockQuote(
                     code=code,
                     name=name,
                     current_price=current_price,
@@ -94,7 +92,7 @@ async def get_stock_quote(code: str):
 
     except HTTPException:
         raise
-    except Exception as e:
+    except (ConnectionError, TimeoutError, ValueError, KeyError) as e:
         raise HTTPException(status_code=500, detail=f"获取股票行情失败: {e!s}") from e
 
 
@@ -144,13 +142,13 @@ async def get_stock_kline(
     try:
         kline_data = await _get_kline_tencent(code, ktype, count)
         return {"code": code, "ktype": ktype, "count": len(kline_data), "data": kline_data}
-    except Exception as e:
+    except (ValueError, KeyError, ConnectionError, RuntimeError) as e:
         raise HTTPException(status_code=500, detail=f"获取K线数据失败: {e!s}") from e
 
 
 async def _get_kline_tencent(code: str, ktype: str, count: int) -> list[dict]:
     """从腾讯获取 K 线数据"""
-    from ..http_client import async_get
+    from ..aiohttp_session import async_get
 
     ktype_map = {"day": "day", "week": "week", "month": "month"}
     ktype_param = ktype_map.get(ktype, "day")
@@ -167,7 +165,6 @@ async def _get_kline_tencent(code: str, ktype: str, count: int) -> list[dict]:
     }
 
     async with await async_get(url, params=params, headers=headers, timeout=10) as response:
-
         if response.status == 200:
             import json
 

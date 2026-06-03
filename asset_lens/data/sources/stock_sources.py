@@ -13,12 +13,12 @@ def fetch_stocks_baostock() -> list[dict[str, Any]]:
 
         lg = bs.login()
         if lg.error_code != "0":
-            print(f"❌ Baostock 登录失败: {lg.error_msg}")
+            logger.error(f" Baostock 登录失败: {lg.error_msg}")
             return []
 
         rs = bs.query_stock_basic()
         if rs.error_code != "0":
-            print(f"❌ Baostock 查询失败: {rs.error_msg}")
+            logger.error(f" Baostock 查询失败: {rs.error_msg}")
             bs.logout()
             return []
 
@@ -28,7 +28,7 @@ def fetch_stocks_baostock() -> list[dict[str, Any]]:
         bs.logout()
 
         if not data_list:
-            print("❌ Baostock: 获取数据为空")
+            logger.info(" Baostock: 获取数据为空")
             return []
 
         stocks = []
@@ -58,15 +58,15 @@ def fetch_stocks_baostock() -> list[dict[str, Any]]:
 
         return stocks
 
-    except Exception as e:
-        print(f"❌ Baostock 获取失败: {e}")
+    except (ValueError, KeyError, ConnectionError, RuntimeError) as e:
+        logger.error(f" Baostock 获取失败: {e}")
         return []
 
 
 def fetch_stocks_akshare(akshare) -> list[dict[str, Any]]:
     """使用 AkShare 获取A股列表"""
     try:
-        print("正在获取A股股票列表(AkShare)...")
+        logger.info("正在获取A股股票列表(AkShare)...")
         df = akshare.stock_zh_a_spot_em()
 
         if df is None or df.empty:
@@ -104,15 +104,15 @@ def fetch_stocks_akshare(akshare) -> list[dict[str, Any]]:
 
         return stocks
 
-    except Exception as e:
-        print(f"❌ AkShare 获取失败: {e}")
+    except (ValueError, KeyError, ConnectionError) as e:
+        logger.error(f" AkShare 获取失败: {e}")
         return []
 
 
 def fetch_stocks_efinance() -> list[dict[str, Any]]:
     """使用 Efinance 获取A股列表"""
     try:
-        print("正在获取A股股票列表(Efinance)...")
+        logger.info("正在获取A股股票列表(Efinance)...")
         import efinance as ef
 
         df = ef.stock.get_quote_snapshot()
@@ -148,8 +148,8 @@ def fetch_stocks_efinance() -> list[dict[str, Any]]:
 
         return stocks
 
-    except Exception as e:
-        print(f"❌ Efinance 获取失败: {e}")
+    except (ValueError, KeyError, ConnectionError, ImportError) as e:
+        logger.error(f" Efinance 获取失败: {e}")
         return []
 
 
@@ -198,6 +198,6 @@ def enrich_prices_tencent(stocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
         return stocks
 
-    except Exception as e:
-        print(f"❌ 腾讯财经补充价格失败: {e}")
+    except (ConnectionError, TimeoutError, ValueError) as e:
+        logger.error(f" 腾讯财经补充价格失败: {e}")
         return stocks

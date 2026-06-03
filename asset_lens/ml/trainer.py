@@ -165,7 +165,7 @@ class ModelTrainer:
                 X, y = self.prepare_training_data(df, code)
                 all_X.append(X)
                 all_y.append(y)
-            except Exception as e:
+            except (ValueError, KeyError, RuntimeError) as e:
                 logger.warning(f"处理股票 {code} 失败: {e}")
                 continue
 
@@ -390,7 +390,7 @@ class ModelTrainer:
                 train_features=len(self.feature_engineer.feature_names),
             )
             logger.info(f"模型记录已保存到数据库: ID={model_id}")
-        except Exception as e:
+        except (ValueError, KeyError, OSError, RuntimeError) as e:
             logger.warning(f"保存模型记录到数据库失败: {e}")
 
         return result
@@ -438,7 +438,7 @@ class ModelTrainer:
                         confidence=result.confidence,
                         features={"latest_close": float(df["close"].iloc[-1])},
                     )
-            except Exception as e:
+            except (ValueError, KeyError, OSError, RuntimeError) as e:
                 logger.warning(f"保存预测记录失败: {e}")
 
         return {

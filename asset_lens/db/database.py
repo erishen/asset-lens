@@ -1,11 +1,3 @@
-"""
-Database manager for asset-lens.
-数据库管理器 - 提供数据存储和查询接口
-"""
-
-# pylint: disable=not-callable
-# mypy: ignore-errors
-
 import json
 import logging
 from collections.abc import Generator
@@ -17,14 +9,13 @@ from investkit_utils.db.paths import ensure_data_dir, get_asset_lens_db_path
 from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
 
-from .models import DataSyncLog, MLModel, NorthIndustryFlow, PredictionRecord, StockInfo, StockKline, init_database
+from .models import DataSyncLog, MLModel, PredictionRecord, StockInfo, StockKline, init_database
+from .north_flow_db import NorthFlowDBMixin
 
 logger = logging.getLogger(__name__)
 
 
-class DatabaseManager:
-    """数据库管理器"""
-
+class DatabaseManager(NorthFlowDBMixin):
     def __init__(self, db_path: str | None = None):
         if db_path is None:
             ensure_data_dir()
@@ -34,17 +25,15 @@ class DatabaseManager:
         self.engine, self.SessionLocal = init_database(db_path)
 
     def get_session(self) -> Session:
-        """获取数据库会话"""
         return self.SessionLocal()
 
     @contextmanager
     def session_scope(self) -> Generator[Session, None, None]:
-        """提供事务范围的会话上下文管理器"""
         session = self.get_session()
         try:
             yield session
             session.commit()
-        except Exception as e:
+        except (OSError, RuntimeError) as e:
             logger.debug(f"忽略异常: {e}")
             session.rollback()
             raise
@@ -52,7 +41,6 @@ class DatabaseManager:
             session.close()
 
     def close(self):
-        """关闭数据库连接"""
         self.engine.dispose()
 
     def save_klines(
@@ -61,17 +49,6 @@ class DatabaseManager:
         klines: list[dict[str, Any]],
         data_source: str = "Unknown",
     ) -> int:
-        """
-        保存K线数据（批量优化版本）
-
-        Args:
-            code: 股票代码
-            klines: K线数据列表
-            data_source: 数据来源
-
-        Returns:
-            保存的记录数
-        """
         with self.session_scope() as session:
             valid_klines = [k for k in klines if k.get("date")]
             if not valid_klines:
@@ -123,12 +100,6 @@ class DatabaseManager:
             return saved_count
 
     def get_stock_codes_with_klines(self) -> set[str]:
-        """
-        获取已有K线数据的股票代码集合
-
-        Returns:
-            股票代码集合
-        """
         with self.session_scope() as session:
             from sqlalchemy import distinct
 
@@ -142,18 +113,6 @@ class DatabaseManager:
         end_date: str | None = None,
         limit: int = 500,
     ) -> list[dict[str, Any]]:
-        """
-        获取K线数据
-
-        Args:
-            code: 股票代码
-            start_date: 起始日期
-            end_date: 结束日期
-            limit: 最大返回数量
-
-        Returns:
-            K线数据列表
-        """
         with self.session_scope() as session:
             query = session.query(StockKline).filter(StockKline.code == code)
 
@@ -173,16 +132,6 @@ class DatabaseManager:
         codes: list[str] | None = None,
         days: int = 250,
     ) -> dict[str, list[dict[str, Any]]]:
-        """
-        获取用于机器学习的K线数据
-
-        Args:
-            codes: 股票代码列表，为空则获取所有
-            days: 历史天数
-
-        Returns:
-            股票代码到K线数据的映射
-        """
         with self.session_scope() as session:
             start_date = (datetime.now() - timedelta(days=days + 30)).strftime("%Y-%m-%d")
 
@@ -204,13 +153,11 @@ class DatabaseManager:
             return data
 
     def get_stock_codes(self) -> list[str]:
-        """获取所有有K线数据的股票代码"""
         with self.session_scope() as session:
             results = session.query(StockKline.code).distinct().all()
             return [r[0] for r in results]
 
     def get_kline_count(self, code: str | None = None) -> int:
-        """获取K线数据数量"""
         with self.session_scope() as session:
             query = session.query(func.count(StockKline.id))
             if code:
@@ -218,7 +165,6 @@ class DatabaseManager:
             return query.scalar() or 0
 
     def save_stock_info(self, info: dict[str, Any]) -> bool:
-        """保存股票基本信息"""
         with self.session_scope() as session:
             code = info.get("code", "")
             if not code:
@@ -238,7 +184,6 @@ class DatabaseManager:
             return True
 
     def get_stock_info(self, code: str) -> dict[str, Any] | None:
-        """获取股票基本信息"""
         with self.session_scope() as session:
             record = session.query(StockInfo).filter(StockInfo.code == code).first()
             if record:
@@ -267,12 +212,6 @@ class DatabaseManager:
         train_features: int = 0,
         version: str = "1.0.0",
     ) -> int:
-        """
-        保存ML模型记录
-
-        Returns:
-            模型ID
-        """
         with self.session_scope() as session:
             record = MLModel(
                 name=name,
@@ -291,7 +230,6 @@ class DatabaseManager:
             return record.id
 
     def get_latest_model(self, name: str = "stock_predictor") -> dict[str, Any] | None:
-        """获取最新的ML模型"""
         with self.session_scope() as session:
             record = (
                 session.query(MLModel)
@@ -322,7 +260,6 @@ class DatabaseManager:
         confidence: float,
         features: dict[str, Any] | None = None,
     ) -> int:
-        """保存预测记录"""
         with self.session_scope() as session:
             record = PredictionRecord(
                 model_id=model_id,
@@ -342,7 +279,6 @@ class DatabaseManager:
         model_id: int | None = None,
         days: int = 30,
     ) -> list[dict[str, Any]]:
-        """获取预测记录"""
         with self.session_scope() as session:
             start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
 
@@ -381,7 +317,6 @@ class DatabaseManager:
         status: str = "running",
         error_message: str = "",
     ) -> int:
-        """记录数据同步日志"""
         with self.session_scope() as session:
             record = DataSyncLog(
                 data_type=data_type,
@@ -405,7 +340,6 @@ class DatabaseManager:
         status: str = "success",
         error_message: str = "",
     ):
-        """更新同步日志"""
         with self.session_scope() as session:
             record = session.query(DataSyncLog).filter(DataSyncLog.id == log_id).first()
             if record:
@@ -416,7 +350,6 @@ class DatabaseManager:
                 record.error_message = error_message
 
     def get_statistics(self) -> dict[str, Any]:
-        """获取数据库统计信息"""
         with self.session_scope() as session:
             kline_count = session.query(func.count(StockKline.id)).scalar() or 0
             stock_count = session.query(func.count(func.distinct(StockKline.code))).scalar() or 0
@@ -445,7 +378,6 @@ class DatabaseManager:
             }
 
     def clear_old_data(self, days: int = 365) -> int:
-        """清理旧数据"""
         with self.session_scope() as session:
             cutoff_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
             deleted = session.query(StockKline).filter(StockKline.date < cutoff_date).delete()
@@ -457,16 +389,6 @@ class DatabaseManager:
         days: int = 250,
         daily_limit: int = 100,
     ) -> dict[str, Any]:
-        """自动同步股票历史数据
-
-        Args:
-            fast: 是否快速模式（减少延迟）
-            days: 历史天数
-            daily_limit: 每日同步数量限制
-
-        Returns:
-            同步结果统计
-        """
         from ..data.market_stock_fetcher import MarketStockFetcher
         from .migration import DataMigration
 
@@ -505,141 +427,6 @@ class DatabaseManager:
             "failed": result.get("failed", 0),
             "total": len(need_sync),
         }
-
-    def save_north_industry_flow(
-        self,
-        date: str,
-        industry_data: list[dict[str, Any]],
-        data_source: str = "东方财富(Playwright)",
-    ) -> dict[str, int]:
-        """
-        保存北向资金行业流向数据
-
-        Args:
-            date: 日期 (YYYY-MM-DD)
-            industry_data: 行业数据列表
-            data_source: 数据来源
-
-        Returns:
-            保存结果字典 {'added': 新增数, 'updated': 更新数, 'total': 总数}
-        """
-        with self.session_scope() as session:
-            added_count = 0
-            updated_count = 0
-            now = datetime.now()
-
-            for data in industry_data:
-                industry = data.get("industry", "")
-                if not industry:
-                    continue
-
-                existing = (
-                    session.query(NorthIndustryFlow)
-                    .filter(NorthIndustryFlow.date == date, NorthIndustryFlow.industry == industry)
-                    .first()
-                )
-
-                if existing:
-                    existing.net_inflow = data.get("net_inflow", 0)
-                    existing.change_rate = data.get("change_rate", 0)
-                    existing.data_source = data_source
-                    existing.updated_at = now
-                    updated_count += 1
-                else:
-                    record = NorthIndustryFlow(
-                        date=date,
-                        industry=industry,
-                        net_inflow=data.get("net_inflow", 0),
-                        change_rate=data.get("change_rate", 0),
-                        data_source=data_source,
-                    )
-                    session.add(record)
-                    added_count += 1
-
-            return {"added": added_count, "updated": updated_count, "total": added_count + updated_count}
-
-    def get_north_industry_flow(
-        self,
-        date: str | None = None,
-        industry: str | None = None,
-        days: int = 30,
-    ) -> list[dict[str, Any]]:
-        """
-        获取北向资金行业流向数据
-
-        Args:
-            date: 指定日期
-            industry: 指定行业
-            days: 历史天数
-
-        Returns:
-            行业流向数据列表
-        """
-        with self.session_scope() as session:
-            query = session.query(NorthIndustryFlow)
-
-            if date:
-                query = query.filter(NorthIndustryFlow.date == date)
-            elif days > 0:
-                start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
-                query = query.filter(NorthIndustryFlow.date >= start_date)
-
-            if industry:
-                query = query.filter(NorthIndustryFlow.industry == industry)
-
-            query = query.order_by(desc(NorthIndustryFlow.date), desc(NorthIndustryFlow.net_inflow))
-
-            results = query.all()
-            return [r.to_dict() for r in results]
-
-    def get_north_industry_flow_dates(self, days: int = 30) -> list[str]:
-        """
-        获取有北向资金行业流向数据的日期列表
-
-        Args:
-            days: 历史天数
-
-        Returns:
-            日期列表
-        """
-        with self.session_scope() as session:
-            start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
-
-            results = (
-                session.query(NorthIndustryFlow.date)
-                .filter(NorthIndustryFlow.date >= start_date)
-                .distinct()
-                .order_by(desc(NorthIndustryFlow.date))
-                .all()
-            )
-
-            return [r[0] for r in results]
-
-    def get_north_industry_flow_trend(self, industry: str, days: int = 30) -> list[dict[str, Any]]:
-        """
-        获取指定行业的北向资金流向趋势
-
-        Args:
-            industry: 行业名称
-            days: 历史天数
-
-        Returns:
-            趋势数据列表
-        """
-        with self.session_scope() as session:
-            start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
-
-            results = (
-                session.query(NorthIndustryFlow)
-                .filter(
-                    NorthIndustryFlow.industry == industry,
-                    NorthIndustryFlow.date >= start_date,
-                )
-                .order_by(NorthIndustryFlow.date)
-                .all()
-            )
-
-            return [r.to_dict() for r in results]
 
 
 db_manager = DatabaseManager()

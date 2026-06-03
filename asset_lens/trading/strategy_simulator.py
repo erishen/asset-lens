@@ -1,175 +1,17 @@
-"""
-Strategy Simulator - 策略模拟层
-支持在股票池上做策略脚本化模拟
-
-功能:
-1. 再平衡频率控制
-2. 持仓上限管理
-3. 分散度控制
-4. 止盈止损
-5. 入池后持有期限
-6. 分位数筛选
-
-输出:
-- 对比基准的收益曲线
-- 交易明细
-- 回撤与风险指标
-- 换手率和成本影响
-"""
-
 from collections.abc import Callable
-from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from enum import Enum
 from typing import Any
 
-
-class RebalanceFrequency(Enum):
-    """再平衡频率"""
-
-    DAILY = "daily"
-    WEEKLY = "weekly"
-    BIWEEKLY = "biweekly"
-    MONTHLY = "monthly"
-    QUARTERLY = "quarterly"
-
-
-class StopLossType(Enum):
-    """止损类型"""
-
-    FIXED = "fixed"
-    TRAILING = "trailing"
-    ATR_BASED = "atr_based"
-
-
-@dataclass
-class SimulationConfig:
-    """模拟配置"""
-
-    initial_capital: float = 1000000.0
-    max_positions: int = 10
-    max_position_weight: float = 0.15
-    min_position_weight: float = 0.05
-    rebalance_frequency: RebalanceFrequency = RebalanceFrequency.WEEKLY
-    stop_loss_pct: float = 0.08
-    take_profit_pct: float = 0.20
-    stop_loss_type: StopLossType = StopLossType.FIXED
-    min_holding_days: int = 5
-    max_holding_days: int = 60
-    commission_rate: float = 0.0003
-    slippage_rate: float = 0.001
-    benchmark_code: str = "sh000300"
-
-
-@dataclass
-class SimulatedPosition:
-    """模拟持仓"""
-
-    code: str
-    name: str
-    entry_date: str
-    entry_price: float
-    shares: int
-    weight: float
-    current_price: float = 0.0
-    current_value: float = 0.0
-    profit: float = 0.0
-    profit_rate: float = 0.0
-    holding_days: int = 0
-    highest_price: float = 0.0
-    stop_loss_price: float = 0.0
-    take_profit_price: float = 0.0
-    stop_loss_type: StopLossType = StopLossType.FIXED
-    stop_loss_pct: float = 0.08
-    _atr: float | None = None
-    _atr_multiplier: float = 2.0
-
-    def update_price(self, new_price: float) -> None:
-        """更新价格"""
-        self.current_price = new_price
-        self.current_value = new_price * self.shares
-        self.profit = self.current_value - (self.entry_price * self.shares)
-        self.profit_rate = (self.current_price - self.entry_price) / self.entry_price
-
-        if new_price > self.highest_price:
-            self.highest_price = new_price
-
-        self._update_stop_loss_price(new_price)
-
-    def _update_stop_loss_price(self, new_price: float) -> None:
-        """更新止损价格"""
-        if self.stop_loss_type == StopLossType.TRAILING:
-            if new_price > self.highest_price:
-                trailing_price = self.highest_price * (1 - self.stop_loss_pct)
-                self.stop_loss_price = trailing_price
-        elif self.stop_loss_type == StopLossType.ATR_BASED:
-            if self._atr is not None:
-                self.stop_loss_price = new_price - self._atr * self._atr_multiplier
-            else:
-                self.stop_loss_price = self.entry_price * (1 - self.stop_loss_pct)
-        else:
-            self.stop_loss_price = self.entry_price * (1 - self.stop_loss_pct)
-
-    def should_stop_loss(self) -> bool:
-        """是否触发止损"""
-        if self.stop_loss_price <= 0:
-            return False
-        return self.current_price <= self.stop_loss_price
-
-    def should_take_profit(self) -> bool:
-        """是否触发止盈"""
-        if self.take_profit_price <= 0:
-            return False
-        return self.current_price >= self.take_profit_price
-
-
-@dataclass
-class SimulatedTrade:
-    """模拟交易记录"""
-
-    date: str
-    code: str
-    name: str
-    action: str
-    price: float
-    shares: int
-    amount: float
-    commission: float
-    slippage: float
-    reason: str
-    profit: float = 0.0
-    profit_rate: float = 0.0
-
-
-@dataclass
-class SimulationResult:
-    """模拟结果"""
-
-    start_date: str
-    end_date: str
-    initial_capital: float
-    final_capital: float
-    total_return: float
-    annual_return: float
-    benchmark_return: float
-    excess_return: float
-    max_drawdown: float
-    sharpe_ratio: float
-    win_rate: float
-    total_trades: int
-    win_trades: int
-    lose_trades: int
-    turnover_rate: float
-    total_commission: float
-    total_slippage: float
-    trades: list[SimulatedTrade] = field(default_factory=list)
-    daily_values: list[dict[str, Any]] = field(default_factory=list)
-    positions: list[SimulatedPosition] = field(default_factory=list)
+from .simulator_models import (
+    RebalanceFrequency,
+    SimulationConfig,
+    SimulationResult,
+    SimulatedPosition,
+    SimulatedTrade,
+)
 
 
 class StrategySimulator:
-    """策略模拟器"""
-
     def __init__(self, config: SimulationConfig | None = None):
         self.config = config or SimulationConfig()
         self.positions: dict[str, SimulatedPosition] = {}
@@ -179,7 +21,6 @@ class StrategySimulator:
         self.last_rebalance_date: str | None = None
 
     def should_rebalance(self, current_date: str) -> bool:
-        """判断是否需要再平衡"""
         if self.last_rebalance_date is None:
             return True
 
@@ -202,7 +43,6 @@ class StrategySimulator:
         return False
 
     def calculate_position_weight(self, score: float, total_score: float) -> float:
-        """计算持仓权重"""
         if total_score <= 0:
             return self.config.min_position_weight
 
@@ -220,7 +60,6 @@ class StrategySimulator:
         date: str,
         reason: str = "rebalance",
     ) -> SimulatedTrade | None:
-        """执行买入"""
         if code in self.positions:
             return None
 
@@ -291,7 +130,6 @@ class StrategySimulator:
         date: str,
         reason: str = "rebalance",
     ) -> SimulatedTrade | None:
-        """执行卖出"""
         if code not in self.positions:
             return None
 
@@ -328,10 +166,6 @@ class StrategySimulator:
         return trade
 
     def check_stop_loss_take_profit(self, date: str, prices: dict[str, float]) -> list[SimulatedTrade]:
-        """检查止损止盈
-
-        根据配置的止损类型动态计算止损价格
-        """
         trades: list[SimulatedTrade] = []
 
         for code, position in list(self.positions.items()):
@@ -350,7 +184,6 @@ class StrategySimulator:
         return trades
 
     def check_holding_period(self, date: str) -> list[str]:
-        """检查持有期限，返回因超过最大持有期需要卖出的股票"""
         to_sell: list[str] = []
         current = datetime.strptime(date, "%Y-%m-%d")
 
@@ -365,7 +198,6 @@ class StrategySimulator:
         return to_sell
 
     def can_sell_position(self, code: str, date: str, reason: str = "rebalance") -> bool:
-        """检查是否可以卖出持仓（考虑最小持有天数）"""
         if code not in self.positions:
             return False
 
@@ -381,7 +213,6 @@ class StrategySimulator:
         return holding_days >= self.config.min_holding_days
 
     def get_total_value(self, prices: dict[str, float]) -> float:
-        """获取总资产"""
         positions_value = sum(prices.get(code, pos.current_price) * pos.shares for code, pos in self.positions.items())
         return self.cash + positions_value
 
@@ -394,20 +225,6 @@ class StrategySimulator:
         selection_func: Callable | None = None,
         benchmark_prices: dict[str, float] | None = None,
     ) -> SimulationResult:
-        """
-        运行模拟
-
-        Args:
-            stock_pool_data: 股票池数据 (包含 score 等信息)
-            price_history: 价格历史 {code: [{date, price, ...}]}
-            start_date: 开始日期
-            end_date: 结束日期
-            selection_func: 选股函数
-            benchmark_prices: 基准指数价格序列 {date: price}
-
-        Returns:
-            模拟结果
-        """
         self.positions = {}
         self.trades = []
         self.daily_values = []
@@ -488,13 +305,6 @@ class StrategySimulator:
         end_date: str,
         benchmark_prices: dict[str, float] | None = None,
     ) -> SimulationResult:
-        """计算模拟结果
-
-        Args:
-            start_date: 开始日期
-            end_date: 结束日期
-            benchmark_prices: 基准指数价格序列 {date: price}
-        """
         final_capital = self.daily_values[-1]["total_value"] if self.daily_values else self.config.initial_capital
         total_return = (final_capital - self.config.initial_capital) / self.config.initial_capital * 100
 

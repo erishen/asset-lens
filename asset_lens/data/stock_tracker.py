@@ -9,13 +9,17 @@ Stock tracker for asset-lens.
 4. 跟踪报告 - 生成跟踪分析报告
 """
 
-import json
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from ..config import config
 from ..trading.stock_pool import StockPool
+from .providers.cache import UnifiedCache
 
 
 @dataclass
@@ -65,9 +69,10 @@ class StockTracker:
 
     def __init__(self, pool_name: str = "default"):
         self.pool_name = pool_name
-        self.tracker_path = config.cache_path / "stock_tracker"
-        self.tracker_path.mkdir(parents=True, exist_ok=True)
-        self.tracker_file = self.tracker_path / f"{pool_name}_tracker.json"
+        tracker_dir = config.cache_path / "stock_tracker"
+        tracker_dir.mkdir(parents=True, exist_ok=True)
+        self._cache = UnifiedCache(cache_dir=tracker_dir)
+        self._tracker_filename = f"{pool_name}_tracker.json"
         self.stock_pool = StockPool(pool_name)
         self.config = TrackerConfig()
         self.daily_records: dict[str, list[DailyRecord]] = {}
@@ -75,48 +80,46 @@ class StockTracker:
         self._load_tracker()
 
     def _load_tracker(self) -> None:
-        """加载跟踪数据"""
-        if self.tracker_file.exists():
-            try:
-                with open(self.tracker_file, encoding="utf-8") as f:
-                    data = json.load(f)
+        data = self._cache.load_file(self._tracker_filename)
+        if data is None:
+            return
 
-                for code, records in data.get("daily_records", {}).items():
-                    self.daily_records[code] = [
-                        DailyRecord(
-                            date=r.get("date", ""),
-                            code=r.get("code", ""),
-                            name=r.get("name", ""),
-                            open_price=r.get("open_price", 0),
-                            close_price=r.get("close_price", 0),
-                            high_price=r.get("high_price", 0),
-                            low_price=r.get("low_price", 0),
-                            change_percent=r.get("change_percent", 0),
-                            turnover_rate=r.get("turnover_rate", 0),
-                            volume=r.get("volume", 0),
-                            amount=r.get("amount", 0),
-                        )
-                        for r in records
-                    ]
-
-                self.monster_signals = [
-                    MonsterStockSignal(
-                        code=s.get("code", ""),
-                        name=s.get("name", ""),
-                        signal_type=s.get("signal_type", ""),
-                        signal_date=s.get("signal_date", ""),
-                        description=s.get("description", ""),
-                        score=s.get("score", 0),
-                        details=s.get("details", {}),
+        try:
+            for code, records in data.get("daily_records", {}).items():
+                self.daily_records[code] = [
+                    DailyRecord(
+                        date=r.get("date", ""),
+                        code=r.get("code", ""),
+                        name=r.get("name", ""),
+                        open_price=r.get("open_price", 0),
+                        close_price=r.get("close_price", 0),
+                        high_price=r.get("high_price", 0),
+                        low_price=r.get("low_price", 0),
+                        change_percent=r.get("change_percent", 0),
+                        turnover_rate=r.get("turnover_rate", 0),
+                        volume=r.get("volume", 0),
+                        amount=r.get("amount", 0),
                     )
-                    for s in data.get("monster_signals", [])
+                    for r in records
                 ]
 
-            except Exception as e:
-                print(f"加载跟踪数据失败: {e}")
+            self.monster_signals = [
+                MonsterStockSignal(
+                    code=s.get("code", ""),
+                    name=s.get("name", ""),
+                    signal_type=s.get("signal_type", ""),
+                    signal_date=s.get("signal_date", ""),
+                    description=s.get("description", ""),
+                    score=s.get("score", 0),
+                    details=s.get("details", {}),
+                )
+                for s in data.get("monster_signals", [])
+            ]
+
+        except (json.JSONDecodeError, OSError, ValueError, KeyError) as e:
+            logger.error(f"加载跟踪数据失败: {e}")
 
     def _save_tracker(self) -> None:
-        """保存跟踪数据"""
         data = {
             "pool_name": self.pool_name,
             "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -153,8 +156,7 @@ class StockTracker:
             ],
         }
 
-        with open(self.tracker_file, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+        self._cache.save_file(self._tracker_filename, data, ttl=0)
 
     def record_daily(self, stock_data: dict[str, Any]) -> bool:
         """
@@ -478,44 +480,44 @@ class StockTracker:
         """打印跟踪报告"""
         report = self.get_tracking_report()
 
-        print("\n" + "=" * 60)
-        print(f"📊 股票跟踪报告 - {report['pool_name']}")
-        print("=" * 60)
-        print(f"更新时间: {report['update_time']}")
-        print(f"跟踪天数: {report['tracked_days']} 天")
+        logger.info(f"" + "=" * 60)
+        logger.info(f" 股票跟踪报告 - {report['pool_name']}")
+        logger.info("=" * 60)
+        logger.info(f"更新时间: {report['update_time']}")
+        logger.info(f"跟踪天数: {report['tracked_days']} 天")
 
-        print("\n" + "-" * 60)
-        print("📈 股票池状态")
-        print("-" * 60)
-        print(f"观察中: {report['watching_count']} 只")
-        print(f"持有中: {report['holding_count']} 只")
-        print(f"已卖出: {report['sold_count']} 只")
+        logger.info(f"" + "-" * 60)
+        logger.info("📈 股票池状态")
+        logger.info("-" * 60)
+        logger.info(f"观察中: {report['watching_count']} 只")
+        logger.info(f"持有中: {report['holding_count']} 只")
+        logger.info(f"已卖出: {report['sold_count']} 只")
 
         if report.get("recent_monsters"):
-            print("\n" + "-" * 60)
-            print("🔥 近期妖股信号")
-            print("-" * 60)
+            logger.info(f"" + "-" * 60)
+            logger.info(" 近期妖股信号")
+            logger.info("-" * 60)
             for s in report["recent_monsters"]:
-                print(f"  {s['name']}({s['code']})")
-                print(f"    信号: {s['signal_type']}")
-                print(f"    得分: {s['score']:.0f}")
-                print(f"    日期: {s['signal_date']}")
+                logger.info(f"  {s['name']}({s['code']})")
+                logger.info(f"    信号: {s['signal_type']}")
+                logger.info(f"    得分: {s['score']:.0f}")
+                logger.info(f"    日期: {s['signal_date']}")
 
         if report.get("best_performers"):
-            print("\n" + "-" * 60)
-            print("🏆 表现最佳")
-            print("-" * 60)
+            logger.info(f"" + "-" * 60)
+            logger.info(" 表现最佳")
+            logger.info("-" * 60)
             for i, s in enumerate(report["best_performers"], 1):
-                print(f"  {i}. {s['name']}({s['code']}): {s['profit_rate']:+.2f}%")
+                logger.info(f"  {i}. {s['name']}({s['code']}): {s['profit_rate']:+.2f}%")
 
         if report.get("worst_performers"):
-            print("\n" + "-" * 60)
-            print("⚠️ 表现最差")
-            print("-" * 60)
+            logger.info(f"" + "-" * 60)
+            logger.info(" 表现最差")
+            logger.info("-" * 60)
             for i, s in enumerate(report["worst_performers"], 1):
-                print(f"  {i}. {s['name']}({s['code']}): {s['profit_rate']:+.2f}%")
+                logger.info(f"  {i}. {s['name']}({s['code']}): {s['profit_rate']:+.2f}%")
 
-        print("\n" + "=" * 60)
+        logger.info(f"" + "=" * 60)
 
 
 stock_tracker = StockTracker()

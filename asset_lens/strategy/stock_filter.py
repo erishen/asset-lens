@@ -1,9 +1,12 @@
+logger = logging.getLogger(__name__)
+
 """
 Stock filter module for asset-lens.
 股票筛选模块 - 支持可配置的筛选条件
 """
 
 import json
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -102,8 +105,8 @@ class StockFilter:
                 max_results=limit.get("max_results", 50),
             )
 
-        except Exception as e:
-            print(f"加载股票筛选配置失败: {e}")
+        except (json.JSONDecodeError, OSError, ValueError, KeyError) as e:
+            logger.error(f"加载股票筛选配置失败: {e}")
             return StockFilterConfig()
 
     def filter_stock(self, stock: dict[str, Any]) -> bool:

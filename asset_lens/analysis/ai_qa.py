@@ -115,8 +115,7 @@ class AIQAEngine:
                 },
             ]
 
-            with open(self.knowledge_base_file, "w", encoding="utf-8") as f:
-                json.dump(default_knowledge, f, ensure_ascii=False, indent=2)
+            write_json_cache(self.knowledge_base_file, default_knowledge)
 
     def classify_question(self, question: str) -> QuestionType:
         """分类问题类型"""
@@ -329,29 +328,16 @@ class AIQAEngine:
             }
         )
 
-        with open(self.knowledge_base_file, "w", encoding="utf-8") as f:
-            json.dump(entries, f, ensure_ascii=False, indent=2)
+        write_json_cache(self.knowledge_base_file, entries)
 
     def _load_knowledge_base(self) -> list[dict[str, Any]]:
         """加载知识库"""
-        if not self.knowledge_base_file.exists():
-            return []
-        try:
-            with open(self.knowledge_base_file, encoding="utf-8") as f:
-                data: list[dict[str, Any]] = json.load(f)
-                return data
-        except (ValueError, KeyError, TypeError):
-            return []
+        data = read_json_cache(self.knowledge_base_file)
+        return data if data else []
 
     def _save_qa_history(self, response: QAResponse) -> None:
         """保存问答历史"""
-        history = []
-        if self.qa_history_file.exists():
-            try:
-                with open(self.qa_history_file, encoding="utf-8") as f:
-                    history = json.load(f)
-            except (ValueError, KeyError, TypeError):
-                history = []
+        history: list[dict[str, Any]] = read_json_cache(self.qa_history_file) or []
 
         history.append(
             {
@@ -366,19 +352,14 @@ class AIQAEngine:
         if len(history) > 100:
             history = history[-100:]
 
-        with open(self.qa_history_file, "w", encoding="utf-8") as f:
-            json.dump(history, f, ensure_ascii=False, indent=2)
+        write_json_cache(self.qa_history_file, history)
 
     def get_qa_history(self, limit: int = 20) -> list[dict[str, Any]]:
         """获取问答历史"""
-        if not self.qa_history_file.exists():
-            return []
-        try:
-            with open(self.qa_history_file, encoding="utf-8") as f:
-                history: list[dict[str, Any]] = json.load(f)
-                return history[-limit:]
-        except (ValueError, KeyError, TypeError):
-            return []
+        history = read_json_cache(self.qa_history_file)
+        if history:
+            return history[-limit:]
+        return []
 
 
 ai_qa_engine = AIQAEngine()

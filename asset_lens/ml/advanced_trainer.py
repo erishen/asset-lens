@@ -63,7 +63,7 @@ except ImportError:
 
 
 @dataclass
-class TrainingResult:
+class AdvancedTrainingResult:
     """训练结果"""
 
     model_type: str
@@ -265,7 +265,7 @@ class AdvancedMLTrainer:
         try:
             importance = optuna.importance.get_param_importances(study)
             param_importance = dict(importance)
-        except Exception as e:
+        except (ValueError, RuntimeError) as e:
             logger.debug(f"忽略异常: {e}")
 
         trials_history = [
@@ -297,7 +297,7 @@ class AdvancedMLTrainer:
         model_type: str = "lightgbm",
         params: dict[str, Any] | None = None,
         cv_splits: int = 5,
-    ) -> TrainingResult:
+    ) -> AdvancedTrainingResult:
         """
         使用时间序列交叉验证训练模型
 
@@ -393,10 +393,10 @@ class AdvancedMLTrainer:
         if HAS_SHAP and len(X) > 0:
             try:
                 shap_values = self._compute_shap_values(model, X.sample(min(100, len(X))))
-            except Exception as e:
+            except (ValueError, RuntimeError) as e:
                 logger.warning(f"SHAP 计算失败: {e}")
 
-        return TrainingResult(
+        return AdvancedTrainingResult(
             model_type=model_type,
             accuracy=accuracy_score(true_values_array, predictions_array),
             precision=precision_score(true_values_array, predictions_array, zero_division=0),
@@ -431,7 +431,7 @@ class AdvancedMLTrainer:
 
             return {name: float(val) for name, val in zip(X.columns, mean_shap, strict=False)}
 
-        except Exception as e:
+        except (ValueError, RuntimeError) as e:
             logger.warning(f"SHAP 计算失败: {e}")
             return {}
 
@@ -459,7 +459,7 @@ class AdvancedMLTrainer:
         y: pd.Series,
         models: list[str] | None = None,
         weights: list[float] | None = None,
-    ) -> TrainingResult:
+    ) -> AdvancedTrainingResult:
         """
         训练集成模型
 
@@ -505,7 +505,7 @@ class AdvancedMLTrainer:
 
         training_time = time.time() - start_time
 
-        return TrainingResult(
+        return AdvancedTrainingResult(
             model_type="ensemble",
             accuracy=0.0,
             precision=0.0,
@@ -522,7 +522,7 @@ class AdvancedMLTrainer:
             n_samples=len(X),
         )
 
-    def save_results(self, result: TrainingResult | OptimizationResult, filename: str) -> None:
+    def save_results(self, result: AdvancedTrainingResult | OptimizationResult, filename: str) -> None:
         """保存结果"""
         path = self.output_dir / f"{filename}.json"
         with open(path, "w", encoding="utf-8") as f:

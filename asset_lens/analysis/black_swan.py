@@ -10,9 +10,10 @@ Black Swan Alert Module.
 5. 风险等级评估
 """
 
-import json
 from dataclasses import dataclass, field
 from datetime import datetime
+
+from ..utils.json_cache import read_json_cache, write_json_cache
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -42,7 +43,7 @@ class RiskType(Enum):
 
 
 @dataclass
-class RiskAlert:
+class BlackSwanRiskAlert:
     """风险预警"""
 
     risk_type: RiskType
@@ -73,7 +74,7 @@ class MarketRiskAssessment:
     market_trend: str
     volatility_level: float
     sentiment_score: float
-    risk_alerts: list[RiskAlert]
+    risk_alerts: list[BlackSwanRiskAlert]
     recommendations: list[str]
     timestamp: str = field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
@@ -93,7 +94,7 @@ class BlackSwanMonitor:
 
     def check_market_risk(self, market_data: dict[str, Any] | None = None) -> MarketRiskAssessment:
         """检查市场风险"""
-        alerts: list[RiskAlert] = []
+        alerts: list[BlackSwanRiskAlert] = []
         recommendations: list[str] = []
 
         if market_data:
@@ -103,7 +104,7 @@ class BlackSwanMonitor:
 
             if index_change < self.PANIC_SELLING_THRESHOLD:
                 alerts.append(
-                    RiskAlert(
+                    BlackSwanRiskAlert(
                         risk_type=RiskType.MARKET_CRASH,
                         risk_level=BlackSwanRiskLevel.CRITICAL,
                         title="市场恐慌性下跌",
@@ -117,7 +118,7 @@ class BlackSwanMonitor:
 
             elif index_change < self.MARKET_CRASH_THRESHOLD:
                 alerts.append(
-                    RiskAlert(
+                    BlackSwanRiskAlert(
                         risk_type=RiskType.MARKET_CRASH,
                         risk_level=BlackSwanRiskLevel.HIGH,
                         title="市场大幅下跌",
@@ -131,7 +132,7 @@ class BlackSwanMonitor:
 
             if volatility > self.HIGH_VOLATILITY_THRESHOLD:
                 alerts.append(
-                    RiskAlert(
+                    BlackSwanRiskAlert(
                         risk_type=RiskType.SYSTEMIC_RISK,
                         risk_level=BlackSwanRiskLevel.HIGH,
                         title="市场波动剧烈",
@@ -144,7 +145,7 @@ class BlackSwanMonitor:
 
         if not alerts:
             alerts.append(
-                RiskAlert(
+                BlackSwanRiskAlert(
                     risk_type=RiskType.SYSTEMIC_RISK,
                     risk_level=BlackSwanRiskLevel.LOW,
                     title="市场风险较低",
@@ -170,9 +171,9 @@ class BlackSwanMonitor:
         self,
         holdings: list[dict[str, Any]],
         market_data: dict[str, Any] | None = None,
-    ) -> list[RiskAlert]:
+    ) -> list[BlackSwanRiskAlert]:
         """检查持仓风险"""
-        alerts: list[RiskAlert] = []
+        alerts: list[BlackSwanRiskAlert] = []
 
         if not holdings:
             return alerts
@@ -183,7 +184,7 @@ class BlackSwanMonitor:
 
         if len(losing_positions) > len(holdings) * 0.5:
             alerts.append(
-                RiskAlert(
+                BlackSwanRiskAlert(
                     risk_type=RiskType.COMPANY_RISK,
                     risk_level=BlackSwanRiskLevel.HIGH,
                     title="持仓大面积亏损",
@@ -195,7 +196,7 @@ class BlackSwanMonitor:
 
         if high_concentration:
             alerts.append(
-                RiskAlert(
+                BlackSwanRiskAlert(
                     risk_type=RiskType.SYSTEMIC_RISK,
                     risk_level=BlackSwanRiskLevel.MEDIUM,
                     title="持仓集中度过高",
@@ -209,7 +210,7 @@ class BlackSwanMonitor:
             profit_rate = holding.get("profit_rate", 0)
             if profit_rate < -15:
                 alerts.append(
-                    RiskAlert(
+                    BlackSwanRiskAlert(
                         risk_type=RiskType.COMPANY_RISK,
                         risk_level=BlackSwanRiskLevel.CRITICAL,
                         title=f"{holding.get('name', holding['code'])} 严重亏损",
@@ -225,9 +226,9 @@ class BlackSwanMonitor:
         self,
         industry_data: dict[str, Any],
         holdings: list[dict[str, Any]],
-    ) -> list[RiskAlert]:
+    ) -> list[BlackSwanRiskAlert]:
         """检查行业风险"""
-        alerts: list[RiskAlert] = []
+        alerts: list[BlackSwanRiskAlert] = []
 
         for industry, data in industry_data.items():
             industry_change = data.get("change", 0)
@@ -235,7 +236,7 @@ class BlackSwanMonitor:
                 industry_stocks = [h["code"] for h in holdings if h.get("industry") == industry]
                 if industry_stocks:
                     alerts.append(
-                        RiskAlert(
+                        BlackSwanRiskAlert(
                             risk_type=RiskType.INDUSTRY_RISK,
                             risk_level=BlackSwanRiskLevel.HIGH,
                             title=f"{industry} 行业风险",
@@ -247,16 +248,16 @@ class BlackSwanMonitor:
 
         return alerts
 
-    def check_external_risk(self, external_events: list[dict[str, Any]]) -> list[RiskAlert]:
+    def check_external_risk(self, external_events: list[dict[str, Any]]) -> list[BlackSwanRiskAlert]:
         """检查外部风险"""
-        alerts: list[RiskAlert] = []
+        alerts: list[BlackSwanRiskAlert] = []
 
         for event in external_events:
             severity = event.get("severity", "low")
             risk_level = BlackSwanRiskLevel.HIGH if severity == "high" else BlackSwanRiskLevel.MEDIUM
 
             alerts.append(
-                RiskAlert(
+                BlackSwanRiskAlert(
                     risk_type=RiskType.EXTERNAL_SHOCK,
                     risk_level=risk_level,
                     title=event.get("title", "外部风险事件"),
@@ -268,7 +269,7 @@ class BlackSwanMonitor:
 
         return alerts
 
-    def _calculate_overall_risk(self, alerts: list[RiskAlert]) -> BlackSwanRiskLevel:
+    def _calculate_overall_risk(self, alerts: list[BlackSwanRiskAlert]) -> BlackSwanRiskLevel:
         """计算整体风险等级"""
         if not alerts:
             return BlackSwanRiskLevel.LOW
@@ -298,32 +299,21 @@ class BlackSwanMonitor:
 
         return concentrated_stocks
 
-    def save_alerts(self, alerts: list[RiskAlert]) -> None:
+    def save_alerts(self, alerts: list[BlackSwanRiskAlert]) -> None:
         """保存预警记录"""
-        history: list[dict[str, Any]] = []
-        if self.history_file.exists():
-            try:
-                with open(self.history_file, encoding="utf-8") as f:
-                    history = json.load(f)
-            except (ValueError, KeyError, TypeError):
-                pass
+        history: list[dict[str, Any]] = read_json_cache(self.history_file) or []
 
         for alert in alerts:
             history.append(alert.to_dict())
 
-        with open(self.history_file, "w", encoding="utf-8") as f:
-            json.dump(history[-100:], f, ensure_ascii=False, indent=2)
+        write_json_cache(self.history_file, history[-100:])
 
     def get_recent_alerts(self, limit: int = 20) -> list[dict[str, Any]]:
         """获取最近预警"""
-        if not self.history_file.exists():
-            return []
-        try:
-            with open(self.history_file, encoding="utf-8") as f:
-                history: list[dict[str, Any]] = json.load(f)
-                return history[-limit:]
-        except (ValueError, KeyError, TypeError):
-            return []
+        history = read_json_cache(self.history_file)
+        if history:
+            return history[-limit:]
+        return []
 
     def format_assessment(self, assessment: MarketRiskAssessment) -> str:
         """格式化风险评估报告"""

@@ -99,7 +99,7 @@ class AIMarketAnalyzer:
                 "up_stocks": up_stocks,
                 "down_stocks": down_stocks,
             }
-        except Exception as e:
+        except (ValueError, KeyError, ConnectionError, RuntimeError) as e:
             logger.warning(f"获取市场数据失败: {e}")
             return {"avg_change": 0, "up_ratio": 0.5, "volatility": 0.02}
 
@@ -334,7 +334,7 @@ class AdaptiveMLTrainer:
                     selected.append(code)
 
             return selected[:200]
-        except Exception as e:
+        except (ValueError, KeyError, RuntimeError) as e:
             logger.warning(f"筛选股票池失败: {e}")
             return self._get_default_stock_pool()
 
@@ -344,7 +344,7 @@ class AdaptiveMLTrainer:
             from ..db.database import db_manager
 
             return db_manager.get_stock_codes()[:100]
-        except Exception as e:
+        except (ValueError, KeyError, OSError, RuntimeError) as e:
             logger.debug(f"忽略异常: {e}")
             return ["sh600519", "sh601318", "sh600036", "sz000001", "sz000002"]
 

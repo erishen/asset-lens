@@ -1,9 +1,12 @@
+logger = logging.getLogger(__name__)
+
 """
 汇率历史数据解析器
 解析资产汇总.csv 文件（原备份-表格 1.csv）
 """
 
 import csv
+import logging
 from pathlib import Path
 
 from ..data.models import ExchangeRateHistory
@@ -29,8 +32,8 @@ class ExchangeRateParser:
                 usd_rate=usd_rate,
                 hkd_rate=hkd_rate,
             )
-        except Exception as e:
-            print(f"解析汇率历史行数据时出错: {e}, 行数据: {row}")
+        except (ValueError, TypeError, KeyError) as e:
+            logger.info(f"解析汇率历史行数据时出错: {e}, 行数据: {row}")
             return None
 
     @classmethod
@@ -56,9 +59,9 @@ class ExchangeRateParser:
                     if rate:
                         rates.append(rate)
                     else:
-                        print(f"警告: 第 {row_num} 行汇率历史数据解析失败")
+                        logger.error(f"警告: 第 {row_num} 行汇率历史数据解析失败")
 
-        except Exception as e:
+        except (OSError, ValueError, KeyError) as e:
             raise Exception(f"读取汇率历史 CSV 文件失败: {e}") from e
 
         return rates

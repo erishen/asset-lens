@@ -8,15 +8,17 @@
 4. 操作评价和建议
 """
 
-import json
+import logging
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from ..utils.json_cache import read_json_cache, write_json_cache
 
-class TradeAction(Enum):
+
+class AutoTradeAction(Enum):
     BUY = "buy"
     SELL = "sell"
 
@@ -30,12 +32,12 @@ class TradeReason(Enum):
 
 
 @dataclass
-class TradeRecord:
+class AutoTradeRecord:
     """交易记录"""
 
     id: str
     timestamp: str
-    action: TradeAction
+    action: AutoTradeAction
     code: str
     name: str
     price: float
@@ -98,15 +100,12 @@ class AutoTrader:
 
     def _load_json(self, file_path: Path, default: Any) -> Any:
         """加载JSON文件"""
-        if file_path.exists():
-            with open(file_path, encoding="utf-8") as f:
-                return json.load(f)
-        return default
+        data = read_json_cache(file_path)
+        return data if data is not None else default
 
     def _save_json(self, file_path: Path, data: Any):
         """保存JSON文件"""
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+        write_json_cache(file_path, data)
 
     def _generate_trade_id(self) -> str:
         """生成交易ID"""
@@ -122,12 +121,12 @@ class AutoTrader:
         reason_detail: str = "",
         market_data: dict | None = None,
         portfolio_state: dict | None = None,
-    ) -> TradeRecord:
+    ) -> AutoTradeRecord:
         """记录买入"""
-        trade = TradeRecord(
+        trade = AutoTradeRecord(
             id=self._generate_trade_id(),
             timestamp=datetime.now().isoformat(),
-            action=TradeAction.BUY,
+            action=AutoTradeAction.BUY,
             code=code,
             name=name,
             price=price,
@@ -158,12 +157,12 @@ class AutoTrader:
         reason_detail: str = "",
         market_data: dict | None = None,
         portfolio_state: dict | None = None,
-    ) -> TradeRecord:
+    ) -> AutoTradeRecord:
         """记录卖出"""
-        trade = TradeRecord(
+        trade = AutoTradeRecord(
             id=self._generate_trade_id(),
             timestamp=datetime.now().isoformat(),
-            action=TradeAction.SELL,
+            action=AutoTradeAction.SELL,
             code=code,
             name=name,
             price=price,

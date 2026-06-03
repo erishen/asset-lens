@@ -3,12 +3,9 @@ Main entry point for asset-lens.
 项目主入口
 """
 
-import warnings
+from asset_lens.utils.warnings_config import suppress_common_warnings
 
-warnings.filterwarnings("ignore", message="Pandas requires version")
-warnings.filterwarnings("ignore", message=".*unclosed.*socket.*")
-warnings.filterwarnings("ignore", category=ResourceWarning)
-warnings.filterwarnings("ignore", category=DeprecationWarning)
+suppress_common_warnings()
 
 from asset_lens.cli import cli
 

@@ -10,11 +10,14 @@ Backtesting system for asset-lens.
 """
 
 import json
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from ..config import config
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     pass
@@ -37,7 +40,7 @@ class BacktestTrade:
 
 
 @dataclass
-class BacktestResult:
+class StrategyBacktestResult:
     """回测结果"""
 
     strategy_name: str
@@ -314,7 +317,7 @@ class Backtester:
         end_date: str | None = None,
         commission_rate: float = 0.0003,
         slippage_rate: float = 0.001,
-    ) -> BacktestResult:
+    ) -> StrategyBacktestResult:
         """
         运行回测
 
@@ -403,7 +406,7 @@ class Backtester:
 
         perf = self._calculate_performance(daily_values, trades, initial_capital, all_dates)
 
-        return BacktestResult(
+        return StrategyBacktestResult(
             strategy_name=strategy_name,
             start_date=all_dates[0],
             end_date=all_dates[-1],
@@ -424,7 +427,7 @@ class Backtester:
             daily_values=daily_values,
         )
 
-    def _save_backtest(self, result: BacktestResult) -> None:
+    def _save_backtest(self, result: StrategyBacktestResult) -> None:
         """保存回测结果"""
         filename = f"{result.strategy_name}_{result.start_date}_{result.end_date}.json"
         filepath = self.backtest_path / filename
@@ -472,7 +475,7 @@ class Backtester:
         strategies: list[str],
         historical_data: dict[str, list[dict[str, Any]]],
         **kwargs,
-    ) -> dict[str, BacktestResult]:
+    ) -> dict[str, StrategyBacktestResult]:
         """
         比较多个策略
 
@@ -490,7 +493,7 @@ class Backtester:
                 result = self.run_backtest(strategy_name, historical_data, **kwargs)
                 results[strategy_name] = result
             except Exception as e:
-                print(f"策略 {strategy_name} 回测失败: {e}")
+                logger.warning("策略 %s 回测失败: %s", strategy_name, e)
 
         return results
 
@@ -500,7 +503,7 @@ class Backtester:
         historical_data: dict[str, list[dict[str, Any]]],
         metric: str = "sharpe_ratio",
         **kwargs,
-    ) -> tuple[str, BacktestResult]:
+    ) -> tuple[str, StrategyBacktestResult]:
         """
         获取最佳策略
 

@@ -6,8 +6,8 @@ Tests for Trading Review.
 from asset_lens.analysis.trading_review import (
     ClosedPosition,
     PerformanceMetrics,
-    TradeRecord,
-    TradeResult,
+    ReviewTradeRecord,
+    ReviewTradeResult,
     TradeType,
     TradingReview,
     trading_review,
@@ -25,22 +25,22 @@ class TestTradeType:
         assert TradeType.BONUS.value == "bonus"
 
 
-class TestTradeResult:
+class TestReviewTradeResult:
     """测试交易结果枚举"""
 
     def test_trade_results(self):
         """测试所有交易结果"""
-        assert TradeResult.PROFIT.value == "profit"
-        assert TradeResult.LOSS.value == "loss"
-        assert TradeResult.BREAK_EVEN.value == "break_even"
+        assert ReviewTradeResult.PROFIT.value == "profit"
+        assert ReviewTradeResult.LOSS.value == "loss"
+        assert ReviewTradeResult.BREAK_EVEN.value == "break_even"
 
 
-class TestTradeRecord:
+class TestReviewTradeRecord:
     """测试交易记录"""
 
     def test_create_trade_record(self):
         """测试创建交易记录"""
-        record = TradeRecord(
+        record = ReviewTradeRecord(
             code="sh600519",
             name="贵州茅台",
             trade_type=TradeType.BUY,
@@ -75,7 +75,7 @@ class TestClosedPosition:
         )
 
         assert position.code == "sh600519"
-        assert position.result == TradeResult.PROFIT
+        assert position.result == ReviewTradeResult.PROFIT
         assert position.profit_loss == 20000.0
 
     def test_closed_position_loss(self):
@@ -91,10 +91,10 @@ class TestClosedPosition:
             hold_days=30,
             buy_date="2024-01-01",
             sell_date="2024-01-31",
-            result=TradeResult.LOSS,
+            result=ReviewTradeResult.LOSS,
         )
 
-        assert position.result == TradeResult.LOSS
+        assert position.result == ReviewTradeResult.LOSS
 
 
 class TestPerformanceMetrics:
@@ -164,7 +164,7 @@ class TestTradingReview:
 
         assert position.profit_loss == 20000.0
         assert position.hold_days == 30
-        assert position.result == TradeResult.PROFIT
+        assert position.result == ReviewTradeResult.PROFIT
 
     def test_calculate_performance_empty(self, tmp_path):
         """测试计算空绩效"""
@@ -191,7 +191,7 @@ class TestTradingReview:
                 hold_days=30,
                 buy_date="2024-01-01",
                 sell_date="2024-01-31",
-                result=TradeResult.PROFIT,
+                result=ReviewTradeResult.PROFIT,
             ),
             ClosedPosition(
                 code="sz000001",
@@ -204,7 +204,7 @@ class TestTradingReview:
                 hold_days=15,
                 buy_date="2024-01-01",
                 sell_date="2024-01-16",
-                result=TradeResult.LOSS,
+                result=ReviewTradeResult.LOSS,
             ),
         ]
 
@@ -232,7 +232,7 @@ class TestTradingReview:
                 hold_days=30,
                 buy_date="2024-01-01",
                 sell_date="2024-01-31",
-                result=TradeResult.PROFIT,
+                result=ReviewTradeResult.PROFIT,
             ),
         ]
 
@@ -309,7 +309,7 @@ class TestTradingReview:
                 hold_days=30,
                 buy_date="2024-01-01",
                 sell_date="2024-01-31",
-                result=TradeResult.PROFIT,
+                result=ReviewTradeResult.PROFIT,
             ),
         ]
 

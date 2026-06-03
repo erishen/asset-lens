@@ -13,6 +13,8 @@ import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
+
+from ..utils.json_cache import read_json_cache, write_json_cache
 from pathlib import Path
 from typing import Any
 
@@ -291,14 +293,8 @@ class ModelRetrainer:
     def _get_prediction_count(self) -> int:
         """获取预测数量"""
         predictions_file = self.cache_path / "ml_predictions.json"
-        if not predictions_file.exists():
-            return 0
-        try:
-            with open(predictions_file, encoding="utf-8") as f:
-                data: list[dict[str, Any]] = json.load(f)
-                return len(data)
-        except (ValueError, KeyError, TypeError):
-            return 0
+        data = read_json_cache(predictions_file)
+        return len(data) if data else 0
 
     def _save_version(self, version: ModelVersion) -> None:
         """保存版本信息"""
@@ -311,8 +307,7 @@ class ModelRetrainer:
 
         versions = versions[: self.config.keep_versions]
 
-        with open(self.models_path / "versions.json", "w", encoding="utf-8") as f:
-            json.dump(versions, f, ensure_ascii=False, indent=2)
+        write_json_cache(self.models_path / "versions.json", versions)
 
     def _update_current_model(self, version: str) -> None:
         """更新当前模型"""
@@ -326,26 +321,13 @@ class ModelRetrainer:
     def _load_versions(self) -> list[dict[str, Any]]:
         """加载版本信息"""
         versions_file = self.models_path / "versions.json"
-        if not versions_file.exists():
-            return []
-        try:
-            with open(versions_file, encoding="utf-8") as f:
-                data: list[dict[str, Any]] = json.load(f)
-                return data
-        except (ValueError, KeyError, TypeError):
-            return []
+        data = read_json_cache(versions_file)
+        return data if data else []
 
     def _log_retraining(self, result: RetrainingResult) -> None:
         """记录重训练日志"""
         log_file = self.models_path / "retrain_log.json"
-        logs: list[dict[str, Any]] = []
-
-        if log_file.exists():
-            try:
-                with open(log_file, encoding="utf-8") as f:
-                    logs = json.load(f)
-            except (ValueError, KeyError, TypeError):
-                pass
+        logs: list[dict[str, Any]] = read_json_cache(log_file) or []
 
         logs.append(
             result.to_dict()
@@ -363,8 +345,7 @@ class ModelRetrainer:
             }
         )
 
-        with open(log_file, "w", encoding="utf-8") as f:
-            json.dump(logs[-50:], f, ensure_ascii=False, indent=2)
+        write_json_cache(log_file, logs[-50:])
 
     def get_version_history(self) -> list[ModelVersion]:
         """获取版本历史"""

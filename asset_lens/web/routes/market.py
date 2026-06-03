@@ -31,7 +31,7 @@ async def get_market_indexes():
 
 async def _get_market_indexes() -> list[MarketIndex]:
     """获取市场指数数据"""
-    from ..http_client import async_get
+    from ..aiohttp_session import async_get
 
     index_codes = [
         ("sh000001", "上证指数"),
@@ -51,7 +51,6 @@ async def _get_market_indexes() -> list[MarketIndex]:
 
     try:
         async with await async_get(url, headers=headers, timeout=10) as response:
-
             if response.status == 200:
                 result = []
                 content = await response.text()
@@ -85,7 +84,7 @@ async def _get_market_indexes() -> list[MarketIndex]:
 
                 return result
 
-    except Exception as e:
+    except (ConnectionError, TimeoutError, ValueError, KeyError, OSError) as e:
         logger.debug(f"忽略异常: {e}")
 
     return []
@@ -108,23 +107,21 @@ async def get_hot_stocks(
     try:
         stocks = market_stock_fetcher.fetch_all_cn_stocks(max_pages=1)
         return {"market": market, "count": len(stocks[:limit]), "stocks": stocks[:limit]}
-    except Exception as e:
+    except (ValueError, KeyError, ConnectionError, RuntimeError) as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/north-flow")
 async def get_north_flow():
-    """获取北向资金流向"""
     try:
         flow_data = await _get_north_flow_data()
         return flow_data
-    except Exception as e:
+    except (ValueError, KeyError, ConnectionError, RuntimeError) as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 async def _get_north_flow_data() -> dict:
-    """获取北向资金数据"""
-    from ..http_client import async_get
+    from ..aiohttp_session import async_get
 
     url = "http://push2.eastmoney.com/api/qt/stock/fflow/kline/get"
     params = {
@@ -137,7 +134,6 @@ async def _get_north_flow_data() -> dict:
 
     try:
         async with await async_get(url, params=params, timeout=10) as response:
-
             if response.status == 200:
                 data = await response.json(content_type=None)
 
@@ -153,20 +149,21 @@ async def _get_north_flow_data() -> dict:
                             "total_inflow": float(latest[9]) if len(latest) > 9 else 0,
                         }
 
-    except (ValueError, TypeError):
-        pass
+    except (ValueError, TypeError) as e:
+        logger.debug("市场数据参数解析失败: %s", e)
 
     return {"date": "", "main_inflow": 0, "retail_inflow": 0, "total_inflow": 0}
 
 
 @router.get("/sentiment")
 async def get_market_sentiment():
-    """获取市场情绪指标"""
+    import asyncio
+
     from ...core.market_sentiment import MarketSentimentAnalyzer
 
     try:
         analyzer = MarketSentimentAnalyzer()
-        sentiment = analyzer.analyze()
+        sentiment = await asyncio.to_thread(analyzer.analyze)
 
         return {
             "overall_score": sentiment.overall_score,
@@ -184,5 +181,5 @@ async def get_market_sentiment():
             "suggestions": sentiment.suggestions,
             "analysis_time": sentiment.analysis_time,
         }
-    except Exception as e:
+    except (ValueError, KeyError, RuntimeError) as e:
         raise HTTPException(status_code=500, detail=str(e)) from e

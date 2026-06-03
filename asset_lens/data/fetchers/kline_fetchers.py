@@ -3,12 +3,9 @@ K-line data fetchers for different sources.
 K线数据获取器 - 不同数据源的K线获取方法
 """
 
-import warnings
+from ...utils.warnings_config import suppress_common_warnings
 
-warnings.filterwarnings("ignore", message="Pandas requires version")
-warnings.filterwarnings("ignore", message=".*unclosed.*socket.*")
-warnings.filterwarnings("ignore", category=ResourceWarning)
-warnings.filterwarnings("ignore", category=DeprecationWarning)
+suppress_common_warnings()
 
 import logging
 from datetime import datetime, timedelta
@@ -36,7 +33,10 @@ class BaostockKlineFetcher:
                 return False
             self._logged_in = True
             return True
-        except Exception as e:
+        except (ImportError, ConnectionError) as e:
+            logger.error(f"Baostock connection error: {e}")
+            return False
+        except (ValueError, RuntimeError) as e:
             logger.error(f"Baostock login error: {e}")
             return False
 
@@ -48,7 +48,9 @@ class BaostockKlineFetcher:
             if self._logged_in:
                 bs.logout()
                 self._logged_in = False
-        except Exception as e:
+        except (ImportError, ConnectionError) as e:
+            logger.warning(f"Baostock logout connection error: {e}")
+        except (ValueError, RuntimeError) as e:
             logger.warning(f"Baostock logout error: {e}")
 
     def fetch_kline(self, code: str, days: int = 60) -> dict[str, Any] | None:
@@ -91,7 +93,10 @@ class BaostockKlineFetcher:
                 "data": df.to_dict("records"),
                 "source": "baostock",
             }
-        except Exception as e:
+        except (ValueError, KeyError, TypeError) as e:
+            logger.error(f"Baostock data parsing error: {e}")
+            return None
+        except (ConnectionError, RuntimeError, OSError) as e:
             logger.error(f"Baostock fetch error: {e}")
             return None
 
@@ -123,7 +128,10 @@ class AkshareKlineFetcher:
                 "data": df.to_dict("records"),
                 "source": "akshare",
             }
-        except Exception as e:
+        except (ValueError, KeyError, TypeError) as e:
+            logger.error(f"AkShare data parsing error: {e}")
+            return None
+        except (ConnectionError, RuntimeError, OSError) as e:
             logger.error(f"AkShare fetch error: {e}")
             return None
 
@@ -171,6 +179,9 @@ class TushareKlineFetcher:
                 "data": df.to_dict("records"),
                 "source": "tushare",
             }
-        except Exception as e:
+        except (ValueError, KeyError, TypeError) as e:
+            logger.error(f"Tushare data parsing error: {e}")
+            return None
+        except (ConnectionError, RuntimeError, OSError) as e:
             logger.error(f"Tushare fetch error: {e}")
             return None

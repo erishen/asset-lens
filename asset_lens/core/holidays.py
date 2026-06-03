@@ -5,6 +5,7 @@
 
 import logging
 from datetime import date, datetime, timedelta
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ class HolidayConfig:
     def __init__(
         self,
         year: int,
-        holidays: list[dict],
+        holidays: list[dict[str, Any]],
         working_weekends: list[str] | None = None,
         post_holiday_trading_suspensions: list[str] | None = None,
     ):
@@ -158,7 +159,7 @@ def is_fund_trading_day(d: date) -> bool:
 def calculate_working_days(
     start: date,
     end: date,
-    stop_periods: list[tuple] | None = None,
+    stop_periods: list[tuple[date, date]] | None = None,
 ) -> int:
     if start > end:
         return 0
@@ -186,7 +187,7 @@ def calculate_working_days(
 def calculate_fund_trading_days(
     start: date,
     end: date,
-    stop_periods: list[tuple] | None = None,
+    stop_periods: list[tuple[date, date]] | None = None,
 ) -> int:
     if start > end:
         return 0
@@ -211,8 +212,8 @@ def calculate_fund_trading_days(
     return count
 
 
-def parse_stop_periods(record_str: str) -> list[tuple]:
-    stop_periods: list[tuple] = []
+def parse_stop_periods(record_str: str) -> list[tuple[date, date]]:
+    stop_periods: list[tuple[date, date]] = []
 
     if not record_str:
         return stop_periods
@@ -234,14 +235,14 @@ def parse_stop_periods(record_str: str) -> list[tuple]:
                     end = _parse_date_string(range_parts[1].strip())
                     if start and end:
                         stop_periods.append((start, end))
-                except Exception as e:
+                except ValueError as e:
                     logger.debug(f"忽略异常: {e}")
         else:
             try:
                 single_date = _parse_date_string(date_range)
                 if single_date:
                     stop_periods.append((single_date, single_date))
-            except Exception as e:
+            except ValueError as e:
                 logger.debug(f"忽略异常: {e}")
 
     return stop_periods
