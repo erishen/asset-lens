@@ -452,7 +452,7 @@ def _execute_buy_signals(buy_signals, pool, remaining_buy, remaining_position, m
 
     for signal in buy_signals:
         if bought >= remaining_buy:
-            click.echo(f"⏭️ 今日买入数量已达上限")
+            click.echo("⏭️ 今日买入数量已达上限")
             break
 
         price = signal["current_price"]

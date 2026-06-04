@@ -5,10 +5,10 @@ from typing import Any
 import pandas as pd
 
 from ..config import config
-from ..utils.json_cache import read_json_cache, write_json_cache
 from ..trading.stock_pool import StockPool
+from ..utils.json_cache import read_json_cache, write_json_cache
 from .ai_trader_execution import AITraderExecutionMixin
-from .ai_trader_models import AITradeRecord, TradeSignal
+from .ai_trader_models import TradeSignal
 
 logger = logging.getLogger(__name__)
 
@@ -81,17 +81,17 @@ class AISimulatedTrader(AITraderExecutionMixin):
         self.market_condition = analysis.condition.value
         self.current_strategy = analysis.suggested_strategy
 
-        console_print(f"  市场状态: {self.market_condition.upper()}")
-        console_print(f"  风险等级: {analysis.risk_level}")
-        console_print(f"  建议策略: {self.current_strategy}")
+        logger.info(f"  市场状态: {self.market_condition.upper()}")
+        logger.info(f"  风险等级: {analysis.risk_level}")
+        logger.info(f"  建议策略: {self.current_strategy}")
 
         strategy_config = AdaptiveStrategyConfig.get_config(analysis.condition)
 
         logger.info("第二步: 筛选候选股票...")
         candidates = self._get_candidate_stocks(strategy_config)
-        console_print(f"  候选股票: {len(candidates)} 只")
+        logger.info(f"  候选股票: {len(candidates)} 只")
 
-        console_print("\n🔮 第三步: ML预测生成信号...")
+        logger.info("\n🔮 第三步: ML预测生成信号...")
         signals = self._generate_signals(candidates, strategy_config, analysis)
 
         for signal in signals:

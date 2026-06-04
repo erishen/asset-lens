@@ -213,7 +213,7 @@ class ReportFormatMixin:
             console.print(f"• 当前资金增值效率: [cyan]{efficiency['capital_efficiency']}[/cyan]")
             console.print(f"• 年化资金增长率: [cyan]{efficiency['annual_growth_rate']}[/cyan]")
 
-        logger.info(f"" + "=" * 60)
+        logger.info("" + "=" * 60)
 
     def _format_money_value(self, value: str) -> str:
         try:

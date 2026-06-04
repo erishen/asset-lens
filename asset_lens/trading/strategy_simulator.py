@@ -4,10 +4,10 @@ from typing import Any
 
 from .simulator_models import (
     RebalanceFrequency,
-    SimulationConfig,
-    SimulationResult,
     SimulatedPosition,
     SimulatedTrade,
+    SimulationConfig,
+    SimulationResult,
 )
 
 
@@ -391,7 +391,6 @@ __all__ = [
     "SimulatedTrade",
     "SimulationConfig",
     "SimulationResult",
-    "StopLossType",
     "StrategySimulator",
     "strategy_simulator",
 ]

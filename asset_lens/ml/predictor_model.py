@@ -149,7 +149,6 @@ class PredictorModelMixin:
     def _create_stacking_model(self) -> Any:
         from sklearn.ensemble import StackingClassifier
         from sklearn.linear_model import LogisticRegression
-        from sklearn.model_selection import cross_val_score
 
         estimators = []
 
@@ -173,7 +172,7 @@ class PredictorModelMixin:
 
         return StackingClassifier(estimators=estimators, final_estimator=LogisticRegression(), cv=3)
 
-    def fit(self, X: pd.DataFrame, y: pd.Series) -> "StockPredictor":
+    def fit(self, X: pd.DataFrame, y: pd.Series) -> "PredictorModelMixin":
         if self.model_type == "ensemble":
             self._ensemble_models = {}
             for name, model in self._create_ensemble_models("classification").items():

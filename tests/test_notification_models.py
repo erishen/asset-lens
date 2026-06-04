@@ -3,7 +3,6 @@ from asset_lens.notification.notification_models import (
     EnhancedNotificationMessage,
     NotificationConfig,
 )
-from asset_lens.notification.service import NotificationMessage
 
 
 class TestEnhancedNotificationChannel:

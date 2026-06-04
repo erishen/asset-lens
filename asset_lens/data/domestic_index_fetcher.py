@@ -1,10 +1,7 @@
 import logging
-import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from typing import Any
-
-from ..utils.http_client import HTTPClient
 
 logger = logging.getLogger(__name__)
 

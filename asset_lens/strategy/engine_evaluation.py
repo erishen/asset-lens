@@ -1,3 +1,4 @@
+import contextlib
 import logging
 from typing import Any
 
@@ -11,7 +12,7 @@ class StrategyEvaluationMixin:
             return {"error": f"策略 {strategy_name} 不存在"}
 
         conditions_met = 0
-        total_conditions = len(strategy.buy_conditions)
+        len(strategy.buy_conditions)
         details = []
 
         for condition in strategy.buy_conditions:
@@ -206,9 +207,9 @@ class StrategyEvaluationMixin:
         param_names = list(param_ranges.keys())
 
         for combo in param_combinations:
-            params = dict(zip(param_names, combo))
+            params = dict(zip(param_names, combo, strict=False))
 
-            modified_strategy = self._apply_params(strategy, params)
+            self._apply_params(strategy, params)
 
             screened = self.screen_stocks(stocks, strategy_name, min_score=0.3)
 
@@ -237,7 +238,6 @@ class StrategyEvaluationMixin:
     def _generate_param_ranges(self, strategy: Any) -> dict[str, list]:
         ranges = {}
         for i, condition in enumerate(strategy.buy_conditions):
-            field = condition.field
             value = condition.value
 
             if isinstance(value, (int, float)):
@@ -283,10 +283,8 @@ class StrategyEvaluationMixin:
         for stock in all_stocks:
             ret = stock.get(target_field, 0)
             if ret is not None:
-                try:
+                with contextlib.suppress(ValueError, TypeError):
                     all_returns.append(float(ret))
-                except (ValueError, TypeError):
-                    pass
 
                 if stock.get("code", "") in screened_codes:
                     screened_returns.append(float(ret))
@@ -330,7 +328,7 @@ class StrategyEvaluationMixin:
         weights = [w / total_weight for w in weights]
 
         combined_conditions = []
-        for strategy, weight in zip(strategies, weights):
+        for strategy, weight in zip(strategies, weights, strict=False):
             for condition in strategy.buy_conditions:
                 combined_condition = {
                     "name": condition.name,
@@ -376,7 +374,7 @@ class StrategyEvaluationMixin:
                 total = sum(weights)
                 w = [wt / total for wt in weights]
 
-            combined_score = sum(s * w for s, w in zip(stock_scores.values(), w))
+            combined_score = sum(s * w for s, w in zip(stock_scores.values(), w, strict=False))
 
             best_strategy = max(stock_scores, key=stock_scores.get) if stock_scores else None
 

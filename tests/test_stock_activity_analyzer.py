@@ -2,7 +2,6 @@
 Tests for stock_activity_analyzer.py
 """
 
-import json
 import tempfile
 from pathlib import Path
 from unittest.mock import patch

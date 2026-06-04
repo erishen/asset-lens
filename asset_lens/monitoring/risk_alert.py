@@ -12,13 +12,6 @@ from .risk_alert_checks import AlertLevel, RiskAlertChecksMixin
 logger = logging.getLogger(__name__)
 
 
-class AlertLevel(Enum):
-    INFO = "info"
-    WARNING = "warning"
-    DANGER = "danger"
-    CRITICAL = "critical"
-
-
 class RiskAlertType(Enum):
     MAX_DRAWDOWN = "max_drawdown"
     VOLATILITY = "volatility"

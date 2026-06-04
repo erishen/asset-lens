@@ -396,4 +396,6 @@ class SellRecord:
         }
 
 
-from .portfolio import Portfolio
+from .portfolio import Portfolio  # noqa: E402
+
+

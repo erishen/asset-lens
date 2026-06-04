@@ -1,3 +1,4 @@
+import json
 import logging
 import time
 from datetime import datetime
@@ -157,7 +158,7 @@ class StockHistoryCacheMixin:
         total_klines = 0
         sources: dict[str, int] = {}
 
-        for code, data in cache.items():
+        for data in cache.values():
             klines = data.get("klines", [])
             if klines:
                 with_klines += 1

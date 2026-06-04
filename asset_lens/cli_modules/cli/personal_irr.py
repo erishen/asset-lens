@@ -3,7 +3,6 @@ from decimal import Decimal
 from typing import Any
 
 import click
-from rich.console import Console
 
 from asset_lens.cli_modules.cli.analyze_core import _get_data_dir
 
@@ -82,7 +81,7 @@ def register_personal_irr_command(cli: click.Group) -> None:
 
             if data_dir:
                 try:
-                    rates = CSVParser.get_exchange_rates(data_dir)
+                    CSVParser.get_exchange_rates(data_dir)
                     # rates[0]=USD, rates[1]=HKD 汇率已读取
                 except (ValueError, TypeError) as e:
                     logger.debug("汇率参数解析失败: %s", e)

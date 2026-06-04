@@ -56,7 +56,7 @@ def register_db_sync_commands(db_group: click.Group) -> None:
         migration = DataMigration()
         result = migration.fetch_and_store_history(codes=missing_codes, days=days, data_source=source, delay=delay)
 
-        click.echo(f"\n📊 更新结果:")
+        click.echo("\n📊 更新结果:")
         click.echo(f"   ✅ 成功: {result.get('success', 0)}")
         click.echo(f"   ❌ 失败: {result.get('failed', 0)}")
         click.echo(f"   📈 K线总数: {result.get('total_klines', 0)}")
@@ -88,7 +88,7 @@ def register_db_sync_commands(db_group: click.Group) -> None:
             updated = sync_result.get("updated", 0)
             failed = sync_result.get("failed", 0)
 
-            click.echo(f"\n📊 同步结果:")
+            click.echo("\n📊 同步结果:")
             click.echo(f"   ✅ 新同步: {synced} 只股票")
             click.echo(f"   🔄 已更新: {updated} 只股票")
             click.echo(f"   ❌ 失败: {failed} 只股票")

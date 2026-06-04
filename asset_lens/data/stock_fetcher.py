@@ -1,13 +1,9 @@
 import logging
-import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-import requests
-
 from ..config import config
-from ..utils.http_client import get_session_without_proxy, with_retry
 from .fetchers.base import FetcherCacheMixin
 from .stock_fetcher_sources import StockFetcherSourcesMixin
 

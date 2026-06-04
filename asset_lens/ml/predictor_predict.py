@@ -1,7 +1,6 @@
 import logging
 from typing import Any
 
-import numpy as np
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -35,15 +34,9 @@ class PredictorPredictMixin:
 
         confidence = abs(up_prob - 0.5) * 2
 
-        if hasattr(self, "_bullish_threshold"):
-            bullish_threshold = self._bullish_threshold
-        else:
-            bullish_threshold = 0.55
+        bullish_threshold = self._bullish_threshold if hasattr(self, "_bullish_threshold") else 0.55
 
-        if up_prob > bullish_threshold:
-            expected_return = (up_prob - 0.5) * 10
-        else:
-            expected_return = -(0.5 - up_prob) * 10
+        expected_return = (up_prob - 0.5) * 10 if up_prob > bullish_threshold else -(0.5 - up_prob) * 10
 
         return PredictionResult(
             code=code,

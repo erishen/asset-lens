@@ -79,7 +79,7 @@ class RealtimePnlConfigMixin:
             self._fund_codes_map = {}
             return {}
 
-        except (json.JSONDecodeError, ValueError, TypeError) as e:
+        except (ValueError, TypeError) as e:
             logger.error(
                 f"加载基金代码配置时发生未知错误: {e}",
                 exc_info=True,
@@ -158,7 +158,7 @@ class RealtimePnlConfigMixin:
             self._stock_codes_map = {}
             return {}
 
-        except (json.JSONDecodeError, ValueError, TypeError) as e:
+        except (ValueError, TypeError) as e:
             logger.error(
                 f"加载股票代码配置时发生未知错误: {e}",
                 exc_info=True,

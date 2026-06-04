@@ -231,7 +231,7 @@ def main():
 
     elif args.mode == "status":
         summary = updater.get_update_summary()
-        logger.info(f" 基本面数据更新状态:")
+        logger.info(" 基本面数据更新状态:")
         logger.info("-" * 40)
         for key, value in summary.items():
             logger.info(f"  {key}: {value}")

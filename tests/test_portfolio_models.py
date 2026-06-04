@@ -1,7 +1,7 @@
 from asset_lens.analysis.portfolio_models import (
     HealthLevel,
-    Position,
     PortfolioHealth,
+    Position,
     SectorAllocation,
     StockDiagnosis,
     TrendDirection,

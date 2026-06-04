@@ -3,7 +3,10 @@ Stock data sources for asset-lens.
 股票数据源模块 - 处理不同数据源的数据获取
 """
 
+import logging
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 def fetch_stocks_baostock() -> list[dict[str, Any]]:

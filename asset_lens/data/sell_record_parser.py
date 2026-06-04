@@ -3,11 +3,14 @@
 解析卖出记录-表格 1.csv 文件
 """
 
+import logging
 from pathlib import Path
 
 from ..core.exceptions import DataLoadError
 from ..data.models import RiskLevel, SellRecord
 from .parser_utils import SELL_RECORD_FIELDS, parse_date, parse_decimal
+
+logger = logging.getLogger(__name__)
 
 
 class SellRecordParser:

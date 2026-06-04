@@ -107,7 +107,7 @@ class TestSignalPusher:
             priority=Priority.HIGH,
         )
 
-        with patch("asset_lens.analysis.signal_pusher.logger") as mock_logger:
+        with patch("asset_lens.analysis.signal_pusher.logger"):
             result = pusher._push_to_console(signal)
 
         assert result is True

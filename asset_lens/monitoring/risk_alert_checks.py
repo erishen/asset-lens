@@ -2,14 +2,12 @@ import logging
 from enum import Enum
 from typing import Any
 
-from ..config import config
-
 logger = logging.getLogger(__name__)
 
 
 class RiskAlertChecksMixin:
     def check_max_drawdown(self, current_drawdown: float, portfolio_name: str = "default") -> Any | None:
-        from .risk_alert import RiskAlertItem, RiskAlertType
+        from .risk_alert import RiskAlertType
 
         if abs(current_drawdown) >= self.config.max_drawdown_threshold:
             level = AlertLevel.CRITICAL if abs(current_drawdown) >= self.config.max_drawdown_threshold * 1.5 else AlertLevel.WARNING
@@ -24,7 +22,7 @@ class RiskAlertChecksMixin:
         return None
 
     def check_volatility(self, current_volatility: float, portfolio_name: str = "default") -> Any | None:
-        from .risk_alert import RiskAlertItem, RiskAlertType
+        from .risk_alert import RiskAlertType
 
         if current_volatility >= self.config.volatility_threshold:
             return self._create_alert(
@@ -37,7 +35,7 @@ class RiskAlertChecksMixin:
         return None
 
     def check_concentration(self, holdings: dict[str, float]) -> Any | None:
-        from .risk_alert import RiskAlertItem, RiskAlertType
+        from .risk_alert import RiskAlertType
 
         if not holdings:
             return None
@@ -67,7 +65,7 @@ class RiskAlertChecksMixin:
         stock_name: str = "",
         stock_code: str = "",
     ) -> Any | None:
-        from .risk_alert import RiskAlertItem, RiskAlertType
+        from .risk_alert import RiskAlertType
 
         if cost_price <= 0:
             return None
@@ -91,7 +89,7 @@ class RiskAlertChecksMixin:
         stock_name: str = "",
         stock_code: str = "",
     ) -> Any | None:
-        from .risk_alert import RiskAlertItem, RiskAlertType
+        from .risk_alert import RiskAlertType
 
         if cost_price <= 0:
             return None
@@ -109,7 +107,7 @@ class RiskAlertChecksMixin:
         return None
 
     def check_position_limit(self, current_position: float) -> Any | None:
-        from .risk_alert import RiskAlertItem, RiskAlertType
+        from .risk_alert import RiskAlertType
 
         if current_position >= self.config.position_limit:
             return self._create_alert(
@@ -127,7 +125,7 @@ class RiskAlertChecksMixin:
         stock_code: str,
         change_percent: float,
     ) -> Any | None:
-        from .risk_alert import RiskAlertItem, RiskAlertType
+        from .risk_alert import RiskAlertType
 
         if abs(change_percent) >= self.config.price_change_threshold:
             direction = "上涨" if change_percent > 0 else "下跌"
@@ -143,7 +141,7 @@ class RiskAlertChecksMixin:
         return None
 
     def check_market_regime(self, regime: str, description: str = "") -> Any | None:
-        from .risk_alert import RiskAlertItem, RiskAlertType
+        from .risk_alert import RiskAlertType
 
         if regime in ["crash", "extreme_volatility"]:
             return self._create_alert(

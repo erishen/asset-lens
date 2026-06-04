@@ -9,6 +9,7 @@ Market environment analyzer for asset-lens.
 4. 参数动态调整 - 根据环境调整策略参数
 """
 
+import json
 import logging
 from dataclasses import dataclass
 from datetime import datetime

@@ -166,7 +166,7 @@ class MarketStockFetcher(
         except (ValueError, KeyError, TypeError) as e:
             logger.error(f"获取A股股票列表数据解析失败: {e}")
             return []
-        except (ValueError, KeyError, RuntimeError, ConnectionError) as e:
+        except (RuntimeError, ConnectionError) as e:
             logger.error(f"获取A股股票列表失败: {e}")
             return []
 
@@ -180,7 +180,7 @@ class MarketStockFetcher(
                 return all_stocks
         except (ImportError, ConnectionError) as e:
             logger.warning(f"Tushare 连接/导入失败: {e}")
-        except (RuntimeError, ConnectionError) as e:
+        except RuntimeError as e:
             logger.warning(f"Tushare 获取失败: {e}")
 
         logger.info("Tushare 获取失败，尝试腾讯财经...")
@@ -191,7 +191,7 @@ class MarketStockFetcher(
                 return all_stocks
         except (ImportError, ConnectionError) as e:
             logger.warning(f"腾讯财经连接/导入失败: {e}")
-        except (RuntimeError, ConnectionError, ValueError) as e:
+        except (RuntimeError, ValueError) as e:
             logger.warning(f"腾讯财经获取失败: {e}")
 
         logger.info("腾讯财经获取失败，尝试 AkShare...")
@@ -213,7 +213,7 @@ class MarketStockFetcher(
                 return all_stocks
         except (ImportError, ValueError) as e:
             logger.warning(f"Efinance 导入/数据解析失败: {e}")
-        except (RuntimeError, ConnectionError, ValueError) as e:
+        except (RuntimeError, ConnectionError) as e:
             logger.warning(f"Efinance 获取失败: {e}")
 
         logger.info("Efinance 获取失败，尝试 Baostock...")
@@ -224,7 +224,7 @@ class MarketStockFetcher(
                 return all_stocks
         except (ImportError, ConnectionError) as e:
             logger.warning(f"Baostock 连接/导入失败: {e}")
-        except (RuntimeError, ConnectionError) as e:
+        except RuntimeError as e:
             logger.warning(f"Baostock 获取失败: {e}")
 
         logger.error("所有数据源获取失败")

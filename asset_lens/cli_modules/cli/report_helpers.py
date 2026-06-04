@@ -4,7 +4,6 @@ from typing import Any, cast
 from .report_fund_evaluation import (
     _evaluate_fund_with_peers,
     _get_fund_category,
-    _get_fund_type_threshold,
 )
 
 logger = logging.getLogger(__name__)

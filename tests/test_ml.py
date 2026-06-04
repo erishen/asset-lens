@@ -80,7 +80,8 @@ class TestMLAITrader:
 
     def test_module_import(self):
         """测试模块导入"""
-        from asset_lens.ml.ai_trader import AISimulatedTrader, AITradeRecord, TradeSignal
+        from asset_lens.ml.ai_trader import AISimulatedTrader, TradeSignal
+        from asset_lens.ml.ai_trader_models import AITradeRecord
 
         assert AISimulatedTrader is not None
         assert TradeSignal is not None

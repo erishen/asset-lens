@@ -1,9 +1,9 @@
 from datetime import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
-from asset_lens.trading.stock_pool_strategy import StockPoolStrategyMixin, StockPosition, StockPoolConfig
+from asset_lens.trading.stock_pool_strategy import StockPoolConfig, StockPoolStrategyMixin, StockPosition
 
 
 class FakeStockPool(StockPoolStrategyMixin):
