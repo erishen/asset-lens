@@ -67,9 +67,11 @@ class TestFetchHistoryBaostock:
 
     def test_fetch_history_baostock_no_module(self, fetcher):
         """Test fetch_history_baostock without baostock module"""
-        fetcher._baostock = None
-
-        with patch.object(type(fetcher), "baostock", property(lambda self: None)):
+        with patch.dict("sys.modules", {"baostock": None}):
+            # Clear cached import in source module
+            source_mod = __import__("asset_lens.data.stock_history_sources", fromlist=["stock_history_sources"])
+            if hasattr(source_mod, "bs"):
+                delattr(source_mod, "bs")
             result = fetcher.fetch_history_baostock("sh600519", 60)
             assert result is None
 
@@ -233,7 +235,7 @@ class TestFetchHistoryTushare:
         mock_pro.daily.return_value = mock_df
         mock_ts.pro_api.return_value = mock_pro
 
-        with patch.object(type(fetcher), "tushare", property(lambda self: mock_ts)):
+        with patch.dict("sys.modules", {"tushare": mock_ts}):
             result = fetcher.fetch_history_tushare("sh600519", 60)
             assert result is None
 
@@ -242,7 +244,7 @@ class TestFetchHistoryTushare:
         mock_ts = MagicMock()
         mock_ts.pro_api.side_effect = RuntimeError("API error")
 
-        with patch.object(type(fetcher), "tushare", property(lambda self: mock_ts)):
+        with patch.dict("sys.modules", {"tushare": mock_ts}):
             result = fetcher.fetch_history_tushare("sh600519", 60)
             assert result is None
 
