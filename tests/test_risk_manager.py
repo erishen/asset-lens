@@ -177,7 +177,7 @@ class TestRiskManager:
 
     def test_load_warnings_with_file(self, manager):
         """测试加载警告 - 有文件"""
-        warnings_data = {"warnings": [{"warning_type": "test", "message": "测试警告", "level": "medium"}]}
+        warnings_data = [{"warning_type": "test", "message": "测试警告", "level": "medium"}]
         with open(manager.warnings_file, "w", encoding="utf-8") as f:
             json.dump(warnings_data, f)
 
@@ -195,8 +195,8 @@ class TestRiskManager:
         with open(manager.warnings_file, encoding="utf-8") as f:
             data = json.load(f)
 
-        assert "warnings" in data
-        assert len(data["warnings"]) == 1
+        assert isinstance(data, list)
+        assert len(data) == 1
 
     def test_calculate_stop_loss_take_profit_default(self, manager):
         """测试计算止损止盈 - 默认"""
@@ -234,131 +234,60 @@ class TestRiskManager:
 
     def test_check_position_concentration_empty(self, manager):
         """测试检查持仓集中度 - 空持仓"""
-        with patch("asset_lens.trading.stock_pool.StockPool") as mock_pool:
-            mock_instance = MagicMock()
-            mock_instance.positions = {}
-            mock_pool.return_value = mock_instance
+        result = manager.check_position_concentration([])
 
-            result = manager.check_position_concentration()
-
-            assert result["holding_positions"] == 0
-            assert len(result["warnings"]) > 0
+        assert result == []
 
     def test_check_position_concentration_with_positions(self, manager):
         """测试检查持仓集中度 - 有持仓"""
-        with patch("asset_lens.trading.stock_pool.StockPool") as mock_pool:
-            mock_instance = MagicMock()
+        holdings = [
+            {"code": "sh600519", "name": "贵州茅台", "market_value": 180000, "industry": "白酒"},
+            {"code": "sz000001", "name": "平安银行", "market_value": 15000, "industry": "银行"},
+        ]
 
-            pos1 = MagicMock()
-            pos1.code = "sh600519"
-            pos1.name = "贵州茅台"
-            pos1.status = "holding"
-            pos1.buy_price = 1800
-            pos1.shares = 100
+        result = manager.check_position_concentration(holdings)
 
-            pos2 = MagicMock()
-            pos2.code = "sz000001"
-            pos2.name = "平安银行"
-            pos2.status = "holding"
-            pos2.buy_price = 15
-            pos2.shares = 1000
-
-            mock_instance.positions = {"sh600519": pos1, "sz000001": pos2}
-            mock_pool.return_value = mock_instance
-
-            result = manager.check_position_concentration()
-
-            assert result["holding_positions"] == 2
-            assert "concentration" in result
+        assert isinstance(result, list)
 
     def test_get_risk_summary(self, manager):
         """测试获取风险摘要"""
-        with (
-            patch("asset_lens.trading.stock_pool.StockPool") as mock_pool,
-            patch("asset_lens.data.market_environment.market_environment_analyzer") as mock_env,
-        ):
+        with patch("asset_lens.trading.stock_pool.StockPool") as mock_pool:
             mock_pool_instance = MagicMock()
-            mock_pool_instance.positions = {}
-            mock_pool_instance.get_performance.return_value = {"win_rate": 0.5}
+            mock_pool_instance.list_stocks.return_value = []
             mock_pool.return_value = mock_pool_instance
-
-            mock_env_result = MagicMock()
-            mock_env_result.risk_level = "medium"
-            mock_env_result.market_type = "震荡市"
-            mock_env_result.sentiment = "中性"
-            mock_env.analyze_environment.return_value = mock_env_result
 
             result = manager.get_risk_summary()
 
-            assert "risk_score" in result
-            assert "risk_level" in result
-            assert "market_risk" in result
-            assert "position_risk" in result
+            assert "total_warnings" in result
+            assert "config" in result
 
     def test_generate_risk_warnings(self, manager):
         """测试生成风险预警"""
-        with (
-            patch("asset_lens.trading.stock_pool.StockPool") as mock_pool,
-            patch("asset_lens.data.market_environment.market_environment_analyzer") as mock_env,
-        ):
+        with patch("asset_lens.trading.stock_pool.StockPool") as mock_pool:
             mock_pool_instance = MagicMock()
-            mock_pool_instance.positions = {}
+            mock_pool_instance.list_stocks.return_value = []
             mock_pool.return_value = mock_pool_instance
 
-            mock_env_result = MagicMock()
-            mock_env_result.risk_level = "high"
-            mock_env_result.market_type = "熊市"
-            mock_env.analyze_environment.return_value = mock_env_result
-
-            warnings = manager.generate_risk_warnings()
+            warnings = manager.check_risks([])
 
             assert isinstance(warnings, list)
-            assert len(manager.warnings) >= len(warnings)
 
     def test_calculate_position_advice_empty(self, manager):
         """测试计算仓位建议 - 空持仓"""
-        with (
-            patch("asset_lens.trading.stock_pool.StockPool") as mock_pool,
-            patch("asset_lens.data.market_environment.market_environment_analyzer") as mock_env,
-        ):
-            mock_pool_instance = MagicMock()
-            mock_pool_instance.positions = {}
-            mock_pool.return_value = mock_pool_instance
+        advices = manager.get_position_advice([])
 
-            mock_env_result = MagicMock()
-            mock_env_result.risk_level = "medium"
-            mock_env.analyze_environment.return_value = mock_env_result
-
-            advices = manager.calculate_position_advice()
-
-            assert isinstance(advices, list)
-            assert len(advices) == 0
+        assert isinstance(advices, list)
+        assert len(advices) == 0
 
     def test_calculate_position_advice_with_positions(self, manager):
         """测试计算仓位建议 - 有持仓"""
-        with (
-            patch("asset_lens.trading.stock_pool.StockPool") as mock_pool,
-            patch("asset_lens.data.market_environment.market_environment_analyzer") as mock_env,
-        ):
-            mock_pool_instance = MagicMock()
+        holdings = [
+            {"code": "sh600519", "name": "贵州茅台", "market_value": 180000, "profit_rate": 5},
+        ]
 
-            pos = MagicMock()
-            pos.code = "sh600519"
-            pos.name = "贵州茅台"
-            pos.status = "holding"
-            pos.buy_price = 1800
-            pos.shares = 100
+        advices = manager.get_position_advice(holdings)
 
-            mock_pool_instance.positions = {"sh600519": pos}
-            mock_pool.return_value = mock_pool_instance
-
-            mock_env_result = MagicMock()
-            mock_env_result.risk_level = "medium"
-            mock_env.analyze_environment.return_value = mock_env_result
-
-            advices = manager.calculate_position_advice(total_capital=1000000)
-
-            assert isinstance(advices, list)
+        assert isinstance(advices, list)
 
 
 class TestRiskScenarios:

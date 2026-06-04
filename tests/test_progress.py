@@ -2,6 +2,8 @@
 Tests for progress module.
 """
 
+from unittest.mock import patch
+
 from asset_lens.utils.progress import ProgressBar, Spinner, TaskProgress, create_progress_bar
 
 
@@ -30,13 +32,12 @@ class TestProgressBar:
 
         assert bar.current == 1
 
-    def test_finish(self, capsys):
+    def test_finish(self):
         """Test finish"""
         bar = ProgressBar(total=10)
-        bar.finish("Done!")
-
-        captured = capsys.readouterr()
-        assert "Done!" in captured.out
+        with patch("asset_lens.utils.progress.logger") as mock_logger:
+            bar.finish("Done!")
+            mock_logger.info.assert_called_with("Done!")
 
     def test_custom_chars(self):
         """Test custom characters"""
@@ -72,13 +73,12 @@ class TestSpinner:
 
         assert spinner.current == 1
 
-    def test_finish(self, capsys):
+    def test_finish(self):
         """Test finish"""
         spinner = Spinner("Loading")
-        spinner.finish("Done!")
-
-        captured = capsys.readouterr()
-        assert "Done!" in captured.out
+        with patch("asset_lens.utils.progress.logger") as mock_logger:
+            spinner.finish("Done!")
+            mock_logger.info.assert_called_with("✓ Done!")
 
 
 class TestTaskProgress:
@@ -93,13 +93,13 @@ class TestTaskProgress:
         assert progress.current_task == 0
         assert len(progress.completed) == 0
 
-    def test_start_task(self, capsys):
+    def test_start_task(self):
         """Test start task"""
         progress = TaskProgress(["Task 1"])
-        progress.start_task("Task 1")
-
-        captured = capsys.readouterr()
-        assert "Task 1" in captured.out
+        with patch("asset_lens.utils.progress.logger") as mock_logger:
+            progress.start_task("Task 1")
+            mock_logger.info.assert_called_once()
+            assert "Task 1" in mock_logger.info.call_args[0][0]
 
     def test_complete_task(self, capsys):
         """Test complete task"""
@@ -115,11 +115,13 @@ class TestTaskProgress:
 
         assert "Task 1" in progress.completed
 
-    def test_summary(self, capsys):
+    def test_summary(self):
         """Test summary"""
         progress = TaskProgress(["Task 1", "Task 2"])
         progress.completed = ["Task 1"]
-        progress.summary()
-
-        captured = capsys.readouterr()
-        assert "1/2" in captured.out
+        with patch("asset_lens.utils.progress.logger") as mock_logger:
+            progress.summary()
+            # summary calls logger.info multiple times
+            assert mock_logger.info.call_count >= 2
+            logged_text = " ".join(str(c[0][0]) for c in mock_logger.info.call_args_list)
+            assert "1/2" in logged_text

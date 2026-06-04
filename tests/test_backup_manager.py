@@ -14,9 +14,12 @@ from asset_lens.data.backup_manager import BackupManager
 @pytest.fixture
 def backup_manager(tmp_path):
     """创建备份管理器实例"""
+    from asset_lens.data.providers.cache import UnifiedCache
+
     manager = BackupManager()
     manager.backup_path = tmp_path
-    manager.config_file = tmp_path / "backup_config.json"
+    manager._cache = UnifiedCache(cache_dir=tmp_path)
+    manager.config = manager._load_config()
     return manager
 
 
@@ -26,7 +29,6 @@ class TestBackupManager:
     def test_init(self, backup_manager):
         """测试初始化"""
         assert backup_manager.backup_path is not None
-        assert backup_manager.config_file is not None
         assert isinstance(backup_manager.config, dict)
 
     def test_load_config_default(self, backup_manager):
@@ -44,7 +46,9 @@ class TestBackupManager:
         """测试保存配置"""
         backup_manager._save_config()
 
-        assert backup_manager.config_file.exists()
+        # Verify config was saved by loading it back
+        loaded = backup_manager._cache.load_file(backup_manager._config_filename)
+        assert loaded is not None
 
     def test_create_backup_success(self, backup_manager, tmp_path):
         """测试创建备份 - 成功"""

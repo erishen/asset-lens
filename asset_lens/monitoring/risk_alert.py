@@ -128,7 +128,7 @@ class RiskAlertSystem(RiskAlertChecksMixin):
 
         suggestions = {
             RiskAlertType.MAX_DRAWDOWN: "建议降低仓位，检查止损设置",
-            RiskAlertType.HIGH_VOLATILITY: "建议减少高风险资产配置",
+            RiskAlertType.VOLATILITY: "建议减少高风险资产配置",
             RiskAlertType.CONCENTRATION: "建议分散投资，降低单一持仓比例",
             RiskAlertType.STOP_LOSS: "建议立即止损或设置自动止损",
             RiskAlertType.TAKE_PROFIT: "建议考虑部分止盈",

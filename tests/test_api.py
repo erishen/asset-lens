@@ -70,8 +70,32 @@ class TestPortfolioEndpoints:
 
     def test_get_portfolio_analysis(self, client, api_headers):
         """测试获取投资组合分析"""
-        response = client.get("/api/v1/portfolio/analysis", headers=api_headers)
-        assert response.status_code in [200, 404, 500]
+        from unittest.mock import MagicMock, patch
+
+        mock_product = MagicMock()
+        mock_product.name = "测试产品"
+        mock_product.current_amount = 10000
+        mock_product.initial_amount = 10000
+
+        mock_parser_cls = MagicMock()
+        mock_parser_instance = MagicMock()
+        mock_parser_instance.parse_csv_file.return_value = [mock_product]
+        mock_parser_cls.return_value = mock_parser_instance
+
+        mock_analysis = MagicMock()
+        mock_analysis.summary = "测试摘要"
+        mock_analysis.risk_assessment = "低风险"
+        mock_analysis.suggestions = ["建议1"]
+        mock_analysis.warnings = []
+        mock_analysis.score = 80
+
+        mock_analyzer_instance = MagicMock()
+        mock_analyzer_instance.analyze_portfolio.return_value = mock_analysis
+
+        with patch("asset_lens.data.csv_parser.CSVParser", mock_parser_cls):
+            with patch("asset_lens.core.ai_analyzer.ai_analyzer", mock_analyzer_instance):
+                response = client.get("/api/chat/portfolio", headers=api_headers)
+                assert response.status_code in [200, 404, 500]
 
 
 class TestRiskEndpoints:

@@ -50,7 +50,7 @@ class TestAssetLensClient:
         assert "timestamp" in result
 
     def test_get_fund_nav_error(self):
-        with patch("asset_lens.data.fund_fetcher.FundDataFetcher", side_effect=Exception("网络错误")):
+        with patch("asset_lens.data.fund_fetcher.FundDataFetcher", side_effect=RuntimeError("网络错误")):
             result = self.client.get_fund_nav("000001")
 
         assert result["success"] is False
@@ -71,7 +71,7 @@ class TestAssetLensClient:
         assert result["data"]["status"] == "healthy"
 
     def test_analyze_portfolio_error(self):
-        with patch("asset_lens.analysis.portfolio_analyzer.PortfolioAnalyzer", side_effect=Exception("分析失败")):
+        with patch("asset_lens.analysis.portfolio_analyzer.PortfolioAnalyzer", side_effect=RuntimeError("分析失败")):
             result = self.client.analyze_portfolio()
 
         assert result["success"] is False
@@ -99,7 +99,7 @@ class TestAssetLensClient:
         assert len(result["data"]) == 5
 
     def test_screen_stocks_error(self):
-        with patch("asset_lens.strategy.screener.StockScreener", side_effect=Exception("筛选失败")):
+        with patch("asset_lens.strategy.screener.StockScreener", side_effect=RuntimeError("筛选失败")):
             result = self.client.screen_stocks()
 
         assert result["success"] is False
@@ -128,7 +128,7 @@ class TestAssetLensClient:
         assert result["data"]["sharpe_ratio"] == 1.2
 
     def test_calculate_risk_metrics_error(self):
-        with patch("asset_lens.risk.risk_service.calculate_metrics", side_effect=Exception("计算失败")):
+        with patch("asset_lens.risk.risk_service.calculate_metrics", side_effect=RuntimeError("计算失败")):
             result = self.client.calculate_risk_metrics([])
 
         assert result["success"] is False

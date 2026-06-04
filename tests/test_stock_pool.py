@@ -309,12 +309,18 @@ class TestStrategyStockPool:
             },
         ]
 
-        result = pool.add_stocks_by_strategy(
-            strategy_name="value",
-            stocks=stocks,
-            min_score=60.0,
-            max_stocks=5,
-        )
+        with patch("asset_lens.strategy.engine.strategy_engine") as mock_engine:
+            mock_engine.screen_stocks.return_value = [
+                {"code": "sh600519", "name": "贵州茅台", "score": 85, "strategy_score": 85},
+                {"code": "sz000001", "name": "平安银行", "score": 75, "strategy_score": 75},
+            ]
+
+            result = pool.add_stocks_by_strategy(
+                strategy_name="value",
+                stocks=stocks,
+                min_score=60.0,
+                max_stocks=5,
+            )
 
         assert result["success"] is True
         assert result["strategy"] == "value"
@@ -337,13 +343,18 @@ class TestStrategyStockPool:
             },
         ]
 
-        result = pool.add_stocks_by_strategy(
-            strategy_name="value",
-            stocks=stocks,
-            min_score=60.0,
-            max_stocks=5,
-            auto_remove_low_score=True,
-        )
+        with patch("asset_lens.strategy.engine.strategy_engine") as mock_engine:
+            mock_engine.screen_stocks.return_value = [
+                {"code": "sh600519", "name": "贵州茅台", "score": 85, "strategy_score": 85},
+            ]
+
+            result = pool.add_stocks_by_strategy(
+                strategy_name="value",
+                stocks=stocks,
+                min_score=60.0,
+                max_stocks=5,
+                auto_remove_low_score=True,
+            )
 
         assert result["success"] is True
 
@@ -361,11 +372,16 @@ class TestStrategyStockPool:
             },
         ]
 
-        pool.add_stocks_by_strategy(
-            strategy_name="value",
-            stocks=stocks,
-            min_score=60.0,
-        )
+        with patch("asset_lens.strategy.engine.strategy_engine") as mock_engine:
+            mock_engine.screen_stocks.return_value = [
+                {"code": "sh600519", "name": "贵州茅台", "score": 85, "strategy_score": 85},
+            ]
+
+            pool.add_stocks_by_strategy(
+                strategy_name="value",
+                stocks=stocks,
+                min_score=60.0,
+            )
 
         result = pool.get_strategy_top_stocks("value", top_n=5)
 
@@ -385,11 +401,16 @@ class TestStrategyStockPool:
             },
         ]
 
-        pool.add_stocks_by_strategy(
-            strategy_name="value",
-            stocks=stocks,
-            min_score=60.0,
-        )
+        with patch("asset_lens.strategy.engine.strategy_engine") as mock_engine:
+            mock_engine.screen_stocks.return_value = [
+                {"code": "sh600519", "name": "贵州茅台", "score": 85, "strategy_score": 85},
+            ]
+
+            pool.add_stocks_by_strategy(
+                strategy_name="value",
+                stocks=stocks,
+                min_score=60.0,
+            )
 
         result = pool.clear_strategy_stocks("value")
 

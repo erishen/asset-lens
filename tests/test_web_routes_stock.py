@@ -5,7 +5,7 @@ Tests for Web Routes - Stock API.
 
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import FastAPI
@@ -60,12 +60,21 @@ class TestGetStockQuote:
     def test_get_stock_quote_success(self, client):
         """测试获取股票行情成功"""
         mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.text = 'var hq_str_sh600519="贵州茅台,1790.0,1755.0,1800.0,1820.0,1780.0,1785.0,1800.0,1000000,1800000000,500000,900000,200000,400000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2024-01-01,15:00:00";'
+        mock_response.status = 200
+        mock_response.text = AsyncMock(
+            return_value='var hq_str_sh600519="贵州茅台,1790.0,1755.0,1800.0,1820.0,1780.0,1785.0,1800.0,1000000,1800000000,500000,900000,200000,400000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2024-01-01,15:00:00";'
+        )
 
-        with patch("asset_lens.utils.http_client.safe_get") as mock_get:
-            mock_get.return_value = mock_response
+        class AsyncContextManager:
+            async def __aenter__(self):
+                return mock_response
+            async def __aexit__(self, *args):
+                pass
 
+        async def mock_async_get(url, **kwargs):
+            return AsyncContextManager()
+
+        with patch("asset_lens.web.aiohttp_session.async_get", side_effect=mock_async_get):
             response = client.get("/api/stock/quote/sh600519")
 
             assert response.status_code == 200
@@ -76,21 +85,38 @@ class TestGetStockQuote:
     def test_get_stock_quote_not_found(self, client):
         """测试股票不存在"""
         mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.text = 'var hq_str_sh999999="";'
+        mock_response.status = 200
+        mock_response.text = AsyncMock(return_value='var hq_str_sh999999="";')
 
-        with patch("asset_lens.utils.http_client.safe_get") as mock_get:
-            mock_get.return_value = mock_response
+        class AsyncContextManager:
+            async def __aenter__(self):
+                return mock_response
+            async def __aexit__(self, *args):
+                pass
 
+        async def mock_async_get(url, **kwargs):
+            return AsyncContextManager()
+
+        with patch("asset_lens.web.aiohttp_session.async_get", side_effect=mock_async_get):
             response = client.get("/api/stock/quote/sh999999")
 
             assert response.status_code == 404
 
     def test_get_stock_quote_service_unavailable(self, client):
         """测试服务不可用"""
-        with patch("asset_lens.utils.http_client.safe_get") as mock_get:
-            mock_get.return_value = None
+        mock_response = MagicMock()
+        mock_response.status = 500
 
+        class AsyncContextManager:
+            async def __aenter__(self):
+                return mock_response
+            async def __aexit__(self, *args):
+                pass
+
+        async def mock_async_get(url, **kwargs):
+            return AsyncContextManager()
+
+        with patch("asset_lens.web.aiohttp_session.async_get", side_effect=mock_async_get):
             response = client.get("/api/stock/quote/sh600519")
 
             assert response.status_code == 503

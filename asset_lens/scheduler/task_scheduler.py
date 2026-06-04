@@ -23,6 +23,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from ..utils.json_cache import read_json_cache, write_json_cache
+
 logger = logging.getLogger(__name__)
 
 

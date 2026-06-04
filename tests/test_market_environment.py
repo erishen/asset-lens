@@ -140,8 +140,7 @@ class TestMarketEnvironmentAnalyzer:
             ]
         }
 
-        with open(analyzer.cache_file, "w", encoding="utf-8") as f:
-            json.dump(history_data, f)
+        analyzer._cache.save_file("market_environment.json", history_data, ttl=0)
 
         analyzer._load_history()
         assert len(analyzer.history) == 1
@@ -168,7 +167,9 @@ class TestMarketEnvironmentAnalyzer:
 
         analyzer._save_history()
 
-        assert analyzer.cache_file.exists()
+        # Verify data was saved by loading it back
+        loaded = analyzer._cache.load_file("market_environment.json")
+        assert loaded is not None
 
     def test_get_latest_environment_empty(self, analyzer):
         """测试获取最新环境 - 空历史"""

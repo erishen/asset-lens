@@ -81,6 +81,19 @@ class StrategyEvaluationMixin:
         if value is None:
             return False
 
+        # Handle between operator separately since target is a list
+        if operator == "between":
+            try:
+                value = float(value)
+            except (ValueError, TypeError):
+                return False
+            if isinstance(target, (list, tuple)) and len(target) == 2:
+                try:
+                    return float(target[0]) <= value <= float(target[1])
+                except (ValueError, TypeError):
+                    return False
+            return False
+
         try:
             value = float(value)
             target = float(target)
@@ -105,10 +118,6 @@ class StrategyEvaluationMixin:
             return abs(value - target) < 0.001
         elif operator == "ne":
             return abs(value - target) >= 0.001
-        elif operator == "between":
-            if isinstance(target, (list, tuple)) and len(target) == 2:
-                return target[0] <= value <= target[1]
-            return False
 
         return False
 

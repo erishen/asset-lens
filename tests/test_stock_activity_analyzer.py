@@ -10,6 +10,7 @@ from unittest.mock import patch
 import pytest
 
 from asset_lens.data.stock_activity_analyzer import ActivityMetrics, ETFPrediction, StockActivityAnalyzer
+from asset_lens.data.stock_activity_core import ETF_MAPPING, INDEX_FUND_MAPPING
 
 
 class TestActivityMetrics:
@@ -91,21 +92,20 @@ class TestStockActivityAnalyzer:
     def test_init(self, analyzer):
         """测试初始化"""
         assert analyzer.cache_path is not None
-        assert analyzer.market_stock_cache_file is not None
 
     def test_index_fund_mapping(self, analyzer):
         """测试指数基金映射"""
-        assert "沪深300" in analyzer.INDEX_FUND_MAPPING
-        assert "中证500" in analyzer.INDEX_FUND_MAPPING
-        assert "创业板" in analyzer.INDEX_FUND_MAPPING
+        assert "沪深300" in INDEX_FUND_MAPPING
+        assert "中证500" in INDEX_FUND_MAPPING
+        assert "创业板" in INDEX_FUND_MAPPING
 
     def test_etf_mapping(self, analyzer):
         """测试 ETF 映射"""
-        assert "新能源" in analyzer.ETF_MAPPING
-        assert "半导体" in analyzer.ETF_MAPPING
-        assert "医药" in analyzer.ETF_MAPPING
-        assert "消费" in analyzer.ETF_MAPPING
-        assert "军工" in analyzer.ETF_MAPPING
+        assert "新能源" in ETF_MAPPING
+        assert "半导体" in ETF_MAPPING
+        assert "医药" in ETF_MAPPING
+        assert "消费" in ETF_MAPPING
+        assert "军工" in ETF_MAPPING
 
     def test_load_market_stocks_no_file(self, analyzer):
         """测试加载市场股票 - 文件不存在"""
@@ -119,8 +119,7 @@ class TestStockActivityAnalyzer:
                 {"code": "sh600519", "name": "贵州茅台", "change_percent": 1.5},
             ]
         }
-        with open(analyzer.market_stock_cache_file, "w", encoding="utf-8") as f:
-            json.dump(data, f)
+        analyzer._cache.save_file("market_stocks.json", data, ttl=86400)
 
         result = analyzer.load_market_stocks()
         assert len(result) == 1

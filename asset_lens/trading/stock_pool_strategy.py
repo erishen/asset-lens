@@ -59,7 +59,7 @@ class StockPoolStrategyMixin:
         for stock in stocks_to_add:
             code = stock.get("code", "")
             name = stock.get("name", "")
-            score = stock.get("strategy_score", 0)
+            score = stock.get("score", 0)
 
             if code in self.positions:
                 existing = self.positions[code]
