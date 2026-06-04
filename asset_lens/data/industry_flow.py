@@ -123,7 +123,7 @@ class IndustryFlowMixin:
                         if attempt < max_retries - 1:
                             continue
                         return None
-                except (ValueError, KeyError, ConnectionError, RuntimeError) as e:
+                except (ValueError, KeyError, ConnectionError, RuntimeError, TypeError) as e:
                     logger.warning(f"数据解析错误: {e}")
                     logger.warning("AkShare接口返回数据格式异常，可能是数据源问题")
                     if attempt < max_retries - 1:
