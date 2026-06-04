@@ -63,7 +63,7 @@ class TestSectorMLPredictor:
     def test_sector_ml_predictor_creation(self):
         predictor = SectorMLPredictor()
         assert predictor.model is None
-        assert isinstance(predictor.sector_history, dict)
+        assert isinstance(predictor.feature_names, list)
 
     def test_sector_etf_mapping(self):
         assert "科技" in SectorMLPredictor.SECTOR_ETF_MAPPING

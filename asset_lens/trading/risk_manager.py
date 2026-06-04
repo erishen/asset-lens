@@ -132,10 +132,10 @@ class RiskManager(RiskPositionMixin):
         self._save_warnings()
         return self.warnings
 
-    def get_risk_summary(self) -> dict[str, Any]:
+    def get_risk_summary(self, pool_name: str = "default") -> dict[str, Any]:
         from ..trading.stock_pool import StockPool
 
-        pool = StockPool()
+        pool = StockPool(pool_name)
         holdings = pool.list_stocks(status="holding")
 
         warnings = self.check_risks(holdings)

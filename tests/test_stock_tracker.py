@@ -103,7 +103,7 @@ class TestStockTracker:
     def test_init(self, tracker):
         """测试初始化"""
         assert tracker.pool_name == "test_pool"
-        assert tracker.tracker_path.exists()
+        assert tracker._cache is not None
         assert tracker.config is not None
 
     def test_load_tracker_no_file(self, tracker):
@@ -133,7 +133,9 @@ class TestStockTracker:
 
         tracker._save_tracker()
 
-        assert tracker.tracker_file.exists()
+        # Verify data was saved by loading it back
+        loaded_data = tracker._cache.load_file(tracker._tracker_filename)
+        assert loaded_data is not None
 
     def test_record_daily(self, tracker):
         """测试记录每日数据"""

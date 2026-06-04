@@ -194,7 +194,7 @@ class TestMarketSentimentAnalyzer:
     def test_analyze_index_trend_failure(self):
         """测试指数趋势分析 - 失败"""
 
-        with patch("requests.get", side_effect=Exception("Connection error")):
+        with patch("requests.get", side_effect=ConnectionError("Connection error")):
             analyzer = MarketSentimentAnalyzer()
             indicator = analyzer._analyze_index_trend()
             assert indicator.name == "指数趋势"

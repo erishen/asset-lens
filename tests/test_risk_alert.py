@@ -119,7 +119,7 @@ class TestRiskAlertSystem:
 
     def test_check_max_drawdown_above_threshold(self):
         """测试最大回撤超过阈值"""
-        from asset_lens.monitoring.risk_alert import AlertLevel, RiskAlertConfig, RiskAlertSystem
+        from asset_lens.monitoring.risk_alert import RiskAlertConfig, RiskAlertSystem
 
         config = RiskAlertConfig(max_drawdown_threshold=15.0, alert_cooldown_minutes=0)
         system = RiskAlertSystem(config)
@@ -127,7 +127,7 @@ class TestRiskAlertSystem:
         alert = system.check_max_drawdown(20.0)
 
         assert alert is not None
-        assert alert.level in [AlertLevel.WARNING, AlertLevel.DANGER]
+        assert alert.level.value in ["warning", "danger", "critical"]
         assert alert.value == 20.0
 
     def test_check_volatility_below_threshold(self):
@@ -157,7 +157,7 @@ class TestRiskAlertSystem:
         """测试集中度低于阈值"""
         from asset_lens.monitoring.risk_alert import RiskAlertConfig, RiskAlertSystem
 
-        config = RiskAlertConfig(concentration_threshold=50.0, alert_cooldown_minutes=0)
+        config = RiskAlertConfig(concentration_threshold=0.5, alert_cooldown_minutes=0)
         system = RiskAlertSystem(config)
 
         holdings = {"stock_a": 30000, "stock_b": 40000, "stock_c": 30000}
@@ -169,7 +169,7 @@ class TestRiskAlertSystem:
         """测试集中度超过阈值"""
         from asset_lens.monitoring.risk_alert import RiskAlertConfig, RiskAlertSystem
 
-        config = RiskAlertConfig(concentration_threshold=30.0, alert_cooldown_minutes=0)
+        config = RiskAlertConfig(concentration_threshold=0.3, alert_cooldown_minutes=0)
         system = RiskAlertSystem(config)
 
         holdings = {"stock_a": 50000, "stock_b": 30000, "stock_c": 20000}
@@ -181,47 +181,47 @@ class TestRiskAlertSystem:
         """测试止损低于阈值"""
         from asset_lens.monitoring.risk_alert import RiskAlertConfig, RiskAlertSystem
 
-        config = RiskAlertConfig(stop_loss_percent=-8.0)
+        config = RiskAlertConfig(stop_loss_threshold=-0.08)
         system = RiskAlertSystem(config)
 
-        alert = system.check_stop_loss("sh600519", 100.0, 95.0)
+        alert = system.check_stop_loss(95.0, 100.0, "贵州茅台", "sh600519")
 
         assert alert is None
 
     def test_check_stop_loss_above_threshold(self):
         """测试止损超过阈值"""
-        from asset_lens.monitoring.risk_alert import AlertLevel, RiskAlertConfig, RiskAlertSystem
+        from asset_lens.monitoring.risk_alert import RiskAlertConfig, RiskAlertSystem
 
-        config = RiskAlertConfig(stop_loss_percent=-8.0, alert_cooldown_minutes=0)
+        config = RiskAlertConfig(stop_loss_threshold=-0.08, alert_cooldown_minutes=0)
         system = RiskAlertSystem(config)
 
-        alert = system.check_stop_loss("sh600519", 100.0, 88.0)
+        alert = system.check_stop_loss(88.0, 100.0, "贵州茅台", "sh600519")
 
         assert alert is not None
-        assert alert.level == AlertLevel.DANGER
+        assert alert.level.value == "critical"
 
     def test_check_take_profit_below_threshold(self):
         """测试止盈低于阈值"""
         from asset_lens.monitoring.risk_alert import RiskAlertConfig, RiskAlertSystem
 
-        config = RiskAlertConfig(take_profit_percent=20.0)
+        config = RiskAlertConfig(take_profit_threshold=0.20)
         system = RiskAlertSystem(config)
 
-        alert = system.check_take_profit("sh600519", 100.0, 115.0)
+        alert = system.check_take_profit(115.0, 100.0, "贵州茅台", "sh600519")
 
         assert alert is None
 
     def test_check_take_profit_above_threshold(self):
         """测试止盈超过阈值"""
-        from asset_lens.monitoring.risk_alert import AlertLevel, RiskAlertConfig, RiskAlertSystem
+        from asset_lens.monitoring.risk_alert import RiskAlertConfig, RiskAlertSystem
 
-        config = RiskAlertConfig(take_profit_percent=20.0, alert_cooldown_minutes=0)
+        config = RiskAlertConfig(take_profit_threshold=0.20, alert_cooldown_minutes=0)
         system = RiskAlertSystem(config)
 
-        alert = system.check_take_profit("sh600519", 100.0, 125.0)
+        alert = system.check_take_profit(125.0, 100.0, "贵州茅台", "sh600519")
 
         assert alert is not None
-        assert alert.level == AlertLevel.INFO
+        assert alert.level.value == "info"
 
     def test_check_position_limit_below_threshold(self):
         """测试仓位低于阈值"""
@@ -252,7 +252,7 @@ class TestRiskAlertSystem:
         config = RiskAlertConfig(price_change_threshold=5.0)
         system = RiskAlertSystem(config)
 
-        alert = system.check_price_change("sh600519", 3.0)
+        alert = system.check_price_change("贵州茅台", "sh600519", 3.0)
 
         assert alert is None
 
@@ -263,7 +263,7 @@ class TestRiskAlertSystem:
         config = RiskAlertConfig(price_change_threshold=5.0, alert_cooldown_minutes=0)
         system = RiskAlertSystem(config)
 
-        alert = system.check_price_change("sh600519", 8.0)
+        alert = system.check_price_change("贵州茅台", "sh600519", 8.0)
 
         assert alert is not None
 
@@ -274,7 +274,7 @@ class TestRiskAlertSystem:
         config = RiskAlertConfig(
             max_drawdown_threshold=15.0,
             volatility_threshold=25.0,
-            concentration_threshold=30.0,
+            concentration_threshold=0.3,
             position_limit=80.0,
             alert_cooldown_minutes=0,
         )
@@ -283,9 +283,8 @@ class TestRiskAlertSystem:
         portfolio_data = {
             "max_drawdown": 20.0,
             "volatility": 30.0,
-            "position": 90.0,
+            "total_position": 90.0,
             "holdings": {"stock_a": 50000, "stock_b": 30000, "stock_c": 20000},
-            "stocks": [],
         }
 
         alerts = system.run_all_checks(portfolio_data)

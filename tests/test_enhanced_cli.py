@@ -60,9 +60,9 @@ class TestEnhancedCLI:
         with patch("asset_lens.utils.enhanced_cli.RICH_AVAILABLE", False):
             with patch("asset_lens.utils.enhanced_cli.CLICK_AVAILABLE", False):
                 cli = EnhancedCLI()
-                with patch("builtins.print") as mock_print:
+                with patch("asset_lens.utils.enhanced_cli.logger") as mock_logger:
                     cli.print_colored("test", Color.GREEN)
-                    mock_print.assert_called_once_with("test")
+                    mock_logger.info.assert_called_once_with("test")
 
     def test_print_success(self):
         """测试打印成功消息"""
@@ -108,9 +108,9 @@ class TestEnhancedCLI:
 
         with patch("asset_lens.utils.enhanced_cli.RICH_AVAILABLE", False):
             cli = EnhancedCLI()
-            with patch("builtins.print") as mock_print:
+            with patch("asset_lens.utils.enhanced_cli.logger") as mock_logger:
                 cli.print_header("测试标题")
-                assert mock_print.call_count >= 3
+                assert mock_logger.info.call_count >= 3
 
     def test_print_subheader_no_rich(self):
         """测试打印子标题（无 Rich）"""
@@ -118,9 +118,9 @@ class TestEnhancedCLI:
 
         with patch("asset_lens.utils.enhanced_cli.RICH_AVAILABLE", False):
             cli = EnhancedCLI()
-            with patch("builtins.print") as mock_print:
+            with patch("asset_lens.utils.enhanced_cli.logger") as mock_logger:
                 cli.print_subheader("子标题")
-                assert mock_print.call_count >= 3
+                assert mock_logger.info.call_count >= 3
 
     def test_print_table_no_rich(self):
         """测试打印表格（无 Rich）"""
@@ -128,18 +128,18 @@ class TestEnhancedCLI:
 
         with patch("asset_lens.utils.enhanced_cli.RICH_AVAILABLE", False):
             cli = EnhancedCLI()
-            with patch("builtins.print") as mock_print:
+            with patch("asset_lens.utils.enhanced_cli.logger") as mock_logger:
                 cli.print_table("测试表格", ["列1", "列2"], [["值1", "值2"]])
-                assert mock_print.call_count >= 5
+                assert mock_logger.info.call_count >= 5
 
     def test_print_key_value(self):
         """测试打印键值对"""
         from asset_lens.utils.enhanced_cli import EnhancedCLI
 
         cli = EnhancedCLI()
-        with patch("builtins.print") as mock_print:
+        with patch("asset_lens.utils.enhanced_cli.logger") as mock_logger:
             cli.print_key_value("key", "value")
-            mock_print.assert_called_once()
+            mock_logger.info.assert_called_once()
 
     def test_print_json(self):
         """测试打印 JSON"""
@@ -147,9 +147,9 @@ class TestEnhancedCLI:
 
         with patch("asset_lens.utils.enhanced_cli.RICH_AVAILABLE", False):
             cli = EnhancedCLI()
-            with patch("builtins.print") as mock_print:
+            with patch("asset_lens.utils.enhanced_cli.logger") as mock_logger:
                 cli.print_json({"key": "value"})
-                mock_print.assert_called()
+                mock_logger.info.assert_called()
 
     def test_create_progress_bar(self):
         """测试创建进度条"""
@@ -234,7 +234,7 @@ class TestSimpleProgressBar:
         from asset_lens.utils.enhanced_cli import ProgressBarConfig, SimpleProgressBar
 
         config = ProgressBarConfig(description="Test", total=10)
-        with patch("builtins.print"), SimpleProgressBar(config) as bar:
+        with patch("asset_lens.utils.enhanced_cli.logger"), SimpleProgressBar(config) as bar:
             assert bar.current == 0
 
     def test_update(self):
@@ -242,7 +242,7 @@ class TestSimpleProgressBar:
         from asset_lens.utils.enhanced_cli import ProgressBarConfig, SimpleProgressBar
 
         config = ProgressBarConfig(description="Test", total=10)
-        with patch("builtins.print"):
+        with patch("asset_lens.utils.enhanced_cli.logger"):
             bar = SimpleProgressBar(config)
             bar.__enter__()
             bar.update(2)

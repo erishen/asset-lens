@@ -185,7 +185,7 @@ class TestWebSocketModule:
 
         manager = ConnectionManager()
         mock_ws = AsyncMock()
-        mock_ws.send_json = AsyncMock(side_effect=Exception("Connection error"))
+        mock_ws.send_json = AsyncMock(side_effect=RuntimeError("Connection error"))
         manager.active_connections.add(mock_ws)
         manager._last_ping[mock_ws] = 0
 
@@ -207,19 +207,18 @@ class TestWebSocketModule:
         mock_response = AsyncMock()
         mock_response.status = 200
         mock_response.text = AsyncMock(
-            return_value='var hq_str_sh000001="上证指数,3000.0,2990.0,3005.0,3010.0,2995.0,3000.0,3001.0,1000000,3000000000,..."'
+            return_value='var hq_str_sh000001="上证指数,3000.0,2990.0,3005.0,3010.0,2995.0,3000.0,3001.0,1000000,3000000000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"'
         )
 
-        mock_get_context = MagicMock()
-        mock_get_context.__aenter__ = AsyncMock(return_value=mock_response)
-        mock_get_context.__aexit__ = AsyncMock(return_value=None)
+        async def mock_async_get(url, **kwargs):
+            class AsyncContextManager:
+                async def __aenter__(self):
+                    return mock_response
+                async def __aexit__(self, *args):
+                    pass
+            return AsyncContextManager()
 
-        mock_session = MagicMock()
-        mock_session.get = MagicMock(return_value=mock_get_context)
-        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-        mock_session.__aexit__ = AsyncMock(return_value=None)
-
-        with patch("aiohttp.ClientSession", return_value=mock_session):
+        with patch("asset_lens.web.aiohttp_session.async_get", side_effect=mock_async_get):
             result = await _get_market_indexes_async()
             assert isinstance(result, list)
 
@@ -231,19 +230,18 @@ class TestWebSocketModule:
         mock_response = AsyncMock()
         mock_response.status = 200
         mock_response.text = AsyncMock(
-            return_value='var hq_str_sh600519="贵州茅台,1800.0,1790.0,1805.0,1810.0,1795.0,1800.0,1801.0,1000000,1800000000,..."'
+            return_value='var hq_str_sh600519="贵州茅台,1800.0,1790.0,1805.0,1810.0,1795.0,1800.0,1801.0,1000000,1800000000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"'
         )
 
-        mock_get_context = MagicMock()
-        mock_get_context.__aenter__ = AsyncMock(return_value=mock_response)
-        mock_get_context.__aexit__ = AsyncMock(return_value=None)
+        async def mock_async_get(url, **kwargs):
+            class AsyncContextManager:
+                async def __aenter__(self):
+                    return mock_response
+                async def __aexit__(self, *args):
+                    pass
+            return AsyncContextManager()
 
-        mock_session = MagicMock()
-        mock_session.get = MagicMock(return_value=mock_get_context)
-        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-        mock_session.__aexit__ = AsyncMock(return_value=None)
-
-        with patch("aiohttp.ClientSession", return_value=mock_session):
+        with patch("asset_lens.web.aiohttp_session.async_get", side_effect=mock_async_get):
             result = await _get_stock_quotes_async(["sh600519"])
             assert isinstance(result, list)
 

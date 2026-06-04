@@ -63,6 +63,53 @@ class HTMLReportGenerator:
 
         return output_path
 
+    def generate_html(
+        self,
+        report: dict[str, Any],
+        include_charts: bool = True,
+    ) -> str:
+        """
+        Generate HTML content from a report dict.
+
+        This is a convenience method used by InvestmentReportGenerator.export_html_report.
+
+        Args:
+            report: Report data dict
+            include_charts: Whether to include charts
+
+        Returns:
+            HTML string
+        """
+        report_type = report.get("report_type", "report")
+        analysis_result = {
+            "summary": report.get("summary", ""),
+            "risk_assessment": report.get("risk_assessment", ""),
+            "suggestions": report.get("suggestions", []),
+        }
+        portfolio_data = {
+            "total_value": 0,
+            "total_profit": 0,
+            "overall_return_rate": 0,
+            "total_products": 0,
+            "type_distribution": report.get("type_distribution", {}),
+            "risk_distribution": report.get("risk_distribution", {}),
+        }
+
+        # Map report data into portfolio_data
+        if "performance" in report:
+            perf = report["performance"]
+            portfolio_data["total_profit"] = perf.get("total_profit", 0)
+            portfolio_data["overall_return_rate"] = perf.get("total_profit_rate", 0)
+        if "pool_status" in report:
+            portfolio_data["total_products"] = report["pool_status"].get("total_stocks", 0)
+        if "summary" in report:
+            summary = report["summary"]
+            portfolio_data["total_products"] = summary.get("total_stocks", 0)
+            portfolio_data["total_profit"] = summary.get("total_profit", 0)
+
+        chart_images = {} if include_charts else None
+        return self._generate_html_content(portfolio_data, analysis_result, chart_images)
+
     def _generate_html_content(
         self,
         portfolio_data: dict[str, Any],

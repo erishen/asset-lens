@@ -102,7 +102,7 @@ class TestMarketStockFetcher:
     def test_fetch_cn_stock_list_exception(self, fetcher):
         """测试获取A股股票列表 - 异常"""
         mock_ak = MagicMock()
-        mock_ak.stock_zh_a_spot_em.side_effect = Exception("网络错误")
+        mock_ak.stock_zh_a_spot_em.side_effect = ConnectionError("网络错误")
 
         with patch("asset_lens.utils.akshare_loader._AKSHARE_INSTANCE", mock_ak):
             result = fetcher.fetch_cn_stock_list()
@@ -135,11 +135,11 @@ class TestMarketStockFetcher:
 
     def test_fetch_all_cn_stocks_exception(self, fetcher):
         """测试获取所有A股股票 - 异常"""
-        fetcher._fetch_stocks_tushare = MagicMock(side_effect=Exception("网络错误"))
-        fetcher._fetch_stocks_tencent = MagicMock(side_effect=Exception("网络错误"))
-        fetcher._fetch_stocks_akshare = MagicMock(side_effect=Exception("网络错误"))
-        fetcher._fetch_stocks_efinance = MagicMock(side_effect=Exception("网络错误"))
-        fetcher._fetch_stocks_baostock = MagicMock(side_effect=Exception("网络错误"))
+        fetcher._fetch_stocks_tushare = MagicMock(side_effect=RuntimeError("网络错误"))
+        fetcher._fetch_stocks_tencent = MagicMock(side_effect=RuntimeError("网络错误"))
+        fetcher._fetch_stocks_akshare = MagicMock(side_effect=RuntimeError("网络错误"))
+        fetcher._fetch_stocks_efinance = MagicMock(side_effect=RuntimeError("网络错误"))
+        fetcher._fetch_stocks_baostock = MagicMock(side_effect=RuntimeError("网络错误"))
         fetcher.get_cached_market_stocks = MagicMock(return_value=[])
 
         result = fetcher.fetch_all_cn_stocks()

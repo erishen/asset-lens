@@ -149,7 +149,7 @@ class TestCLI:
         with patch("asset_lens.data.csv_parser.CSVParser.load_data") as mock_load:
             mock_load.return_value = []
 
-            with patch("asset_lens.cli_modules.cli.analyze._get_data_dir") as mock_get_dir:
+            with patch("asset_lens.cli_modules.cli.analyze_core._get_data_dir") as mock_get_dir:
                 mock_get_dir.return_value = None
 
                 with patch("asset_lens.config.config") as mock_config:
@@ -181,8 +181,8 @@ class TestCLI:
 
         with (
             patch("asset_lens.data.csv_parser.CSVParser.load_data") as mock_load,
-            patch("asset_lens.cli_modules.cli.report._get_north_flow") as mock_north,
-            patch("asset_lens.cli_modules.cli.report._get_ml_predictions") as mock_ml,
+            patch("asset_lens.cli_modules.cli.report_helpers._get_north_flow") as mock_north,
+            patch("asset_lens.cli_modules.cli.report_helpers._get_ml_predictions") as mock_ml,
         ):
             mock_load.return_value = []
             mock_north.return_value = {"total_flow": 0, "flows": []}

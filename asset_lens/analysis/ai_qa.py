@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from ..config import config
+from ..utils.json_cache import read_json_cache, write_json_cache
 
 
 class QuestionType(Enum):

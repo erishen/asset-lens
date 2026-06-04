@@ -102,7 +102,8 @@ class TestGetSnapshot:
 
     def test_corrupted_file(self, manager, tmp_storage):
         date_str = "2026-06-01"
-        file_path = manager._get_snapshot_file(date_str)
+        filename = manager._get_snapshot_filename(date_str)
+        file_path = tmp_storage / filename
         file_path.parent.mkdir(parents=True, exist_ok=True)
         file_path.write_text("corrupted json content")
         snapshot = manager.get_snapshot(date_str)
@@ -110,9 +111,10 @@ class TestGetSnapshot:
 
     def test_empty_snapshots_file(self, manager, tmp_storage):
         date_str = "2026-06-02"
-        file_path = manager._get_snapshot_file(date_str)
+        filename = manager._get_snapshot_filename(date_str)
+        file_path = tmp_storage / filename
         file_path.parent.mkdir(parents=True, exist_ok=True)
-        file_path.write_text(json.dumps([]))
+        file_path.write_text(json.dumps({"items": []}))
         snapshot = manager.get_snapshot(date_str)
         assert snapshot is None
 
@@ -160,8 +162,9 @@ class TestSaveSnapshot:
         today_str = __import__("datetime").datetime.now().strftime("%Y-%m-%d")
         manager.create_snapshot(total_assets=100000, total_profit=0, return_rate=0, position_count=0)
         manager.create_snapshot(total_assets=110000, total_profit=1000, return_rate=1.0, position_count=2)
-        file_path = manager._get_snapshot_file(today_str)
+        filename = manager._get_snapshot_filename(today_str)
+        file_path = manager.storage_path / filename
         assert file_path.exists()
         with open(file_path, encoding="utf-8") as f:
             data = json.load(f)
-        assert len(data) == 2
+        assert len(data.get("items", [])) == 2

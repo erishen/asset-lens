@@ -238,7 +238,10 @@ class TestIntelligentRecommender:
 
     def test_save_recommendations(self, recommender, tmp_path):
         """测试保存推荐结果"""
+        from asset_lens.data.providers.cache import UnifiedCache
+
         recommender.recommendation_path = tmp_path
+        recommender._cache = UnifiedCache(cache_dir=tmp_path)
 
         recs = [
             StrategyRecommendation(
