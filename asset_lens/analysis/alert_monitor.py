@@ -12,13 +12,12 @@ Stock Alert Monitor Module.
 
 from dataclasses import dataclass, field
 from datetime import datetime
-
-from ..utils.json_cache import read_json_cache, write_json_cache
 from enum import Enum
 from pathlib import Path
 from typing import Any
 
 from ..config import config
+from ..utils.json_cache import read_json_cache, write_json_cache
 from .signal_pusher import Priority, Signal, SignalPusher, SignalType
 
 

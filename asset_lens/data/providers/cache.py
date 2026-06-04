@@ -10,7 +10,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from .cache_models import CacheConfig, CacheEntry, CacheLevel, DEFAULT_CACHE_CONFIG
+from .cache_models import DEFAULT_CACHE_CONFIG, CacheConfig, CacheEntry, CacheLevel
 
 logger = logging.getLogger(__name__)
 

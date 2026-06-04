@@ -1,4 +1,5 @@
 import logging
+
 logger = logging.getLogger(__name__)
 
 """
@@ -6,8 +7,8 @@ Progress bar utility for asset-lens.
 进度条工具模块
 """
 
-import sys
 import logging
+import sys
 
 
 class ProgressBar:

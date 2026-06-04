@@ -12,12 +12,11 @@ Strategy Backtest Report Module.
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-
-from ..utils.json_cache import read_json_cache, write_json_cache
 from pathlib import Path
 from typing import Any, ClassVar
 
 from ..config import config
+from ..utils.json_cache import read_json_cache, write_json_cache
 
 
 class ReportPeriod(Enum):

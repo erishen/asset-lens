@@ -9,11 +9,11 @@ Stock tracker for asset-lens.
 4. 跟踪报告 - 生成跟踪分析报告
 """
 
+import json
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -480,13 +480,13 @@ class StockTracker:
         """打印跟踪报告"""
         report = self.get_tracking_report()
 
-        logger.info(f"" + "=" * 60)
+        logger.info("" + "=" * 60)
         logger.info(f" 股票跟踪报告 - {report['pool_name']}")
         logger.info("=" * 60)
         logger.info(f"更新时间: {report['update_time']}")
         logger.info(f"跟踪天数: {report['tracked_days']} 天")
 
-        logger.info(f"" + "-" * 60)
+        logger.info("" + "-" * 60)
         logger.info("📈 股票池状态")
         logger.info("-" * 60)
         logger.info(f"观察中: {report['watching_count']} 只")
@@ -494,7 +494,7 @@ class StockTracker:
         logger.info(f"已卖出: {report['sold_count']} 只")
 
         if report.get("recent_monsters"):
-            logger.info(f"" + "-" * 60)
+            logger.info("" + "-" * 60)
             logger.info(" 近期妖股信号")
             logger.info("-" * 60)
             for s in report["recent_monsters"]:
@@ -504,20 +504,20 @@ class StockTracker:
                 logger.info(f"    日期: {s['signal_date']}")
 
         if report.get("best_performers"):
-            logger.info(f"" + "-" * 60)
+            logger.info("" + "-" * 60)
             logger.info(" 表现最佳")
             logger.info("-" * 60)
             for i, s in enumerate(report["best_performers"], 1):
                 logger.info(f"  {i}. {s['name']}({s['code']}): {s['profit_rate']:+.2f}%")
 
         if report.get("worst_performers"):
-            logger.info(f"" + "-" * 60)
+            logger.info("" + "-" * 60)
             logger.info(" 表现最差")
             logger.info("-" * 60)
             for i, s in enumerate(report["worst_performers"], 1):
                 logger.info(f"  {i}. {s['name']}({s['code']}): {s['profit_rate']:+.2f}%")
 
-        logger.info(f"" + "=" * 60)
+        logger.info("" + "=" * 60)
 
 
 stock_tracker = StockTracker()

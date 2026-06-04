@@ -1,9 +1,7 @@
-import json
-from pathlib import Path
 
 import pytest
 
-from asset_lens.trading.auto_trader import AutoTradeAction, AutoTrader, AutoTradeRecord, TradeEvaluation, TradeReason
+from asset_lens.trading.auto_trader import AutoTradeAction, AutoTrader, AutoTradeRecord, TradeReason
 
 
 @pytest.fixture
@@ -109,7 +107,7 @@ class TestAutoTrader:
         assert trade.portfolio_state == {"cash": 50000}
 
     def test_evaluate_trade(self, trader):
-        buy_trade = trader.record_buy(code="600519", name="贵州茅台", price=1800.0, shares=100)
+        trader.record_buy(code="600519", name="贵州茅台", price=1800.0, shares=100)
         trade_dict = trader.trades[0]
         eval_result = trader.evaluate_trade(trade_dict["id"], current_price=1900.0)
         assert eval_result is not None
@@ -121,7 +119,7 @@ class TestAutoTrader:
         assert result is None
 
     def test_evaluate_sell_trade(self, trader):
-        sell_trade = trader.record_sell(code="600519", name="贵州茅台", price=1800.0, shares=100)
+        trader.record_sell(code="600519", name="贵州茅台", price=1800.0, shares=100)
         trade_dict = trader.trades[0]
         eval_result = trader.evaluate_trade(trade_dict["id"], current_price=1700.0)
         assert eval_result is not None
@@ -167,7 +165,7 @@ class TestAutoTrader:
         assert trader.get_trade_history() == []
 
     def test_get_evaluations(self, trader):
-        buy_trade = trader.record_buy(code="600519", name="贵州茅台", price=1800.0, shares=100)
+        trader.record_buy(code="600519", name="贵州茅台", price=1800.0, shares=100)
         trade_dict = trader.trades[0]
         trader.evaluate_trade(trade_dict["id"], current_price=1900.0)
         assert len(trader.get_evaluations()) == 1
@@ -188,7 +186,7 @@ class TestAutoTrader:
         assert "暂无" in result
 
     def test_generate_suggestions_with_evaluations(self, trader):
-        buy_trade = trader.record_buy(code="600519", name="贵州茅台", price=1800.0, shares=100)
+        trader.record_buy(code="600519", name="贵州茅台", price=1800.0, shares=100)
         trade_dict = trader.trades[0]
         trader.evaluate_trade(trade_dict["id"], current_price=1900.0)
         result = trader.generate_suggestions()

@@ -12,7 +12,6 @@ Task Scheduler for asset-lens.
 7. 错误重试机制
 """
 
-import json
 import logging
 import threading
 import time

@@ -1,13 +1,12 @@
 import logging
 import time
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Any, ClassVar
 
 from ..config import config
 from ..utils.http_client import HTTPClient
-from ..utils.json_cache import read_json_cache, write_json_cache
 from .domestic_index_fetcher import DomesticIndexFetcherMixin
 from .foreign_index_fetcher import ForeignIndexFetcherMixin
 

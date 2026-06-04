@@ -8,7 +8,6 @@
 4. 操作评价和建议
 """
 
-import logging
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from enum import Enum

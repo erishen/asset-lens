@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from ..utils.json_cache import read_json_cache, write_json_cache
-from .technical_indicators import TechnicalIndicatorsMixin, safe_divide
+from .technical_indicators import TechnicalIndicatorsMixin
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 

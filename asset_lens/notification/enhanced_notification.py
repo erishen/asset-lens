@@ -16,7 +16,6 @@ Enhanced Notification Service for asset-lens.
 import base64
 import hashlib
 import hmac
-import json
 import logging
 import time
 import urllib.parse
@@ -162,7 +161,7 @@ class EnhancedNotificationService:
             except ValueError:
                 logger.warning(f"无效的通知渠道: {channel_str}")
                 results[channel_str] = False
-            except (ValueError, RuntimeError, ConnectionError) as e:
+            except (RuntimeError, ConnectionError) as e:
                 logger.error(f"发送通知失败 [{channel_str}]: {e}")
                 results[channel_str] = False
 

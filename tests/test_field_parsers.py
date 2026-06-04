@@ -1,5 +1,5 @@
-from datetime import datetime
 
+from asset_lens.data.models import InvestmentType, RiskLevel
 from asset_lens.data.parsers.field_parsers import (
     field_parsers,
     parse_boolean,
@@ -9,7 +9,6 @@ from asset_lens.data.parsers.field_parsers import (
     parse_investment_type,
     parse_risk_level,
 )
-from asset_lens.data.models import InvestmentType, RiskLevel
 
 
 class TestParseDecimal:
@@ -221,5 +220,5 @@ class TestFieldParsersRegistry:
         assert "investment_days" in field_parsers
 
     def test_parsers_are_callable(self):
-        for name, parser in field_parsers.items():
+        for parser in field_parsers.values():
             assert callable(parser)

@@ -2,9 +2,9 @@ import pytest
 
 from asset_lens.trading.simulator_models import (
     RebalanceFrequency,
-    SimulationConfig,
     SimulatedPosition,
     SimulatedTrade,
+    SimulationConfig,
     StopLossType,
 )
 

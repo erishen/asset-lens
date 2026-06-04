@@ -1,16 +1,14 @@
 import logging
 from typing import Any
 
-from ..config import config
-from ..trading.stock_pool import StockPool
-
 logger = logging.getLogger(__name__)
 
 
 class AITraderExecutionMixin:
     def execute_signals(self, signals) -> list:
-        from .ai_trader_models import AITradeRecord
         from datetime import datetime
+
+        from .ai_trader_models import AITradeRecord
 
         logger.info("第四步: 执行交易...")
 

@@ -9,16 +9,14 @@ ML 模型定期重训练模块 - 保持模型新鲜度
 4. 训练结果对比
 """
 
-import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-
-from ..utils.json_cache import read_json_cache, write_json_cache
 from pathlib import Path
 from typing import Any
 
 from ..config import config
+from ..utils.json_cache import read_json_cache, write_json_cache
 
 
 class ModelStatus(Enum):

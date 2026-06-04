@@ -1,9 +1,6 @@
-import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
-
-from ..config import config
 
 
 @dataclass

@@ -44,7 +44,7 @@ def disable_proxy():
     if original_all_proxy is not None:
         os.environ["ALL_PROXY"] = original_all_proxy
     if original_all_proxy_lower is not None:
-        os.environ["all_proxy"] = original_all_proxy_lower
+        os.environ["ALL_PROXY"] = original_all_proxy_lower
 
     os.environ.pop("NO_PROXY", None)
     os.environ.pop("no_proxy", None)

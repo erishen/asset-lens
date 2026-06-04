@@ -2,9 +2,8 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
-import numpy as np
 import pandas as pd
 
 from ..utils.json_cache import read_json_cache
@@ -14,23 +13,23 @@ from .predictor_predict import PredictorPredictMixin
 logger = logging.getLogger(__name__)
 
 try:
-    import lightgbm as lgb
+    import lightgbm as lgb  # noqa: F401
 
     HAS_LIGHTGBM = True
 except ImportError:
     HAS_LIGHTGBM = False
 
 try:
-    import xgboost as xgb
+    import xgboost as xgb  # noqa: F401
 
     HAS_XGBOOST = True
 except ImportError:
     HAS_XGBOOST = False
 
 try:
-    from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, StackingClassifier
-    from sklearn.linear_model import LogisticRegression
-    from sklearn.preprocessing import StandardScaler
+    from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, StackingClassifier  # noqa: F401
+    from sklearn.linear_model import LogisticRegression  # noqa: F401
+    from sklearn.preprocessing import StandardScaler  # noqa: F401
 
     HAS_SKLEARN = True
 except ImportError:

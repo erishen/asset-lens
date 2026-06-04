@@ -35,7 +35,7 @@ def read_json_cache(file_path: Path) -> dict[str, Any] | None:
     except OSError as e:
         logger.debug(f"读取缓存文件 IO 错误 {file_path}: {e}")
         return None
-    except (json.JSONDecodeError, ValueError, TypeError) as e:
+    except (ValueError, TypeError) as e:
         logger.debug(f"读取缓存文件失败 {file_path}: {e}")
         return None
 
@@ -64,7 +64,4 @@ def write_json_cache(file_path: Path, data: dict[str, Any], ensure_dir: bool = T
         return False
     except (TypeError, ValueError) as e:
         logger.warning(f"缓存数据序列化失败 {file_path}: {e}")
-        return False
-    except (OSError, TypeError) as e:
-        logger.warning(f"写入缓存文件失败 {file_path}: {e}")
         return False

@@ -3,7 +3,6 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 
-from ..core.exceptions import DataLoadError, DataParseError
 from ..data.models import InvestmentProduct, InvestmentType
 from .parsers.investment_calculator import days360
 

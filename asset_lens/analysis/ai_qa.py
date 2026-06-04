@@ -10,7 +10,6 @@ AI 问答模块 - 投资问题解答和策略咨询
 5. 个性化建议
 """
 
-import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum

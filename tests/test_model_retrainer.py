@@ -1,7 +1,6 @@
 import json
 from datetime import datetime, timedelta
-from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -124,7 +123,7 @@ class TestModelRetrainer:
 
     def test_should_retrain_outdated(self, retrainer):
         with patch.object(retrainer, "check_model_status", return_value=ModelStatus.OUTDATED):
-            should, reason = retrainer.should_retrain()
+            should, _reason = retrainer.should_retrain()
         assert should is True
 
     def test_should_retrain_accuracy_drop(self, retrainer):
@@ -135,14 +134,14 @@ class TestModelRetrainer:
             ]
             with patch.object(retrainer, "_load_versions", return_value=versions):
                 with patch.object(retrainer, "_get_prediction_count", return_value=0):
-                    should, reason = retrainer.should_retrain()
+                    should, _reason = retrainer.should_retrain()
         assert should is True
 
     def test_should_retrain_no_need(self, retrainer):
         with patch.object(retrainer, "check_model_status", return_value=ModelStatus.CURRENT):
             with patch.object(retrainer, "_load_versions", return_value=[]):
                 with patch.object(retrainer, "_get_prediction_count", return_value=0):
-                    should, reason = retrainer.should_retrain()
+                    should, _reason = retrainer.should_retrain()
         assert should is False
 
     def test_retrain_model_not_needed(self, retrainer):

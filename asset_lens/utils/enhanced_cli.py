@@ -1,4 +1,5 @@
 import logging
+
 logger = logging.getLogger(__name__)
 
 """
@@ -6,8 +7,8 @@ Enhanced CLI Utilities with colors and progress bars.
 增强版 CLI 工具 - 支持彩色输出和进度条
 """
 
-import sys
 import logging
+import sys
 from collections.abc import Iterator, Sized
 from dataclasses import dataclass
 from enum import Enum
@@ -103,7 +104,7 @@ class EnhancedCLI:
         if RICH_AVAILABLE and self.console:
             self.console.print(Panel(title, width=width, style="bold cyan"))
         else:
-            logger.info(f"" + "=" * width)
+            logger.info("" + "=" * width)
             logger.info(title.center(width))
             logger.info("=" * width + "\n")
 
@@ -113,7 +114,7 @@ class EnhancedCLI:
             self.console.print(f"\n[bold]{title}[/bold]", style="cyan")
             self.console.print("─" * width, style="dim")
         else:
-            logger.info(f"" + "-" * width)
+            logger.info("" + "-" * width)
             logger.info(title)
             logger.info("-" * width + "\n")
 

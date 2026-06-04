@@ -4,6 +4,10 @@ Trading module - 交易相关功能
 
 from .auto_trader import AutoTrader, auto_trader
 from .risk_manager import RiskManager, risk_manager
+from .simulator_models import (
+    RebalanceFrequency,
+    StopLossType,
+)
 from .stock_pool import StockPool, StockPosition, stock_pool
 from .stock_pool_builder import (
     EntryReason,
@@ -12,10 +16,6 @@ from .stock_pool_builder import (
     StockEntryMatrix,
     StockPoolBuilder,
     stock_pool_builder,
-)
-from .simulator_models import (
-    RebalanceFrequency,
-    StopLossType,
 )
 from .strategy_simulator import (
     SimulatedPosition,

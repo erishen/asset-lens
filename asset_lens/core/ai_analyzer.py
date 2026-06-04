@@ -277,7 +277,6 @@ class AIAnalyzer:
         total_value = float(data.get("total_value", 1))
 
         high_risk_ratio = 0.0
-        mid_risk_ratio = 0.0
         low_risk_ratio = 0.0
 
         for risk_name, stats in risk_dist.items():
@@ -285,7 +284,7 @@ class AIAnalyzer:
             if risk_name == "高":
                 high_risk_ratio = ratio
             elif risk_name == "中":
-                mid_risk_ratio = ratio
+                pass
             elif risk_name == "低":
                 low_risk_ratio = ratio
 

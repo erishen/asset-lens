@@ -80,7 +80,7 @@ class HTMLReportGenerator:
         Returns:
             HTML string
         """
-        report_type = report.get("report_type", "report")
+        report.get("report_type", "report")
         analysis_result = {
             "summary": report.get("summary", ""),
             "risk_assessment": report.get("risk_assessment", ""),

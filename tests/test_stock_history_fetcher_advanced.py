@@ -2,7 +2,6 @@
 Additional tests for stock_history_fetcher.py
 """
 
-import json
 import tempfile
 from datetime import datetime
 from pathlib import Path

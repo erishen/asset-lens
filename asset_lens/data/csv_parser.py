@@ -4,10 +4,9 @@ import logging
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import ClassVar
 
 from ..config import config
-from ..core.exceptions import DataLoadError, DataParseError
 from ..data.models import InvestmentProduct, InvestmentType, RiskLevel
 from .csv_data_loader import CSVDataLoaderMixin
 from .csv_irr import CSVIrrMixin

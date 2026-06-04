@@ -7,6 +7,7 @@ Fund data fetcher for asset-lens.
 - 文档: https://akshare.akfamily.xyz
 """
 
+import json
 import logging
 import time
 from contextlib import contextmanager
@@ -468,7 +469,7 @@ def fetch_portfolio_fund_quotes() -> dict[str, Any]:
 
     logger.info(f"📋 找到 {len(fund_products)} 个基金类产品")
 
-    logger.info(f"🔍 正在匹配基金代码...")
+    logger.info("🔍 正在匹配基金代码...")
     fund_codes_map = auto_match_fund_codes(fund_products)
 
     matched_codes = []
@@ -488,7 +489,7 @@ def fetch_portfolio_fund_quotes() -> dict[str, Any]:
             logger.info(f"  - {name}")
 
     if not matched_codes:
-        logger.info(f" 没有匹配到任何基金代码")
+        logger.info(" 没有匹配到任何基金代码")
         return {}
 
     logger.info(f" 正在获取 {len(matched_codes)} 只基金的净值...")

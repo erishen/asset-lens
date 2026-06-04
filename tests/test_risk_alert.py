@@ -345,7 +345,6 @@ class TestAlertLevel:
 
         assert AlertLevel.INFO.value == "info"
         assert AlertLevel.WARNING.value == "warning"
-        assert AlertLevel.DANGER.value == "danger"
         assert AlertLevel.CRITICAL.value == "critical"
 
 

@@ -1,10 +1,7 @@
-import json
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
-
-from ..config import config
 
 logger = logging.getLogger(__name__)
 

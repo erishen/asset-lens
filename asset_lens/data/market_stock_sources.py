@@ -203,7 +203,7 @@ class MarketStockSourcesMixin:
             error_msg = str(e).split("\n")[0][:50]
             logger.error(f" 腾讯财经数据解析失败: {error_msg}")
             return []
-        except (RuntimeError, ConnectionError) as e:
+        except RuntimeError as e:
             error_msg = str(e).split("\n")[0][:50]
             logger.error(f" 腾讯财经获取失败: {error_msg}")
             return []

@@ -1,5 +1,4 @@
 import click
-import pandas as pd
 
 
 def register_data_commands(cli: click.Group) -> None:

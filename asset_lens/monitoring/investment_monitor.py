@@ -13,9 +13,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from ..utils.json_cache import read_json_cache, write_json_cache
-
 from ..core.config_manager import MonitorConfig
+from ..utils.json_cache import read_json_cache, write_json_cache
 
 logging.raiseExceptions = False
 

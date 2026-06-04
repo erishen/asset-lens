@@ -3,7 +3,6 @@ Tests for Market Environment Analyzer.
 市场环境分析模块测试
 """
 
-import json
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
