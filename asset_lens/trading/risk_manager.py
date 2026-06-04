@@ -4,7 +4,7 @@ from typing import Any
 
 from ..config import config
 from ..utils.json_cache import read_json_cache, write_json_cache
-from .risk_position import PositionAdvice, RiskConfig, RiskPositionMixin, RiskWarning
+from .risk_position import PositionAdvice, RiskConfig, RiskPositionMixin, RiskWarning  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
