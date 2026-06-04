@@ -16,7 +16,7 @@ class NorthFlowDBMixin:
         industry_data: list[dict[str, Any]],
         data_source: str = "东方财富(Playwright)",
     ) -> dict[str, int]:
-        with self.session_scope() as session:
+        with self.session_scope() as session:  # type: ignore[attr-defined]
             added_count = 0
             updated_count = 0
             now = datetime.now()
@@ -57,7 +57,7 @@ class NorthFlowDBMixin:
         industry: str | None = None,
         days: int = 30,
     ) -> list[dict[str, Any]]:
-        with self.session_scope() as session:
+        with self.session_scope() as session:  # type: ignore[attr-defined]
             query = session.query(NorthIndustryFlow)
 
             if date:
@@ -75,7 +75,7 @@ class NorthFlowDBMixin:
             return [r.to_dict() for r in results]
 
     def get_north_industry_flow_dates(self, days: int = 30) -> list[str]:
-        with self.session_scope() as session:
+        with self.session_scope() as session:  # type: ignore[attr-defined]
             start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
 
             results = (
@@ -89,7 +89,7 @@ class NorthFlowDBMixin:
             return [r[0] for r in results]
 
     def get_north_industry_flow_trend(self, industry: str, days: int = 30) -> list[dict[str, Any]]:
-        with self.session_scope() as session:
+        with self.session_scope() as session:  # type: ignore[attr-defined]
             start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
 
             results = (

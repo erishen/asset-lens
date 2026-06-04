@@ -13,16 +13,16 @@ class AITraderExecutionMixin:
         logger.info("第四步: 执行交易...")
 
         trades = []
-        holding_count = len([p for p in self.stock_pool.positions.values() if p.status == "holding"])
+        holding_count = len([p for p in self.stock_pool.positions.values() if p.status == "holding"])  # type: ignore[attr-defined]
 
         buy_signals = [s for s in signals if s.action == "buy"]
         sell_signals = [s for s in signals if s.action == "sell"]
 
         for signal in sell_signals[:5]:
-            if signal.code in self.stock_pool.positions:
-                sell_pos = self.stock_pool.positions[signal.code]
+            if signal.code in self.stock_pool.positions:  # type: ignore[attr-defined]
+                sell_pos = self.stock_pool.positions[signal.code]  # type: ignore[attr-defined]
                 if sell_pos.status == "holding":
-                    success, _ = self.stock_pool.sell_stock(signal.code, signal.price)
+                    success, _ = self.stock_pool.sell_stock(signal.code, signal.price)  # type: ignore[attr-defined]
                     if success:
                         profit_rate = (signal.price - sell_pos.buy_price) / sell_pos.buy_price * 100
                         trade = AITradeRecord(
@@ -40,7 +40,7 @@ class AITraderExecutionMixin:
                             profit_rate=profit_rate,
                         )
                         trades.append(trade)
-                        self.trades.append(
+                        self.trades.append(  # type: ignore[attr-defined]
                             {
                                 "code": trade.code,
                                 "name": trade.name,
@@ -59,11 +59,11 @@ class AITraderExecutionMixin:
                         logger.info(f"卖出 {signal.code} {signal.name} @ {signal.price:.2f} (收益: {profit_rate:+.2f}%)")
 
         for signal in buy_signals:
-            if holding_count >= self.max_positions:
+            if holding_count >= self.max_positions:  # type: ignore[attr-defined]
                 break
 
-            if signal.code not in self.stock_pool.positions:
-                self.stock_pool.add_stock(
+            if signal.code not in self.stock_pool.positions:  # type: ignore[attr-defined]
+                self.stock_pool.add_stock(  # type: ignore[attr-defined]
                     signal.code,
                     signal.name,
                     signal.price,
@@ -71,17 +71,17 @@ class AITraderExecutionMixin:
                     signal.reason,
                 )
 
-            pos = self.stock_pool.positions.get(signal.code)
+            pos = self.stock_pool.positions.get(signal.code)  # type: ignore[attr-defined]
             if pos and pos.status != "holding":
-                position_amount = self.current_capital * self.position_ratio
+                position_amount = self.current_capital * self.position_ratio  # type: ignore[attr-defined]
                 shares = int(position_amount / signal.price / 100) * 100
 
                 if shares >= 100:
-                    success, _ = self.stock_pool.buy_stock(signal.code, signal.price, shares)
+                    success, _ = self.stock_pool.buy_stock(signal.code, signal.price, shares)  # type: ignore[attr-defined]
                     if success:
                         cost = signal.price * shares
-                        self.current_capital -= cost
-                        self._save_state()
+                        self.current_capital -= cost  # type: ignore[attr-defined]
+                        self._save_state()  # type: ignore[attr-defined]
                         trade = AITradeRecord(
                             code=signal.code,
                             name=signal.name,
@@ -96,7 +96,7 @@ class AITraderExecutionMixin:
                             timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         )
                         trades.append(trade)
-                        self.trades.append(
+                        self.trades.append(  # type: ignore[attr-defined]
                             {
                                 "code": trade.code,
                                 "name": trade.name,
@@ -114,7 +114,7 @@ class AITraderExecutionMixin:
                         holding_count += 1
                         logger.info(f"买入 {signal.code} {signal.name} @ {signal.price:.2f} x {shares}股")
 
-        self._save_trades()
+        self._save_trades()  # type: ignore[attr-defined]
 
         return trades
 
@@ -124,7 +124,7 @@ class AITraderExecutionMixin:
         total_profit = 0.0
         total_cost = 0.0
 
-        for code, pos in self.stock_pool.positions.items():
+        for code, pos in self.stock_pool.positions.items():  # type: ignore[attr-defined]
             if pos.status == "holding":
                 market_value = pos.current_price * pos.shares
                 cost = pos.buy_price * pos.shares
@@ -148,12 +148,12 @@ class AITraderExecutionMixin:
                 total_profit += profit
                 total_cost += cost
 
-        total_value = self.current_capital + total_market_value
-        total_profit_rate = (total_value - self.initial_capital) / self.initial_capital * 100
+        total_value = self.current_capital + total_market_value  # type: ignore[attr-defined]
+        total_profit_rate = (total_value - self.initial_capital) / self.initial_capital * 100  # type: ignore[attr-defined]
 
         return {
-            "initial_capital": self.initial_capital,
-            "current_capital": self.current_capital,
+            "initial_capital": self.initial_capital,  # type: ignore[attr-defined]
+            "current_capital": self.current_capital,  # type: ignore[attr-defined]
             "total_market_value": total_market_value,
             "total_cost": total_cost,
             "total_value": total_value,
@@ -170,7 +170,7 @@ class AITraderExecutionMixin:
         logger.info("=" * 60)
 
         cutoff = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
-        recent_trades = [t for t in self.trades if t.get("timestamp", "") >= cutoff]
+        recent_trades = [t for t in self.trades if t.get("timestamp", "") >= cutoff]  # type: ignore[attr-defined]
 
         if not recent_trades:
             logger.info("  暂无交易记录")

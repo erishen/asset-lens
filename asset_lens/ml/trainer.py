@@ -198,7 +198,7 @@ class ModelTrainer:
             X, y, test_size=self.config.test_size, random_state=self.config.random_state, stratify=y
         )
 
-        self.predictor.fit(X_train, y_train, feature_names=list(X.columns), **kwargs)
+        self.predictor.fit(X_train, y_train, feature_names=list(X.columns), **kwargs)  # type: ignore[call-arg]
 
         y_pred = self.predictor.predict(X_test)
         y_proba = self.predictor.predict_proba(X_test)[:, 1]
@@ -314,7 +314,7 @@ class ModelTrainer:
     def load_model(self, path: Path) -> None:
         """加载模型"""
         self.predictor.load_model(path)
-        self.feature_engineer.feature_names = self.predictor.feature_names
+        self.feature_engineer.feature_names = self.predictor.feature_names  # type: ignore[attr-defined]
 
     def save_training_result(self, result: Any, path: Path) -> None:
         """保存训练结果"""

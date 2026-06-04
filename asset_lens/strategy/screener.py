@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from ..config import config
-from ..utils.json_cache import read_json_cache
+from ..utils.json_cache import read_json_cache_dict
 
 logger = logging.getLogger(__name__)
 
@@ -136,15 +136,15 @@ class StockScreener:
     def _load_market_stocks(self) -> list[dict[str, Any]]:
         """加载市场股票数据"""
         market_file = self.cache_path / "market_stocks.json"
-        data = read_json_cache(market_file)
+        data = read_json_cache_dict(market_file)
         if data:
-            return data.get("data", [])
+            return data.get("data", [])  # type: ignore[no-any-return]
         return []
 
     def _load_stock_history(self, code: str) -> dict[str, Any] | None:
         """加载股票历史数据"""
         history_file = self.cache_path / "stock_history_baostock.json"
-        data = read_json_cache(history_file)
+        data = read_json_cache_dict(history_file)
         if data:
             history_data: dict[str, Any] = data.get("data", {})
             if history_data and isinstance(history_data, dict):
@@ -402,16 +402,16 @@ class StockScreener:
         if filter_type == "fundamental":
             results = self.filter_by_fundamental(stocks)
         elif filter_type == "technical":
-            histories = {}
+            histories = {}  # type: ignore[var-annotated]
             history_file = self.cache_path / "stock_history_baostock.json"
-            history_data = read_json_cache(history_file)
+            history_data = read_json_cache_dict(history_file)
             histories = history_data.get("data", {}) if history_data else {}
             results = self.filter_by_technical(stocks, histories)
         else:
             fundamental_results = self.filter_by_fundamental(stocks)
             histories = {}
             history_file = self.cache_path / "stock_history_baostock.json"
-            history_data = read_json_cache(history_file)
+            history_data = read_json_cache_dict(history_file)
             histories = history_data.get("data", {}) if history_data else {}
             results = self.filter_by_technical(fundamental_results, histories)
 

@@ -22,7 +22,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from ..utils.json_cache import read_json_cache, write_json_cache
+from ..utils.json_cache import read_json_cache_dict, write_json_cache
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +129,7 @@ class TaskScheduler:
     def _load_history(self):
         """加载任务历史"""
         history_file = self._cache_path / "task_history.json"
-        data = read_json_cache(history_file)
+        data = read_json_cache_dict(history_file)
         if data:
             for name, hist in data.items():
                 self._history[name] = TaskHistory(

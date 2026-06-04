@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from ..config import config
-from ..utils.json_cache import read_json_cache, write_json_cache
+from ..utils.json_cache import read_json_cache_dict, write_json_cache
 
 logger = logging.getLogger(__name__)
 
@@ -88,15 +88,15 @@ class VolumeBreakoutFilter:
 
     def _load_market_stocks(self) -> list[dict[str, Any]]:
         """加载市场股票数据"""
-        data = read_json_cache(self.market_stock_file)
+        data = read_json_cache_dict(self.market_stock_file)
         if data:
             return cast(list[dict[str, Any]], data.get("data", []))
         return []
 
     def _load_history(self) -> dict[str, Any]:
         """加载历史数据"""
-        data = read_json_cache(self.history_file)
-        return cast(dict[str, Any], data) if data else {}
+        data = read_json_cache_dict(self.history_file)
+        return cast(dict[str, Any], data) if data else {}  # type: ignore[redundant-cast]
 
     def _save_history(self, history: dict[str, Any]) -> None:
         """保存历史数据"""
@@ -331,7 +331,7 @@ class VolumeBreakoutFilter:
 
         # 第二步：只获取预筛选后股票的历史数据
         logger.info(f"📡 第二步：获取 {len(pre_filtered)} 只股票的 {days} 日历史数据...")
-        stocks_with_history = stock_history_fetcher.get_stocks_with_history(pre_filtered, days)
+        stocks_with_history = stock_history_fetcher.get_stocks_with_history(pre_filtered, days)  # type: ignore[arg-type]
 
         hot_industries = self.get_hot_industries(stocks)
         results = []

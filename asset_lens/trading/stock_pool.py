@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any
 
 from ..config import config
-from ..utils.json_cache import read_json_cache, write_json_cache
+from ..utils.json_cache import read_json_cache_dict, write_json_cache
 from .stock_pool_strategy import StockPoolConfig, StockPoolStrategyMixin, StockPosition
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ class StockPool(StockPoolStrategyMixin):
         self._load_pool()
 
     def _load_pool(self) -> None:
-        data = read_json_cache(self.pool_file)
+        data = read_json_cache_dict(self.pool_file)
         if data is None:
             return
 

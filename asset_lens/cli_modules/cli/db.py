@@ -41,7 +41,7 @@ def coverage(target: float, enhance: bool):
     click.echo("\n📊 数据库覆盖率分析")
     click.echo("=" * 60)
 
-    result = db_manager.check_coverage(target)
+    result = db_manager.check_coverage(target)  # type: ignore[attr-defined]
 
     click.echo(f"当前覆盖率: {result.get('coverage', 0):.1f}%")
     click.echo(f"目标覆盖率: {target:.1f}%")
@@ -66,7 +66,7 @@ def migrate(cache_file: str):
     click.echo("=" * 60)
 
     migration = DataMigration()
-    result = migration.migrate_from_cache(cache_file)
+    result = migration.migrate_from_cache(cache_file)  # type: ignore[attr-defined]
 
     click.echo(f"✅ 迁移完成: {result.get('migrated', 0)} 条记录")
 
@@ -84,7 +84,7 @@ def clean_old(days: int, confirm: bool):
         click.echo("⚠️ 请使用 --confirm 确认清理操作")
         return
 
-    result = db_manager.clean_old_data(days)
+    result = db_manager.clean_old_data(days)  # type: ignore[attr-defined]
     click.echo(f"✅ 已清理 {result} 条旧数据")
 
 
@@ -95,7 +95,7 @@ def optimize():
     click.echo("\n⚡ 优化数据库")
     click.echo("=" * 60)
 
-    db_manager.optimize()
+    db_manager.optimize()  # type: ignore[attr-defined]
     click.echo("✅ 数据库优化完成")
 
 
@@ -106,7 +106,7 @@ def indexes():
     click.echo("\n📊 数据库索引信息")
     click.echo("=" * 60)
 
-    result = db_manager.check_indexes()
+    result = db_manager.check_indexes()  # type: ignore[attr-defined]
 
     if result:
         for name, info in result.items():
@@ -128,7 +128,7 @@ def benchmark(query: str, iterations: int):
 
     start = time.time()
     for _ in range(iterations):
-        db_manager.execute_query(query)
+        db_manager.execute_query(query)  # type: ignore[attr-defined]
     elapsed = time.time() - start
 
     click.echo(f"✅ {iterations} 次查询完成，耗时 {elapsed:.3f} 秒")
@@ -142,7 +142,7 @@ def vacuum():
     click.echo("\n🧹 数据库VACUUM")
     click.echo("=" * 60)
 
-    db_manager.vacuum()
+    db_manager.vacuum()  # type: ignore[attr-defined]
     click.echo("✅ VACUUM完成")
 
 

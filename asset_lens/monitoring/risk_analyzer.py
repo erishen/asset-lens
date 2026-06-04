@@ -32,7 +32,7 @@ from typing import Any
 import numpy as np
 from investkit_utils.types.models import RiskMetrics
 
-from ..utils.json_cache import read_json_cache, write_json_cache
+from ..utils.json_cache import read_json_cache_list, write_json_cache
 
 logger = logging.getLogger(__name__)
 
@@ -300,7 +300,7 @@ class RiskAnalyzer:
         self.risk_history.append(metrics_data)
 
         history_file = self._cache_path / "risk_history.json"
-        history_data = read_json_cache(history_file) or []
+        history_data = read_json_cache_list(history_file) or []
 
         history_data.append(metrics_data)
 

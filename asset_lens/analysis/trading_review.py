@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from ..config import config
-from ..utils.json_cache import read_json_cache, write_json_cache
+from ..utils.json_cache import read_json_cache_list, write_json_cache
 from .review_models import (
     AttributionAnalysis,
     ClosedPosition,
@@ -404,7 +404,7 @@ class TradingReview:
 
     def _load_trades(self) -> list[dict[str, Any]]:
         """加载交易记录"""
-        data = read_json_cache(self.trades_file)
+        data = read_json_cache_list(self.trades_file)
         return data if data else []
 
     def _save_closed_position(self, position: ClosedPosition) -> None:
@@ -454,13 +454,13 @@ class TradingReview:
 
     def _load_closed_positions_data(self) -> list[dict[str, Any]]:
         """加载平仓记录原始数据"""
-        data = read_json_cache(self.closed_positions_file)
+        data = read_json_cache_list(self.closed_positions_file)
         return data if data else []
 
     def _save_report(self, report: ReviewReport) -> None:
         """保存报告"""
         reports = []
-        reports_data = read_json_cache(self.reports_file)
+        reports_data = read_json_cache_list(self.reports_file)
         if reports_data:
             reports = reports_data
 

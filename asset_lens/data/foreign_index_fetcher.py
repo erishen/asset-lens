@@ -23,7 +23,7 @@ class ForeignIndexFetcherMixin:
             if not ak_name:
                 return None
 
-            df = self.akshare.index_global_hist_em(symbol=ak_name)
+            df = self.akshare.index_global_hist_em(symbol=ak_name)  # type: ignore[attr-defined]
             if df is None or df.empty:
                 return None
 
@@ -212,7 +212,7 @@ class ForeignIndexFetcherMixin:
             api_key = config.finnhub_api_key or "demo"
             url = f"https://api.finnhub.io/api/v1/quote?symbol={symbol}&token={api_key}"
 
-            data = self._http_client.get_json(url, timeout=15)
+            data = self._http_client.get_json(url, timeout=15)  # type: ignore[attr-defined]
             if data is None:
                 return None
 
@@ -223,7 +223,7 @@ class ForeignIndexFetcherMixin:
                 return None
 
             return {
-                "name": self.FOREIGN_INDEXES.get(symbol, symbol),
+                "name": self.FOREIGN_INDEXES.get(symbol, symbol),  # type: ignore[attr-defined]
                 "code": symbol,
                 "current_price": current_price,
                 "open": float(data.get("o", 0)),
@@ -244,7 +244,7 @@ class ForeignIndexFetcherMixin:
         try:
             url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&range=1d"
 
-            data = self._http_client.get_json(url, timeout=15)
+            data = self._http_client.get_json(url, timeout=15)  # type: ignore[attr-defined]
             if data is None:
                 return None
 
@@ -260,7 +260,7 @@ class ForeignIndexFetcherMixin:
                 return None
 
             return {
-                "name": self.FOREIGN_INDEXES.get(symbol, symbol),
+                "name": self.FOREIGN_INDEXES.get(symbol, symbol),  # type: ignore[attr-defined]
                 "code": symbol,
                 "current_price": current_price,
                 "open": float(meta.get("regularMarketOpen", 0)),
@@ -315,7 +315,7 @@ class ForeignIndexFetcherMixin:
                 return None
 
             return {
-                "name": self.FOREIGN_INDEXES.get(symbol, symbol),
+                "name": self.FOREIGN_INDEXES.get(symbol, symbol),  # type: ignore[attr-defined]
                 "code": symbol,
                 "current_price": current_price,
                 "open": float(quote.get("02. open", 0)),
@@ -334,9 +334,9 @@ class ForeignIndexFetcherMixin:
 
     def fetch_foreign_index(self, symbol: str) -> dict[str, Any] | None:
         cache_key = f"foreign_{symbol}"
-        cached = self._get_from_cache(cache_key)
+        cached = self._get_from_cache(cache_key)  # type: ignore[attr-defined]
         if cached:
-            return cached
+            return cached  # type: ignore[no-any-return]
 
         fetchers = [
             ("sina_global", self._fetch_from_sina_global),
@@ -351,7 +351,7 @@ class ForeignIndexFetcherMixin:
             try:
                 data = fetcher(symbol)
                 if data:
-                    self._set_cache(cache_key, data)
+                    self._set_cache(cache_key, data)  # type: ignore[attr-defined]
                     logger.info(f"成功从 {source_name} 获取 {symbol}")
                     return data
             except (ValueError, KeyError, ConnectionError, RuntimeError) as e:
@@ -368,14 +368,14 @@ class ForeignIndexFetcherMixin:
 
         indexes = {}
 
-        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:  # type: ignore[attr-defined]
             future_to_symbol = {
-                executor.submit(self.fetch_foreign_index, symbol): symbol for symbol in self.FOREIGN_INDEXES
+                executor.submit(self.fetch_foreign_index, symbol): symbol for symbol in self.FOREIGN_INDEXES  # type: ignore[attr-defined]
             }
 
             for future in as_completed(future_to_symbol):
                 symbol = future_to_symbol[future]
-                name = self.FOREIGN_INDEXES[symbol]
+                name = self.FOREIGN_INDEXES[symbol]  # type: ignore[attr-defined]
 
                 try:
                     data = future.result()
@@ -408,6 +408,6 @@ class ForeignIndexFetcherMixin:
             "指数数据": indexes,
         }
 
-        write_json_cache(self.foreign_cache_file, cache_data)
+        write_json_cache(self.foreign_cache_file, cache_data)  # type: ignore[attr-defined]
 
         return cache_data

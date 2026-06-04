@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from ..config import config
-from ..utils.json_cache import read_json_cache, write_json_cache
+from ..utils.json_cache import read_json_cache_list, write_json_cache
 
 
 class LogTradeAction(Enum):
@@ -372,7 +372,7 @@ class EnhancedTradeLogger:
 
     def _load_logs(self) -> list[dict[str, Any]]:
         """加载日志"""
-        data = read_json_cache(self.log_file)
+        data = read_json_cache_list(self.log_file)
         return data if data else []
 
     def format_statistics_report(self, stats: TradeStatistics) -> str:

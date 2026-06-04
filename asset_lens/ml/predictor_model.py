@@ -9,8 +9,10 @@ logger = logging.getLogger(__name__)
 
 
 class PredictorModelMixin:
+    model_type: str
+
     def _create_model(self, task: str = "classification", **kwargs) -> Any:
-        if self.model_type == "lightgbm":
+        if self.model_type == "lightgbm":  # type: ignore[has-type]
             try:
                 import lightgbm as lgb
 
@@ -204,10 +206,10 @@ class PredictorModelMixin:
 
             if predictions:
                 stacked = np.vstack(predictions)
-                return (stacked.mean(axis=0) > 0.5).astype(int)
+                return (stacked.mean(axis=0) > 0.5).astype(int)  # type: ignore[no-any-return]
             return np.zeros(len(X))
         else:
-            return self.model.predict(X)
+            return self.model.predict(X)  # type: ignore[no-any-return]
 
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
         if not self._is_fitted:
@@ -224,11 +226,11 @@ class PredictorModelMixin:
                     logger.warning(f"模型 {name} 概率预测失败: {e}")
 
             if probas:
-                return np.mean(probas, axis=0)
+                return np.mean(probas, axis=0)  # type: ignore[no-any-return]
             return np.array([[0.5, 0.5]] * len(X))
         else:
             if hasattr(self.model, "predict_proba"):
-                return self.model.predict_proba(X)
+                return self.model.predict_proba(X)  # type: ignore[no-any-return]
             predictions = self.model.predict(X)
             return np.column_stack([1 - predictions, predictions])
 

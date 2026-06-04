@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from ..config import config
-from ..utils.json_cache import read_json_cache, write_json_cache
+from ..utils.json_cache import read_json_cache_list, write_json_cache
 from .signal_pusher import Priority, Signal, SignalPusher, SignalType
 
 
@@ -345,7 +345,7 @@ class AlertMonitor:
 
     def _save_alert(self, alert: MarketStockAlert) -> None:
         """保存异动历史"""
-        history = read_json_cache(self.alert_history_file) or []
+        history = read_json_cache_list(self.alert_history_file) or []
 
         history.append(
             {
@@ -367,7 +367,7 @@ class AlertMonitor:
 
     def get_recent_alerts(self, limit: int = 20) -> list[dict[str, Any]]:
         """获取最近异动"""
-        history = read_json_cache(self.alert_history_file)
+        history = read_json_cache_list(self.alert_history_file)
         if history:
             return history[-limit:]
         return []

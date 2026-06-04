@@ -211,8 +211,8 @@ class IntelligentRecommender:
 
         if historical_data:
             try:
-                validation = strategy_engine.validate_strategy(
-                    strategy_name,
+                validation = strategy_engine.validate_strategy(  # type: ignore[call-arg]
+                    strategy_name,  # type: ignore[arg-type]
                     historical_data,
                 )
 

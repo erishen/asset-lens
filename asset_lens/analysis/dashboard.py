@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any
 
 from ..config import config
-from ..utils.json_cache import read_json_cache, write_json_cache
+from ..utils.json_cache import read_json_cache_dict, write_json_cache
 from .dashboard_models import ChartData, ChartType, DashboardSection, MetricCard, PerformanceDashboard
 
 
@@ -346,7 +346,7 @@ class DashboardGenerator:
         write_json_cache(self.dashboard_file, dashboard.to_dict())
 
     def load_dashboard(self) -> PerformanceDashboard | None:
-        data = read_json_cache(self.dashboard_file)
+        data = read_json_cache_dict(self.dashboard_file)
         if data:
             return self._dict_to_dashboard(data)
         return None

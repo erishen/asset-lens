@@ -7,7 +7,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from ..utils.json_cache import read_json_cache, write_json_cache
+from ..utils.json_cache import read_json_cache_dict, write_json_cache
 from .technical_indicators import TechnicalIndicatorsMixin
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -170,7 +170,7 @@ class FeatureEngineer(TechnicalIndicatorsMixin):
         logger.info(f"特征配置已保存到: {path}")
 
     def load_feature_config(self, path: Path) -> None:
-        config_dict = read_json_cache(path)
+        config_dict = read_json_cache_dict(path)
         if config_dict is None:
             return
 

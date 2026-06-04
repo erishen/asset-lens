@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 class DomesticIndexFetcherMixin:
     def _fetch_from_akshare_spot(self, index_code: str) -> dict[str, Any] | None:
         try:
-            df = self.akshare.stock_zh_index_spot_em()
+            df = self.akshare.stock_zh_index_spot_em()  # type: ignore[attr-defined]
             if df is None or df.empty:
                 return None
 
@@ -50,7 +50,7 @@ class DomesticIndexFetcherMixin:
     def _fetch_from_akshare_hist(self, index_code: str) -> dict[str, Any] | None:
         try:
             code = index_code[2:] if index_code.startswith(("sh", "sz")) else index_code
-            df = self.akshare.index_zh_a_hist(
+            df = self.akshare.index_zh_a_hist(  # type: ignore[attr-defined]
                 symbol=code,
                 period="daily",
                 start_date=(datetime.now() - timedelta(days=7)).strftime("%Y%m%d"),
@@ -70,7 +70,7 @@ class DomesticIndexFetcherMixin:
                 return None
 
             return {
-                "name": self.DOMESTIC_INDEXES.get(index_code, index_code),
+                "name": self.DOMESTIC_INDEXES.get(index_code, index_code),  # type: ignore[attr-defined]
                 "code": index_code,
                 "current_price": current_price,
                 "open": float(latest.get("开盘", 0)),
@@ -106,7 +106,7 @@ class DomesticIndexFetcherMixin:
 
             url = f"http://hq.sinajs.cn/list={sina_code}"
             headers = {"Referer": "http://finance.sina.com.cn"}
-            response = self._http_client.get(url, headers=headers, timeout=10)
+            response = self._http_client.get(url, headers=headers, timeout=10)  # type: ignore[attr-defined]
 
             if response is None:
                 return None
@@ -165,7 +165,7 @@ class DomesticIndexFetcherMixin:
                 return None
 
             url = f"http://qt.gtimg.cn/q={tencent_code}"
-            response = self._http_client.get(url, timeout=10)
+            response = self._http_client.get(url, timeout=10)  # type: ignore[attr-defined]
 
             if response is None:
                 return None
@@ -209,11 +209,11 @@ class DomesticIndexFetcherMixin:
             return None
 
     def fetch_domestic_index(self, index_code: str) -> dict[str, Any] | None:
-        cached = self._get_from_cache(f"domestic_{index_code}")
+        cached = self._get_from_cache(f"domestic_{index_code}")  # type: ignore[attr-defined]
         if cached:
-            return cached
+            return cached  # type: ignore[no-any-return]
 
-        sources = self._sources.get(index_code, [])
+        sources = self._sources.get(index_code, [])  # type: ignore[attr-defined]
         for source in sources:
             if not source.enabled:
                 continue
@@ -231,7 +231,7 @@ class DomesticIndexFetcherMixin:
 
                 if result:
                     source.mark_success()
-                    self._set_cache(f"domestic_{index_code}", result)
+                    self._set_cache(f"domestic_{index_code}", result)  # type: ignore[attr-defined]
                     return result
                 else:
                     source.mark_failure()
@@ -243,8 +243,8 @@ class DomesticIndexFetcherMixin:
 
     def fetch_all_domestic_indexes(self) -> dict[str, Any]:
         results = {}
-        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            futures = {executor.submit(self.fetch_domestic_index, code): code for code in self.DOMESTIC_INDEXES}
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:  # type: ignore[attr-defined]
+            futures = {executor.submit(self.fetch_domestic_index, code): code for code in self.DOMESTIC_INDEXES}  # type: ignore[attr-defined]
 
             for future in as_completed(futures):
                 code = futures[future]

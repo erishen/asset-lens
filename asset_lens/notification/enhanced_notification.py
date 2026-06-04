@@ -26,7 +26,7 @@ from typing import Any
 
 import requests
 
-from ..utils.json_cache import read_json_cache, write_json_cache
+from ..utils.json_cache import read_json_cache_dict, write_json_cache
 from .notification_models import (
     EnhancedNotificationChannel,
     EnhancedNotificationMessage,
@@ -53,7 +53,7 @@ class NotificationHistory:
         self.history: list[dict[str, Any]] = self._load_history()
 
     def _load_history(self) -> list[dict[str, Any]]:
-        data = read_json_cache(self.history_file)
+        data = read_json_cache_dict(self.history_file)
         return data if isinstance(data, list) else []
 
     def _save_history(self):

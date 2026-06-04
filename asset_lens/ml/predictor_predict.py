@@ -15,19 +15,19 @@ class PredictorPredictMixin:
     ) -> Any:
         from .predictor import PredictionResult
 
-        if not self._is_fitted:
+        if not self._is_fitted:  # type: ignore[attr-defined]
             raise ValueError("模型未训练，请先调用 fit() 方法")
 
         features = pd.DataFrame([stock_data])
 
-        missing_features = set(self._feature_names) - set(features.columns)
+        missing_features = set(self._feature_names) - set(features.columns)  # type: ignore[attr-defined]
         for feat in missing_features:
             features[feat] = 0
 
-        features = features[self._feature_names]
+        features = features[self._feature_names]  # type: ignore[attr-defined]
 
-        prediction = self.predict(features)[0]
-        probabilities = self.predict_proba(features)[0]
+        prediction = self.predict(features)[0]  # type: ignore[attr-defined]
+        probabilities = self.predict_proba(features)[0]  # type: ignore[attr-defined]
 
         up_prob = float(probabilities[1]) if len(probabilities) > 1 else float(probabilities[0])
         down_prob = 1 - up_prob
@@ -56,7 +56,7 @@ class PredictorPredictMixin:
     ) -> Any:
         from .predictor import PredictionResult
 
-        if not self._is_fitted:
+        if not self._is_fitted:  # type: ignore[attr-defined]
             logger.warning("模型未训练，返回中性预测")
             return PredictionResult(
                 code=code,
@@ -91,7 +91,7 @@ class PredictorPredictMixin:
 
             logger.warning(f"历史数据不足，使用默认特征: {code}")
 
-            default_features = {name: 0.0 for name in self._feature_names}
+            default_features = {name: 0.0 for name in self._feature_names}  # type: ignore[attr-defined]
             return self.predict_stock(default_features, code, name)
 
         except (ValueError, KeyError, TypeError, RuntimeError) as e:
@@ -112,7 +112,7 @@ class PredictorPredictMixin:
         self,
         stocks_data: list[dict[str, Any]],
     ) -> list[Any]:
-        if not self._is_fitted:
+        if not self._is_fitted:  # type: ignore[attr-defined]
             raise ValueError("模型未训练")
 
         results = []

@@ -6,7 +6,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from ..utils.json_cache import read_json_cache, write_json_cache
+from ..utils.json_cache import read_json_cache_dict, write_json_cache
 from .risk_alert_checks import AlertLevel, RiskAlertChecksMixin
 
 logger = logging.getLogger(__name__)
@@ -81,7 +81,7 @@ class RiskAlertSystem(RiskAlertChecksMixin):
         self._load_history()
 
     def _load_history(self):
-        data = read_json_cache(self._history_file)
+        data = read_json_cache_dict(self._history_file)
         if data:
             for key, ts in data.items():
                 self._alert_history[key] = datetime.fromisoformat(ts)
@@ -173,7 +173,7 @@ class RiskAlertSystem(RiskAlertChecksMixin):
 
     def get_alert_summary(self) -> dict[str, Any]:
         active = self.get_active_alerts()
-        by_level = {}
+        by_level: dict[str, int] = {}
         for alert in active:
             level = alert.level.value
             by_level[level] = by_level.get(level, 0) + 1

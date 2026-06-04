@@ -81,16 +81,16 @@ class MarketStockSourcesMixin:
                         "market": "A股",
                         "industry": industry
                         if industry and industry != "nan"
-                        else self.infer_industry(name, full_code),
+                        else self.infer_industry(name, full_code),  # type: ignore[attr-defined]
                         "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     }
                 )
 
             logger.info(f"Tushare: 获取 {len(stocks)} 只股票")
 
-            stocks = self._enrich_prices_tencent(stocks)
+            stocks = self._enrich_prices_tencent(stocks)  # type: ignore[attr-defined]
 
-            return stocks
+            return stocks  # type: ignore[no-any-return]
 
         except ImportError:
             logger.warning(" Tushare 未安装: pip install tushare")
@@ -170,7 +170,7 @@ class MarketStockSourcesMixin:
                             "pe_ratio": 0,
                             "market_cap": 0,
                             "market": "A股",
-                            "industry": self.infer_industry(name, full_code),
+                            "industry": self.infer_industry(name, full_code),  # type: ignore[attr-defined]
                             "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         }
                     )
@@ -178,7 +178,7 @@ class MarketStockSourcesMixin:
                 logger.info(f"Baostock: 获取 {len(stocks)} 只股票列表")
 
             logger.debug("API请求: https://qt.gtimg.cn/q= (补充实时价格)")
-            stocks = self._enrich_prices_tencent(stocks)
+            stocks = self._enrich_prices_tencent(stocks)  # type: ignore[attr-defined]
 
             valid_stocks: list[dict[str, Any]] = []
             for s in stocks:
@@ -191,7 +191,7 @@ class MarketStockSourcesMixin:
                 return valid_stocks
 
             logger.error(f" 腾讯财经价格补充失败，返回 {len(stocks)} 只股票（无价格）")
-            return stocks
+            return stocks  # type: ignore[no-any-return]
 
         except ImportError:
             logger.warning(" Baostock 未安装，跳过此数据源")
@@ -214,14 +214,14 @@ class MarketStockSourcesMixin:
             logger.debug("API请求: https://push2.eastmoney.com/api/qt/clist/get (通过AkShare)")
 
             with _disable_proxy():
-                df = self.akshare.stock_zh_a_spot_em()
+                df = self.akshare.stock_zh_a_spot_em()  # type: ignore[attr-defined]
 
             if df is None or df.empty:
                 logger.info(" AkShare: 获取数据为空")
                 return []
 
             logger.info(f" AkShare: 共获取 {len(df)} 只A股股票")
-            return self._parse_stock_df(df, "akshare")
+            return self._parse_stock_df(df, "akshare")  # type: ignore[attr-defined,no-any-return]
 
         except (ValueError, KeyError) as e:
             error_msg = str(e).split("\n")[0][:50]
@@ -247,7 +247,7 @@ class MarketStockSourcesMixin:
                 return []
 
             logger.info(f"Efinance: 共获取 {len(df)} 只A股股票")
-            return self._parse_stock_df_efinance(df)
+            return self._parse_stock_df_efinance(df)  # type: ignore[attr-defined,no-any-return]
 
         except ImportError:
             logger.warning(" Efinance 未安装，跳过此数据源")
@@ -292,11 +292,11 @@ class MarketStockSourcesMixin:
                 return []
 
             logger.info(f"Baostock: 共获取 {len(data_list)} 只股票")
-            stocks = self._parse_stock_list_baostock(data_list)
+            stocks = self._parse_stock_list_baostock(data_list)  # type: ignore[attr-defined]
 
-            stocks = self._enrich_stock_prices(stocks)
+            stocks = self._enrich_stock_prices(stocks)  # type: ignore[attr-defined]
 
-            return stocks
+            return stocks  # type: ignore[no-any-return]
 
         except ImportError:
             logger.warning("Baostock 未安装，跳过此数据源")

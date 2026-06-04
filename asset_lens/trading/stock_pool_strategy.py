@@ -58,8 +58,8 @@ class StockPoolStrategyMixin:
             name = stock.get("name", "")
             score = stock.get("score", 0)
 
-            if code in self.positions:
-                existing = self.positions[code]
+            if code in self.positions:  # type: ignore[attr-defined]
+                existing = self.positions[code]  # type: ignore[attr-defined]
                 existing.selected_count += 1
                 existing.selected_history.append(
                     {
@@ -70,16 +70,16 @@ class StockPoolStrategyMixin:
                 )
                 updated_count += 1
             else:
-                self.add_stock(
+                self.add_stock(  # type: ignore[attr-defined]
                     code=code,
                     name=name,
                     price=0.0,
                     status="watching",
                     notes=f"策略 {strategy_name} 选入，评分: {score:.1f}",
                 )
-                self.positions[code].first_selected_date = datetime.now().strftime("%Y-%m-%d")
-                self.positions[code].selected_count = 1
-                self.positions[code].selected_history = [
+                self.positions[code].first_selected_date = datetime.now().strftime("%Y-%m-%d")  # type: ignore[attr-defined]
+                self.positions[code].selected_count = 1  # type: ignore[attr-defined]
+                self.positions[code].selected_history = [  # type: ignore[attr-defined]
                     {
                         "date": datetime.now().strftime("%Y-%m-%d"),
                         "strategy": strategy_name,
@@ -90,7 +90,7 @@ class StockPoolStrategyMixin:
 
         removed_count = 0
         if auto_remove_low_score:
-            for code, position in list(self.positions.items()):
+            for code, position in list(self.positions.items()):  # type: ignore[attr-defined]
                 if position.status == "watching":
                     found = False
                     for stock in stocks_to_add:
@@ -98,10 +98,10 @@ class StockPoolStrategyMixin:
                             found = True
                             break
                     if not found:
-                        self.remove_stock(code, reason=f"策略 {strategy_name} 得分低于 {min_score}")
+                        self.remove_stock(code, reason=f"策略 {strategy_name} 得分低于 {min_score}")  # type: ignore[attr-defined]
                         removed_count += 1
 
-        self._save_pool()
+        self._save_pool()  # type: ignore[attr-defined]
 
         return {
             "success": True,
@@ -116,7 +116,7 @@ class StockPoolStrategyMixin:
         }
 
     def get_strategy_top_stocks(self, strategy_name: str, top_n: int = 10) -> list[dict[str, Any]]:
-        stocks = self.list_stocks()
+        stocks = self.list_stocks()  # type: ignore[attr-defined]
 
         strategy_stocks = []
         for stock in stocks:
@@ -137,11 +137,11 @@ class StockPoolStrategyMixin:
     def clear_strategy_stocks(self, strategy_name: str) -> dict[str, Any]:
         removed_codes = []
 
-        for code, position in list(self.positions.items()):
+        for code, position in list(self.positions.items()):  # type: ignore[attr-defined]
             if position.status == "watching":
                 for entry in position.selected_history:
                     if entry.get("strategy") == strategy_name:
-                        self.remove_stock(code, reason=f"清除策略 {strategy_name} 股票")
+                        self.remove_stock(code, reason=f"清除策略 {strategy_name} 股票")  # type: ignore[attr-defined]
                         removed_codes.append(code)
                         break
 

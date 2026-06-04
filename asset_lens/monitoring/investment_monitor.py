@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from ..core.config_manager import MonitorConfig
-from ..utils.json_cache import read_json_cache, write_json_cache
+from ..utils.json_cache import read_json_cache_list, write_json_cache
 
 logging.raiseExceptions = False
 
@@ -264,7 +264,7 @@ class InvestmentMonitor:
         self.alerts.append(alert)
 
         alert_file = self._cache_path / "alerts.json"
-        alerts_data: list[dict[str, Any]] = read_json_cache(alert_file) or []
+        alerts_data: list[dict[str, Any]] = read_json_cache_list(alert_file) or []
 
         alerts_data.append(
             {

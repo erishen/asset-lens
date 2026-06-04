@@ -19,7 +19,7 @@ from typing import Any
 import click
 
 from asset_lens.config import config
-from asset_lens.utils.json_cache import read_json_cache
+from asset_lens.utils.json_cache import read_json_cache_dict
 
 logger = logging.getLogger(__name__)
 
@@ -221,7 +221,7 @@ def check_data_freshness(
         return True, None
 
     try:
-        data = read_json_cache(file_path)
+        data = read_json_cache_dict(file_path)
         if data:
             update_time_str = data.get(time_key, "")
             if update_time_str:

@@ -86,8 +86,8 @@ class BacktestExecutionMixin:
         amount: float,
         signal_prob: float,
     ) -> None:
-        actual_price = price * (1 + self.config.slippage)
-        commission = amount * self.config.commission_rate
+        actual_price = price * (1 + self.config.slippage)  # type: ignore[attr-defined]
+        commission = amount * self.config.commission_rate  # type: ignore[attr-defined]
         actual_amount = amount - commission
         shares = int(actual_amount / actual_price / 100) * 100
 
@@ -96,27 +96,27 @@ class BacktestExecutionMixin:
 
         actual_cost = shares * actual_price + commission
 
-        if code in self.positions:
-            old_position = self.positions[code]
+        if code in self.positions:  # type: ignore[attr-defined]
+            old_position = self.positions[code]  # type: ignore[attr-defined]
             total_shares = old_position["shares"] + shares
             total_cost = old_position["cost"] + actual_cost
-            self.positions[code] = {
+            self.positions[code] = {  # type: ignore[attr-defined]
                 "shares": total_shares,
                 "avg_price": total_cost / total_shares,
                 "cost": total_cost,
                 "value": total_shares * price,
             }
         else:
-            self.positions[code] = {
+            self.positions[code] = {  # type: ignore[attr-defined]
                 "shares": shares,
                 "avg_price": actual_price,
                 "cost": actual_cost,
                 "value": shares * price,
             }
 
-        self.capital -= actual_cost
+        self.capital -= actual_cost  # type: ignore[attr-defined]
 
-        self.trades.append(
+        self.trades.append(  # type: ignore[attr-defined]
             BacktestTradeRecord(
                 code=code,
                 name="",
@@ -138,21 +138,21 @@ class BacktestExecutionMixin:
         reason: str,
         signal_prob: float,
     ) -> None:
-        if code not in self.positions:
+        if code not in self.positions:  # type: ignore[attr-defined]
             return
 
-        position = self.positions[code]
+        position = self.positions[code]  # type: ignore[attr-defined]
 
-        actual_price = price * (1 - self.config.slippage)
+        actual_price = price * (1 - self.config.slippage)  # type: ignore[attr-defined]
         sell_amount = position["shares"] * actual_price
-        commission = sell_amount * self.config.commission_rate
+        commission = sell_amount * self.config.commission_rate  # type: ignore[attr-defined]
         actual_amount = sell_amount - commission
 
         pnl = actual_amount - position["cost"]
 
-        self.capital += actual_amount
+        self.capital += actual_amount  # type: ignore[attr-defined]
 
-        self.trades.append(
+        self.trades.append(  # type: ignore[attr-defined]
             BacktestTradeRecord(
                 code=code,
                 name="",
@@ -167,7 +167,7 @@ class BacktestExecutionMixin:
             )
         )
 
-        del self.positions[code]
+        del self.positions[code]  # type: ignore[attr-defined]
 
     def _update_equity_curve(
         self,
@@ -176,7 +176,7 @@ class BacktestExecutionMixin:
     ) -> None:
         position_value = 0.0
 
-        for code, position in self.positions.items():
+        for code, position in self.positions.items():  # type: ignore[attr-defined]
             df = price_data.get(code)
             if df is None or df.empty:
                 continue
@@ -187,15 +187,15 @@ class BacktestExecutionMixin:
                 current_price = float(day_data["close"].iloc[0])
                 position_value += position["shares"] * current_price
 
-        total_equity = self.capital + position_value
-        self.equity_curve.append(total_equity)
+        total_equity = self.capital + position_value  # type: ignore[attr-defined]
+        self.equity_curve.append(total_equity)  # type: ignore[attr-defined]
 
     def _close_all_positions(
         self,
         price_data: dict[str, pd.DataFrame],
         date: str | None,
     ) -> None:
-        for code in list(self.positions.keys()):
+        for code in list(self.positions.keys()):  # type: ignore[attr-defined]
             df = price_data.get(code)
 
             if df is None or df.empty:

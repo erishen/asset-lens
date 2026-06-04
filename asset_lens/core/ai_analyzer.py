@@ -14,7 +14,7 @@ from typing import Any, ClassVar
 
 from dotenv import load_dotenv
 
-from ..utils.json_cache import read_json_cache, write_json_cache
+from ..utils.json_cache import read_json_cache_dict, write_json_cache
 
 load_dotenv()
 
@@ -402,7 +402,7 @@ class AIAnalyzer:
             return None
 
         cache_file = self.cache_dir / f"{key}.json"
-        cached = read_json_cache(cache_file)
+        cached = read_json_cache_dict(cache_file)
         if not cached:
             return None
 

@@ -6,7 +6,7 @@ import pandas as pd
 
 from ..config import config
 from ..trading.stock_pool import StockPool
-from ..utils.json_cache import read_json_cache, write_json_cache
+from ..utils.json_cache import read_json_cache_dict, read_json_cache_list, write_json_cache
 from .ai_trader_execution import AITraderExecutionMixin
 from .ai_trader_models import TradeSignal
 
@@ -38,16 +38,16 @@ class AISimulatedTrader(AITraderExecutionMixin):
         self._load_state()
 
     def _load_history(self) -> None:
-        signals = read_json_cache(self.signals_file)
+        signals = read_json_cache_list(self.signals_file)
         if signals:
             self.signals = signals
 
-        trades = read_json_cache(self.trades_file)
+        trades = read_json_cache_list(self.trades_file)
         if trades:
             self.trades = trades
 
     def _load_state(self) -> None:
-        state = read_json_cache(self.state_file)
+        state = read_json_cache_dict(self.state_file)
         if state:
             self.current_capital = state.get("current_capital", self.initial_capital)
 

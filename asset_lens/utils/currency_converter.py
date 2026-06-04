@@ -10,7 +10,7 @@ from typing import Any
 
 from ..config import config
 from ..data.models import Currency
-from .json_cache import read_json_cache, write_json_cache
+from .json_cache import read_json_cache_dict, write_json_cache
 
 
 class CurrencyConverter:
@@ -32,7 +32,7 @@ class CurrencyConverter:
         """从缓存加载汇率数据"""
         cache_file = config.project_root / "cache" / "exchange_rates.json"
 
-        cached_data = read_json_cache(cache_file)
+        cached_data = read_json_cache_dict(cache_file)
         if cached_data is not None:
             for currency_str, rate in cached_data.get("rates", {}).items():
                 try:

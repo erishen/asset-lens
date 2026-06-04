@@ -25,11 +25,11 @@ class NorthMoneyFlowMixin:
 
         logger.warning("Playwright 获取失败，尝试 AkShare 回退...")
 
-        if not self.akshare:
+        if not self.akshare:  # type: ignore[attr-defined]
             return pd.DataFrame()
 
         try:
-            df = self.akshare.stock_hsgt_hist_em(symbol="北向资金")
+            df = self.akshare.stock_hsgt_hist_em(symbol="北向资金")  # type: ignore[attr-defined]
             if df is not None and not df.empty:
                 df = df.rename(
                     columns={

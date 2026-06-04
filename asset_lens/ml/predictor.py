@@ -6,7 +6,7 @@ from typing import Any
 
 import pandas as pd
 
-from ..utils.json_cache import read_json_cache
+from ..utils.json_cache import read_json_cache_dict
 from .predictor_model import PredictorModelMixin
 from .predictor_predict import PredictorPredictMixin
 
@@ -38,7 +38,7 @@ except ImportError:
 
 def _load_optimized_params(model_type: str) -> dict[str, Any]:
     config_path = Path(f"config/ml/{model_type}_best_params.json")
-    params = read_json_cache(config_path)
+    params = read_json_cache_dict(config_path)
     if params:
         logger.info(f"Loaded optimized parameters for {model_type} from {config_path}")
         return params
@@ -160,7 +160,7 @@ class StockPredictor(PredictorModelMixin, PredictorPredictMixin):
 
         feature_engineer = FeatureEngineer()
 
-        klines_data = db_manager.get_all_klines(days=days)
+        klines_data = db_manager.get_all_klines(days=days)  # type: ignore[attr-defined]
 
         if not klines_data:
             raise ValueError("数据库中没有K线数据，请先同步数据")
