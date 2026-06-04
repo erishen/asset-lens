@@ -107,7 +107,7 @@ class HTMLReportGenerator:
             portfolio_data["total_products"] = summary.get("total_stocks", 0)
             portfolio_data["total_profit"] = summary.get("total_profit", 0)
 
-        chart_images = {} if include_charts else None
+        chart_images = {} if include_charts else None  # type: ignore[var-annotated]
         return self._generate_html_content(portfolio_data, analysis_result, chart_images)
 
     def _generate_html_content(

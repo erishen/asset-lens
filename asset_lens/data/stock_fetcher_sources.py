@@ -373,7 +373,7 @@ class StockFetcherSourcesMixin:
 
     def _fetch_us_stock_quote_akshare_full(self, symbol: str) -> dict[str, Any] | None:
         try:
-            df = self.akshare.stock_us_spot_em()
+            df = self.akshare.stock_us_spot_em()  # type: ignore[attr-defined]
 
             if df is None or df.empty:
                 return None

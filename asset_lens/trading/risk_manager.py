@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any
 
 from ..config import config
-from ..utils.json_cache import read_json_cache, write_json_cache
+from ..utils.json_cache import read_json_cache_list, write_json_cache
 from .risk_position import PositionAdvice, RiskConfig, RiskPositionMixin, RiskWarning  # noqa: F401
 
 logger = logging.getLogger(__name__)
@@ -163,7 +163,7 @@ class RiskManager(RiskPositionMixin):
         }
 
     def _load_warnings(self) -> None:
-        data = read_json_cache(self.warnings_file)
+        data = read_json_cache_list(self.warnings_file)
         if data:
             self.warnings = [
                 RiskWarning(

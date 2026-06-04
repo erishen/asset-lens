@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class IndustryFlowMixin:
     def get_north_flow_by_industry(self, use_cache: bool = True, force: bool = False) -> pd.DataFrame:
-        cache_file = self.cache_path / "north_industry_flow_cache.json"
+        cache_file = self.cache_path / "north_industry_flow_cache.json"  # type: ignore[attr-defined]
 
         if use_cache:
             cached_df = self._load_industry_cache(cache_file)
@@ -51,7 +51,7 @@ class IndustryFlowMixin:
             return pd.DataFrame()
 
     def _fetch_industry_flow_from_akshare(self) -> pd.DataFrame | None:
-        if self.akshare:
+        if self.akshare:  # type: ignore[attr-defined]
             logger.info("尝试从AkShare获取北向持股行业数据（真正的北向资金）...")
             try:
                 df = self._fetch_north_holding_from_akshare()
@@ -62,19 +62,19 @@ class IndustryFlowMixin:
                 logger.warning(f"AkShare北向持股获取失败: {e}")
 
         logger.info("AkShare北向持股获取失败，尝试东方财富push2接口...")
-        df = self._fetch_industry_flow_from_push2()
+        df = self._fetch_industry_flow_from_push2()  # type: ignore[attr-defined]
         if df is not None and not df.empty:
             logger.info(f"✅ 成功从东方财富push2接口获取 {len(df)} 个行业数据")
             return df
 
         logger.info("尝试使用Playwright从东方财富获取行业资金流向数据...")
-        df = self._fetch_industry_flow_from_eastmoney_playwright()
+        df = self._fetch_industry_flow_from_eastmoney_playwright()  # type: ignore[attr-defined]
         if df is not None and not df.empty:
             logger.info(f"✅ 成功从东方财富Playwright获取 {len(df)} 个行业数据")
             return df
 
         logger.warning("以上数据源均失败，尝试新浪行业板块（全市场代理数据，非北向）...")
-        df = self._fetch_industry_flow_from_sina()
+        df = self._fetch_industry_flow_from_sina()  # type: ignore[attr-defined]
         if df is not None and not df.empty:
             logger.info(f"✅ 成功从新浪行业板块获取 {len(df)} 个行业数据（注意：非北向数据，为全市场代理）")
             return df
@@ -116,7 +116,7 @@ class IndustryFlowMixin:
                     logger.debug("行业资金流数据解析失败: %s", e)
 
                 try:
-                    df = self.akshare.stock_hsgt_hold_stock_em(market="北向")
+                    df = self.akshare.stock_hsgt_hold_stock_em(market="北向")  # type: ignore[attr-defined]
 
                     if df is None:
                         logger.warning("AkShare接口返回None")
@@ -334,7 +334,7 @@ class IndustryFlowMixin:
 
     def _load_industry_cache(self, cache_file: Path) -> pd.DataFrame | None:
         filename = cache_file.name
-        data = self._cache.load_file(filename)
+        data = self._cache.load_file(filename)  # type: ignore[attr-defined]
         if data is None:
             return None
 
@@ -381,7 +381,7 @@ class IndustryFlowMixin:
             filename = cache_file.name
             data = {"cache_time": datetime.now().isoformat(), "industries": df.to_dict("records")}
 
-            self._cache.save_file(filename, data, ttl=0)
+            self._cache.save_file(filename, data, ttl=0)  # type: ignore[attr-defined]
 
             logger.info(f"缓存已保存: {cache_file}")
 

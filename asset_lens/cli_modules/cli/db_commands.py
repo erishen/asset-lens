@@ -39,7 +39,7 @@ def register_db_sync_commands(db_group: click.Group) -> None:
         click.echo("\n📊 更新缺失的K线数据")
         click.echo("=" * 60)
 
-        missing_codes = db_manager.get_stock_codes_without_klines()
+        missing_codes = db_manager.get_stock_codes_without_klines()  # type: ignore[attr-defined]
 
         if not missing_codes:
             click.echo("✅ 没有缺失的K线数据")
@@ -163,7 +163,7 @@ def register_db_kline_commands(db_group: click.Group) -> None:
         click.echo(f"\n🧹 清理 {days} 天前的K线数据")
         click.echo("=" * 60)
 
-        result = db_manager.clean_old_klines(days)
+        result = db_manager.clean_old_klines(days)  # type: ignore[attr-defined]
 
         click.echo(f"✅ 已清理 {result} 条K线数据")
 
@@ -174,7 +174,7 @@ def register_db_kline_commands(db_group: click.Group) -> None:
         click.echo("\n🔍 验证K线数据完整性")
         click.echo("=" * 60)
 
-        result = db_manager.verify_kline_data()
+        result = db_manager.verify_kline_data()  # type: ignore[attr-defined]
 
         click.echo(f"✅ 验证完成: {result.get('valid', 0)} 条有效, {result.get('invalid', 0)} 条无效")
 
@@ -205,7 +205,7 @@ def register_db_kline_commands(db_group: click.Group) -> None:
 
         if code_list:
             click.echo(f"共 {len(code_list)} 只股票:")
-            for code in code_list[:50]:
+            for code in code_list[:50]:  # type: ignore[index]
                 click.echo(f"  {code}")
             if len(code_list) > 50:
                 click.echo(f"  ... 还有 {len(code_list) - 50} 只")

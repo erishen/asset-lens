@@ -22,14 +22,14 @@ class CSVDataLoaderMixin:
         products = []
 
         data_dir = csv_path.parent
-        usd_rate, hkd_rate = cls.get_exchange_rates(data_dir)
+        usd_rate, hkd_rate = cls.get_exchange_rates(data_dir)  # type: ignore[attr-defined]
 
         try:
             with open(csv_path, encoding="utf-8-sig") as f:
                 reader = csv.DictReader(f)
 
                 for _row_num, row in enumerate(reader, start=2):
-                    product = cls.parse_row(row, reference_date)
+                    product = cls.parse_row(row, reference_date)  # type: ignore[attr-defined]
                     if product:
                         from decimal import Decimal
 
@@ -113,7 +113,7 @@ class CSVDataLoaderMixin:
 
                     logger.info(f"使用数据目录: {target_dir.name}")
 
-                    usd_rate, hkd_rate = cls.get_exchange_rates(target_dir)
+                    usd_rate, hkd_rate = cls.get_exchange_rates(target_dir)  # type: ignore[attr-defined]
                     csv_files = list(target_dir.glob("投资产品-表格 1.csv"))
                     if not csv_files:
                         csv_files = list(target_dir.glob("投资产品.csv"))
@@ -130,11 +130,11 @@ class CSVDataLoaderMixin:
                             products = cls.parse_csv_file(csv_path)
                             dir_date_str = target_dir.name.split("_")[-1]
                             reference_date = datetime.strptime(dir_date_str, "%Y%m%d")
-                            products = cls._calculate_irr_for_products(products, reference_date, usd_rate, hkd_rate)
+                            products = cls._calculate_irr_for_products(products, reference_date, usd_rate, hkd_rate)  # type: ignore[attr-defined]
                             logger.info(
                                 f"成功加载 {len(products)} 个投资产品, 美元汇率: {usd_rate}, 港元汇率: {hkd_rate}"
                             )
-                            return products
+                            return products  # type: ignore[no-any-return]
                         except (OSError, DataLoadError, DataParseError) as e:
                             logger.error(f"加载数据失败: {e}", exc_info=True)
                             raise
@@ -169,18 +169,18 @@ class CSVDataLoaderMixin:
         products = cls.parse_csv_file(csv_path)
 
         reference_date = datetime.now()
-        products = cls._calculate_irr_for_products(
+        products = cls._calculate_irr_for_products(  # type: ignore[attr-defined]
             products, reference_date, float(config.default_usd_rate), float(config.default_hkd_rate)
         )
 
-        return products
+        return products  # type: ignore[no-any-return]
 
     @classmethod
     def load_data_from_dir(cls, data_dir: Path, reference_date: datetime | None = None) -> list[InvestmentProduct]:
         if not data_dir.exists():
             raise FileNotFoundError(f"数据目录不存在: {data_dir}")
 
-        usd_rate, hkd_rate = cls.get_exchange_rates(data_dir)
+        usd_rate, hkd_rate = cls.get_exchange_rates(data_dir)  # type: ignore[attr-defined]
 
         dir_date_str = data_dir.name.split("_")[-1]
         parsed_reference_date = None
@@ -219,6 +219,6 @@ class CSVDataLoaderMixin:
         products = cls.parse_csv_file(csv_path, reference_date=csv_reference_date)
 
         if effective_reference_date:
-            products = cls._calculate_irr_for_products(products, effective_reference_date, usd_rate, hkd_rate)
+            products = cls._calculate_irr_for_products(products, effective_reference_date, usd_rate, hkd_rate)  # type: ignore[attr-defined]
 
         return products

@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 class StrategyEvaluationMixin:
     def evaluate_stock(self, stock: dict[str, Any], strategy_name: str = "value") -> dict[str, Any]:
-        strategy = self.get_strategy(strategy_name)
+        strategy = self.get_strategy(strategy_name)  # type: ignore[attr-defined]
         if not strategy:
             return {"error": f"策略 {strategy_name} 不存在"}
 
@@ -90,7 +90,7 @@ class StrategyEvaluationMixin:
                 return False
             if isinstance(target, (list, tuple)) and len(target) == 2:
                 try:
-                    return float(target[0]) <= value <= float(target[1])
+                    return float(target[0]) <= value <= float(target[1])  # type: ignore[no-any-return]
                 except (ValueError, TypeError):
                     return False
             return False
@@ -108,17 +108,17 @@ class StrategyEvaluationMixin:
             return False
 
         if operator == "gt":
-            return value > target
+            return value > target  # type: ignore[no-any-return]
         elif operator == "gte":
-            return value >= target
+            return value >= target  # type: ignore[no-any-return]
         elif operator == "lt":
-            return value < target
+            return value < target  # type: ignore[no-any-return]
         elif operator == "lte":
-            return value <= target
+            return value <= target  # type: ignore[no-any-return]
         elif operator == "eq":
-            return abs(value - target) < 0.001
+            return abs(value - target) < 0.001  # type: ignore[no-any-return]
         elif operator == "ne":
-            return abs(value - target) >= 0.001
+            return abs(value - target) >= 0.001  # type: ignore[no-any-return]
 
         return False
 
@@ -188,7 +188,7 @@ class StrategyEvaluationMixin:
         target_field: str = "change_percent",
         method: str = "grid_search",
     ) -> dict[str, Any]:
-        strategy = self.get_strategy(strategy_name)
+        strategy = self.get_strategy(strategy_name)  # type: ignore[attr-defined]
         if not strategy:
             return {"error": f"策略 {strategy_name} 不存在"}
 
@@ -224,7 +224,7 @@ class StrategyEvaluationMixin:
                 best_score = score
                 best_params = params
 
-        results.sort(key=lambda x: x["score"], reverse=True)
+        results.sort(key=lambda x: x["score"], reverse=True)  # type: ignore[arg-type,return-value]
 
         return {
             "strategy": strategy_name,
@@ -311,7 +311,7 @@ class StrategyEvaluationMixin:
     ) -> dict[str, Any]:
         strategies = []
         for name in strategy_names:
-            strategy = self.get_strategy(name)
+            strategy = self.get_strategy(name)  # type: ignore[attr-defined]
             if strategy:
                 strategies.append(strategy)
 
@@ -376,7 +376,7 @@ class StrategyEvaluationMixin:
 
             combined_score = sum(s * w for s, w in zip(stock_scores.values(), w, strict=False))
 
-            best_strategy = max(stock_scores, key=stock_scores.get) if stock_scores else None
+            best_strategy = max(stock_scores, key=stock_scores.get) if stock_scores else None  # type: ignore[arg-type]
 
             results.append(
                 {

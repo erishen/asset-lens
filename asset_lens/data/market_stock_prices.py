@@ -208,7 +208,7 @@ class MarketStockPricesMixin:
                     "pe_ratio": pe_ratio,
                     "market_cap": market_cap,
                     "market": "A股",
-                    "industry": self.infer_industry(name, full_code),
+                    "industry": self.infer_industry(name, full_code),  # type: ignore[attr-defined]
                     "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 }
             )
@@ -266,7 +266,7 @@ class MarketStockPricesMixin:
                     "pe_ratio": pe_ratio,
                     "market_cap": market_cap,
                     "market": "A股",
-                    "industry": self.infer_industry(name, full_code),
+                    "industry": self.infer_industry(name, full_code),  # type: ignore[attr-defined]
                     "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 }
             )
@@ -311,7 +311,7 @@ class MarketStockPricesMixin:
                     "pe_ratio": 0,
                     "market_cap": 0,
                     "market": "A股",
-                    "industry": self.infer_industry(name, full_code),
+                    "industry": self.infer_industry(name, full_code),  # type: ignore[attr-defined]
                     "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 }
             )

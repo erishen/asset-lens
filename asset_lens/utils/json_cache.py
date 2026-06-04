@@ -9,26 +9,29 @@ JSON 文件缓存工具 - 统一的 JSON 文件读写入口
 import json
 import logging
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-def read_json_cache(file_path: Path) -> dict[str, Any] | None:
+def read_json_cache(file_path: Path) -> dict[str, Any] | list[Any] | None:
     """从 JSON 文件读取缓存数据
 
     Args:
         file_path: 缓存文件路径
 
     Returns:
-        解析后的字典数据，文件不存在或解析失败返回 None
+        解析后的字典或列表数据，文件不存在或解析失败返回 None
     """
     if not file_path.exists():
         return None
 
     try:
         with open(file_path, encoding="utf-8") as f:
-            return cast(dict[str, Any], json.load(f))
+            data = json.load(f)
+            if isinstance(data, (dict, list)):
+                return data
+            return None
     except json.JSONDecodeError as e:
         logger.debug(f"缓存文件 JSON 解析失败 {file_path}: {e}")
         return None
@@ -40,7 +43,7 @@ def read_json_cache(file_path: Path) -> dict[str, Any] | None:
         return None
 
 
-def write_json_cache(file_path: Path, data: dict[str, Any], ensure_dir: bool = True) -> bool:
+def write_json_cache(file_path: Path, data: dict[str, Any] | list[Any], ensure_dir: bool = True) -> bool:
     """将数据写入 JSON 缓存文件
 
     Args:
@@ -65,3 +68,33 @@ def write_json_cache(file_path: Path, data: dict[str, Any], ensure_dir: bool = T
     except (TypeError, ValueError) as e:
         logger.warning(f"缓存数据序列化失败 {file_path}: {e}")
         return False
+
+
+def read_json_cache_dict(file_path: Path) -> dict[str, Any] | None:
+    """从 JSON 文件读取缓存数据，仅返回字典类型
+
+    Args:
+        file_path: 缓存文件路径
+
+    Returns:
+        解析后的字典数据，文件不存在、解析失败或数据非字典返回 None
+    """
+    data = read_json_cache(file_path)
+    if isinstance(data, dict):
+        return data
+    return None
+
+
+def read_json_cache_list(file_path: Path) -> list[Any] | None:
+    """从 JSON 文件读取缓存数据，仅返回列表类型
+
+    Args:
+        file_path: 缓存文件路径
+
+    Returns:
+        解析后的列表数据，文件不存在、解析失败或数据非列表返回 None
+    """
+    data = read_json_cache(file_path)
+    if isinstance(data, list):
+        return data
+    return None

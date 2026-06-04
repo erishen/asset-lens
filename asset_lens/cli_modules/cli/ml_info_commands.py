@@ -5,7 +5,7 @@ def register_ml_info_commands(ml_group: click.Group) -> None:
     import logging
     from pathlib import Path
 
-    from asset_lens.utils.json_cache import read_json_cache
+    from asset_lens.utils.json_cache import read_json_cache_dict
 
     logger = logging.getLogger(__name__)
 
@@ -79,7 +79,7 @@ def register_ml_info_commands(ml_group: click.Group) -> None:
             console.print(f"\n✅ 已训练模型: {model_path}")
 
             result_path = model_path.with_suffix(".json")
-            result = read_json_cache(result_path)
+            result = read_json_cache_dict(result_path)
             if result:
 
                 console.print(f"   模型类型: {result.get('model_type')}")

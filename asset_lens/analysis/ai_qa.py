@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from ..config import config
-from ..utils.json_cache import read_json_cache, write_json_cache
+from ..utils.json_cache import read_json_cache_list, write_json_cache
 
 
 class QuestionType(Enum):
@@ -332,12 +332,12 @@ class AIQAEngine:
 
     def _load_knowledge_base(self) -> list[dict[str, Any]]:
         """加载知识库"""
-        data = read_json_cache(self.knowledge_base_file)
+        data = read_json_cache_list(self.knowledge_base_file)
         return data if data else []
 
     def _save_qa_history(self, response: QAResponse) -> None:
         """保存问答历史"""
-        history: list[dict[str, Any]] = read_json_cache(self.qa_history_file) or []
+        history: list[dict[str, Any]] = read_json_cache_list(self.qa_history_file) or []
 
         history.append(
             {
@@ -356,7 +356,7 @@ class AIQAEngine:
 
     def get_qa_history(self, limit: int = 20) -> list[dict[str, Any]]:
         """获取问答历史"""
-        history = read_json_cache(self.qa_history_file)
+        history = read_json_cache_list(self.qa_history_file)
         if history:
             return history[-limit:]
         return []

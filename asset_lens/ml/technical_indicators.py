@@ -39,12 +39,12 @@ class TechnicalIndicatorsMixin:
 
     def _calc_ma_features(self, df: pd.DataFrame) -> pd.DataFrame:
         features = {}
-        for period in self.config.ma_periods:
+        for period in self.config.ma_periods:  # type: ignore[attr-defined]
             rolling_ma = df["close"].rolling(window=period, min_periods=max(period // 2, 1)).mean()
             features[f"ma{period}"] = rolling_ma.fillna(df["close"])
             features[f"close_ma{period}_ratio"] = safe_divide(df["close"], rolling_ma, 1.0)
 
-        if f"ma{self.config.ma_periods[0]}" in features and f"ma{self.config.ma_periods[2]}" in features:
+        if f"ma{self.config.ma_periods[0]}" in features and f"ma{self.config.ma_periods[2]}" in features:  # type: ignore[attr-defined]
             ma5 = features["ma5"]
             ma20 = features["ma20"]
             features["ma5_ma20_ratio"] = safe_divide(ma5, ma20, 1.0)
@@ -54,11 +54,11 @@ class TechnicalIndicatorsMixin:
 
     def _calc_macd_features(self, df: pd.DataFrame) -> pd.DataFrame:
         features = {}
-        exp1 = df["close"].ewm(span=self.config.macd_fast, adjust=False).mean()
-        exp2 = df["close"].ewm(span=self.config.macd_slow, adjust=False).mean()
+        exp1 = df["close"].ewm(span=self.config.macd_fast, adjust=False).mean()  # type: ignore[attr-defined]
+        exp2 = df["close"].ewm(span=self.config.macd_slow, adjust=False).mean()  # type: ignore[attr-defined]
 
         features["macd"] = exp1 - exp2
-        features["macd_signal"] = features["macd"].ewm(span=self.config.macd_signal, adjust=False).mean()
+        features["macd_signal"] = features["macd"].ewm(span=self.config.macd_signal, adjust=False).mean()  # type: ignore[attr-defined]
         features["macd_hist"] = features["macd"] - features["macd_signal"]
         features["macd_cross"] = (
             (features["macd"] > features["macd_signal"])
@@ -70,8 +70,8 @@ class TechnicalIndicatorsMixin:
     def _calc_rsi_features(self, df: pd.DataFrame) -> pd.DataFrame:
         features = {}
         delta = df["close"].diff()
-        gain = (delta.where(delta > 0, 0)).rolling(window=self.config.rsi_period).mean().fillna(0)
-        loss = (-delta.where(delta < 0, 0)).rolling(window=self.config.rsi_period).mean().fillna(0.001)
+        gain = (delta.where(delta > 0, 0)).rolling(window=self.config.rsi_period).mean().fillna(0)  # type: ignore[attr-defined]
+        loss = (-delta.where(delta < 0, 0)).rolling(window=self.config.rsi_period).mean().fillna(0.001)  # type: ignore[attr-defined]
 
         rs = safe_divide(gain, loss, 0)
         features["rsi"] = (100 - safe_divide(100, 1 + rs, 50)).fillna(50)
@@ -82,8 +82,8 @@ class TechnicalIndicatorsMixin:
 
     def _calc_boll_features(self, df: pd.DataFrame) -> pd.DataFrame:
         features = {}
-        period = self.config.boll_period
-        std_mult = self.config.boll_std
+        period = self.config.boll_period  # type: ignore[attr-defined]
+        std_mult = self.config.boll_std  # type: ignore[attr-defined]
 
         features["boll_mid"] = df["close"].rolling(window=period).mean().fillna(df["close"])
         features["boll_std"] = df["close"].rolling(window=period).std().fillna(0)
@@ -114,7 +114,7 @@ class TechnicalIndicatorsMixin:
 
     def _calc_volume_features(self, df: pd.DataFrame) -> pd.DataFrame:
         features = {}
-        for period in self.config.volume_ma_periods:
+        for period in self.config.volume_ma_periods:  # type: ignore[attr-defined]
             vol_ma = df["volume"].rolling(window=period).mean().fillna(df["volume"])
             features[f"volume_ma{period}"] = vol_ma
             features[f"volume_ratio_{period}"] = safe_divide(df["volume"], vol_ma, 1.0)

@@ -10,7 +10,7 @@ class StockHistorySourcesMixin:
         try:
             import baostock as bs
 
-            if not self._baostock_login_with_retry():
+            if not self._baostock_login_with_retry():  # type: ignore[attr-defined]
                 return None
 
             bs_code = self._convert_to_bs_code(code)
@@ -21,7 +21,7 @@ class StockHistorySourcesMixin:
             start_date = datetime(datetime.now().year, datetime.now().month, datetime.now().day)
             from datetime import timedelta
 
-            start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+            start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")  # type: ignore[assignment]
 
             rs = bs.query_history_k_data_plus(
                 bs_code,
@@ -146,7 +146,7 @@ class StockHistorySourcesMixin:
         try:
             pure_code = code.replace("sh", "").replace("sz", "")
 
-            df = self.akshare.stock_zh_a_hist(
+            df = self.akshare.stock_zh_a_hist(  # type: ignore[attr-defined]
                 symbol=pure_code,
                 period="daily",
                 start_date=(datetime.now() - __import__("datetime").timedelta(days=days)).strftime("%Y%m%d"),
@@ -198,7 +198,7 @@ class StockHistorySourcesMixin:
         try:
             pure_code = code.replace("sh", "").replace("sz", "")
 
-            df = self.akshare.stock_zh_a_hist_163(
+            df = self.akshare.stock_zh_a_hist_163(  # type: ignore[attr-defined]
                 symbol=pure_code,
                 start_date=(datetime.now() - __import__("datetime").timedelta(days=days)).strftime("%Y%m%d"),
                 end_date=datetime.now().strftime("%Y%m%d"),

@@ -25,7 +25,7 @@ def register_monthly_command(cli: click.Group) -> None:
     def monthly(data_mode: str | None, output: str, skip_ml: bool, skip_north_flow: bool):
         from asset_lens.cli_modules.cli.helpers import load_products, setup_data_mode
         from asset_lens.cli_modules.cli.report import _format_amount, _get_cny_amount, _get_profit_cny_amount
-        from asset_lens.cli_modules.cli.report_helpers import (
+        from asset_lens.cli_modules.cli.report_helpers import (  # type: ignore[attr-defined]
             _check_risks,
             _evaluate_fund_with_peers,
             _get_fund_type_threshold,

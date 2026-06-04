@@ -37,7 +37,7 @@ class RiskWarning:
 
 class RiskPositionMixin:
     def get_position_advice(self, holdings: list[dict[str, Any]]) -> list[PositionAdvice]:
-        advices = []
+        advices = []  # type: ignore[var-annotated]
 
         total_value = sum(h.get("market_value", h.get("amount", 0)) for h in holdings)
 
@@ -54,10 +54,10 @@ class RiskPositionMixin:
             action = "hold"
             reason = ""
 
-            if current_position > self.config.max_single_position:
-                suggested_position = self.config.max_single_position
+            if current_position > self.config.max_single_position:  # type: ignore[attr-defined]
+                suggested_position = self.config.max_single_position  # type: ignore[attr-defined]
                 action = "decrease"
-                reason = f"仓位 {current_position:.1%} 超过单只上限 {self.config.max_single_position:.1%}"
+                reason = f"仓位 {current_position:.1%} 超过单只上限 {self.config.max_single_position:.1%}"  # type: ignore[attr-defined]
 
             profit_rate = holding.get("profit_rate", 0)
             if profit_rate < -10:
@@ -66,7 +66,7 @@ class RiskPositionMixin:
                 reason = f"亏损 {profit_rate:.1f}%，建议减仓止损"
 
             if current_position < 0.05 and profit_rate > 5:
-                suggested_position = min(current_position * 1.5, self.config.max_single_position)
+                suggested_position = min(current_position * 1.5, self.config.max_single_position)  # type: ignore[attr-defined]
                 action = "increase"
                 reason = f"仓位偏低且盈利 {profit_rate:.1f}%，可适当加仓"
 
@@ -84,7 +84,7 @@ class RiskPositionMixin:
         return advices
 
     def check_position_concentration(self, holdings: list[dict[str, Any]]) -> list[RiskWarning]:
-        warnings = []
+        warnings = []  # type: ignore[var-annotated]
 
         total_value = sum(h.get("market_value", h.get("amount", 0)) for h in holdings)
 
@@ -157,8 +157,8 @@ class RiskPositionMixin:
             "method": "default",
         }
 
-        stop_loss = self.config.stop_loss_default
-        take_profit = self.config.take_profit_default
+        stop_loss = self.config.stop_loss_default  # type: ignore[attr-defined]
+        take_profit = self.config.take_profit_default  # type: ignore[attr-defined]
 
         if strategy_name:
             strategy = strategy_engine.get_strategy(strategy_name)

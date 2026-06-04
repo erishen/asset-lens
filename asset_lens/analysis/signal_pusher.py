@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from ..config import config
-from ..utils.json_cache import read_json_cache, write_json_cache
+from ..utils.json_cache import read_json_cache_list, write_json_cache
 
 logger = logging.getLogger(__name__)
 
@@ -201,7 +201,7 @@ class SignalPusher:
         """保存信号历史"""
         history = []
 
-        history_data = read_json_cache(self.signal_history_file)
+        history_data = read_json_cache_list(self.signal_history_file)
         if history_data:
             history = history_data
 
@@ -227,7 +227,7 @@ class SignalPusher:
 
     def get_recent_signals(self, limit: int = 20) -> list[dict[str, Any]]:
         """获取最近信号"""
-        history_data = read_json_cache(self.signal_history_file)
+        history_data = read_json_cache_list(self.signal_history_file)
         if not history_data:
             return []
         return history_data[-limit:]

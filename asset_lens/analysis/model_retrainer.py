@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from ..config import config
-from ..utils.json_cache import read_json_cache, write_json_cache
+from ..utils.json_cache import read_json_cache_list, write_json_cache
 
 
 class ModelStatus(Enum):
@@ -291,7 +291,7 @@ class ModelRetrainer:
     def _get_prediction_count(self) -> int:
         """获取预测数量"""
         predictions_file = self.cache_path / "ml_predictions.json"
-        data = read_json_cache(predictions_file)
+        data = read_json_cache_list(predictions_file)
         return len(data) if data else 0
 
     def _save_version(self, version: ModelVersion) -> None:
@@ -319,13 +319,13 @@ class ModelRetrainer:
     def _load_versions(self) -> list[dict[str, Any]]:
         """加载版本信息"""
         versions_file = self.models_path / "versions.json"
-        data = read_json_cache(versions_file)
+        data = read_json_cache_list(versions_file)
         return data if data else []
 
     def _log_retraining(self, result: RetrainingResult) -> None:
         """记录重训练日志"""
         log_file = self.models_path / "retrain_log.json"
-        logs: list[dict[str, Any]] = read_json_cache(log_file) or []
+        logs: list[dict[str, Any]] = read_json_cache_list(log_file) or []
 
         logs.append(
             result.to_dict()

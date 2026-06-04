@@ -16,7 +16,7 @@ class StockHistoryCacheMixin:
                 "data": histories,
             }
 
-            self._cache.save_file("stock_history.json", cache_data, ttl=86400)
+            self._cache.save_file("stock_history.json", cache_data, ttl=86400)  # type: ignore[attr-defined]
 
             logger.info(f"历史数据缓存已保存: {len(histories)} 只股票")
 
@@ -24,10 +24,10 @@ class StockHistoryCacheMixin:
             logger.error(f"保存历史数据缓存失败: {e}")
 
     def load_history_cache(self) -> dict[str, dict[str, Any]]:
-        data = self._cache.load_file("stock_history.json")
+        data = self._cache.load_file("stock_history.json")  # type: ignore[attr-defined]
         if data is None:
             return {}
-        return data.get("data", {})
+        return data.get("data", {})  # type: ignore[no-any-return]
 
     def check_cache_validity(self, max_age_hours: int = 24) -> dict[str, Any]:
         cache = self.load_history_cache()
@@ -121,7 +121,7 @@ class StockHistoryCacheMixin:
                         logger.debug("股票历史缓存解析失败: %s", e)
 
             try:
-                history = self.fetch_history(code, days=60)
+                history = self.fetch_history(code, days=60)  # type: ignore[attr-defined]
                 if history:
                     history["update_time"] = now.strftime("%Y-%m-%d %H:%M:%S")
                     cache[code] = history
@@ -176,7 +176,7 @@ class StockHistoryCacheMixin:
 
     def clear_cache(self) -> bool:
         try:
-            return self._cache.delete_file("stock_history.json")
+            return self._cache.delete_file("stock_history.json")  # type: ignore[attr-defined,no-any-return]
         except OSError as e:
             logger.error(f"清除缓存失败: {e}")
             return False

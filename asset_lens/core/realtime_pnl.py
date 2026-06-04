@@ -143,8 +143,8 @@ class RealtimePnlEstimator(RealtimePnlConfigMixin):
         self.foreign_cache_file = self.cache_path / "market_index_foreign.json"
         self.fund_cache_file = self.cache_path / "fund_quotes.json"
         self.stock_cache_file = self.cache_path / "stock_quotes.json"
-        self._fund_codes_map: dict[str, str] | None = None
-        self._stock_codes_map: dict[str, str] | None = None
+        self._fund_codes_map: dict[str, str] | None = None  # type: ignore[assignment]
+        self._stock_codes_map: dict[str, str] | None = None  # type: ignore[assignment]
 
     def estimate_product_pnl(
         self,

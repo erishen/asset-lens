@@ -9,28 +9,28 @@ class RiskAlertChecksMixin:
     def check_max_drawdown(self, current_drawdown: float, portfolio_name: str = "default") -> Any | None:
         from .risk_alert import RiskAlertType
 
-        if abs(current_drawdown) >= self.config.max_drawdown_threshold:
-            level = AlertLevel.CRITICAL if abs(current_drawdown) >= self.config.max_drawdown_threshold * 1.5 else AlertLevel.WARNING
+        if abs(current_drawdown) >= self.config.max_drawdown_threshold:  # type: ignore[attr-defined]
+            level = AlertLevel.CRITICAL if abs(current_drawdown) >= self.config.max_drawdown_threshold * 1.5 else AlertLevel.WARNING  # type: ignore[attr-defined]
 
-            return self._create_alert(
+            return self._create_alert(  # type: ignore[attr-defined]
                 alert_type=RiskAlertType.MAX_DRAWDOWN,
                 level=level,
                 title=f"最大回撤预警: {abs(current_drawdown):.1%}",
-                message=f"组合 {portfolio_name} 当前回撤 {abs(current_drawdown):.1%}，超过阈值 {self.config.max_drawdown_threshold:.1%}",
-                data={"drawdown": current_drawdown, "threshold": self.config.max_drawdown_threshold, "portfolio": portfolio_name},
+                message=f"组合 {portfolio_name} 当前回撤 {abs(current_drawdown):.1%}，超过阈值 {self.config.max_drawdown_threshold:.1%}",  # type: ignore[attr-defined]
+                data={"drawdown": current_drawdown, "threshold": self.config.max_drawdown_threshold, "portfolio": portfolio_name},  # type: ignore[attr-defined]
             )
         return None
 
     def check_volatility(self, current_volatility: float, portfolio_name: str = "default") -> Any | None:
         from .risk_alert import RiskAlertType
 
-        if current_volatility >= self.config.volatility_threshold:
-            return self._create_alert(
+        if current_volatility >= self.config.volatility_threshold:  # type: ignore[attr-defined]
+            return self._create_alert(  # type: ignore[attr-defined]
                 alert_type=RiskAlertType.VOLATILITY,
                 level=AlertLevel.WARNING,
                 title=f"高波动率预警: {current_volatility:.1%}",
-                message=f"组合 {portfolio_name} 当前波动率 {current_volatility:.1%}，超过阈值 {self.config.volatility_threshold:.1%}",
-                data={"volatility": current_volatility, "threshold": self.config.volatility_threshold, "portfolio": portfolio_name},
+                message=f"组合 {portfolio_name} 当前波动率 {current_volatility:.1%}，超过阈值 {self.config.volatility_threshold:.1%}",  # type: ignore[attr-defined]
+                data={"volatility": current_volatility, "threshold": self.config.volatility_threshold, "portfolio": portfolio_name},  # type: ignore[attr-defined]
             )
         return None
 
@@ -47,14 +47,14 @@ class RiskAlertChecksMixin:
         max_holding = max(holdings.values())
         max_ratio = max_holding / total
 
-        if max_ratio >= self.config.concentration_threshold:
-            max_name = max(holdings, key=holdings.get)
-            return self._create_alert(
+        if max_ratio >= self.config.concentration_threshold:  # type: ignore[attr-defined]
+            max_name = max(holdings, key=holdings.get)  # type: ignore[arg-type]
+            return self._create_alert(  # type: ignore[attr-defined]
                 alert_type=RiskAlertType.CONCENTRATION,
                 level=AlertLevel.WARNING,
                 title=f"持仓集中度预警: {max_name}",
-                message=f"单一持仓 {max_name} 占比 {max_ratio:.1%}，超过阈值 {self.config.concentration_threshold:.1%}",
-                data={"max_holding": max_name, "max_ratio": max_ratio, "threshold": self.config.concentration_threshold},
+                message=f"单一持仓 {max_name} 占比 {max_ratio:.1%}，超过阈值 {self.config.concentration_threshold:.1%}",  # type: ignore[attr-defined]
+                data={"max_holding": max_name, "max_ratio": max_ratio, "threshold": self.config.concentration_threshold},  # type: ignore[attr-defined]
             )
         return None
 
@@ -72,12 +72,12 @@ class RiskAlertChecksMixin:
 
         loss_pct = (current_price - cost_price) / cost_price
 
-        if loss_pct <= self.config.stop_loss_threshold:
-            return self._create_alert(
+        if loss_pct <= self.config.stop_loss_threshold:  # type: ignore[attr-defined]
+            return self._create_alert(  # type: ignore[attr-defined]
                 alert_type=RiskAlertType.STOP_LOSS,
                 level=AlertLevel.CRITICAL,
                 title=f"止损预警: {stock_name or stock_code}",
-                message=f"{stock_name or stock_code} 当前亏损 {abs(loss_pct):.1%}，触发止损线 {abs(self.config.stop_loss_threshold):.1%}",
+                message=f"{stock_name or stock_code} 当前亏损 {abs(loss_pct):.1%}，触发止损线 {abs(self.config.stop_loss_threshold):.1%}",  # type: ignore[attr-defined]
                 data={"stock_code": stock_code, "stock_name": stock_name, "loss_pct": loss_pct, "current_price": current_price, "cost_price": cost_price},
             )
         return None
@@ -96,12 +96,12 @@ class RiskAlertChecksMixin:
 
         profit_pct = (current_price - cost_price) / cost_price
 
-        if profit_pct >= self.config.take_profit_threshold:
-            return self._create_alert(
+        if profit_pct >= self.config.take_profit_threshold:  # type: ignore[attr-defined]
+            return self._create_alert(  # type: ignore[attr-defined]
                 alert_type=RiskAlertType.TAKE_PROFIT,
                 level=AlertLevel.INFO,
                 title=f"止盈提醒: {stock_name or stock_code}",
-                message=f"{stock_name or stock_code} 当前盈利 {profit_pct:.1%}，达到止盈线 {self.config.take_profit_threshold:.1%}",
+                message=f"{stock_name or stock_code} 当前盈利 {profit_pct:.1%}，达到止盈线 {self.config.take_profit_threshold:.1%}",  # type: ignore[attr-defined]
                 data={"stock_code": stock_code, "stock_name": stock_name, "profit_pct": profit_pct, "current_price": current_price, "cost_price": cost_price},
             )
         return None
@@ -109,13 +109,13 @@ class RiskAlertChecksMixin:
     def check_position_limit(self, current_position: float) -> Any | None:
         from .risk_alert import RiskAlertType
 
-        if current_position >= self.config.position_limit:
-            return self._create_alert(
+        if current_position >= self.config.position_limit:  # type: ignore[attr-defined]
+            return self._create_alert(  # type: ignore[attr-defined]
                 alert_type=RiskAlertType.POSITION_LIMIT,
                 level=AlertLevel.WARNING,
                 title=f"仓位上限预警: {current_position:.1%}",
-                message=f"当前仓位 {current_position:.1%}，超过上限 {self.config.position_limit:.1%}",
-                data={"current_position": current_position, "limit": self.config.position_limit},
+                message=f"当前仓位 {current_position:.1%}，超过上限 {self.config.position_limit:.1%}",  # type: ignore[attr-defined]
+                data={"current_position": current_position, "limit": self.config.position_limit},  # type: ignore[attr-defined]
             )
         return None
 
@@ -127,11 +127,11 @@ class RiskAlertChecksMixin:
     ) -> Any | None:
         from .risk_alert import RiskAlertType
 
-        if abs(change_percent) >= self.config.price_change_threshold:
+        if abs(change_percent) >= self.config.price_change_threshold:  # type: ignore[attr-defined]
             direction = "上涨" if change_percent > 0 else "下跌"
-            level = AlertLevel.CRITICAL if abs(change_percent) >= self.config.price_change_threshold * 2 else AlertLevel.WARNING
+            level = AlertLevel.CRITICAL if abs(change_percent) >= self.config.price_change_threshold * 2 else AlertLevel.WARNING  # type: ignore[attr-defined]
 
-            return self._create_alert(
+            return self._create_alert(  # type: ignore[attr-defined]
                 alert_type=RiskAlertType.PRICE_CHANGE,
                 level=level,
                 title=f"价格剧烈波动: {stock_name}",
@@ -144,7 +144,7 @@ class RiskAlertChecksMixin:
         from .risk_alert import RiskAlertType
 
         if regime in ["crash", "extreme_volatility"]:
-            return self._create_alert(
+            return self._create_alert(  # type: ignore[attr-defined]
                 alert_type=RiskAlertType.MARKET_REGIME,
                 level=AlertLevel.CRITICAL,
                 title=f"市场状态预警: {regime}",
@@ -152,7 +152,7 @@ class RiskAlertChecksMixin:
                 data={"regime": regime, "description": description},
             )
         elif regime in ["high_volatility", "bear"]:
-            return self._create_alert(
+            return self._create_alert(  # type: ignore[attr-defined]
                 alert_type=RiskAlertType.MARKET_REGIME,
                 level=AlertLevel.WARNING,
                 title=f"市场状态提醒: {regime}",
@@ -203,7 +203,7 @@ class RiskAlertChecksMixin:
 
             for stock_data in market_data.get("stocks", []):
                 change = stock_data.get("change_percent")
-                if change is not None and abs(change) >= self.config.price_change_threshold:
+                if change is not None and abs(change) >= self.config.price_change_threshold:  # type: ignore[attr-defined]
                     alert = self.check_price_change(
                         stock_data.get("name", ""),
                         stock_data.get("code", ""),

@@ -9,7 +9,7 @@ class AnalysisWarningsMixin:
     def generate_risk_warnings(self, portfolio: Portfolio) -> list[dict[str, Any]]:
         warnings = []
 
-        low_returns = self.get_low_return_products(portfolio, threshold=config.min_return_threshold)
+        low_returns = self.get_low_return_products(portfolio, threshold=config.min_return_threshold)  # type: ignore[attr-defined]
         if low_returns:
             warnings.append(
                 {
@@ -85,7 +85,7 @@ class AnalysisWarningsMixin:
         portfolio.get_type_distribution()
         total_value = portfolio.total_value
 
-        low_returns = self.get_low_return_products(portfolio, threshold=2.0)
+        low_returns = self.get_low_return_products(portfolio, threshold=2.0)  # type: ignore[attr-defined]
         transferable_amount = sum(
             float(p.get("current_amount", 0)) for p in low_returns if p.get("status") == "收益过低"
         )
@@ -115,30 +115,30 @@ class AnalysisWarningsMixin:
 
         if low_returns:
             redeem_products = [p for p in low_returns if p.get("status") == "收益过低"][:7]
-            observe_products = self.get_short_term_observation_products(portfolio)[:7]
+            observe_products = self.get_short_term_observation_products(portfolio)[:7]  # type: ignore[attr-defined]
 
             details = [f"• 建议赎回的低效产品 ({len(redeem_products)}个):"]
             for i, p in enumerate(redeem_products, 1):
-                amount_str = self._format_money_value(p["current_amount"])
+                amount_str = self._format_money_value(p["current_amount"])  # type: ignore[attr-defined]
                 name = p["name"][:20] + "..." if len(p["name"]) > 20 else p["name"]
                 details.append(f"  {i}. {name} ({amount_str}) - {p['annual_return']}")
 
             if observe_products:
                 details.append(f"\n• 短期观察产品 ({len(observe_products)}个，建议等待至3个月):")
                 for i, p in enumerate(observe_products, 1):
-                    amount_str = self._format_money_value(p["current_amount"])
+                    amount_str = self._format_money_value(p["current_amount"])  # type: ignore[attr-defined]
                     name = p["name"][:20] + "..." if len(p["name"]) > 20 else p["name"]
                     details.append(f"  {i}. ⏳ {name} ({amount_str}) - {p['annual_return']}")
 
             details.append("")
             details.append("• 将资金转投收益率2.5%以上的产品（如优质债基、混合基金）")
 
-            high_return_ref = self.get_high_return_reference_products(portfolio)
+            high_return_ref = self.get_high_return_reference_products(portfolio)  # type: ignore[attr-defined]
             if high_return_ref:
                 details.append(f"• 可参考的高收益产品 ({len(high_return_ref)}个):")
                 for i, p in enumerate(high_return_ref[:5], 1):
-                    amount_str = self._format_money_value(p["current_amount"])
-                    self._format_money(p["profit_amount"])
+                    amount_str = self._format_money_value(p["current_amount"])  # type: ignore[attr-defined]
+                    self._format_money(p["profit_amount"])  # type: ignore[attr-defined]
                     name = p["name"][:20] + "..." if len(p["name"]) > 20 else p["name"]
                     details.append(f"  {i}. {name} ({amount_str}) - {p['annual_return']}")
 
@@ -150,7 +150,7 @@ class AnalysisWarningsMixin:
                 }
             )
 
-        short_term_loss = len(self.get_short_term_observation_products(portfolio))
+        short_term_loss = len(self.get_short_term_observation_products(portfolio))  # type: ignore[attr-defined]
         long_term_low = len(
             [
                 p

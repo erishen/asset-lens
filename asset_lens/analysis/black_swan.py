@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from ..config import config
-from ..utils.json_cache import read_json_cache, write_json_cache
+from ..utils.json_cache import read_json_cache_list, write_json_cache
 
 
 class BlackSwanRiskLevel(Enum):
@@ -300,7 +300,7 @@ class BlackSwanMonitor:
 
     def save_alerts(self, alerts: list[BlackSwanRiskAlert]) -> None:
         """保存预警记录"""
-        history: list[dict[str, Any]] = read_json_cache(self.history_file) or []
+        history: list[dict[str, Any]] = read_json_cache_list(self.history_file) or []
 
         for alert in alerts:
             history.append(alert.to_dict())
@@ -309,7 +309,7 @@ class BlackSwanMonitor:
 
     def get_recent_alerts(self, limit: int = 20) -> list[dict[str, Any]]:
         """获取最近预警"""
-        history = read_json_cache(self.history_file)
+        history = read_json_cache_list(self.history_file)
         if history:
             return history[-limit:]
         return []

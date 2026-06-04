@@ -25,7 +25,7 @@ class DatabaseManager(NorthFlowDBMixin):
         self.engine, self.SessionLocal = init_database(db_path)
 
     def get_session(self) -> Session:
-        return self.SessionLocal()
+        return self.SessionLocal()  # type: ignore[no-any-return]
 
     @contextmanager
     def session_scope(self) -> Generator[Session, None, None]:
@@ -40,7 +40,7 @@ class DatabaseManager(NorthFlowDBMixin):
         finally:
             session.close()
 
-    def close(self):
+    def close(self):  # type: ignore[no-untyped-def]
         self.engine.dispose()
 
     def save_klines(
@@ -227,7 +227,7 @@ class DatabaseManager(NorthFlowDBMixin):
             )
             session.add(record)
             session.flush()
-            return record.id
+            return record.id  # type: ignore[no-any-return]
 
     def get_latest_model(self, name: str = "stock_predictor") -> dict[str, Any] | None:
         with self.session_scope() as session:
@@ -271,7 +271,7 @@ class DatabaseManager(NorthFlowDBMixin):
             )
             session.add(record)
             session.flush()
-            return record.id
+            return record.id  # type: ignore[no-any-return]
 
     def get_predictions(
         self,
@@ -330,9 +330,9 @@ class DatabaseManager(NorthFlowDBMixin):
             )
             session.add(record)
             session.flush()
-            return record.id
+            return record.id  # type: ignore[no-any-return]
 
-    def update_sync_log(
+    def update_sync_log(  # type: ignore[no-untyped-def]
         self,
         log_id: int,
         records_success: int = 0,
@@ -381,7 +381,7 @@ class DatabaseManager(NorthFlowDBMixin):
         with self.session_scope() as session:
             cutoff_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
             deleted = session.query(StockKline).filter(StockKline.date < cutoff_date).delete()
-            return deleted
+            return deleted  # type: ignore[no-any-return]
 
     def auto_sync_history(
         self,

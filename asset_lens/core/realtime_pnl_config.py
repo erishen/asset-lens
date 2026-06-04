@@ -3,22 +3,25 @@ import logging
 from decimal import Decimal
 
 from ..config import config
-from ..utils.json_cache import read_json_cache
+from ..utils.json_cache import read_json_cache_dict
 
 logger = logging.getLogger(__name__)
 
 
 class RealtimePnlConfigMixin:
+    _fund_codes_map: dict[str, str] | None
+    _stock_codes_map: dict[str, str] | None
+
     def _load_fund_codes_config(self) -> dict[str, str]:
-        if self._fund_codes_map is not None:
-            return self._fund_codes_map
+        if self._fund_codes_map is not None:  # type: ignore[has-type]
+            return self._fund_codes_map  # type: ignore[no-any-return,has-type]
 
         config_file = config.project_root / "config" / "fund_stock_codes.json"
         result = {}
 
         if not config_file.exists():
             logger.warning(f"基金代码配置文件不存在: {config_file}", extra={"config_file": str(config_file)})
-            self._fund_codes_map = {}
+            self._fund_codes_map = {}  # type: ignore[var-annotated]
             return {}
 
         try:
@@ -89,15 +92,15 @@ class RealtimePnlConfigMixin:
             return {}
 
     def _load_stock_codes_config(self) -> dict[str, str]:
-        if self._stock_codes_map is not None:
-            return self._stock_codes_map
+        if self._stock_codes_map is not None:  # type: ignore[has-type]
+            return self._stock_codes_map  # type: ignore[no-any-return,has-type]
 
         config_file = config.project_root / "config" / "fund_stock_codes.json"
         result = {}
 
         if not config_file.exists():
             logger.warning(f"股票代码配置文件不存在: {config_file}", extra={"config_file": str(config_file)})
-            self._stock_codes_map = {}
+            self._stock_codes_map = {}  # type: ignore[var-annotated]
             return {}
 
         try:
@@ -170,7 +173,7 @@ class RealtimePnlConfigMixin:
     def _read_fund_quotes_from_cache(self) -> dict[str, Decimal]:
         moves: dict[str, Decimal] = {}
 
-        data = read_json_cache(self.fund_cache_file)
+        data = read_json_cache_dict(self.fund_cache_file)  # type: ignore[attr-defined]
         if data:
             for code, fund_data in data.get("data", {}).items():
                 change_percent = fund_data.get("change_percent", 0)
@@ -181,7 +184,7 @@ class RealtimePnlConfigMixin:
     def _read_stock_quotes_from_cache(self) -> dict[str, Decimal]:
         moves: dict[str, Decimal] = {}
 
-        data = read_json_cache(self.stock_cache_file)
+        data = read_json_cache_dict(self.stock_cache_file)  # type: ignore[attr-defined]
         if data:
             for code, stock_data in data.get("data", {}).items():
                 change_percent = stock_data.get("change_percent", 0)
@@ -213,7 +216,7 @@ class RealtimePnlConfigMixin:
     def read_index_moves_from_cache(self, is_weekly: bool = False) -> dict[str, Decimal]:
         moves: dict[str, Decimal] = {}
 
-        domestic_data = read_json_cache(self.domestic_cache_file) or {}
+        domestic_data = read_json_cache_dict(self.domestic_cache_file) or {}  # type: ignore[attr-defined]
         if domestic_data:
             index_mapping = {
                 "上证指数": "SHComp",
@@ -235,7 +238,7 @@ class RealtimePnlConfigMixin:
                     else:
                         moves[en_code] = Decimal(str(index_data.get("涨跌幅", 0)))
 
-        foreign_data = read_json_cache(self.foreign_cache_file)
+        foreign_data = read_json_cache_dict(self.foreign_cache_file)  # type: ignore[attr-defined]
         if foreign_data:
             foreign_index_mapping = {
                 "QQQ": "Nasdaq",

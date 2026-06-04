@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from ..config import config
-from ..utils.json_cache import read_json_cache, write_json_cache
+from ..utils.json_cache import read_json_cache_list, write_json_cache
 
 logger = logging.getLogger(__name__)
 
@@ -329,7 +329,7 @@ class MLPredictionTracker:
 
     def _load_predictions(self) -> list[PredictionRecord]:
         """加载预测记录"""
-        data = read_json_cache(self.predictions_file)
+        data = read_json_cache_list(self.predictions_file)
         if not data:
             return []
         try:

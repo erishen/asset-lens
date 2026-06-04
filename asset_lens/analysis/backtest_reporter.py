@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, ClassVar
 
 from ..config import config
-from ..utils.json_cache import read_json_cache, write_json_cache
+from ..utils.json_cache import read_json_cache_list, write_json_cache
 
 
 class ReportPeriod(Enum):
@@ -387,7 +387,7 @@ class BacktestReporter:
 
     def _load_reports(self) -> list[dict[str, Any]]:
         """加载报告"""
-        data = read_json_cache(self.reports_file)
+        data = read_json_cache_list(self.reports_file)
         return data if data else []
 
     def get_recent_reports(self, limit: int = 10) -> list[dict[str, Any]]:
