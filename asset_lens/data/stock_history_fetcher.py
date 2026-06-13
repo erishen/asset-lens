@@ -45,50 +45,20 @@ class StockHistoryFetcher(
     @property
     def baostock(self):
         try:
-            import baostock as bs
+            from asset_lens.data.baostock_session import baostock_session
 
-            return bs
+            return baostock_session.bs
         except ImportError:
             return None
 
     def _baostock_login_with_retry(self) -> bool:
-        if self._baostock_logged_in:
-            return True
+        from asset_lens.data.baostock_session import baostock_session
 
-        try:
-            import baostock as bs
-
-            max_retries = 3
-            for attempt in range(max_retries):
-                try:
-                    lg = bs.login()
-                    if lg.error_code == "0":
-                        self._baostock_logged_in = True
-                        return True
-
-                    logger.debug(f"Baostock 登录失败 (尝试 {attempt + 1}/{max_retries}): {lg.error_msg}")
-
-                    if "already" in lg.error_msg.lower():
-                        self._baostock_logged_in = True
-                        return True
-
-                    time.sleep(1)
-                except (ConnectionError, RuntimeError, ValueError) as e:
-                    logger.debug(f"Baostock 登录异常 (尝试 {attempt + 1}/{max_retries}): {e}")
-                    time.sleep(1)
-
-            return False
-        except ImportError:
-            return False
+        return baostock_session.login()
 
     def baostock_logout(self) -> None:
-        try:
-            import baostock as bs
-
-            bs.logout()
-            self._baostock_logged_in = False
-        except (ImportError, RuntimeError):
-            pass
+        # 全局会话不主动登出
+        pass
 
     def fetch_history(self, code: str, days: int = 60) -> dict[str, Any] | None:
         cache = self.load_history_cache()

@@ -1,5 +1,6 @@
 import contextlib
 import logging
+import os
 from typing import Any
 
 from fastapi import HTTPException
@@ -8,9 +9,22 @@ from .chat_models import ChatRequest, ChatResponse, RAGRequest, RAGResponse, Sig
 
 logger = logging.getLogger(__name__)
 
+# Demo 模式检测
+DEMO_MODE = os.getenv("ASSET_LENS_DEMO_MODE", "").lower() in ("true", "1", "yes")
+
 
 @router.post("/qa", response_model=ChatResponse)
 async def chat_qa(request: ChatRequest):
+    # Demo 模式下返回提示信息
+    if DEMO_MODE:
+        return ChatResponse(
+            response="⚠️ Demo 模式下 AI 聊天功能不可用。此功能需要配置 LLM API Key。\n\n如需使用完整功能，请自行部署并配置相关 API Key。",
+            sources=[],
+            confidence=0.0,
+            suggestions=["查看投资组合概览", "了解风险管理", "查看策略分析"],
+            related_questions=["如何配置 AI 功能？", "如何部署完整版本？"],
+        )
+
     try:
         from pathlib import Path
 

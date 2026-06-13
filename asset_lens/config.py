@@ -10,6 +10,7 @@ Configuration management for asset-lens.
 """
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -21,11 +22,17 @@ from .core.platform_loader import PlatformConfig
 
 load_dotenv()
 
+# Demo 模式检测
+DEMO_MODE = os.getenv("ASSET_LENS_DEMO_MODE", "").lower() in ("true", "1", "yes")
+
 
 class Settings(BaseSettings):
     """应用配置 - 使用 Pydantic BaseSettings"""
 
     data_mode: str = Field(default="sample", description="数据模式: sample 或 real")
+
+    # Demo 模式标志（由环境变量 ASSET_LENS_DEMO_MODE 控制）
+    demo_mode: bool = Field(default=False, description="Demo 模式开关")
 
     conda_python: str | None = Field(default=None, description="Conda Python 路径")
 
@@ -139,7 +146,12 @@ class AssetLensConfig:
     def __init__(self) -> None:
         self._settings = settings
 
-        self.data_mode: str = self._settings.data_mode
+        # Demo 模式下强制使用 sample 数据模式
+        self.is_demo: bool = DEMO_MODE or self._settings.demo_mode
+        if self.is_demo:
+            self.data_mode: str = "sample"
+        else:
+            self.data_mode = self._settings.data_mode
 
         self.finnhub_api_key: str | None = self._settings.finnhub_api_key
         self.alphavantage_api_key: str | None = self._settings.alphavantage_api_key

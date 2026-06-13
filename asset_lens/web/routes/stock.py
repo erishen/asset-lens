@@ -2,12 +2,16 @@
 Stock Routes - 股票相关 API
 """
 
+import os
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/stock", tags=["stock"])
+
+# Demo 模式检测
+DEMO_MODE = os.getenv("ASSET_LENS_DEMO_MODE", "").lower() in ("true", "1", "yes")
 
 
 class WebStockQuote(BaseModel):
@@ -34,6 +38,12 @@ async def get_stock_quote(code: str):
     Args:
         code: 股票代码（如 sh600519）
     """
+    # Demo 模式下返回模拟数据
+    if DEMO_MODE:
+        from ..demo_data import get_demo_stock_quote
+        data = get_demo_stock_quote(code)
+        return WebStockQuote(**data)
+
     try:
         from ..aiohttp_session import async_get
 

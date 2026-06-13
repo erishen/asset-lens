@@ -256,9 +256,9 @@ class DomesticIndexFetcherMixin:
                     logger.debug(f"获取 {code} 失败: {e}")
 
         return {
-            "indexes": results,
+            "指数数据": results,
             "total": len(results),
-            "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "更新时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
 
     def fetch_domestic_indexes_fast(self, key_indexes: list[str] | None = None) -> dict[str, Any]:
@@ -272,7 +272,7 @@ class DomesticIndexFetcherMixin:
                 results[code] = result
 
         return {
-            "indexes": results,
+            "指数数据": results,
             "total": len(results),
-            "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "更新时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }

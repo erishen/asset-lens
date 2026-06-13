@@ -98,7 +98,7 @@ class MarketStockSourcesMixin:
         except (ValueError, KeyError) as e:
             logger.error(f"Tushare 数据解析失败: {e}")
             return []
-        except (RuntimeError, ConnectionError) as e:
+        except Exception as e:
             logger.error(f" Tushare 获取失败: {e}")
             return []
 
@@ -120,23 +120,20 @@ class MarketStockSourcesMixin:
 
                 logger.info("腾讯财经不提供完整股票列表，尝试 Baostock...")
 
-                import baostock as bs
+                from asset_lens.data.baostock_session import baostock_ctx
 
-                lg = bs.login()
-                if lg.error_code != "0":
-                    logger.error(f"Baostock 登录失败: {lg.error_msg}")
-                    return []
+                with baostock_ctx() as bs:
+                    if bs is None:
+                        return []
 
-                rs = bs.query_stock_basic()
-                if rs.error_code != "0":
-                    logger.error(f" Baostock 查询失败: {rs.error_msg}")
-                    bs.logout()
-                    return []
+                    rs = bs.query_stock_basic()
+                    if rs.error_code != "0":
+                        logger.error(f" Baostock 查询失败: {rs.error_msg}")
+                        return []
 
-                data_list = []
-                while rs.error_code == "0" and rs.next():
-                    data_list.append(rs.get_row_data())
-                bs.logout()
+                    data_list = []
+                    while rs.error_code == "0" and rs.next():
+                        data_list.append(rs.get_row_data())
 
                 if not data_list:
                     logger.info(" Baostock: 获取数据为空")
@@ -263,29 +260,25 @@ class MarketStockSourcesMixin:
 
     def _fetch_stocks_baostock(self) -> list[dict[str, Any]]:
         try:
-            import baostock as bs
+            from asset_lens.data.baostock_session import baostock_ctx
 
             logger.info("正在获取A股股票列表(Baostock)...")
             logger.debug("API请求: http://www.baostock.com (Baostock)")
 
             with _disable_proxy():
-                lg = bs.login()
-                if lg.error_code != "0":
-                    logger.error(f" Baostock 登录失败: {lg.error_msg}")
-                    return []
+                with baostock_ctx() as bs:
+                    if bs is None:
+                        return []
 
-                rs = bs.query_stock_basic()
+                    rs = bs.query_stock_basic()
 
-                if rs.error_code != "0":
-                    logger.error(f"Baostock 查询失败: {rs.error_msg}")
-                    bs.logout()
-                    return []
+                    if rs.error_code != "0":
+                        logger.error(f"Baostock 查询失败: {rs.error_msg}")
+                        return []
 
-                data_list = []
-                while rs.error_code == "0" and rs.next():
-                    data_list.append(rs.get_row_data())
-
-                bs.logout()
+                    data_list = []
+                    while rs.error_code == "0" and rs.next():
+                        data_list.append(rs.get_row_data())
 
             if not data_list:
                 logger.warning("Baostock: 获取数据为空")

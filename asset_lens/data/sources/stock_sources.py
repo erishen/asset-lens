@@ -12,23 +12,20 @@ logger = logging.getLogger(__name__)
 def fetch_stocks_baostock() -> list[dict[str, Any]]:
     """使用 Baostock 获取A股列表"""
     try:
-        import baostock as bs
+        from asset_lens.data.baostock_session import baostock_ctx
 
-        lg = bs.login()
-        if lg.error_code != "0":
-            logger.error(f" Baostock 登录失败: {lg.error_msg}")
-            return []
+        with baostock_ctx() as bs:
+            if bs is None:
+                return []
 
-        rs = bs.query_stock_basic()
-        if rs.error_code != "0":
-            logger.error(f" Baostock 查询失败: {rs.error_msg}")
-            bs.logout()
-            return []
+            rs = bs.query_stock_basic()
+            if rs.error_code != "0":
+                logger.error(f" Baostock 查询失败: {rs.error_msg}")
+                return []
 
-        data_list = []
-        while rs.error_code == "0" and rs.next():
-            data_list.append(rs.get_row_data())
-        bs.logout()
+            data_list = []
+            while rs.error_code == "0" and rs.next():
+                data_list.append(rs.get_row_data())
 
         if not data_list:
             logger.info(" Baostock: 获取数据为空")

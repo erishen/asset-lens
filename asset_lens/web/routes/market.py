@@ -3,6 +3,7 @@ Market Routes - 市场数据相关 API
 """
 
 import logging
+import os
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
@@ -10,6 +11,9 @@ from pydantic import BaseModel
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/market", tags=["market"])
+
+# Demo 模式检测
+DEMO_MODE = os.getenv("ASSET_LENS_DEMO_MODE", "").lower() in ("true", "1", "yes")
 
 
 class MarketIndex(BaseModel):
@@ -25,6 +29,11 @@ class MarketIndex(BaseModel):
 @router.get("/indexes", response_model=list[MarketIndex])
 async def get_market_indexes():
     """获取市场主要指数"""
+    # Demo 模式下返回模拟数据
+    if DEMO_MODE:
+        from ..demo_data import get_demo_market_indexes
+        return [MarketIndex(**idx) for idx in get_demo_market_indexes()]
+
     indexes = await _get_market_indexes()
     return indexes
 
