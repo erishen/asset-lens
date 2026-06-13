@@ -78,11 +78,10 @@ class StockFetcherSourcesMixin:
 
     def _fetch_cn_stock_quote_baostock(self, stock_code: str) -> dict[str, Any] | None:
         try:
-            import baostock as bs
+            from asset_lens.data.baostock_session import baostock_session
 
-            lg = bs.login()
-            if lg.error_code != "0":
-                logger.debug(f"Baostock 登录失败: {lg.error_msg}")
+            bs = baostock_session.bs
+            if bs is None:
                 return None
 
             pure_code = stock_code.replace("sh", "").replace("sz", "")
@@ -104,14 +103,11 @@ class StockFetcherSourcesMixin:
             )
 
             if rs.error_code != "0":
-                bs.logout()
                 return None
 
             data_list = []
             while rs.error_code == "0" and rs.next():
                 data_list.append(rs.get_row_data())
-
-            bs.logout()
 
             if not data_list:
                 return None

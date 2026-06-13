@@ -65,15 +65,15 @@ def _check_market_environment() -> tuple:
 
         indices = result["指数数据"]
         sh_index = None
-        for name, data in indices.items():
-            if "上证" in name:
+        for code, data in indices.items():
+            if "sh000001" in code or "上证" in data.get("name", ""):
                 sh_index = data
                 break
 
         if not sh_index:
             return True, "⚠️ 无上证指数数据，默认允许交易"
 
-        change = sh_index.get("涨跌幅", 0)
+        change = sh_index.get("change_percent", 0)
         if isinstance(change, str):
             change = float(change.replace("%", ""))
 
@@ -326,7 +326,11 @@ def _analyze_buy_signals(
 
         evaluation = engine.evaluate_stock(stock_data, strategy_name)
 
-        if evaluation["match"] and evaluation["score"] >= 60:
+        # evaluate_stock 返回 score 为 0~1 小数，recommendation 为推荐等级
+        score_pct = evaluation.get("score", 0) * 100
+        is_match = evaluation.get("recommendation", "") in ("强烈推荐", "推荐")
+
+        if is_match and score_pct >= 60:
             current_price = stock_data.get("current_price", 0)
             market_cap = stock_data.get("market_cap", 0)
 

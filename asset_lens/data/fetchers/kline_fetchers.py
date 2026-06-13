@@ -20,45 +20,25 @@ class BaostockKlineFetcher:
     """Baostock K线数据获取器"""
 
     def __init__(self):
-        self._logged_in = False
+        pass
 
     def login(self) -> bool:
-        """登录 Baostock"""
-        try:
-            import baostock as bs
+        """登录 Baostock（使用全局会话）"""
+        from ...data.baostock_session import baostock_session
 
-            lg = bs.login()
-            if lg.error_code != "0":
-                logger.warning(f"Baostock login failed: {lg.error_msg}")
-                return False
-            self._logged_in = True
-            return True
-        except (ImportError, ConnectionError) as e:
-            logger.error(f"Baostock connection error: {e}")
-            return False
-        except (ValueError, RuntimeError) as e:
-            logger.error(f"Baostock login error: {e}")
-            return False
+        return baostock_session.login()
 
     def logout(self) -> None:
-        """登出 Baostock"""
-        try:
-            import baostock as bs
-
-            if self._logged_in:
-                bs.logout()
-                self._logged_in = False
-        except (ImportError, ConnectionError) as e:
-            logger.warning(f"Baostock logout connection error: {e}")
-        except (ValueError, RuntimeError) as e:
-            logger.warning(f"Baostock logout error: {e}")
+        """登出 Baostock（全局会话不主动登出）"""
+        pass
 
     def fetch_kline(self, code: str, days: int = 60) -> dict[str, Any] | None:
         """获取K线数据"""
         try:
-            import baostock as bs
+            from ...data.baostock_session import baostock_session
 
-            if not self._logged_in and not self.login():
+            bs = baostock_session.bs
+            if bs is None:
                 return None
 
             end_date = datetime.now().strftime("%Y-%m-%d")

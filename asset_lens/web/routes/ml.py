@@ -4,6 +4,8 @@ ML 预测信号 API 路由
 """
 
 import logging
+import os
+import random
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -15,6 +17,23 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/ml", tags=["ml"])
 
 MODEL_PATH = Path(__file__).parent.parent.parent / "models" / "stock_predictor.joblib"
+
+# Demo 模式检测
+DEMO_MODE = os.getenv("ASSET_LENS_DEMO_MODE", "").lower() in ("true", "1", "yes")
+
+# Demo 模式模拟 ML 信号数据
+DEMO_ML_SIGNALS = [
+    {"code": "SH900001", "name": "华夏成长混合", "prediction": "up", "confidence": 0.78, "up_prob": 0.78, "down_prob": 0.22, "expected_return": 3.5},
+    {"code": "SH900002", "name": "招商科技先锋", "prediction": "down", "confidence": 0.65, "up_prob": 0.35, "down_prob": 0.65, "expected_return": -1.8},
+    {"code": "SZ900003", "name": "中银价值精选", "prediction": "up", "confidence": 0.72, "up_prob": 0.72, "down_prob": 0.28, "expected_return": 2.1},
+    {"code": "US900001", "name": "环球科技指数基金", "prediction": "up", "confidence": 0.82, "up_prob": 0.82, "down_prob": 0.18, "expected_return": 4.2},
+    {"code": "F900001", "name": "南方稳健成长混合A", "prediction": "up", "confidence": 0.71, "up_prob": 0.71, "down_prob": 0.29, "expected_return": 1.9},
+    {"code": "F900004", "name": "广发高端制造股票A", "prediction": "up", "confidence": 0.75, "up_prob": 0.75, "down_prob": 0.25, "expected_return": 3.8},
+    {"code": "B900001", "name": "招商国债A", "prediction": "neutral", "confidence": 0.60, "up_prob": 0.55, "down_prob": 0.45, "expected_return": 0.3},
+    {"code": "G900001", "name": "华安黄金ETF联接A", "prediction": "up", "confidence": 0.80, "up_prob": 0.80, "down_prob": 0.20, "expected_return": 5.1},
+    {"code": "E900001", "name": "中证500ETF先锋", "prediction": "up", "confidence": 0.68, "up_prob": 0.68, "down_prob": 0.32, "expected_return": 2.5},
+    {"code": "D900001", "name": "环球股息优势基金A", "prediction": "up", "confidence": 0.73, "up_prob": 0.73, "down_prob": 0.27, "expected_return": 2.8},
+]
 
 
 def _get_model():
@@ -77,6 +96,29 @@ async def get_ml_signals() -> dict[str, Any]:
     Returns:
         预测信号列表
     """
+    # Demo 模式下返回模拟信号
+    if DEMO_MODE:
+        signals = []
+        for s in DEMO_ML_SIGNALS:
+            signals.append({
+                "code": s["code"],
+                "name": s["name"],
+                "prediction": s["prediction"],
+                "confidence": s["confidence"],
+                "up_prob": s["up_prob"],
+                "down_prob": s["down_prob"],
+                "expected_return": s["expected_return"],
+                "signal_strength": "strong" if s["confidence"] > 0.7 else "medium" if s["confidence"] > 0.6 else "weak",
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            })
+        return {
+            "signals": signals,
+            "model_status": "demo",
+            "total": len(signals),
+            "message": "Demo 模式 — 预测结果为模拟数据",
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+
     model = _get_model()
     if model is None:
         return {
@@ -161,6 +203,38 @@ async def get_stock_signal(code: str) -> dict[str, Any]:
     Returns:
         预测信号详情
     """
+    # Demo 模式下返回模拟信号
+    if DEMO_MODE:
+        for s in DEMO_ML_SIGNALS:
+            if s["code"].upper() == code.upper():
+                return {
+                    "code": code,
+                    "signal": {
+                        "prediction": s["prediction"],
+                        "confidence": s["confidence"],
+                        "up_prob": s["up_prob"],
+                        "down_prob": s["down_prob"],
+                        "expected_return": s["expected_return"],
+                    },
+                    "model_status": "demo",
+                    "message": "Demo 模式 — 预测结果为模拟数据",
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                }
+        # 未找到匹配的代码，返回随机信号
+        return {
+            "code": code,
+            "signal": {
+                "prediction": random.choice(["up", "down", "neutral"]),
+                "confidence": round(random.uniform(0.5, 0.85), 2),
+                "up_prob": round(random.uniform(0.3, 0.7), 2),
+                "down_prob": round(random.uniform(0.3, 0.7), 2),
+                "expected_return": round(random.uniform(-3, 5), 2),
+            },
+            "model_status": "demo",
+            "message": "Demo 模式 — 预测结果为模拟数据",
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+
     model = _get_model()
     if model is None:
         return {
@@ -216,6 +290,17 @@ async def get_model_status() -> dict[str, Any]:
     Returns:
         模型状态信息
     """
+    # Demo 模式下返回模拟状态
+    if DEMO_MODE:
+        return {
+            "status": "demo",
+            "model_type": "simulated",
+            "feature_count": 14,
+            "model_path": "demo_mode",
+            "message": "Demo 模式 — 使用模拟预测数据",
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+
     model = _get_model()
 
     if model is None:

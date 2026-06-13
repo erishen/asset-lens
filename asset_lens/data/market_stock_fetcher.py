@@ -178,9 +178,7 @@ class MarketStockFetcher(
             if all_stocks:
                 self.save_market_stocks(all_stocks)
                 return all_stocks
-        except (ImportError, ConnectionError) as e:
-            logger.warning(f"Tushare 连接/导入失败: {e}")
-        except RuntimeError as e:
+        except Exception as e:
             logger.warning(f"Tushare 获取失败: {e}")
 
         logger.info("Tushare 获取失败，尝试腾讯财经...")

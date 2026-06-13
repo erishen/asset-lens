@@ -2,10 +2,15 @@
 Strategy Routes - 策略相关 API
 """
 
+import os
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/strategies", tags=["strategy"])
+
+# Demo 模式检测
+DEMO_MODE = os.getenv("ASSET_LENS_DEMO_MODE", "").lower() in ("true", "1", "yes")
 
 
 class StrategyInfo(BaseModel):
@@ -24,6 +29,24 @@ class StrategyInfo(BaseModel):
 @router.get("", response_model=list[StrategyInfo])
 async def list_strategies():
     """获取策略列表"""
+    # Demo 模式下返回模拟数据
+    if DEMO_MODE:
+        from ..demo_data import get_demo_strategies
+        strategies = get_demo_strategies()
+        return [
+            StrategyInfo(
+                name=s["name"],
+                description=s["description"],
+                buy_conditions=s["buy_conditions"],
+                sell_conditions=s["sell_conditions"],
+                position_size=s["position_size"],
+                max_positions=s["max_positions"],
+                stop_loss=s["stop_loss"],
+                take_profit=s["take_profit"],
+            )
+            for s in strategies
+        ]
+
     from ...strategy.engine import strategy_engine
 
     strategies = strategy_engine.list_strategies()
@@ -55,6 +78,23 @@ async def list_strategies():
 @router.get("/{strategy_name}")
 async def get_strategy(strategy_name: str):
     """获取策略详情"""
+    # Demo 模式下返回模拟数据
+    if DEMO_MODE:
+        from ..demo_data import get_demo_strategy_detail
+        strategy = get_demo_strategy_detail(strategy_name)
+        if strategy is None:
+            raise HTTPException(status_code=404, detail=f"策略 {strategy_name} 不存在")
+        return {
+            "name": strategy["name"],
+            "description": strategy["description"],
+            "buy_conditions": [{"name": f"条件{i+1}", "weight": 0.3, "value": True} for i in range(strategy["buy_conditions"])],
+            "sell_conditions": [{"name": f"条件{i+1}", "weight": 0.3, "value": True} for i in range(strategy["sell_conditions"])],
+            "position_size": strategy["position_size"],
+            "max_positions": strategy["max_positions"],
+            "stop_loss": strategy["stop_loss"],
+            "take_profit": strategy["take_profit"],
+        }
+
     from ...strategy.engine import strategy_engine
 
     strategy = strategy_engine.get_strategy(strategy_name)

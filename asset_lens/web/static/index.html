@@ -228,6 +228,44 @@
             color: #666;
             font-size: 0.9rem;
         }
+        /* Demo 横幅样式 */
+        .demo-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+            background: linear-gradient(90deg, #ff6b35, #f7931e);
+            color: #fff;
+            text-align: center;
+            padding: 10px 40px 10px 20px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+        }
+        .demo-banner .close-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            line-height: 1;
+            opacity: 0.8;
+        }
+        .demo-banner .close-btn:hover {
+            opacity: 1;
+        }
+        .demo-banner-hidden {
+            display: none;
+        }
+        .demo-banner-offset {
+            padding-top: 40px;
+        }
         .overlay {
             display: none;
             position: fixed;
@@ -401,8 +439,14 @@
 </head>
 <body>
     <div id="app">
+        <!-- Demo 横幅 -->
+        <div class="demo-banner" v-if="isDemoMode && !demoBannerClosed">
+            🎭 Demo 模式 — 数据为模拟展示，不代表真实投资建议
+            <button class="close-btn" @click="demoBannerClosed = true">&times;</button>
+        </div>
+
         <div class="overlay" :class="{ active: mobileMenuOpen }" @click="closeMobileMenu"></div>
-        <div class="container">
+        <div class="container" :class="{ 'demo-banner-offset': isDemoMode && !demoBannerClosed }">
             <div class="header">
                 <h1>Asset Lens</h1>
                 <p>个人资产运营系统 - 实时监控您的投资组合</p>
@@ -591,6 +635,8 @@
                 const refreshing = ref(false);
                 const error = ref('');
                 const mobileMenuOpen = ref(false);
+                const isDemoMode = ref(false);
+                const demoBannerClosed = ref(false);
                 const summary = ref({
                     total_assets: 0,
                     total_profit: 0,
@@ -647,6 +693,10 @@
                     loading.value = true;
                     error.value = '';
                     try {
+                        // 检测 Demo 模式
+                        const demoRes = await fetch(`${API_BASE}/api/demo/status`).then(r => r.json()).catch(() => ({ demo_mode: false }));
+                        isDemoMode.value = demoRes.demo_mode || false;
+
                         const [summaryRes, strategiesRes, portfolioRes] = await Promise.all([
                             fetch(`${API_BASE}/api/portfolio/summary`).then(r => r.json()),
                             fetch(`${API_BASE}/api/strategies`).then(r => r.json()),
@@ -1025,6 +1075,8 @@
                     refreshing,
                     error,
                     mobileMenuOpen,
+                    isDemoMode,
+                    demoBannerClosed,
                     summary,
                     strategies,
                     portfolioItems,

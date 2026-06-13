@@ -56,8 +56,10 @@ RUN mkdir -p /app/cache /app/data /app/logs /app/reports
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -m asset_lens system check || exit 1
 
-# 默认命令
-CMD ["python", "-m", "asset_lens", "--help"]
+# 启动脚本 - 根据 ASSET_LENS_DEMO_MODE 环境变量决定启动模式
+# 当 ASSET_LENS_DEMO_MODE=true 时，启动 Web 服务
+# 否则显示帮助信息
+CMD ["sh", "-c", "if [ \"$ASSET_LENS_DEMO_MODE\" = \"true\" ]; then uvicorn asset_lens.web.api:app --host 0.0.0.0 --port ${PORT:-8000}; else python -m asset_lens --help; fi"]
 
 # 标签
 LABEL maintainer="InvestKit Team"

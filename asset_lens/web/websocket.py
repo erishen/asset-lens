@@ -5,11 +5,15 @@ WebSocket Manager - WebSocket 连接管理
 import asyncio
 import json
 import logging
+import os
 from datetime import datetime
 
 from fastapi import WebSocket, WebSocketDisconnect
 
 logger = logging.getLogger(__name__)
+
+# Demo 模式检测
+DEMO_MODE = os.getenv("ASSET_LENS_DEMO_MODE", "").lower() in ("true", "1", "yes")
 
 
 class ConnectionManager:
@@ -141,6 +145,11 @@ async def handle_market_websocket(websocket: WebSocket):
 
 async def _get_market_indexes_async():
     """获取市场指数数据（异步版本）"""
+    # Demo 模式下返回模拟数据
+    if DEMO_MODE:
+        from .demo_data import get_demo_market_indexes
+        return get_demo_market_indexes()
+
     from .aiohttp_session import async_get
 
     indexes = []
@@ -200,6 +209,11 @@ async def _get_market_indexes_async():
 
 async def _get_stock_quotes_async(codes: list[str]):
     """获取股票行情数据（异步版本）"""
+    # Demo 模式下返回模拟数据
+    if DEMO_MODE:
+        from .demo_data import get_demo_stock_quote
+        return [get_demo_stock_quote(code) for code in codes[:10]]
+
     from .aiohttp_session import async_get
 
     quotes = []

@@ -27,10 +27,32 @@ from fastapi.staticfiles import StaticFiles
 
 logger = logging.getLogger(__name__)
 
+# Demo 模式检测
+DEMO_MODE = os.getenv("ASSET_LENS_DEMO_MODE", "").lower() in ("true", "1", "yes")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     from .aiohttp_session import close_session
+
+    # Demo 模式下自动生成模拟数据
+    if DEMO_MODE:
+        logger.info("🎭 Demo 模式已启用，正在生成模拟数据...")
+        try:
+            import sys
+
+            project_root = Path(__file__).parent.parent.parent
+            scripts_dir = project_root / "scripts"
+            if str(scripts_dir) not in sys.path:
+                sys.path.insert(0, str(scripts_dir))
+
+            from seed_demo import generate_demo_csv
+
+            data_dir = project_root / "data" / "sample_data"
+            generate_demo_csv(data_dir)
+            logger.info("✅ Demo 模拟数据生成完成")
+        except Exception as e:
+            logger.warning(f"⚠️ Demo 模拟数据生成失败: {e}，将使用已有数据")
 
     yield
     await close_session()
@@ -46,6 +68,9 @@ app = FastAPI(
 CORS_ORIGINS = os.getenv(
     "CORS_ORIGINS", "http://localhost:3000,http://localhost:5173,http://localhost:3002,http://localhost:8080"
 ).split(",")
+# Demo 模式下允许所有来源
+if DEMO_MODE or CORS_ORIGINS == ["*"]:
+    CORS_ORIGINS = ["*"]
 CORS_METHODS = os.getenv("CORS_METHODS", "GET,POST,PUT,DELETE,OPTIONS").split(",")
 CORS_HEADERS = os.getenv("CORS_HEADERS", "Content-Type,Authorization,Accept").split(",")
 
@@ -107,6 +132,16 @@ async def root():
         "version": "1.0.0",
         "docs": "/docs",
         "health": "/health",
+    }
+
+
+@app.get("/api/demo/status")
+async def demo_status():
+    """Demo 模式状态"""
+    return {
+        "demo_mode": DEMO_MODE,
+        "data_mode": "sample" if DEMO_MODE else "normal",
+        "message": "Demo 模式 — 数据为模拟展示，不代表真实投资建议" if DEMO_MODE else "正常模式",
     }
 
 
@@ -198,6 +233,11 @@ async def websocket_market(websocket: WebSocket):
 
 async def _get_market_indexes():
     """获取市场指数数据"""
+    # Demo 模式下返回模拟数据
+    if DEMO_MODE:
+        from .demo_data import get_demo_market_indexes
+        return get_demo_market_indexes()
+
     from .aiohttp_session import async_get
 
     indexes = []
@@ -249,6 +289,11 @@ async def _get_market_indexes():
 
 async def _get_stock_quotes(codes: list[str]):
     """获取股票行情数据"""
+    # Demo 模式下返回模拟数据
+    if DEMO_MODE:
+        from .demo_data import get_demo_stock_quote
+        return [get_demo_stock_quote(code) for code in codes[:10]]
+
     from .aiohttp_session import async_get
 
     quotes = []

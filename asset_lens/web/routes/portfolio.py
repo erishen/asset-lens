@@ -2,6 +2,7 @@
 Portfolio Routes - 投资组合相关 API
 """
 
+import os
 from datetime import datetime
 from decimal import Decimal
 
@@ -11,6 +12,9 @@ from pydantic import BaseModel
 from ...config import config
 
 router = APIRouter(prefix="/api/portfolio", tags=["portfolio"])
+
+# Demo 模式检测
+DEMO_MODE = os.getenv("ASSET_LENS_DEMO_MODE", "").lower() in ("true", "1", "yes")
 
 
 class PortfolioSummary(BaseModel):
@@ -39,6 +43,12 @@ class PortfolioItem(BaseModel):
 @router.get("/summary", response_model=PortfolioSummary)
 async def get_portfolio_summary():
     """获取投资组合摘要"""
+    # Demo 模式下返回模拟数据
+    if DEMO_MODE:
+        from ..demo_data import get_demo_portfolio_summary
+        data = get_demo_portfolio_summary()
+        return PortfolioSummary(**data)
+
     from ...data.csv_parser import CSVParser
     from ...data.models import Portfolio
 
@@ -79,6 +89,11 @@ async def get_portfolio_items(
         sort_by: 排序字段
         sort_order: 排序方向
     """
+    # Demo 模式下返回模拟数据
+    if DEMO_MODE:
+        from ..demo_data import get_demo_portfolio_items
+        return get_demo_portfolio_items(investment_type, sort_by, sort_order)
+
     from ...data.csv_parser import CSVParser
 
     try:
@@ -130,6 +145,11 @@ async def get_portfolio_performance(
         start_date: 开始日期
         end_date: 结束日期
     """
+    # Demo 模式下返回模拟数据
+    if DEMO_MODE:
+        from ..demo_data import get_demo_performance
+        return get_demo_performance()
+
     from ...data.csv_parser import CSVParser
     from ...data.models import Portfolio
     from ...report.analyzer import ReportGenerator
