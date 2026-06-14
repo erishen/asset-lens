@@ -1,4 +1,10 @@
 venv_test
+
+# ML model files (large binaries, not suitable for git)
+models/*.joblib
+
+# Test screenshots
+test-results/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
