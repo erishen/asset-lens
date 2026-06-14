@@ -1546,7 +1546,7 @@ check-size: ## 检查项目大小
 	@du -sh .
 	@echo ""
 	@echo "=== 主要目录大小 ==="
-	@du -sh asset_lens/ cache/ config/ data/ docs/ output/ scripts/ tests/ web-react/ 2>/dev/null | sort -hr
+	@du -sh asset_lens/ cache/ config/ data/ output/ scripts/ tests/ web-react/ 2>/dev/null | sort -hr
 	@echo ""
 	@echo "=== 大文件 (>1MB) ==="
 	@find . -type f -size +1M -not -path "./.git/*" -not -path "./web-react/node_modules/*" 2>/dev/null | head -10
