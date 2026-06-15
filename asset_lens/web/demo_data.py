@@ -16,51 +16,51 @@ import random
 # ============================================================
 
 DEMO_PORTFOLIO_SUMMARY = {
-    "total_assets": 856320.50,
-    "total_profit": 123456.78,
-    "total_return": 16.85,
+    "total_assets": 100890.00,
+    "total_profit": 12890.00,
+    "total_return": 14.65,
     "position_count": 15,
 }
 
 DEMO_PORTFOLIO_ITEMS = [
     # A股
-    {"name": "贵州茅台", "code": "sh600519", "investment_type": "A股", "risk_level": "高",
-     "current_amount": 128500.00, "initial_amount": 100000.00, "profit_amount": 28500.00, "return_rate": 28.50, "annual_return": 22.80},
-    {"name": "宁德时代", "code": "sz300750", "investment_type": "A股", "risk_level": "高",
-     "current_amount": 45600.00, "initial_amount": 50000.00, "profit_amount": -4400.00, "return_rate": -8.80, "annual_return": -7.20},
-    {"name": "招商银行", "code": "sh600036", "investment_type": "A股", "risk_level": "中",
-     "current_amount": 67800.00, "initial_amount": 60000.00, "profit_amount": 7800.00, "return_rate": 13.00, "annual_return": 10.50},
+    {"name": "龙腾科技", "code": "demo001", "investment_type": "A股", "risk_level": "高",
+     "current_amount": 15000.00, "initial_amount": 12000.00, "profit_amount": 3000.00, "return_rate": 25.00, "annual_return": 20.00},
+    {"name": "星辰能源", "code": "demo002", "investment_type": "A股", "risk_level": "高",
+     "current_amount": 5400.00, "initial_amount": 6000.00, "profit_amount": -600.00, "return_rate": -10.00, "annual_return": -8.00},
+    {"name": "鼎盛银行", "code": "demo003", "investment_type": "A股", "risk_level": "中",
+     "current_amount": 8000.00, "initial_amount": 7000.00, "profit_amount": 1000.00, "return_rate": 14.29, "annual_return": 11.40},
     # 基金
-    {"name": "易方达蓝筹精选混合", "code": "F005827", "investment_type": "基金", "risk_level": "中高",
-     "current_amount": 82300.00, "initial_amount": 80000.00, "profit_amount": 2300.00, "return_rate": 2.88, "annual_return": 2.30},
-    {"name": "华夏沪深300指数增强A", "code": "F001015", "investment_type": "定投基金", "risk_level": "中",
-     "current_amount": 54600.00, "initial_amount": 48000.00, "profit_amount": 6600.00, "return_rate": 13.75, "annual_return": 11.00},
-    {"name": "广发高端制造股票A", "code": "F005232", "investment_type": "基金", "risk_level": "高",
-     "current_amount": 38900.00, "initial_amount": 30000.00, "profit_amount": 8900.00, "return_rate": 29.67, "annual_return": 23.70},
-    {"name": "南方中证500ETF联接A", "code": "F160119", "investment_type": "基金", "risk_level": "中",
-     "current_amount": 42100.00, "initial_amount": 40000.00, "profit_amount": 2100.00, "return_rate": 5.25, "annual_return": 4.20},
+    {"name": "远见蓝筹混合", "code": "demo004", "investment_type": "基金", "risk_level": "中高",
+     "current_amount": 9600.00, "initial_amount": 9300.00, "profit_amount": 300.00, "return_rate": 3.23, "annual_return": 2.60},
+    {"name": "稳健沪深300指数", "code": "demo005", "investment_type": "定投基金", "risk_level": "中",
+     "current_amount": 6400.00, "initial_amount": 5600.00, "profit_amount": 800.00, "return_rate": 14.29, "annual_return": 11.40},
+    {"name": "卓越制造股票", "code": "demo006", "investment_type": "基金", "risk_level": "高",
+     "current_amount": 4500.00, "initial_amount": 3500.00, "profit_amount": 1000.00, "return_rate": 28.57, "annual_return": 22.80},
+    {"name": "中证500指数联接", "code": "demo007", "investment_type": "基金", "risk_level": "中",
+     "current_amount": 4900.00, "initial_amount": 4700.00, "profit_amount": 200.00, "return_rate": 4.26, "annual_return": 3.40},
     # 债券
-    {"name": "招商国债A", "code": "B003021", "investment_type": "债券", "risk_level": "低",
-     "current_amount": 103500.00, "initial_amount": 100000.00, "profit_amount": 3500.00, "return_rate": 3.50, "annual_return": 3.50},
-    {"name": "富国信用债A", "code": "B000107", "investment_type": "债券", "risk_level": "中低",
-     "current_amount": 78200.00, "initial_amount": 75000.00, "profit_amount": 3200.00, "return_rate": 4.27, "annual_return": 4.10},
+    {"name": "国债A", "code": "demo008", "investment_type": "债券", "risk_level": "低",
+     "current_amount": 12000.00, "initial_amount": 11600.00, "profit_amount": 400.00, "return_rate": 3.45, "annual_return": 3.40},
+    {"name": "信用债A", "code": "demo009", "investment_type": "债券", "risk_level": "中低",
+     "current_amount": 9100.00, "initial_amount": 8700.00, "profit_amount": 400.00, "return_rate": 4.60, "annual_return": 4.40},
     # 现金
-    {"name": "天弘余额宝货币基金", "code": "C000198", "investment_type": "现金", "risk_level": "低",
-     "current_amount": 80144.00, "initial_amount": 80000.00, "profit_amount": 144.00, "return_rate": 0.18, "annual_return": 1.80},
-    {"name": "华夏现金增利货币A", "code": "C003003", "investment_type": "现金", "risk_level": "低",
-     "current_amount": 50100.00, "initial_amount": 50000.00, "profit_amount": 100.00, "return_rate": 0.20, "annual_return": 2.00},
+    {"name": "货币基金A", "code": "demo010", "investment_type": "现金", "risk_level": "低",
+     "current_amount": 9400.00, "initial_amount": 9300.00, "profit_amount": 100.00, "return_rate": 1.08, "annual_return": 1.80},
+    {"name": "货币基金B", "code": "demo011", "investment_type": "现金", "risk_level": "低",
+     "current_amount": 5800.00, "initial_amount": 5800.00, "profit_amount": 0.00, "return_rate": 0.00, "annual_return": 0.00},
     # 黄金
-    {"name": "华安黄金ETF联接A", "code": "G000216", "investment_type": "黄金", "risk_level": "中",
-     "current_amount": 73200.00, "initial_amount": 60000.00, "profit_amount": 13200.00, "return_rate": 22.00, "annual_return": 18.50},
+    {"name": "黄金ETF联接", "code": "demo012", "investment_type": "黄金", "risk_level": "中",
+     "current_amount": 8500.00, "initial_amount": 7000.00, "profit_amount": 1500.00, "return_rate": 21.43, "annual_return": 18.00},
     # 个人养老金
-    {"name": "兴全安泰积极养老Y", "code": "P017099", "investment_type": "个人养老金", "risk_level": "中高",
-     "current_amount": 31720.00, "initial_amount": 30000.00, "profit_amount": 1720.00, "return_rate": 5.73, "annual_return": 5.20},
+    {"name": "积极养老Y", "code": "demo013", "investment_type": "个人养老金", "risk_level": "中高",
+     "current_amount": 3700.00, "initial_amount": 3500.00, "profit_amount": 200.00, "return_rate": 5.71, "annual_return": 5.20},
     # ETF
-    {"name": "中证500ETF先锋", "code": "E510500", "investment_type": "ETF", "risk_level": "高",
-     "current_amount": 33560.00, "initial_amount": 30000.00, "profit_amount": 3560.00, "return_rate": 11.87, "annual_return": 9.50},
+    {"name": "中证500ETF", "code": "demo014", "investment_type": "ETF", "risk_level": "高",
+     "current_amount": 3900.00, "initial_amount": 3500.00, "profit_amount": 400.00, "return_rate": 11.43, "annual_return": 9.10},
     # 股息基金
-    {"name": "环球股息优势基金A", "code": "D007564", "investment_type": "股息基金", "risk_level": "中",
-     "current_amount": 44800.00, "initial_amount": 40000.00, "profit_amount": 4800.00, "return_rate": 12.00, "annual_return": 9.60},
+    {"name": "环球股息基金", "code": "demo015", "investment_type": "股息基金", "risk_level": "中",
+     "current_amount": 5200.00, "initial_amount": 4600.00, "profit_amount": 600.00, "return_rate": 13.04, "annual_return": 10.40},
 ]
 
 
@@ -83,16 +83,10 @@ DEMO_MARKET_INDEXES = [
 # ============================================================
 
 DEMO_STOCK_QUOTES = {
-    "sh600519": {"name": "贵州茅台", "base_price": 1688.50},
-    "sz300750": {"name": "宁德时代", "base_price": 218.35},
-    "sh600036": {"name": "招商银行", "base_price": 35.68},
-    "sh601318": {"name": "中国平安", "base_price": 48.92},
-    "sz000858": {"name": "五粮液", "base_price": 152.30},
-    "sh600900": {"name": "长江电力", "base_price": 28.45},
-    "sz002594": {"name": "比亚迪", "base_price": 268.70},
-    "sh601012": {"name": "隆基绿能", "base_price": 22.15},
-    "sz000333": {"name": "美的集团", "base_price": 62.80},
-    "sh600276": {"name": "恒瑞医药", "base_price": 45.30},
+    "demo001": {"name": "龙腾科技", "base_price": 168.50},
+    "demo002": {"name": "星辰能源", "base_price": 21.80},
+    "demo003": {"name": "鼎盛银行", "base_price": 35.68},
+    "demo004": {"name": "远见蓝筹混合", "base_price": 2.35},
 }
 
 
