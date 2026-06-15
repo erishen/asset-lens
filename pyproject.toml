@@ -159,4 +159,4 @@ extend = "../pyproject.toml"
 known-first-party = ["asset_lens"]
 
 [tool.uv.sources]
-investkit-utils = { workspace = true }
+investkit-utils = { git = "https://github.com/erishen/investkit_utils.git" }
