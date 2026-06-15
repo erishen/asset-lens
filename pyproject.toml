@@ -60,6 +60,8 @@ dependencies = [
     "tushare>=1.4.29",
     "baostock>=0.9.1",
     "httpx>=0.28.1",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
 ]
 
 [project.optional-dependencies]
@@ -159,4 +161,4 @@ extend = "../pyproject.toml"
 known-first-party = ["asset_lens"]
 
 [tool.uv.sources]
-investkit-utils = { git = "https://github.com/erishen/investkit_utils.git" }
+investkit-utils = { workspace = true }
