@@ -16,8 +16,6 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
-import httpx
-
 logger = logging.getLogger(__name__)
 
 
@@ -60,15 +58,9 @@ class StockAIAnalyzer:
             DeprecationWarning,
             stacklevel=2,
         )
-        self.api_key = os.getenv("DEEPSEEK_API_KEY") or os.getenv("OPENAI_API_KEY") or os.getenv("ZHIPU_API_KEY")
-
-        if os.getenv("DEEPSEEK_API_KEY"):
-            self.api_base = os.getenv("DEEPSEEK_API_BASE", "https://api.deepseek.com/v1")
-            self.model = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
-        else:
-            self.api_base = os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1")
-            self.model = os.getenv("AI_MODEL", "gpt-4o-mini")
-
+        self.api_url = os.getenv("LLM_API_URL", "https://langchain-llm-toolkit.onrender.com")
+        self.api_key = os.getenv("LLM_API_KEY", "")
+        self.model = os.getenv("AI_MODEL", "deepseek-chat")
         self.enabled = bool(self.api_key)
 
         self.cache_dir = os.path.join("cache", "ai_analysis")
@@ -121,43 +113,30 @@ class StockAIAnalyzer:
         try:
             prompt = self._build_analysis_prompt(stock_data, market_data, strategy_signal, additional_context)
 
-            with httpx.Client(timeout=30.0) as client:
-                response = client.post(
-                    f"{self.api_base}/chat/completions",
-                    headers={
-                        "Authorization": f"Bearer {self.api_key}",
-                        "Content-Type": "application/json",
-                    },
-                    json={
-                        "model": self.model,
-                        "messages": [
-                            {
-                                "role": "system",
-                                "content": '你是一位专业的股票分析师，擅长技术分析和基本面分析。请以JSON格式输出分析结果，格式：{"d":"buy/sell/hold/wait","c":0-100,"r":"理由","rl":"low/medium/high","kf":["因素"],"ms":"乐观/中性/悲观","sl":止损价,"tp":止盈价}',
-                            },
-                            {"role": "user", "content": prompt},
-                        ],
-                        "temperature": 0.3,
-                        "max_tokens": 500,
-                    },
-                )
+            import requests
 
-                if response.status_code != 200:
-                    return self._default_result(f"API 调用失败: {response.status_code}")
+            response = requests.post(
+                f"{self.api_url}/api/v1/chat",
+                headers={"X-API-Key": self.api_key, "Content-Type": "application/json"},
+                json={
+                    "model": self.model,
+                    "messages": [
+                        {"role": "system", "content": '你是一位专业的股票分析师，擅长技术分析和基本面分析。请以JSON格式输出分析结果，格式：{"d":"buy/sell/hold/wait","c":0-100,"r":"理由","rl":"low/medium/high","kf":["因素"],"ms":"乐观/中性/悲观","sl":止损价,"tp":止盈价}'},
+                        {"role": "user", "content": prompt},
+                    ],
+                    "temperature": 0.3,
+                    "max_tokens": 500,
+                },
+                timeout=30,
+            )
 
-                result = response.json()
-                content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+            if response.status_code != 200:
+                return self._default_result(f"API 调用失败: {response.status_code}")
 
-                usage = result.get("usage", {})
-                prompt_tokens = usage.get("prompt_tokens", 0)
-                completion_tokens = usage.get("completion_tokens", 0)
-                total_tokens = usage.get("total_tokens", 0)
+            result = response.json()
+            content = result.get("response", "")
 
-                self.total_tokens_used += total_tokens
-                cost = (prompt_tokens * 0.001 + completion_tokens * 0.002) / 1000
-                self.total_cost += cost
-
-                return self._parse_response(content, prompt_tokens, completion_tokens, total_tokens)
+            return self._parse_response(content, 0, 0, 0)
 
         except Exception as e:
             return self._default_result(f"分析异常: {e!s}")
