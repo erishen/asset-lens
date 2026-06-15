@@ -4,7 +4,7 @@ services:
     runtime: python
     repo: https://github.com/erishen/asset-lens
     plan: free
-    buildCommand: pip install -U uv && uv sync --reinstall-package asset-lens --no-dev --no-cache && pip install uvicorn fastapi
+    buildCommand: pip install -U uv && uv sync --reinstall-package asset-lens --no-dev --no-cache
     startCommand: uv run uvicorn asset_lens.web.api:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
