@@ -165,7 +165,7 @@ asset-lens is the core data engine. Three companion apps in `invest-kit/apps/` c
 
 | Feature | langgraph-csv-analyst | autogen-asset-analyst | crewai-product-analyst |
 |---------|----------------------|----------------------|----------------------|
-| Architecture | StateGraph pipeline | RoundRobinGroupChat | Crew role delegation |
+| Architecture | StateGraph pipeline | SelectorGroupChat | Crew role delegation |
 | Agent interaction | Sequential/parallel | Debate & veto | Task delegation |
 | Decision making | Last node decides | Consensus through debate | Crew synthesis |
 | Risk control | Assessment only | One-vote veto | Role-based review |
