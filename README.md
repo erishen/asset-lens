@@ -151,6 +151,29 @@ Config files use `.example` templates — copy to remove the `.example` suffix a
 
 ---
 
+## Ecosystem
+
+asset-lens is the core data engine. Three companion apps in `invest-kit/apps/` consume its output for different analysis paradigms:
+
+| App | Framework | Pattern | Input | Output |
+|-----|-----------|---------|-------|--------|
+| **[langgraph-csv-analyst](../langgraph-csv-analyst/)** | LangGraph | Deterministic pipeline (fan-out/fan-in) | CSV file | Charts + LLM analysis |
+| **[autogen-asset-analyst](../autogen-asset-analyst/)** | AutoGen | Multi-agent roundtable debate | asset-lens JSON | Debate transcript + consensus |
+| **[crewai-product-analyst](../crewai-product-analyst/)** | CrewAI | Role-based crew collaboration | Product data | Product analysis report |
+
+### Key Differences
+
+| Feature | langgraph-csv-analyst | autogen-asset-analyst | crewai-product-analyst |
+|---------|----------------------|----------------------|----------------------|
+| Architecture | StateGraph pipeline | RoundRobinGroupChat | Crew role delegation |
+| Agent interaction | Sequential/parallel | Debate & veto | Task delegation |
+| Decision making | Last node decides | Consensus through debate | Crew synthesis |
+| Risk control | Assessment only | One-vote veto | Role-based review |
+| Data source | CSV (any format) | asset-lens JSON | Product data |
+| Strength | Deterministic, reproducible | Multi-perspective debate | Structured collaboration |
+
+---
+
 ## Disclaimer
 
 This project is for personal learning and investment research only. **It does not constitute investment advice.**

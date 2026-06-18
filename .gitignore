@@ -248,3 +248,6 @@ data/投资产品.csv
 data/bonus_records.json
 data/consumption_records.json
 data/salary_records.json
+
+# AI analysis output (from ai-analyze)
+ai-analysis/
