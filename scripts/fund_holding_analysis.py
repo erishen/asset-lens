@@ -25,7 +25,36 @@ logger = logging.getLogger(__name__)
 
 def load_investment_products() -> list[dict[str, Any]]:
     """从投资产品CSV中加载所有产品"""
-    csv_path = "data/sample_data/投资产品-脱敏.csv"
+    # 首先尝试从 ts-demo/data/latest_money_csv 目录加载
+    ts_demo_data_path = "../ts-demo/data"
+    
+    # 查找最新的 money_csv 目录
+    money_csv_dirs = []
+    if os.path.exists(ts_demo_data_path):
+        for item in os.listdir(ts_demo_data_path):
+            if item.startswith("money_csv_") and os.path.isdir(os.path.join(ts_demo_data_path, item)):
+                money_csv_dirs.append(item)
+    
+    if money_csv_dirs:
+        # 按日期排序，取最新的
+        money_csv_dirs.sort(reverse=True)
+        latest_dir = money_csv_dirs[0]
+        csv_path = os.path.join(ts_demo_data_path, latest_dir, "投资产品-表格 1.csv")
+        
+        if os.path.exists(csv_path):
+            logger.info("从 ts-demo 加载投资产品数据: %s", csv_path)
+        else:
+            logger.warning("ts-demo 中未找到投资产品文件，尝试其他路径")
+            csv_path = None
+    
+    # 如果 ts-demo 中没有找到，回退到原来的逻辑
+    if not csv_path or not os.path.exists(csv_path):
+        data_mode = os.getenv('DATA_MODE', 'sample')
+        
+        if data_mode == 'real':
+            csv_path = "data/real/投资产品.csv"
+        else:
+            csv_path = "data/sample_data/投资产品-脱敏.csv"
 
     if not os.path.exists(csv_path):
         logger.error("文件不存在: %s", csv_path)
@@ -40,6 +69,30 @@ def load_investment_products() -> list[dict[str, Any]]:
         for line in lines[1:]:
             values = line.strip().split(',')
             product = dict(zip(header, values, strict=True))
+            
+            # 适配ts-demo的CSV格式：基金代码在各个平台列中
+            # 平台列：微信,中金,支付宝,富途,招商,港招,交通,浦发,建设,中信,民生,工商,中银
+            platform_columns = ['微信', '中金', '支付宝', '富途', '招商', '港招', '交通', '浦发', '建设', '中信', '民生', '工商', '中银']
+            
+            # 提取基金代码和平台
+            fund_code = ''
+            platform = ''
+            for plat_col in platform_columns:
+                if plat_col in header:
+                    code = product.get(plat_col, '').strip()
+                    if code and code != ',' and code != ' ':
+                        fund_code = code
+                        platform = plat_col
+                        break
+            
+            # 如果找到了基金代码，添加到产品信息中
+            if fund_code:
+                product['代码'] = fund_code
+                product['平台A'] = platform
+            else:
+                # 如果没有找到基金代码，跳过这个产品
+                continue
+            
             products.append(product)
 
     return products

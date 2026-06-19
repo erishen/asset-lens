@@ -1663,9 +1663,9 @@ sentiment: ## 分析市场风向
 # 基金持仓分析
 # ============================================
 .PHONY: fund-holding
-fund-holding: ## 分析高仓位基金持仓汇总（股票仓位>=20%，排除债券类型）
-	@echo "📊 分析高仓位基金持仓..."
-	@PYTHONWARNINGS=ignore uv run python -W ignore scripts/fund_holding_analysis.py --analyze
+fund-holding: ## 分析基金持仓汇总（查看所有基金，包括债券基金）
+	@echo "📊 分析基金持仓..."
+	@PYTHONWARNINGS=ignore uv run python -W ignore scripts/fund_holding_analysis.py --all
 
 .PHONY: fund-holding-all
 fund-holding-all: ## 分析所有基金持仓（包括低仓位和债券基金）
