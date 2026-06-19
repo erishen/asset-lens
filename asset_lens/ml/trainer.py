@@ -198,7 +198,7 @@ class ModelTrainer:
             X, y, test_size=self.config.test_size, random_state=self.config.random_state, stratify=y
         )
 
-        self.predictor.fit(X_train, y_train, feature_names=list(X.columns), **kwargs)  # type: ignore[call-arg]
+        self.predictor.fit(X_train, y_train, **kwargs)  # type: ignore[call-arg]
 
         y_pred = self.predictor.predict(X_test)
         y_proba = self.predictor.predict_proba(X_test)[:, 1]
