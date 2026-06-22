@@ -1,100 +1,100 @@
-# Demo Data 说明
+# Demo Data
 
-## 📁 模拟数据集
+## 📁 Simulated Dataset
 
-为了支持项目的开源和演示，我们创建了一套完整的模拟投资数据。这些数据保持了真实数据的结构和复杂性，但所有金额、收益率等敏感信息都已脱敏处理。
+To support open-source and demonstration use cases, we've created a complete set of simulated investment data. This data preserves the structure and complexity of real data, but all amounts, returns, and other sensitive information have been anonymized.
 
-## 📊 数据特点
+## 📊 Data Characteristics
 
-### 投资类型覆盖
-- **货币基金**: 余额宝、朝朝宝等低风险产品
-- **指数基金**: 沪深300、中证500、纳斯达克100等
-- **债券基金**: 国债ETF等固收产品
-- **混合基金**: 平衡配置基金
-- **个股**: A股、科技股等
-- **美股**: 苹果、微软等科技股
-- **港股**: 腾讯等
-- **QDII**: 标普500ETF等海外基金
-- **理财产品**: 银行理财、定期存款
-- **REITs**: 物流REITs等
-- **黄金**: 黄金ETF
+### Investment Types Covered
+- **Money Market Funds**: Low-risk products (e.g., Yu'e Bao)
+- **Index Funds**: CSI 300, CSI 500, Nasdaq 100, etc.
+- **Bond Funds**: Government bond ETFs and fixed-income products
+- **Mixed Funds**: Balanced allocation funds
+- **A-Shares**: Chinese domestic stocks, tech stocks
+- **US Stocks**: Apple, Microsoft, etc.
+- **HK Stocks**: Tencent, etc.
+- **QDII**: S&P 500 ETFs and overseas funds
+- **Wealth Management**: Bank wealth management, time deposits
+- **REITs**: Logistics REITs, etc.
+- **Gold**: Gold ETFs
 
-### 平台分布
-- **微信**: 美股投资（苹果、微软）
-- **支付宝**: 国内基金、A股、港股、QDII等主要投资
+### Platform Distribution
+- **WeChat**: US stock investments (Apple, Microsoft)
+- **Alipay**: Domestic funds, A-shares, HK stocks, QDII (primary)
 
-### 定投策略展示
-数据中包含了系统支持的所有定投模式：
+### DCA Strategy Showcase
+The data includes all supported DCA (Dollar-Cost Averaging) modes:
 
-1. **固定金额定投**: `2024/1/15-now:buy:200`
-2. **智能区间定投**: `2024/2/1-now:buy:100~300`
-3. **浮动金额定投**: `2024/7/1-now:buy:150±50`
-4. **估值模式定投**: `2024/3/15-now:buy:80-200-400`
-5. **分阶段定投**: `2024/1/1-2024/6/30:buy:100;2024/7/1-now:buy:150±50`
+1. **Fixed Amount DCA**: `2024/1/15-now:buy:200`
+2. **Smart Range DCA**: `2024/2/1-now:buy:100~300`
+3. **Floating Amount DCA**: `2024/7/1-now:buy:150±50`
+4. **Valuation-Based DCA**: `2024/3/15-now:buy:80-200-400`
+5. **Phased DCA**: `2024/1/1-2024/6/30:buy:100;2024/7/1-now:buy:150±50`
 
-### 多币种支持
-- **人民币投资**: 国内基金、A股等
-- **美元投资**: 美股、美元基金
-- **港元投资**: 港股等
-- **汇率数据**: 实时汇率转换支持
-- **市场指数**: 上证指数、沪深300、纳指100等
-- **风险指标**: 恐慌指数VXX、美联储利率等
+### Multi-Currency Support
+- **CNY Investments**: Domestic funds, A-shares, etc.
+- **USD Investments**: US stocks, USD funds
+- **HKD Investments**: HK stocks, etc.
+- **Exchange Rates**: Real-time rate conversion support
+- **Market Indices**: SSE Composite, CSI 300, Nasdaq 100, etc.
+- **Risk Indicators**: VIX, Federal Reserve interest rates, etc.
 
-## 🔧 使用方法
+## 🔧 Usage
 
-### 1. 运行演示
+### 1. Run Demo
 ```bash
-# 确保已安装依赖
+# Ensure dependencies are installed
 pip install -r requirements.txt
 
-# 使用演示数据运行分析
+# Run analysis with demo data
 asset-lens analyze --data-mode sample
 ```
 
-### 2. 查看结果
-分析结果将保存在 `output/投资收益率分析_YYYYMMDD.csv` 文件中。
+### 2. View Results
+Analysis results are saved to `output/` directory.
 
-### 3. 对比分析
+### 3. Comparative Analysis
 ```bash
-# 创建多期演示数据进行对比
+# Create multi-period demo data for comparison
 asset-lens compare -- demo1 demo2 report
 ```
 
-## 📈 预期输出
+## 📈 Expected Output
 
-使用演示数据运行后，您将看到：
+After running with demo data, you will see:
 
-- **收益率排名**: 展示各类投资产品的年化收益率
-- **类型分析**: 按投资类型统计的收益分布
-- **定投效果**: 不同定投策略的收益对比
-- **风险评估**: 各风险等级产品的表现
-- **多币种统计**: 外币投资的汇率影响分析
+- **Return Rankings**: Annualized returns across all investment products
+- **Type Analysis**: Return distribution by investment type
+- **DCA Effectiveness**: Return comparison across different DCA strategies
+- **Risk Assessment**: Performance by risk level
+- **Multi-Currency Statistics**: Exchange rate impact analysis on foreign investments
 
-## 🔒 隐私保护
+## 🔒 Privacy Protection
 
-- ✅ 所有金额数据已脱敏处理
-- ✅ 收益率数据为合理模拟值
-- ✅ 个人敏感信息已完全移除
-- ✅ 保持了数据结构的完整性
+- ✅ All monetary data has been anonymized
+- ✅ Return rates are reasonable simulated values
+- ✅ Personal sensitive information completely removed
+- ✅ Data structure integrity preserved
 
-## 🎯 教学价值
+## 🎯 Educational Value
 
-这套演示数据可以帮助用户：
+This demo dataset helps users:
 
-1. **理解系统功能**: 快速了解投资分析系统的能力
-2. **学习定投策略**: 通过实例理解不同定投模式
-3. **掌握使用方法**: 无需真实数据即可体验完整流程
-4. **技术学习**: 研究IRR计算、数据处理等技术实现
+1. **Understand System Capabilities**: Quickly grasp what the investment analysis system can do
+2. **Learn DCA Strategies**: Understand different DCA modes through examples
+3. **Master Usage**: Experience the full workflow without real data
+4. **Technical Learning**: Study IRR calculations, data processing, and other technical implementations
 
-## 📝 自定义数据
+## 📝 Custom Data
 
-您可以基于这个模板创建自己的测试数据：
+You can create your own test data based on this template:
 
-1. 复制 `data/sample_data` 文件夹
-2. 修改投资产品名称和金额
-3. 调整定投策略和时间范围
-4. 运行分析查看结果
+1. Copy the `data/sample_data` folder
+2. Modify product names and amounts
+3. Adjust DCA strategies and time ranges
+4. Run analysis to view results
 
 ---
 
-**注意**: 这些数据仅用于演示和学习目的，不构成任何投资建议。
+**Note**: This data is for demonstration and learning purposes only and does not constitute investment advice.
