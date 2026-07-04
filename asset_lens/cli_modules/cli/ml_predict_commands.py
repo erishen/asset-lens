@@ -9,12 +9,10 @@ def register_ml_predict_commands(ml_group: click.Group) -> None:
     @click.option("--code", help="股票代码")
     @click.option("--auto-train", is_flag=True, default=True, help="模型不存在时自动训练")
     def predict(model: str, code: str, auto_train: bool):
-        import numpy as np
         import pandas as pd
         from rich.console import Console
         from rich.table import Table
 
-        from asset_lens.data.market_stock_fetcher import MarketStockFetcher
         from asset_lens.ml.predictor import StockPredictor
 
         console = Console()
@@ -95,45 +93,26 @@ def register_ml_predict_commands(ml_group: click.Group) -> None:
                 console.print("[yellow]请提供股票代码: --code sh600519[/yellow]")
                 return
 
-            console.print(f"\n📊 获取股票数据: {code}")
-            fetcher = MarketStockFetcher()
-            stocks_data = fetcher.get_cached_market_stocks()
+            # 从数据库获取真实 K 线数据
+            from asset_lens.db.database import db_manager
 
-            stock_info = None
-            for stock in stocks_data:
-                if stock.get("code") == code:
-                    stock_info = stock
-                    break
+            console.print(f"\n📊 获取 K 线数据: {code}")
+            klines = db_manager.get_klines(code, limit=100)
 
-            if not stock_info:
-                console.print(f"[red]❌ 未找到股票: {code}[/red]")
+            if not klines:
+                console.print("[yellow]⚠️ 数据库中无该股票的 K 线数据[/yellow]")
+                console.print("请先运行: make ml-fetch-history")
                 return
 
-            console.print(f"✅ 获取成功: {stock_info.get('name', code)}")
+            price_df = pd.DataFrame(klines)
+            for col in ["open", "high", "low", "close", "volume", "amount"]:
+                if col not in price_df.columns:
+                    price_df[col] = 0
 
-            np.random.seed(42)
-            n_days = 100
-
-            console.print("\n📊 数据集统计")
+            console.print("📊 数据集统计")
             console.print("=" * 60)
-            console.print("  数据源: 市场股票缓存")
-            console.print(f"  总股票数: {len(stocks_data)}")
-            console.print(f"  使用天数: {n_days} 天")
-
-            current_price = stock_info.get("current_price", 10)
-            returns = np.random.randn(n_days) * 0.02
-            prices = current_price * np.exp(np.cumsum(returns))
-
-            price_df = pd.DataFrame(
-                {
-                    "open": prices * (1 + np.random.randn(n_days) * 0.01),
-                    "high": prices * (1 + np.abs(np.random.randn(n_days) * 0.02)),
-                    "low": prices * (1 - np.abs(np.random.randn(n_days) * 0.02)),
-                    "close": prices,
-                    "volume": np.random.randint(100000, 1000000, n_days),
-                    "amount": prices * np.random.randint(100000, 1000000, n_days),
-                }
-            )
+            console.print(f"  数据源: 数据库 K 线")
+            console.print(f"  数据条数: {len(price_df)}")
 
             from asset_lens.ml.features import FeatureEngineer
 
@@ -145,7 +124,7 @@ def register_ml_predict_commands(ml_group: click.Group) -> None:
             pred_result = predictor.predict_stock(
                 stock_data=latest_features,
                 code=code,
-                name=stock_info.get("name", ""),
+                name=code,  # 从 K 线表获取名称
             )
 
             console.print("\n📈 预测结果:")
@@ -181,7 +160,6 @@ def register_ml_predict_commands(ml_group: click.Group) -> None:
         from rich.console import Console
         from rich.table import Table
 
-        from asset_lens.data.stock_history_fetcher import StockHistoryFetcher
         from asset_lens.trading.stock_pool import StockPool
 
         logger = logging.getLogger(__name__)
@@ -265,44 +243,39 @@ def register_ml_predict_commands(ml_group: click.Group) -> None:
 
             console.print(f"✅ 股票池中有 {len(stocks)} 只股票")
 
+            from asset_lens.db.database import db_manager
             from asset_lens.ml.predictor import StockPredictor
 
             predictor = StockPredictor(model_path=model_path)
 
-            fetcher = StockHistoryFetcher()
-
             predictions = []
             for stock in stocks[:limit]:
                 code = stock.get("code", "")
-                name = stock.get("name", "")
+                name = stock.get("name", code)
                 try:
-                    history = fetcher.fetch_history(code, days=250)
-                    history_data = None
-                    if history and history.get("klines"):
-                        history_data = []
-                        for kline in history["klines"]:
-                            history_data.append(
-                                {
-                                    "open": float(kline.get("open", 0)),
-                                    "high": float(kline.get("high", 0)),
-                                    "low": float(kline.get("low", 0)),
-                                    "close": float(kline.get("close", 0)),
-                                    "volume": float(kline.get("volume", 0)),
-                                    "amount": float(kline.get("amount", 0)),
-                                }
-                            )
+                    klines = db_manager.get_klines(code, limit=100)
+                    if not klines:
+                        continue
+                    history_data = []
+                    for kline in klines:
+                        history_data.append({
+                            "open": float(kline.get("open", 0)),
+                            "high": float(kline.get("high", 0)),
+                            "low": float(kline.get("low", 0)),
+                            "close": float(kline.get("close", 0)),
+                            "volume": float(kline.get("volume", 0)),
+                            "amount": float(kline.get("amount", 0)),
+                        })
 
                     pred_result = predictor.predict_single(code=code, name=name, history_data=history_data)
                     if pred_result:
-                        predictions.append(
-                            {
-                                "code": code,
-                                "name": name,
-                                "prediction": pred_result.prediction,
-                                "confidence": pred_result.confidence,
-                                "up_prob": pred_result.up_prob,
-                            }
-                        )
+                        predictions.append({
+                            "code": code,
+                            "name": name,
+                            "prediction": pred_result.prediction,
+                            "confidence": pred_result.confidence,
+                            "up_prob": pred_result.up_prob,
+                        })
                 except Exception as e:
                     logger.debug(f"忽略异常: {e}")
 
