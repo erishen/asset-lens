@@ -48,9 +48,9 @@ class ReportFormatMixin:
 
             console.print("\n[dim]📊 收益率说明：")
             console.print("[dim]• 已实现收益率：卖出记录中的收益率，包含所有卖出部分的总收益")
-            console.print("[dim]• 年化收益率：直接从CSV读取预计算的年化数据（包含年化收益和复利年化）")
-            console.print("[dim]  注意：卖出记录的年化收益率为CSV中预先计算的数据，未使用IRR计算")
-            console.print("[dim]  对于有多次交易记录的产品，当前年化收益可能与实际IRR存在差异[/dim]")
+            console.print("[dim]• 年化收益率：优先使用 CSV「年化收益」列；若缺失则用「收益率 ÷ 投资天数 × 365」简单年化")
+            console.print("[dim]  注意：卖出记录不使用 IRR 计算，也不引用 CSV「复利年化」列（该列历史数据存在计算错误）")
+            console.print("[dim]  对于有多次交易记录的产品，年化收益为近似值，可能与实时组合 IRR 存在差异[/dim]")
 
             if sold_analysis.get("top_performers"):
                 console.print("\n[bold green]表现最好的已卖出产品:[/bold green]")

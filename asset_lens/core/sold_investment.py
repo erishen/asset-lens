@@ -114,8 +114,15 @@ class SoldInvestmentAnalyzer:
             return_rate = record.return_rate or Decimal("0")
             holding_days = record.investment_days or 0
 
-            # 使用CSV中的年化收益率（与 ts-demo 保持一致，优先使用年化收益）
-            annualized_return = record.annual_return or record.compound_return or Decimal("0")
+            # 年化收益率：优先使用 CSV「年化收益」列（已验证可靠）；
+            # 绝不回退到「复利年化」列——该列历史数据存在计算错误（如 255% 等异常值）；
+            # 若「年化收益」缺失，则用「收益率」与「投资天数」做简单年化（百分比口径，与 CSV 列一致）。
+            if record.annual_return:
+                annualized_return = record.annual_return
+            elif record.return_rate and record.investment_days:
+                annualized_return = record.return_rate * Decimal("365") / Decimal(str(record.investment_days))
+            else:
+                annualized_return = Decimal("0")
 
             detail = SoldInvestmentDetail(
                 name=record.name,

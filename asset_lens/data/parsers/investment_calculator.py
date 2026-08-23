@@ -233,6 +233,39 @@ class InvestmentCalculator:
 
         return cashflows
 
+    @staticmethod
+    def _has_alternating_cashflows(transactions: list[dict]) -> bool:
+        """买/卖交替出现 >=2 次 → IRR 可能多根、数值不稳定，需改用稳定口径。"""
+        prev_sign = None
+        flips = 0
+        for trans in transactions:
+            sign = 1 if trans.get("type") == "sell" else -1
+            if prev_sign is not None and sign != prev_sign:
+                flips += 1
+            prev_sign = sign
+        return flips >= 2
+
+    @staticmethod
+    def _net_invested_annualized(
+        current_amount: Decimal | float | None,
+        net_invested: float,
+        total_days: int,
+    ) -> float | None:
+        """稳定年化：基于净投入资本 (current / 净投入)^(360/天数) - 1。
+
+        高换手产品（频繁买/卖对冲）的 IRR 会因多根问题剧烈跳动，
+        改用净投入年化可消除数值敏感性，且符合直觉（金价小涨 → 年化小涨）。
+        """
+        try:
+            if not net_invested or net_invested <= 0 or not total_days or total_days <= 0:
+                return None
+            if not current_amount or float(current_amount) <= 0:
+                return None
+            rate = (float(current_amount) / float(net_invested)) ** (360.0 / total_days) - 1
+            return rate
+        except (ValueError, ZeroDivisionError, OverflowError):
+            return None
+
     @classmethod
     def calculate_product_returns(
         cls,
@@ -345,7 +378,13 @@ class InvestmentCalculator:
                     if cashflows and len(cashflows) > 1:
                         irr = irr_calculator.calculate_irr_with_days(cashflows)
                         if irr is not None and -1 < irr < 10:
-                            if precise_simple_return is not None:
+                            unstable = cls._has_alternating_cashflows(transactions)
+                            stable = cls._net_invested_annualized(
+                                product.current_amount, total_buy - total_sell, total_days
+                            )
+                            if unstable and stable is not None:
+                                product.annual_return = Decimal(str(round(stable * 100, 2)))
+                            elif precise_simple_return is not None:
                                 simple_annualized = (1 + precise_simple_return) ** (360 / total_days) - 1
                                 diff = abs(irr - simple_annualized)
                                 if diff > 0.5:
@@ -354,6 +393,7 @@ class InvestmentCalculator:
                                     product.annual_return = Decimal(str(round(irr * 100, 2)))
                             else:
                                 product.annual_return = Decimal(str(round(irr * 100, 2)))
+                            product.compound_return = product.annual_return
                             return product
 
                     if precise_simple_return is not None:
@@ -362,6 +402,9 @@ class InvestmentCalculator:
                 elif precise_simple_return is not None:
                     simple_annualized = (1 + precise_simple_return) ** (360 / total_days) - 1
                     product.annual_return = Decimal(str(round(simple_annualized * 100, 2)))
+
+        if product.annual_return is not None:
+            product.compound_return = product.annual_return
 
         return product
 

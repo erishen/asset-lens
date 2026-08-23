@@ -66,7 +66,7 @@ def _load_products_with_returns(data_dir: Path) -> dict[str, dict]:
         InvestmentCalculator.calculate_product_returns(p)
 
         annual_return_value = (
-            float(p.compound_return) if p.compound_return else (float(p.annual_return) if p.annual_return else 0)
+            float(p.annual_return) if p.annual_return else (float(p.compound_return) if p.compound_return else 0)
         )
 
         key = f"{p.name}@{_get_main_platform(p)}"
@@ -197,10 +197,34 @@ def register_compare_commands(cli: click.Group) -> None:
             click.echo(f"❌ 创建快照失败: {e}", err=True)
 
 
+# 持有天数小于该阈值的仓位视为“建仓期”，年化率不稳定，趋势对比中排除
+YOUNG_POSITION_DAYS = 180
+# 年化率绝对值超过该阈值的视为数据/计算异常（如高换手产品净投入残差失真），趋势对比中排除
+ANNUAL_RETURN_CAP = 200.0
+
+
+def _exclude_from_trend(info: dict) -> bool:
+    """趋势对比中排除不可信的年化率：
+    - 建仓期产品（持有天数过短），年化率会因持仓过短而剧烈失真；
+    - 年化率绝对值超过上限，通常是源数据噪声（如高换手产品净投入残差极小）导致的异常值。
+    """
+    if (info.get("investment_days") or 0) < YOUNG_POSITION_DAYS:
+        return True
+    if abs(info.get("annual_return") or 0) > ANNUAL_RETURN_CAP:
+        return True
+    return False
+
+
 def _show_trend_analysis(console: Console, data_dirs: list[Path], before: str | None, after: str | None):
     """显示所有时间点的收益率趋势分析（类似 ts-demo npm run compare）"""
     console.print("\n[bold blue]📅 所有时间点收益趋势分析[/bold blue]")
     console.print("─" * 80)
+    console.print(
+        "[dim]注：下方“上涨/下跌”为相邻快照间【年化收益率】的变动，单位 pp(百分点)，"
+        "表示年化率较上一期的增减，并非产品的真实盈亏金额；"
+        f"持有天数 < {YOUNG_POSITION_DAYS} 天的建仓期产品，或年化率绝对值 > {ANNUAL_RETURN_CAP:.0f}% 的异常值已排除"
+        f"（其年化率会因持仓过短或源数据噪声而剧烈失真）。[/dim]"
+    )
 
     if before and after:
         before_dir = next((d for d in data_dirs if before.replace("-", "") in d.name), None)
@@ -225,6 +249,8 @@ def _show_trend_analysis(console: Console, data_dirs: list[Path], before: str | 
     product_trends: dict[str, list[float]] = {}
     for date_str in dir_dates:
         for key, info in all_data[date_str].items():
+            if _exclude_from_trend(info):
+                continue
             if key not in product_trends:
                 product_trends[key] = []
             product_trends[key].append(info["annual_return"])
@@ -244,19 +270,19 @@ def _show_trend_analysis(console: Console, data_dirs: list[Path], before: str | 
             consistently_deteriorating.append((key, returns[0], returns[-1], total_change))
 
     if consistently_improving:
-        console.print(f"\n[bold red]🚀 持续上涨产品[/bold red] ({len(consistently_improving)}个):")
+        console.print(f"\n[bold red]🚀 持续年化率上升产品[/bold red] ({len(consistently_improving)}个):")
         for key, first, last, change in consistently_improving[:5]:
             name = key.split("@")[0]
             console.print(
-                f"  • {name:<20s} {_format_return(first)} → {_format_return(last)} [red](总上涨+{change:.2f}%)[/red]"
+                f"  • {name:<20s} {_format_return(first)} → {_format_return(last)} [red](年化率累计 +{change:.2f}pp)[/red]"
             )
 
     if consistently_deteriorating:
-        console.print(f"\n[bold green]🔻 持续下跌产品[/bold green] ({len(consistently_deteriorating)}个):")
+        console.print(f"\n[bold green]🔻 持续年化率下降产品[/bold green] ({len(consistently_deteriorating)}个):")
         for key, first, last, change in consistently_deteriorating[:5]:
             name = key.split("@")[0]
             console.print(
-                f"  • {name:<20s} {_format_return(first)} → {_format_return(last)} [green](总下跌{change:.2f}%)[/green]"
+                f"  • {name:<20s} {_format_return(first)} → {_format_return(last)} [green](年化率累计 {change:.2f}pp)[/green]"
             )
 
     for i in range(1, len(dir_dates)):
@@ -271,7 +297,7 @@ def _show_trend_analysis(console: Console, data_dirs: list[Path], before: str | 
         max_deteriorating: tuple[str, float] = ("", 0)
 
         for key, info in current_data.items():
-            if key in previous_data:
+            if key in previous_data and not _exclude_from_trend(info) and not _exclude_from_trend(previous_data[key]):
                 change = info["annual_return"] - previous_data[key]["annual_return"]
                 if change > 0.5:
                     improving += 1
@@ -283,23 +309,28 @@ def _show_trend_analysis(console: Console, data_dirs: list[Path], before: str | 
                         max_deteriorating = (info["name"], change)
 
         console.print(f"\n[bold cyan]时间段: {previous_date} → {current_date}[/bold cyan]")
-        console.print(f"  上涨: [red]{improving}个[/red], 下跌: [green]{deteriorating}个[/green]")
+        console.print(
+            f"  年化率变动 — 上升: [red]{improving}个[/red], 下降: [green]{deteriorating}个[/green]"
+        )
         if max_improving[0]:
-            console.print(f"  最大上涨: {max_improving[0]} [red]+{max_improving[1]:.2f}%[/red]")
+            console.print(f"  年化率上升最多: {max_improving[0]} [red]+{max_improving[1]:.2f}pp[/red]")
         if max_deteriorating[0]:
-            console.print(f"  最大下跌: {max_deteriorating[0]} [green]{max_deteriorating[1]:.2f}%[/green]")
+            console.print(f"  年化率下降最多: {max_deteriorating[0]} [green]{max_deteriorating[1]:.2f}pp[/green]")
 
     first_data = all_data[dir_dates[0]]
     last_data = all_data[dir_dates[-1]]
-    first_avg = sum(v["annual_return"] for v in first_data.values()) / len(first_data) if first_data else 0
-    last_avg = sum(v["annual_return"] for v in last_data.values()) / len(last_data) if last_data else 0
+    _mature = lambda d: [v["annual_return"] for v in d.values() if not _exclude_from_trend(v)]
+    first_vals = _mature(first_data)
+    last_vals = _mature(last_data)
+    first_avg = sum(first_vals) / len(first_vals) if first_vals else 0
+    last_avg = sum(last_vals) / len(last_vals) if last_vals else 0
     total_change = last_avg - first_avg
 
     console.print(f"\n{'─' * 80}")
     console.print("[bold magenta]📈 总体投资趋势分析[/bold magenta]")
     console.print(f"• 平均年化收益率: {first_avg:.2f}% → {last_avg:.2f}%")
-    change_str = f"+{total_change:.2f}%" if total_change >= 0 else f"{total_change:.2f}%"
-    console.print(f"• 总体变化: {'[red]' if total_change >= 0 else '[green]'}{change_str}[/]")
+    change_str = f"+{total_change:.2f}pp" if total_change >= 0 else f"{total_change:.2f}pp"
+    console.print(f"• 年化率总体变化: {'[red]' if total_change >= 0 else '[green]'}{change_str}[/]")
     console.print(f"• 分析时间范围: {dir_dates[0]} - {dir_dates[-1]} ({len(dir_dates)}个时间点)")
 
     console.print("\n[bold red]💡 投资建议:[/bold red]")
@@ -311,9 +342,13 @@ def _show_trend_analysis(console: Console, data_dirs: list[Path], before: str | 
         console.print("❌ 需要重新评估投资策略，考虑调整资产配置")
 
     console.print("\n[bold yellow]📌 重要说明:[/bold yellow]")
-    console.print("   本工具比较的是【年化收益率】的变化")
-    console.print("   ⚠️  对于有交易记录的产品，年化收益率会剧烈波动")
-    console.print("   ✅ 适用于观察长期趋势、发现新增或卖出的产品")
+    console.print("   上方“上升/下降”及“年化率上升/下降最多”比较的是【年化收益率的变动】，")
+    console.print("   数值单位为百分点(pp)，表示年化率较上一期的增减，并非产品的真实盈亏金额或收益率。")
+    console.print("   ⚠️  对于有交易记录或持仓时间较短的产品，年化收益率会被放大、剧烈波动；")
+    console.print("      早期快照(如刚建仓)可能出现几百 pp 的变动，属正常年化现象，不代表实际赚了/亏了那么多。")
+    console.print(f"   ⚠️  持有天数 < {YOUNG_POSITION_DAYS} 天的建仓期产品，或年化率绝对值 > {ANNUAL_RETURN_CAP:.0f}% 的异常值，已从上方趋势对比中排除，"
+                   "避免年化率因持仓过短或源数据噪声而失真。")
+    console.print("   ✅ 本视图适用于观察长期趋势、发现新增或卖出的产品，不代表真实损益。")
 
 
 def _show_two_date_comparison(console: Console, before_dir: Path, after_dir: Path):
@@ -324,6 +359,10 @@ def _show_two_date_comparison(console: Console, before_dir: Path, after_dir: Pat
     console.print("\n[bold blue]📊 投资收益比较报告[/bold blue]")
     console.print(f"[blue]对比时间: {before_date} → {after_date}[/blue]")
     console.print("─" * 80)
+    console.print(
+        "[dim]注：“上升/下降”比较的是两期之间【年化收益率】的变动，单位 pp(百分点)，"
+        "表示年化率的差值，并非产品的真实盈亏金额。[/dim]"
+    )
 
     before_data = _load_products_with_returns(before_dir)
     after_data = _load_products_with_returns(after_dir)
@@ -380,20 +419,20 @@ def _show_two_date_comparison(console: Console, before_dir: Path, after_dir: Pat
 
     if improving:
         improving.sort(key=lambda x: x["change"], reverse=True)
-        console.print(f"\n[bold red]📈 收益上涨产品[/bold red] ({len(improving)}个):")
+        console.print(f"\n[bold red]📈 年化率上升产品[/bold red] ({len(improving)}个):")
         for item in improving[:8]:
             console.print(
                 f"  • {item['name']:<20s} {_format_return(item['before_return'])} → {_format_return(item['after_return'])} "
-                f"[red](+{item['change']:.2f}%)[/red]"
+                f"[red](年化率 +{item['change']:.2f}pp)[/red]"
             )
 
     if deteriorating:
         deteriorating.sort(key=lambda x: x["change"])
-        console.print(f"\n[bold green]📉 收益下跌产品[/bold green] ({len(deteriorating)}个):")
+        console.print(f"\n[bold green]📉 年化率下降产品[/bold green] ({len(deteriorating)}个):")
         for item in deteriorating[:8]:
             console.print(
                 f"  • {item['name']:<20s} {_format_return(item['before_return'])} → {_format_return(item['after_return'])} "
-                f"[green]({item['change']:.2f}%)[/green]"
+                f"[green](年化率 {item['change']:.2f}pp)[/green]"
             )
 
     if new_products:
@@ -405,7 +444,7 @@ def _show_two_date_comparison(console: Console, before_dir: Path, after_dir: Pat
                 else f"¥{item['current_amount']:,.0f}"
             )
             console.print(
-                f"  • {item['name']:<20s} {_format_return(item['return'])} ({item['days']}天) 金额: {amount_str}"
+                f"  • {item['name']:<20s} 年化率 {_format_return(item['return'])} ({item['days']}天) 金额: {amount_str}"
             )
 
     if sold_products:
@@ -416,9 +455,9 @@ def _show_two_date_comparison(console: Console, before_dir: Path, after_dir: Pat
                 if item["initial_amount"] >= 10000
                 else f"¥{item['initial_amount']:,.0f}"
             )
-            console.print(f"  • {item['name']:<20s} 卖出时收益 {_format_return(item['return'])} 投入: {amount_str}")
+            console.print(f"  • {item['name']:<20s} 卖出时年化率 {_format_return(item['return'])} 投入: {amount_str}")
 
-    console.print(f"\n[gray bold]⚖️  收益稳定产品[/gray bold]: {len(stable)}个")
+    console.print(f"\n[gray bold]⚖️  年化率稳定产品[/gray bold]: {len(stable)}个")
 
     new_capital = sum(p["current_amount"] for p in new_products)
     sold_capital = sum(p["initial_amount"] for p in sold_products)
@@ -429,16 +468,16 @@ def _show_two_date_comparison(console: Console, before_dir: Path, after_dir: Pat
     console.print("\n[bold magenta]💸 资金流动分析:[/bold magenta]")
     console.print(f"• 新增投资资金: [cyan]{new_capital / 10000:.1f}万元[/cyan]")
     console.print(f"• 卖出回收资金: [yellow]{sold_capital / 10000:.1f}万元[/yellow]")
-    console.print(f"• 上涨产品资金: [red]{improving_capital / 10000:.1f}万元[/red]")
-    console.print(f"• 下跌产品资金: [green]{deteriorating_capital / 10000:.1f}万元[/green]")
+    console.print(f"• 年化率上升产品资金: [red]{improving_capital / 10000:.1f}万元[/red]")
+    console.print(f"• 年化率下降产品资金: [green]{deteriorating_capital / 10000:.1f}万元[/green]")
     net_str = f"+{net_flow / 10000:.1f}" if net_flow >= 0 else f"{net_flow / 10000:.1f}"
     console.print(f"• 净资金流动: {'[red]' if net_flow >= 0 else '[green]'}{net_str}万元[/]")
 
     console.print(f"\n{'─' * 80}")
     console.print("[bold magenta]📋 详细统计摘要:[/bold magenta]")
     console.print(f"• 总产品数量: {len(before_data) + len(new_products)}")
-    console.print(f"• 收益上涨: [red]{len(improving)}个[/red]")
-    console.print(f"• 收益下跌: [green]{len(deteriorating)}个[/green]")
+    console.print(f"• 年化率上升: [red]{len(improving)}个[/red]")
+    console.print(f"• 年化率下降: [green]{len(deteriorating)}个[/green]")
     console.print(f"• 新增投资: [cyan]{len(new_products)}个[/cyan]")
     console.print(f"• 已卖出: [yellow]{len(sold_products)}个[/yellow]")
 

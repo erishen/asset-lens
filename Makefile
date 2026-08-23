@@ -23,8 +23,8 @@ PYTHON := python
 PROJECT_DIR := $(shell pwd)
 VERSION := 1.0.0
 
-# Python 命令（使用 uv run）
-PY := uv run python -m asset_lens
+# Python 命令（使用 uv run，--no-sync 避免每次运行都联网对齐 venv）
+PY := uv run --no-sync python -m asset_lens
 
 # 默认目标
 .PHONY: all
