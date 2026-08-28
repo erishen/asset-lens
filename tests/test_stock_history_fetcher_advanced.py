@@ -35,6 +35,7 @@ class TestStockHistoryFetcherProperties:
         with patch.dict("os.environ", {}, clear=True):
             # Remove TUSHARE_TOKEN from environment
             import os
+
             os.environ.pop("TUSHARE_TOKEN", None)
             result = fetcher.tushare
             assert result is None
@@ -196,6 +197,7 @@ class TestFetchHistoryTushare:
         """Test fetch_history_tushare without tushare module"""
         with patch.dict("os.environ", {}, clear=False):
             import os
+
             os.environ.pop("TUSHARE_TOKEN", None)
             result = fetcher.fetch_history_tushare("sh600519", 60)
             assert result is None
@@ -653,7 +655,9 @@ class TestGetStocksWithHistory:
                 "sh600519": {
                     "name": "贵州茅台",
                     "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "klines": [{"close": 1800, "turnover_rate": 0.5, "amount": 1000000, "volume": 1000, "change_percent": 1.0}],
+                    "klines": [
+                        {"close": 1800, "turnover_rate": 0.5, "amount": 1000000, "volume": 1000, "change_percent": 1.0}
+                    ],
                     "source": "akshare",
                 }
             },

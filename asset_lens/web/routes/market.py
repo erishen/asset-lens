@@ -32,6 +32,7 @@ async def get_market_indexes():
     # Demo 模式下返回模拟数据
     if DEMO_MODE:
         from ..demo_data import get_demo_market_indexes
+
         return [MarketIndex(**idx) for idx in get_demo_market_indexes()]
 
     indexes = await _get_market_indexes()

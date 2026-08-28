@@ -7,6 +7,7 @@ ML准确率优化脚本 v5 - 深度学习
 2. Attention机制
 3. 多尺度特征
 """
+
 import json
 import logging
 import time
@@ -28,6 +29,7 @@ try:
     import torch.optim as optim
     from torch import nn
     from torch.utils.data import DataLoader, TensorDataset
+
     HAS_TORCH = True
 except ImportError:
     HAS_TORCH = False
@@ -117,7 +119,7 @@ def create_sequences(X, y, seq_length=20):
     y_seq = []
 
     for i in range(seq_length, len(X)):
-        X_seq.append(X[i-seq_length:i])
+        X_seq.append(X[i - seq_length : i])
         y_seq.append(y[i])
 
     return np.array(X_seq), np.array(y_seq)
@@ -135,12 +137,12 @@ def prepare_data(days: int = 500, seq_length: int = 20):
             continue
 
         df = pd.DataFrame(klines)
-        df['date'] = pd.to_datetime(df['date'])
-        df = df.sort_values('date').reset_index(drop=True)
+        df["date"] = pd.to_datetime(df["date"])
+        df = df.sort_values("date").reset_index(drop=True)
 
-        for col in ['open', 'close', 'high', 'low', 'volume', 'amount']:
+        for col in ["open", "close", "high", "low", "volume", "amount"]:
             if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
         stocks_data[code] = df
 
@@ -153,7 +155,7 @@ def prepare_data(days: int = 500, seq_length: int = 20):
     for df in stocks_data.values():
         df_features = feature_engineer.calculate_all_features(df)
 
-        future_return = df_features['close'].shift(-5) / df_features['close'] - 1
+        future_return = df_features["close"].shift(-5) / df_features["close"] - 1
 
         def label_return(r):
             if pd.isna(r):
@@ -185,10 +187,10 @@ def prepare_data(days: int = 500, seq_length: int = 20):
     return X_all, y_all
 
 
-def train_deep_model(X_train, y_train, X_test, y_test, model_type='lstm', epochs=20, batch_size=256, seq_length=20):
+def train_deep_model(X_train, y_train, X_test, y_test, model_type="lstm", epochs=20, batch_size=256, seq_length=20):
     """训练深度学习模型"""
 
-    device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
     logger.info("🔧 使用设备: %s", device)
 
     scaler = StandardScaler()
@@ -208,7 +210,7 @@ def train_deep_model(X_train, y_train, X_test, y_test, model_type='lstm', epochs
 
     input_dim = X_train.shape[1]
 
-    if model_type == 'lstm':
+    if model_type == "lstm":
         model = LSTMModel(input_dim=input_dim, hidden_dim=64, num_layers=2, dropout=0.3)
     else:
         model = TransformerModel(input_dim=input_dim, d_model=64, nhead=4, num_layers=2, dropout=0.3)
@@ -217,7 +219,7 @@ def train_deep_model(X_train, y_train, X_test, y_test, model_type='lstm', epochs
 
     criterion = nn.BCELoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=3, factor=0.5)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", patience=3, factor=0.5)
 
     logger.info("🚀 训练 %s 模型...", model_type.upper())
 
@@ -243,7 +245,9 @@ def train_deep_model(X_train, y_train, X_test, y_test, model_type='lstm', epochs
                 val_loss = criterion(val_outputs, y_test_tensor)
                 val_pred = (val_outputs > 0.5).float()
                 val_acc = (val_pred == y_test_tensor).float().mean()
-                logger.info(f"   Epoch {epoch+1}/{epochs}: Loss={avg_loss:.4f}, Val_Loss={val_loss:.4f}, Val_Acc={val_acc:.2%}")
+                logger.info(
+                    f"   Epoch {epoch + 1}/{epochs}: Loss={avg_loss:.4f}, Val_Loss={val_loss:.4f}, Val_Acc={val_acc:.2%}"
+                )
 
     model.eval()
     with torch.no_grad():
@@ -252,11 +256,11 @@ def train_deep_model(X_train, y_train, X_test, y_test, model_type='lstm', epochs
         y_true = y_test_tensor.cpu().numpy()
 
     metrics = {
-        'accuracy': accuracy_score(y_true, y_pred),
-        'precision': precision_score(y_true, y_pred, zero_division=0),
-        'recall': recall_score(y_true, y_pred, zero_division=0),
-        'f1_score': f1_score(y_true, y_pred, zero_division=0),
-        'auc': roc_auc_score(y_true, y_proba),
+        "accuracy": accuracy_score(y_true, y_pred),
+        "precision": precision_score(y_true, y_pred, zero_division=0),
+        "recall": recall_score(y_true, y_pred, zero_division=0),
+        "f1_score": f1_score(y_true, y_pred, zero_division=0),
+        "auc": roc_auc_score(y_true, y_proba),
     }
 
     return model, metrics
@@ -276,21 +280,22 @@ def main():
 
     X, y = prepare_data(days=500, seq_length=20)
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
-    )
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
     logger.info("\n📊 训练集: %s, 测试集: %s", len(X_train), len(X_test))
 
     results = {}
 
-    for model_type in ['lstm', 'transformer']:
-        logger.info("\n%s", '='*40)
+    for model_type in ["lstm", "transformer"]:
+        logger.info("\n%s", "=" * 40)
         logger.info("  训练 %s 模型", model_type.upper())
-        logger.info('='*40)
+        logger.info("=" * 40)
 
         _model, metrics = train_deep_model(
-            X_train, y_train, X_test, y_test,
+            X_train,
+            y_train,
+            X_test,
+            y_test,
             model_type=model_type,
             epochs=30,
             batch_size=512,
@@ -309,20 +314,25 @@ def main():
     total_time = time.time() - start_time
     logger.info(f"⏱️ 总耗时: {total_time:.1f} 秒")
 
-    best_model = max(results.keys(), key=lambda k: results[k]['accuracy'])
-    best_acc = results[best_model]['accuracy']
+    best_model = max(results.keys(), key=lambda k: results[k]["accuracy"])
+    best_acc = results[best_model]["accuracy"]
     improvement = (best_acc - 0.72) / 0.72 * 100
     logger.info(f"📈 最佳模型: {best_model.upper()}, 准确率: {best_acc:.2%}")
     logger.info(f"   相比基准 72% {'↑' if improvement > 0 else '↓'}{abs(improvement):.1f}%")
 
     output_path = Path("models/optimization_v5_results.json")
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, 'w', encoding='utf-8') as f:
-        json.dump({
-            'results': results,
-            'best_model': best_model,
-            'total_time': total_time,
-        }, f, indent=2, default=str)
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "results": results,
+                "best_model": best_model,
+                "total_time": total_time,
+            },
+            f,
+            indent=2,
+            default=str,
+        )
     logger.info("📄 结果已保存: %s", output_path)
 
     return results

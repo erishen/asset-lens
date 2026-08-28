@@ -370,7 +370,8 @@ class ForeignIndexFetcherMixin:
 
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:  # type: ignore[attr-defined]
             future_to_symbol = {
-                executor.submit(self.fetch_foreign_index, symbol): symbol for symbol in self.FOREIGN_INDEXES  # type: ignore[attr-defined]
+                executor.submit(self.fetch_foreign_index, symbol): symbol
+                for symbol in self.FOREIGN_INDEXES  # type: ignore[attr-defined]
             }
 
             for future in as_completed(future_to_symbol):

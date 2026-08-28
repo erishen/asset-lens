@@ -303,7 +303,9 @@ class TestStrategyBacktest:
             mock_config.cache_path = Path(tempfile.mkdtemp())
             engine = StrategyEngine()
 
-            result = engine.validate_strategy({"name": "nonexistent", "conditions": [{"field": "pe_ratio", "operator": "lt", "value": 20}]})
+            result = engine.validate_strategy(
+                {"name": "nonexistent", "conditions": [{"field": "pe_ratio", "operator": "lt", "value": 20}]}
+            )
             assert result["is_valid"] is True
 
 

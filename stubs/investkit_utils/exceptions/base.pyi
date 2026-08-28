@@ -1,6 +1,5 @@
 from typing import Any
 
-
 class InvestKitError(Exception):
     default_message: str
     default_code: str
@@ -22,7 +21,6 @@ class InvestKitError(Exception):
         details: dict[str, Any] | None = None,
     ) -> None: ...
     def to_dict(self) -> dict[str, Any]: ...
-
 
 class ValidationError(InvestKitError): ...
 class NotFoundError(InvestKitError): ...

@@ -214,8 +214,10 @@ class TestWebSocketModule:
             class AsyncContextManager:
                 async def __aenter__(self):
                     return mock_response
+
                 async def __aexit__(self, *args):
                     pass
+
             return AsyncContextManager()
 
         with patch("asset_lens.web.aiohttp_session.async_get", side_effect=mock_async_get):
@@ -237,8 +239,10 @@ class TestWebSocketModule:
             class AsyncContextManager:
                 async def __aenter__(self):
                     return mock_response
+
                 async def __aexit__(self, *args):
                     pass
+
             return AsyncContextManager()
 
         with patch("asset_lens.web.aiohttp_session.async_get", side_effect=mock_async_get):

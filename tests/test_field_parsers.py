@@ -1,4 +1,3 @@
-
 from asset_lens.data.models import InvestmentType, RiskLevel
 from asset_lens.data.parsers.field_parsers import (
     field_parsers,

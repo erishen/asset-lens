@@ -236,6 +236,7 @@ async def _get_market_indexes():
     # Demo 模式下返回模拟数据
     if DEMO_MODE:
         from .demo_data import get_demo_market_indexes
+
         return get_demo_market_indexes()
 
     from .aiohttp_session import async_get
@@ -292,6 +293,7 @@ async def _get_stock_quotes(codes: list[str]):
     # Demo 模式下返回模拟数据
     if DEMO_MODE:
         from .demo_data import get_demo_stock_quote
+
         return [get_demo_stock_quote(code) for code in codes[:10]]
 
     from .aiohttp_session import async_get

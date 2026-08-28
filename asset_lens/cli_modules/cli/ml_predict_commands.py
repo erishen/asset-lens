@@ -258,24 +258,28 @@ def register_ml_predict_commands(ml_group: click.Group) -> None:
                         continue
                     history_data = []
                     for kline in klines:
-                        history_data.append({
-                            "open": float(kline.get("open", 0)),
-                            "high": float(kline.get("high", 0)),
-                            "low": float(kline.get("low", 0)),
-                            "close": float(kline.get("close", 0)),
-                            "volume": float(kline.get("volume", 0)),
-                            "amount": float(kline.get("amount", 0)),
-                        })
+                        history_data.append(
+                            {
+                                "open": float(kline.get("open", 0)),
+                                "high": float(kline.get("high", 0)),
+                                "low": float(kline.get("low", 0)),
+                                "close": float(kline.get("close", 0)),
+                                "volume": float(kline.get("volume", 0)),
+                                "amount": float(kline.get("amount", 0)),
+                            }
+                        )
 
                     pred_result = predictor.predict_single(code=code, name=name, history_data=history_data)
                     if pred_result:
-                        predictions.append({
-                            "code": code,
-                            "name": name,
-                            "prediction": pred_result.prediction,
-                            "confidence": pred_result.confidence,
-                            "up_prob": pred_result.up_prob,
-                        })
+                        predictions.append(
+                            {
+                                "code": code,
+                                "name": name,
+                                "prediction": pred_result.prediction,
+                                "confidence": pred_result.confidence,
+                                "up_prob": pred_result.up_prob,
+                            }
+                        )
                 except Exception as e:
                     logger.debug(f"忽略异常: {e}")
 

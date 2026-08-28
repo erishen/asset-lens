@@ -179,8 +179,12 @@ class TestMLPredictionTracker:
 
     def test_get_performance(self, tracker):
         tracker.record_prediction(
-            code="600519", name="贵州茅台", prediction_type="direction",
-            predicted_direction="up", predicted_prob=0.75, features={},
+            code="600519",
+            name="贵州茅台",
+            prediction_type="direction",
+            predicted_direction="up",
+            predicted_prob=0.75,
+            features={},
         )
         perf = tracker.get_performance(days=30)
         assert isinstance(perf, ModelPerformance)
@@ -195,11 +199,17 @@ class TestMLPredictionTracker:
     def test_analyze_predictions(self, tracker):
         old_date = (datetime.now() - timedelta(days=10)).strftime("%Y-%m-%d %H:%M:%S")
         record = PredictionRecord(
-            id="test_001", code="600519", name="贵州茅台",
-            prediction_type="direction", predicted_direction="up",
-            predicted_prob=0.75, actual_change=2.0,
-            outcome=PredictionOutcome.CORRECT, features={},
-            model_version="v1.0", created_at=old_date,
+            id="test_001",
+            code="600519",
+            name="贵州茅台",
+            prediction_type="direction",
+            predicted_direction="up",
+            predicted_prob=0.75,
+            actual_change=2.0,
+            outcome=PredictionOutcome.CORRECT,
+            features={},
+            model_version="v1.0",
+            created_at=old_date,
         )
         tracker._save_prediction(record)
 
@@ -211,8 +221,12 @@ class TestMLPredictionTracker:
     def test_get_recent_predictions(self, tracker):
         for i in range(5):
             tracker.record_prediction(
-                code=f"code_{i}", name=f"Stock {i}", prediction_type="direction",
-                predicted_direction="up", predicted_prob=0.7, features={},
+                code=f"code_{i}",
+                name=f"Stock {i}",
+                prediction_type="direction",
+                predicted_direction="up",
+                predicted_prob=0.7,
+                features={},
             )
         recent = tracker.get_recent_predictions(limit=3)
         assert len(recent) == 3
@@ -228,10 +242,18 @@ class TestMLPredictionTracker:
 
     def test_format_performance_report(self, tracker):
         perf = ModelPerformance(
-            total_predictions=10, correct_predictions=7, wrong_predictions=2,
-            pending_predictions=1, accuracy=0.778, precision=0.8, recall=0.7,
-            avg_confidence=0.72, profit_predictions=6, loss_predictions=4,
-            period_start="2025-01-01", period_end="2025-01-31",
+            total_predictions=10,
+            correct_predictions=7,
+            wrong_predictions=2,
+            pending_predictions=1,
+            accuracy=0.778,
+            precision=0.8,
+            recall=0.7,
+            avg_confidence=0.72,
+            profit_predictions=6,
+            loss_predictions=4,
+            period_start="2025-01-01",
+            period_end="2025-01-31",
         )
         report = tracker.format_performance_report(perf)
         assert "ML 模型表现报告" in report

@@ -55,10 +55,20 @@ def generate_demo_csv(output_dir: Path | None = None) -> Path:
     with open(csv_path, "w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f)
         # 写入表头（与 CSVParser.COLUMN_MAPPING 兼容）
-        writer.writerow([
-            "", "类型", "名称", "风险", "平台A",
-            "初始金额", "收益金额", "收益率", "年化收益", "投资天数",
-        ])
+        writer.writerow(
+            [
+                "",
+                "类型",
+                "名称",
+                "风险",
+                "平台A",
+                "初始金额",
+                "收益金额",
+                "收益率",
+                "年化收益",
+                "投资天数",
+            ]
+        )
 
         for i, product in enumerate(DEMO_PRODUCTS):
             initial = product["初始金额"]
@@ -69,18 +79,20 @@ def generate_demo_csv(output_dir: Path | None = None) -> Path:
             # 模拟投资天数（60-365天）
             investment_days = random.randint(60, 365)
 
-            writer.writerow([
-                i,
-                product["类型"],
-                product["名称"],
-                product["风险"],
-                current,  # 平台A = 当前金额（这样 current_amount = 平台A）
-                initial,  # 初始金额
-                profit,   # 收益金额
-                return_rate,  # 收益率
-                annual_return,  # 年化收益
-                investment_days,  # 投资天数
-            ])
+            writer.writerow(
+                [
+                    i,
+                    product["类型"],
+                    product["名称"],
+                    product["风险"],
+                    current,  # 平台A = 当前金额（这样 current_amount = 平台A）
+                    initial,  # 初始金额
+                    profit,  # 收益金额
+                    return_rate,  # 收益率
+                    annual_return,  # 年化收益
+                    investment_days,  # 投资天数
+                ]
+            )
 
     total_initial = sum(p["初始金额"] for p in DEMO_PRODUCTS)
     print(f"✅ 已生成模拟投资产品数据: {csv_path}")

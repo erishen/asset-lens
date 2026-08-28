@@ -2,6 +2,7 @@
 ML准确率优化脚本 v2 - 轻量版
 目标: 72% → 80%
 """
+
 import json
 import logging
 import time
@@ -20,12 +21,14 @@ logger = logging.getLogger(__name__)
 
 try:
     import lightgbm as lgb
+
     HAS_LIGHTGBM = True
 except ImportError:
     HAS_LIGHTGBM = False
 
 try:
     import xgboost as xgb
+
     HAS_XGBOOST = True
 except ImportError:
     HAS_XGBOOST = False
@@ -43,12 +46,12 @@ def prepare_data(days: int = 500):
             continue
 
         df = pd.DataFrame(klines)
-        df['date'] = pd.to_datetime(df['date'])
-        df = df.sort_values('date').reset_index(drop=True)
+        df["date"] = pd.to_datetime(df["date"])
+        df = df.sort_values("date").reset_index(drop=True)
 
-        for col in ['open', 'close', 'high', 'low', 'volume', 'amount']:
+        for col in ["open", "close", "high", "low", "volume", "amount"]:
             if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
         stocks_data[code] = df
 
@@ -61,7 +64,7 @@ def prepare_data(days: int = 500):
     for df in stocks_data.values():
         df_features = feature_engineer.calculate_all_features(df)
 
-        future_return = df_features['close'].shift(-5) / df_features['close'] - 1
+        future_return = df_features["close"].shift(-5) / df_features["close"] - 1
 
         def label_return(r):
             if pd.isna(r):
@@ -95,9 +98,7 @@ def prepare_data(days: int = 500):
 
 def train_model(X: pd.DataFrame, y: pd.Series) -> dict:
     """训练模型"""
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
-    )
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
     estimators = []
 
@@ -116,7 +117,7 @@ def train_model(X: pd.DataFrame, y: pd.Series) -> dict:
             verbose=-1,
             n_jobs=1,
         )
-        estimators.append(('lgb', lgb_model))
+        estimators.append(("lgb", lgb_model))
 
     if HAS_XGBOOST:
         xgb_model = xgb.XGBClassifier(
@@ -130,24 +131,24 @@ def train_model(X: pd.DataFrame, y: pd.Series) -> dict:
             min_child_weight=3,
             gamma=0.05,
             random_state=42,
-            eval_metric='logloss',
+            eval_metric="logloss",
             n_jobs=1,
         )
-        estimators.append(('xgb', xgb_model))
+        estimators.append(("xgb", xgb_model))
 
     logger.info("🚀 训练集成模型...")
-    model = VotingClassifier(estimators=estimators, voting='soft')
+    model = VotingClassifier(estimators=estimators, voting="soft")
     model.fit(X_train, y_train)
 
     y_pred = model.predict(X_test)
     y_proba = model.predict_proba(X_test)[:, 1]
 
     metrics = {
-        'accuracy': accuracy_score(y_test, y_pred),
-        'precision': precision_score(y_test, y_pred, zero_division=0),
-        'recall': recall_score(y_test, y_pred, zero_division=0),
-        'f1_score': f1_score(y_test, y_pred, zero_division=0),
-        'auc': roc_auc_score(y_test, y_proba),
+        "accuracy": accuracy_score(y_test, y_pred),
+        "precision": precision_score(y_test, y_pred, zero_division=0),
+        "recall": recall_score(y_test, y_pred, zero_division=0),
+        "f1_score": f1_score(y_test, y_pred, zero_division=0),
+        "auc": roc_auc_score(y_test, y_proba),
     }
 
     return metrics
@@ -175,17 +176,24 @@ def main():
     total_time = time.time() - start_time
     logger.info(f"⏱️ 总耗时: {total_time:.1f} 秒")
 
-    improvement = (metrics['accuracy'] - 0.72) / 0.72 * 100
-    logger.info(f"📈 准确率提升: {metrics['accuracy']:.2%} (相比基准 72% {'↑' if improvement > 0 else '↓'}{abs(improvement):.1f}%)")
+    improvement = (metrics["accuracy"] - 0.72) / 0.72 * 100
+    logger.info(
+        f"📈 准确率提升: {metrics['accuracy']:.2%} (相比基准 72% {'↑' if improvement > 0 else '↓'}{abs(improvement):.1f}%)"
+    )
 
     output_path = Path("models/optimization_v2_lite_results.json")
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, 'w', encoding='utf-8') as f:
-        json.dump({
-            'model_metrics': metrics,
-            'total_time': total_time,
-            'improvement_pct': improvement,
-        }, f, indent=2, default=str)
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "model_metrics": metrics,
+                "total_time": total_time,
+                "improvement_pct": improvement,
+            },
+            f,
+            indent=2,
+            default=str,
+        )
     logger.info("📄 结果已保存: %s", output_path)
 
 

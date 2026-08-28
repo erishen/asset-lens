@@ -41,6 +41,7 @@ async def get_stock_quote(code: str):
     # Demo 模式下返回模拟数据
     if DEMO_MODE:
         from ..demo_data import get_demo_stock_quote
+
         data = get_demo_stock_quote(code)
         return WebStockQuote(**data)
 

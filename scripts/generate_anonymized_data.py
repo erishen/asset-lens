@@ -22,7 +22,7 @@ from asset_lens.data.fund_fetcher import auto_match_fund_codes
 def extract_code_from_name(name):
     """从名称中提取代码"""
     # 匹配6位数字代码
-    match = re.search(r'\b(\d{6})\b', name)
+    match = re.search(r"\b(\d{6})\b", name)
     if match:
         return match.group(1)
     return None
@@ -47,7 +47,21 @@ def generate_anonymized_portfolio():
     logger.info("美元汇率: %s, 港元汇率: %s", usd_rate, hkd_rate)
 
     # 获取金额列（各平台）
-    platform_columns = ["微信", "中金", "支付宝", "富途", "招商", "港招", "交通", "浦发", "建设", "中信", "民生", "工商", "中银"]
+    platform_columns = [
+        "微信",
+        "中金",
+        "支付宝",
+        "富途",
+        "招商",
+        "港招",
+        "交通",
+        "浦发",
+        "建设",
+        "中信",
+        "民生",
+        "工商",
+        "中银",
+    ]
 
     # 计算每个产品的总金额（需要考虑汇率转换）
     def calc_amount(row):
@@ -229,12 +243,7 @@ def generate_anonymized_portfolio():
 
     # 合并相同代码的产品（同一产品在不同平台持有）
     # 按代码分组，合并占比，保留第一条的类型、名称、风险
-    agg_dict = {
-        "类型": "first",
-        "名称": "first",
-        "风险": "first",
-        "占比(%)": "sum"
-    }
+    agg_dict = {"类型": "first", "名称": "first", "风险": "first", "占比(%)": "sum"}
     anonymized_df = anonymized_df.groupby("代码", as_index=False).agg(agg_dict)
 
     # 重新排列列顺序
@@ -248,13 +257,15 @@ def generate_anonymized_portfolio():
 
     # 添加"其他"行（没有代码的产品总占比）
     if other_percent > 0:
-        other_row = pd.DataFrame({
-            "类型": ["其他"],
-            "名称": ["其他（理财/国债/现金等）"],
-            "代码": ["-"],
-            "风险": ["-"],
-            "占比(%)": [round(other_percent, 2)]
-        })
+        other_row = pd.DataFrame(
+            {
+                "类型": ["其他"],
+                "名称": ["其他（理财/国债/现金等）"],
+                "代码": ["-"],
+                "风险": ["-"],
+                "占比(%)": [round(other_percent, 2)],
+            }
+        )
         anonymized_df = pd.concat([anonymized_df, other_row], ignore_index=True)
 
     # 保存到 sample_data 目录
@@ -267,7 +278,7 @@ def generate_anonymized_portfolio():
     logger.info("脱敏数据已保存到: %s", output_file)
     logger.info("投资组合概览:")
     logger.info("  产品数量: %d", len(anonymized_df))
-    logger.info("  总占比: %.2f%%", anonymized_df['占比(%)'].sum())
+    logger.info("  总占比: %.2f%%", anonymized_df["占比(%)"].sum())
 
     # 统计有代码的产品
     has_code = (anonymized_df["代码"] != "").sum()
@@ -297,7 +308,7 @@ def generate_anonymized_portfolio():
     logger.info("所有有代码的产品:")
     for _, row in anonymized_df.iterrows():
         if row["代码"]:
-            logger.info("  %s: %s -> %s", row['类型'], row['名称'], row['代码'])
+            logger.info("  %s: %s -> %s", row["类型"], row["名称"], row["代码"])
 
     return anonymized_df
 

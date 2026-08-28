@@ -81,18 +81,14 @@ class TestCalculateCashflowsWithDays:
             {"date": "2024/06/15", "type": "sell", "amount": 5000},
         ]
         start_date = date(2024, 1, 1)
-        result = InvestmentCalculator.calculate_cashflows_with_days(
-            transactions, start_date, Decimal("8000"), 360
-        )
+        result = InvestmentCalculator.calculate_cashflows_with_days(transactions, start_date, Decimal("8000"), 360)
         assert len(result) == 3
         assert result[0]["amount"] == -10000
         assert result[1]["amount"] == 5000
         assert result[2]["amount"] == 8000.0
 
     def test_no_start_date(self):
-        result = InvestmentCalculator.calculate_cashflows_with_days(
-            [], None, Decimal("1000"), 360
-        )
+        result = InvestmentCalculator.calculate_cashflows_with_days([], None, Decimal("1000"), 360)
         assert result == []
 
     def test_with_interest_payment(self):
@@ -109,6 +105,7 @@ class TestCalculateCashflowsWithDays:
 class TestIsDCAProduct:
     def test_dca_fund_type(self):
         from unittest.mock import MagicMock
+
         product = MagicMock()
         product.investment_type = MagicMock()
         product.investment_type.value = "定投基金"
@@ -117,6 +114,7 @@ class TestIsDCAProduct:
 
     def test_non_dca(self):
         from unittest.mock import MagicMock
+
         product = MagicMock()
         product.investment_type = MagicMock()
         product.investment_type.value = "股票"

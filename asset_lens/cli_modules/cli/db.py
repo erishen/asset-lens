@@ -25,9 +25,9 @@ def stats():
     table.add_column("值", style="green")
 
     table.add_row("K线数据", f"{statistics['kline_count']:,} 条")
-    table.add_row("股票数量", str(statistics['stock_count']))
-    table.add_row("ML模型数", str(statistics['model_count']))
-    table.add_row("预测记录", str(statistics['prediction_count']))
+    table.add_row("股票数量", str(statistics["stock_count"]))
+    table.add_row("ML模型数", str(statistics["model_count"]))
+    table.add_row("预测记录", str(statistics["prediction_count"]))
 
     console.print(table)
 

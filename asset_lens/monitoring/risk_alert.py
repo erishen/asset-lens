@@ -116,7 +116,12 @@ class RiskAlertSystem(RiskAlertChecksMixin):
         value = 0.0
         threshold = 0.0
         if data:
-            value = float(data.get("drawdown", data.get("volatility", data.get("loss_pct", data.get("profit_pct", data.get("change_percent", 0))))))
+            value = float(
+                data.get(
+                    "drawdown",
+                    data.get("volatility", data.get("loss_pct", data.get("profit_pct", data.get("change_percent", 0)))),
+                )
+            )
             threshold = float(data.get("threshold", self.config.max_drawdown_threshold))
 
         suggestions = {
@@ -181,7 +186,11 @@ class RiskAlertSystem(RiskAlertChecksMixin):
         return {
             "total_alerts": len(active),
             "by_level": by_level,
-            "by_type": {t.value: sum(1 for a in active if a.type == t) for t in RiskAlertType if any(a.type == t for a in active)},
+            "by_type": {
+                t.value: sum(1 for a in active if a.type == t)
+                for t in RiskAlertType
+                if any(a.type == t for a in active)
+            },
             "last_updated": datetime.now().isoformat(),
         }
 

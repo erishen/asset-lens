@@ -17,9 +17,7 @@ class TradingAnalyzer:
         transactions = []
         for file in os.listdir(self.data_dir):
             if file.startswith("transaction_"):
-                with open(
-                    os.path.join(self.data_dir, file), encoding="utf-8"
-                ) as f:
+                with open(os.path.join(self.data_dir, file), encoding="utf-8") as f:
                     transactions.append(json.load(f))
         return transactions
 
@@ -40,9 +38,7 @@ class TradingAnalyzer:
         avg_profit = df["profit"].mean() if len(df) > 0 else 0
 
         strategy_stats = (
-            df.groupby("strategy")
-            .agg({"profit": ["count", "sum", "mean"], "profit_rate": "mean"})
-            .round(2)
+            df.groupby("strategy").agg({"profit": ["count", "sum", "mean"], "profit_rate": "mean"}).round(2)
         )
 
         return {

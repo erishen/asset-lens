@@ -118,7 +118,8 @@ class RealtimePnlConfigMixin:
             stocks = data.get("stocks", [])
             if not isinstance(stocks, list):
                 logger.warning(
-                    f"股票列表格式错误: 期望 list，得到 {type(stocks).__name__}", extra={"config_file": str(config_file)}
+                    f"股票列表格式错误: 期望 list，得到 {type(stocks).__name__}",
+                    extra={"config_file": str(config_file)},
                 )
                 self._stock_codes_map = {}
                 return {}

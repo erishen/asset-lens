@@ -333,23 +333,23 @@ class MLPredictionTracker:
         if not data:
             return []
         try:
-                return [
-                    PredictionRecord(
-                        id=p["id"],
-                        code=p["code"],
-                        name=p["name"],
-                        prediction_type=p["prediction_type"],
-                        predicted_direction=p["predicted_direction"],
-                        predicted_prob=p["predicted_prob"],
-                        actual_change=p.get("actual_change"),
-                        outcome=PredictionOutcome(p["outcome"]),
-                        features=p.get("features", {}),
-                        model_version=p.get("model_version", "v1.0"),
-                        created_at=p["created_at"],
-                        verified_at=p.get("verified_at"),
-                    )
-                    for p in data
-                ]
+            return [
+                PredictionRecord(
+                    id=p["id"],
+                    code=p["code"],
+                    name=p["name"],
+                    prediction_type=p["prediction_type"],
+                    predicted_direction=p["predicted_direction"],
+                    predicted_prob=p["predicted_prob"],
+                    actual_change=p.get("actual_change"),
+                    outcome=PredictionOutcome(p["outcome"]),
+                    features=p.get("features", {}),
+                    model_version=p.get("model_version", "v1.0"),
+                    created_at=p["created_at"],
+                    verified_at=p.get("verified_at"),
+                )
+                for p in data
+            ]
         except (json.JSONDecodeError, OSError, ValueError, KeyError) as e:
             logger.debug(f"忽略异常: {e}")
             return []

@@ -233,7 +233,12 @@ class CSVIrrMixin:
 
     @classmethod
     def _calculate_cashflows_with_days(
-        cls, transactions: list[dict], start_date: date | None, current_amount: Decimal, total_days: int, interest_payment: Decimal | None = None
+        cls,
+        transactions: list[dict],
+        start_date: date | None,
+        current_amount: Decimal,
+        total_days: int,
+        interest_payment: Decimal | None = None,
     ) -> list[dict]:
         from datetime import date
 

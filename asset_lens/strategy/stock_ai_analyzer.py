@@ -121,7 +121,10 @@ class StockAIAnalyzer:
                 json={
                     "model": self.model,
                     "messages": [
-                        {"role": "system", "content": '你是一位专业的股票分析师，擅长技术分析和基本面分析。请以JSON格式输出分析结果，格式：{"d":"buy/sell/hold/wait","c":0-100,"r":"理由","rl":"low/medium/high","kf":["因素"],"ms":"乐观/中性/悲观","sl":止损价,"tp":止盈价}'},
+                        {
+                            "role": "system",
+                            "content": '你是一位专业的股票分析师，擅长技术分析和基本面分析。请以JSON格式输出分析结果，格式：{"d":"buy/sell/hold/wait","c":0-100,"r":"理由","rl":"low/medium/high","kf":["因素"],"ms":"乐观/中性/悲观","sl":止损价,"tp":止盈价}',
+                        },
                         {"role": "user", "content": prompt},
                     ],
                     "temperature": 0.3,

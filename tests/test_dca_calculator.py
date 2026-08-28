@@ -7,9 +7,7 @@ from asset_lens.data.parsers.dca_calculator import DCACalculator
 
 class TestCalculateAnnualReturn:
     def test_positive_return(self):
-        result = DCACalculator.calculate_annual_return(
-            Decimal("10000"), Decimal("12000"), 360
-        )
+        result = DCACalculator.calculate_annual_return(Decimal("10000"), Decimal("12000"), 360)
         assert result is not None
         assert float(result) > 0
 
@@ -22,22 +20,16 @@ class TestCalculateAnnualReturn:
         assert result is None
 
     def test_loss(self):
-        result = DCACalculator.calculate_annual_return(
-            Decimal("10000"), Decimal("5000"), 360
-        )
+        result = DCACalculator.calculate_annual_return(Decimal("10000"), Decimal("5000"), 360)
         assert result is not None
         assert float(result) < 0
 
     def test_total_loss(self):
-        result = DCACalculator.calculate_annual_return(
-            Decimal("10000"), Decimal("0"), 360
-        )
+        result = DCACalculator.calculate_annual_return(Decimal("10000"), Decimal("0"), 360)
         assert result == Decimal("-100")
 
     def test_short_period(self):
-        result = DCACalculator.calculate_annual_return(
-            Decimal("10000"), Decimal("10100"), 30
-        )
+        result = DCACalculator.calculate_annual_return(Decimal("10000"), Decimal("10100"), 30)
         assert result is not None
         assert float(result) > 0
 
@@ -56,9 +48,7 @@ class TestCalculateCashflows:
         assert cashflows[2]["amount"] == -12000.0
 
     def test_empty_transactions(self):
-        cashflows = DCACalculator.calculate_cashflows(
-            [], datetime(2024, 1, 1), Decimal("10000"), 360
-        )
+        cashflows = DCACalculator.calculate_cashflows([], datetime(2024, 1, 1), Decimal("10000"), 360)
         assert len(cashflows) == 1
         assert cashflows[0]["amount"] == -10000.0
 

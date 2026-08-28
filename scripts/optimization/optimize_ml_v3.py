@@ -8,6 +8,7 @@ ML准确率优化脚本 v3
 3. Stacking集成
 4. 特征选择
 """
+
 import json
 import logging
 import time
@@ -28,18 +29,21 @@ logger = logging.getLogger(__name__)
 
 try:
     import lightgbm as lgb
+
     HAS_LIGHTGBM = True
 except ImportError:
     HAS_LIGHTGBM = False
 
 try:
     import xgboost as xgb
+
     HAS_XGBOOST = True
 except ImportError:
     HAS_XGBOOST = False
 
 try:
     from catboost import CatBoostClassifier
+
     HAS_CATBOOST = True
 except ImportError:
     HAS_CATBOOST = False
@@ -57,12 +61,12 @@ def prepare_data(days: int = 500):
             continue
 
         df = pd.DataFrame(klines)
-        df['date'] = pd.to_datetime(df['date'])
-        df = df.sort_values('date').reset_index(drop=True)
+        df["date"] = pd.to_datetime(df["date"])
+        df = df.sort_values("date").reset_index(drop=True)
 
-        for col in ['open', 'close', 'high', 'low', 'volume', 'amount']:
+        for col in ["open", "close", "high", "low", "volume", "amount"]:
             if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
         stocks_data[code] = df
 
@@ -75,7 +79,7 @@ def prepare_data(days: int = 500):
     for df in stocks_data.values():
         df_features = feature_engineer.calculate_all_features(df)
 
-        future_return = df_features['close'].shift(-5) / df_features['close'] - 1
+        future_return = df_features["close"].shift(-5) / df_features["close"] - 1
 
         def label_return(r):
             if pd.isna(r):
@@ -118,8 +122,11 @@ def select_features(X_train, y_train, X_test, k=80):
     selected_indices = selector.get_support(indices=True)
     selected_features = [X_train.columns[i] for i in selected_indices]
 
-    return pd.DataFrame(X_train_selected, columns=selected_features), \
-           pd.DataFrame(X_test_selected, columns=selected_features), selected_features
+    return (
+        pd.DataFrame(X_train_selected, columns=selected_features),
+        pd.DataFrame(X_test_selected, columns=selected_features),
+        selected_features,
+    )
 
 
 def train_stacking_model(X_train, y_train, X_test, y_test):
@@ -142,7 +149,7 @@ def train_stacking_model(X_train, y_train, X_test, y_test):
             verbose=-1,
             n_jobs=1,
         )
-        estimators.append(('lgb', lgb_model))
+        estimators.append(("lgb", lgb_model))
 
     if HAS_XGBOOST:
         xgb_model = xgb.XGBClassifier(
@@ -156,10 +163,10 @@ def train_stacking_model(X_train, y_train, X_test, y_test):
             min_child_weight=8,
             gamma=0.0969,
             random_state=42,
-            eval_metric='logloss',
+            eval_metric="logloss",
             n_jobs=1,
         )
-        estimators.append(('xgb', xgb_model))
+        estimators.append(("xgb", xgb_model))
 
     if HAS_CATBOOST:
         cat_model = CatBoostClassifier(
@@ -170,7 +177,7 @@ def train_stacking_model(X_train, y_train, X_test, y_test):
             random_state=42,
             verbose=0,
         )
-        estimators.append(('cat', cat_model))
+        estimators.append(("cat", cat_model))
 
     logger.info("🚀 训练 Stacking 集成模型...")
 
@@ -180,7 +187,7 @@ def train_stacking_model(X_train, y_train, X_test, y_test):
         estimators=estimators,
         final_estimator=final_estimator,
         cv=3,
-        stack_method='predict_proba',
+        stack_method="predict_proba",
         n_jobs=1,
     )
 
@@ -190,11 +197,11 @@ def train_stacking_model(X_train, y_train, X_test, y_test):
     y_proba = model.predict_proba(X_test)[:, 1]
 
     metrics = {
-        'accuracy': accuracy_score(y_test, y_pred),
-        'precision': precision_score(y_test, y_pred, zero_division=0),
-        'recall': recall_score(y_test, y_pred, zero_division=0),
-        'f1_score': f1_score(y_test, y_pred, zero_division=0),
-        'auc': roc_auc_score(y_test, y_proba),
+        "accuracy": accuracy_score(y_test, y_pred),
+        "precision": precision_score(y_test, y_pred, zero_division=0),
+        "recall": recall_score(y_test, y_pred, zero_division=0),
+        "f1_score": f1_score(y_test, y_pred, zero_division=0),
+        "auc": roc_auc_score(y_test, y_proba),
     }
 
     return model, metrics
@@ -220,7 +227,7 @@ def train_voting_model(X_train, y_train, X_test, y_test):
             verbose=-1,
             n_jobs=1,
         )
-        estimators.append(('lgb', lgb_model))
+        estimators.append(("lgb", lgb_model))
 
     if HAS_XGBOOST:
         xgb_model = xgb.XGBClassifier(
@@ -234,10 +241,10 @@ def train_voting_model(X_train, y_train, X_test, y_test):
             min_child_weight=8,
             gamma=0.0969,
             random_state=42,
-            eval_metric='logloss',
+            eval_metric="logloss",
             n_jobs=1,
         )
-        estimators.append(('xgb', xgb_model))
+        estimators.append(("xgb", xgb_model))
 
     if HAS_CATBOOST:
         cat_model = CatBoostClassifier(
@@ -248,22 +255,22 @@ def train_voting_model(X_train, y_train, X_test, y_test):
             random_state=42,
             verbose=0,
         )
-        estimators.append(('cat', cat_model))
+        estimators.append(("cat", cat_model))
 
     logger.info("🚀 训练 Voting 集成模型...")
 
-    model = VotingClassifier(estimators=estimators, voting='soft')
+    model = VotingClassifier(estimators=estimators, voting="soft")
     model.fit(X_train, y_train)
 
     y_pred = model.predict(X_test)
     y_proba = model.predict_proba(X_test)[:, 1]
 
     metrics = {
-        'accuracy': accuracy_score(y_test, y_pred),
-        'precision': precision_score(y_test, y_pred, zero_division=0),
-        'recall': recall_score(y_test, y_pred, zero_division=0),
-        'f1_score': f1_score(y_test, y_pred, zero_division=0),
-        'auc': roc_auc_score(y_test, y_proba),
+        "accuracy": accuracy_score(y_test, y_pred),
+        "precision": precision_score(y_test, y_pred, zero_division=0),
+        "recall": recall_score(y_test, y_pred, zero_division=0),
+        "f1_score": f1_score(y_test, y_pred, zero_division=0),
+        "auc": roc_auc_score(y_test, y_proba),
     }
 
     return model, metrics
@@ -275,7 +282,7 @@ def cross_validate(X, y, n_splits=3):
 
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
 
-    scores = {'accuracy': [], 'auc': []}
+    scores = {"accuracy": [], "auc": []}
 
     for fold, (train_idx, val_idx) in enumerate(skf.split(X, y)):
         X_train, X_val = X.iloc[train_idx], X.iloc[val_idx]
@@ -283,16 +290,16 @@ def cross_validate(X, y, n_splits=3):
 
         _, metrics = train_voting_model(X_train, y_train, X_val, y_val)
 
-        scores['accuracy'].append(metrics['accuracy'])
-        scores['auc'].append(metrics['auc'])
+        scores["accuracy"].append(metrics["accuracy"])
+        scores["auc"].append(metrics["auc"])
 
         logger.info(f"   Fold {fold + 1}: Acc={metrics['accuracy']:.2%}, AUC={metrics['auc']:.4f}")
 
     return {
-        'accuracy_mean': np.mean(scores['accuracy']),
-        'accuracy_std': np.std(scores['accuracy']),
-        'auc_mean': np.mean(scores['auc']),
-        'auc_std': np.std(scores['auc']),
+        "accuracy_mean": np.mean(scores["accuracy"]),
+        "accuracy_std": np.std(scores["accuracy"]),
+        "auc_mean": np.mean(scores["auc"]),
+        "auc_std": np.std(scores["auc"]),
     }
 
 
@@ -306,9 +313,7 @@ def main():
 
     X, y = prepare_data(days=500)
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
-    )
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
     logger.info("\n📊 训练集: %s, 测试集: %s", len(X_train), len(X_test))
 
@@ -324,17 +329,24 @@ def main():
     total_time = time.time() - start_time
     logger.info(f"⏱️ 总耗时: {total_time:.1f} 秒")
 
-    improvement = (metrics['accuracy'] - 0.72) / 0.72 * 100
-    logger.info(f"📈 准确率提升: {metrics['accuracy']:.2%} (相比基准 72% {'↑' if improvement > 0 else '↓'}{abs(improvement):.1f}%)")
+    improvement = (metrics["accuracy"] - 0.72) / 0.72 * 100
+    logger.info(
+        f"📈 准确率提升: {metrics['accuracy']:.2%} (相比基准 72% {'↑' if improvement > 0 else '↓'}{abs(improvement):.1f}%)"
+    )
 
     output_path = Path("models/optimization_v3_results.json")
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, 'w', encoding='utf-8') as f:
-        json.dump({
-            'model_metrics': metrics,
-            'total_time': total_time,
-            'improvement_pct': improvement,
-        }, f, indent=2, default=str)
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "model_metrics": metrics,
+                "total_time": total_time,
+                "improvement_pct": improvement,
+            },
+            f,
+            indent=2,
+            default=str,
+        )
     logger.info("📄 结果已保存: %s", output_path)
 
     return metrics

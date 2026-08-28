@@ -128,9 +128,7 @@ class StockPredictor(PredictorModelMixin, PredictorPredictMixin):
         from sklearn.metrics import accuracy_score, classification_report
         from sklearn.model_selection import train_test_split
 
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=eval_size, random_state=42, stratify=y
-        )
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=eval_size, random_state=42, stratify=y)
 
         self.fit(X_train, y_train)
 

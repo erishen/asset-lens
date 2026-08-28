@@ -46,6 +46,7 @@ async def get_portfolio_summary():
     # Demo 模式下返回模拟数据
     if DEMO_MODE:
         from ..demo_data import get_demo_portfolio_summary
+
         data = get_demo_portfolio_summary()
         return PortfolioSummary(**data)
 
@@ -92,6 +93,7 @@ async def get_portfolio_items(
     # Demo 模式下返回模拟数据
     if DEMO_MODE:
         from ..demo_data import get_demo_portfolio_items
+
         return get_demo_portfolio_items(investment_type, sort_by, sort_order)
 
     from ...data.csv_parser import CSVParser
@@ -148,6 +150,7 @@ async def get_portfolio_performance(
     # Demo 模式下返回模拟数据
     if DEMO_MODE:
         from ..demo_data import get_demo_performance
+
         return get_demo_performance()
 
     from ...data.csv_parser import CSVParser

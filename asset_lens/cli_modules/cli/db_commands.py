@@ -5,7 +5,9 @@ def register_db_sync_commands(db_group: click.Group) -> None:
     @db_group.command()
     @click.option("--codes", "codes_str", help="股票代码列表（逗号分隔）")
     @click.option("--days", default=250, help="历史天数")
-    @click.option("--source", default="auto", type=click.Choice(["auto", "akshare", "baostock", "tushare"]), help="数据源")
+    @click.option(
+        "--source", default="auto", type=click.Choice(["auto", "akshare", "baostock", "tushare"]), help="数据源"
+    )
     @click.option("--delay", default=0.3, type=float, help="请求间隔（秒）")
     def fetch(codes_str: str | None, days: int, source: str, delay: float):
         from asset_lens.db.migration import DataMigration
@@ -28,7 +30,9 @@ def register_db_sync_commands(db_group: click.Group) -> None:
     @click.option("--days", default=250, help="历史天数")
     @click.option("--limit", default=0, type=int, help="限制数量（0=不限制）")
     @click.option("--delay", default=0.3, type=float, help="请求间隔（秒）")
-    @click.option("--source", default="auto", type=click.Choice(["auto", "akshare", "baostock", "tushare"]), help="数据源")
+    @click.option(
+        "--source", default="auto", type=click.Choice(["auto", "akshare", "baostock", "tushare"]), help="数据源"
+    )
     def update_missing(days: int, limit: int, delay: float, source: str) -> None:
         from rich.console import Console
 
@@ -102,9 +106,9 @@ def register_db_sync_commands(db_group: click.Group) -> None:
             table.add_column("值", style="green")
 
             table.add_row("K线数据", f"{stats['kline_count']:,} 条")
-            table.add_row("股票数量", str(stats['stock_count']))
-            table.add_row("ML模型数", str(stats['model_count']))
-            table.add_row("预测记录", str(stats['prediction_count']))
+            table.add_row("股票数量", str(stats["stock_count"]))
+            table.add_row("ML模型数", str(stats["model_count"]))
+            table.add_row("预测记录", str(stats["prediction_count"]))
 
             console.print(table)
 

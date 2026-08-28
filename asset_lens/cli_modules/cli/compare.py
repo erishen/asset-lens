@@ -309,9 +309,7 @@ def _show_trend_analysis(console: Console, data_dirs: list[Path], before: str | 
                         max_deteriorating = (info["name"], change)
 
         console.print(f"\n[bold cyan]时间段: {previous_date} → {current_date}[/bold cyan]")
-        console.print(
-            f"  年化率变动 — 上升: [red]{improving}个[/red], 下降: [green]{deteriorating}个[/green]"
-        )
+        console.print(f"  年化率变动 — 上升: [red]{improving}个[/red], 下降: [green]{deteriorating}个[/green]")
         if max_improving[0]:
             console.print(f"  年化率上升最多: {max_improving[0]} [red]+{max_improving[1]:.2f}pp[/red]")
         if max_deteriorating[0]:
@@ -346,8 +344,10 @@ def _show_trend_analysis(console: Console, data_dirs: list[Path], before: str | 
     console.print("   数值单位为百分点(pp)，表示年化率较上一期的增减，并非产品的真实盈亏金额或收益率。")
     console.print("   ⚠️  对于有交易记录或持仓时间较短的产品，年化收益率会被放大、剧烈波动；")
     console.print("      早期快照(如刚建仓)可能出现几百 pp 的变动，属正常年化现象，不代表实际赚了/亏了那么多。")
-    console.print(f"   ⚠️  持有天数 < {YOUNG_POSITION_DAYS} 天的建仓期产品，或年化率绝对值 > {ANNUAL_RETURN_CAP:.0f}% 的异常值，已从上方趋势对比中排除，"
-                   "避免年化率因持仓过短或源数据噪声而失真。")
+    console.print(
+        f"   ⚠️  持有天数 < {YOUNG_POSITION_DAYS} 天的建仓期产品，或年化率绝对值 > {ANNUAL_RETURN_CAP:.0f}% 的异常值，已从上方趋势对比中排除，"
+        "避免年化率因持仓过短或源数据噪声而失真。"
+    )
     console.print("   ✅ 本视图适用于观察长期趋势、发现新增或卖出的产品，不代表真实损益。")
 
 

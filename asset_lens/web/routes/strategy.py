@@ -32,6 +32,7 @@ async def list_strategies():
     # Demo 模式下返回模拟数据
     if DEMO_MODE:
         from ..demo_data import get_demo_strategies
+
         strategies = get_demo_strategies()
         return [
             StrategyInfo(
@@ -81,14 +82,19 @@ async def get_strategy(strategy_name: str):
     # Demo 模式下返回模拟数据
     if DEMO_MODE:
         from ..demo_data import get_demo_strategy_detail
+
         strategy = get_demo_strategy_detail(strategy_name)
         if strategy is None:
             raise HTTPException(status_code=404, detail=f"策略 {strategy_name} 不存在")
         return {
             "name": strategy["name"],
             "description": strategy["description"],
-            "buy_conditions": [{"name": f"条件{i+1}", "weight": 0.3, "value": True} for i in range(strategy["buy_conditions"])],
-            "sell_conditions": [{"name": f"条件{i+1}", "weight": 0.3, "value": True} for i in range(strategy["sell_conditions"])],
+            "buy_conditions": [
+                {"name": f"条件{i + 1}", "weight": 0.3, "value": True} for i in range(strategy["buy_conditions"])
+            ],
+            "sell_conditions": [
+                {"name": f"条件{i + 1}", "weight": 0.3, "value": True} for i in range(strategy["sell_conditions"])
+            ],
             "position_size": strategy["position_size"],
             "max_positions": strategy["max_positions"],
             "stop_loss": strategy["stop_loss"],

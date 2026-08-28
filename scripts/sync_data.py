@@ -146,9 +146,9 @@ def print_results(results: list[dict], dry_run: bool = False):
         return
 
     action = "预览" if dry_run else "同步"
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"📊 数据{action}结果")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     total_added = 0
     total_updated = 0
@@ -185,9 +185,9 @@ def print_results(results: list[dict], dry_run: bool = False):
         if "error" in result:
             print(f"   ❌ 错误: {result['error']}")
 
-    print(f"\n{'-'*60}")
+    print(f"\n{'-' * 60}")
     print(f"📈 汇总: 新增 {total_added} | 更新 {total_updated} | 未变化 {total_unchanged}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
 
 def main():

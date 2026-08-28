@@ -37,13 +37,15 @@ def get_ml_training_stocks(limit: int = 200):
         market_cap = stock.get("market_cap", 0)
         if market_cap < 30:
             continue
-        filtered_stocks.append({
-            "code": code,
-            "name": name,
-            "market_cap": market_cap,
-            "change_percent": stock.get("change_percent", 0),
-            "turnover_rate": stock.get("turnover_rate", 0),
-        })
+        filtered_stocks.append(
+            {
+                "code": code,
+                "name": name,
+                "market_cap": market_cap,
+                "change_percent": stock.get("change_percent", 0),
+                "turnover_rate": stock.get("turnover_rate", 0),
+            }
+        )
 
     filtered_stocks.sort(key=lambda x: x["market_cap"], reverse=True)
 

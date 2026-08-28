@@ -8,6 +8,7 @@ ML准确率优化脚本 v2
 3. 数据优化 - 样本平衡、数据增强
 4. 标签优化 - 三分类、回归辅助
 """
+
 import json
 import logging
 import time
@@ -28,18 +29,21 @@ logger = logging.getLogger(__name__)
 
 try:
     import lightgbm as lgb
+
     HAS_LIGHTGBM = True
 except ImportError:
     HAS_LIGHTGBM = False
 
 try:
     import xgboost as xgb
+
     HAS_XGBOOST = True
 except ImportError:
     HAS_XGBOOST = False
 
 try:
     from catboost import CatBoostClassifier
+
     HAS_CATBOOST = True
 except ImportError:
     HAS_CATBOOST = False
@@ -59,68 +63,72 @@ class AdvancedFeatureEngineer(FeatureEngineer):
 
     def _add_price_patterns(self, df: pd.DataFrame) -> pd.DataFrame:
         """价格形态特征"""
-        df['body_size'] = abs(df['close'] - df['open']) / df['close']
-        df['upper_wick'] = (df['high'] - df[['open', 'close']].max(axis=1)) / df['close']
-        df['lower_wick'] = (df[['open', 'close']].min(axis=1) - df['low']) / df['close']
+        df["body_size"] = abs(df["close"] - df["open"]) / df["close"]
+        df["upper_wick"] = (df["high"] - df[["open", "close"]].max(axis=1)) / df["close"]
+        df["lower_wick"] = (df[["open", "close"]].min(axis=1) - df["low"]) / df["close"]
 
-        df['is_bullish'] = (df['close'] > df['open']).astype(int)
-        df['is_doji'] = (df['body_size'] < 0.01).astype(int)
-        df['is_hammer'] = ((df['lower_wick'] > 2 * df['body_size']) &
-                          (df['upper_wick'] < df['body_size'])).astype(int)
-        df['is_shooting_star'] = ((df['upper_wick'] > 2 * df['body_size']) &
-                                  (df['lower_wick'] < df['body_size'])).astype(int)
+        df["is_bullish"] = (df["close"] > df["open"]).astype(int)
+        df["is_doji"] = (df["body_size"] < 0.01).astype(int)
+        df["is_hammer"] = ((df["lower_wick"] > 2 * df["body_size"]) & (df["upper_wick"] < df["body_size"])).astype(int)
+        df["is_shooting_star"] = (
+            (df["upper_wick"] > 2 * df["body_size"]) & (df["lower_wick"] < df["body_size"])
+        ).astype(int)
 
-        df['consecutive_up'] = (df['is_bullish'] * (df['is_bullish'].groupby(
-            (df['is_bullish'] != df['is_bullish'].shift()).cumsum()).cumsum() + 1))
-        df['consecutive_down'] = ((1 - df['is_bullish']) * ((1 - df['is_bullish']).groupby(
-            ((1 - df['is_bullish']) != (1 - df['is_bullish']).shift()).cumsum()).cumsum() + 1))
+        df["consecutive_up"] = df["is_bullish"] * (
+            df["is_bullish"].groupby((df["is_bullish"] != df["is_bullish"].shift()).cumsum()).cumsum() + 1
+        )
+        df["consecutive_down"] = (1 - df["is_bullish"]) * (
+            (1 - df["is_bullish"]).groupby(((1 - df["is_bullish"]) != (1 - df["is_bullish"]).shift()).cumsum()).cumsum()
+            + 1
+        )
 
         return df
 
     def _add_time_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """时间特征"""
-        if 'date' in df.columns:
-            df['date'] = pd.to_datetime(df['date'])
-            df['day_of_week'] = df['date'].dt.dayofweek
-            df['day_of_month'] = df['date'].dt.day
-            df['month'] = df['date'].dt.month
-            df['quarter'] = df['date'].dt.quarter
-            df['is_month_start'] = df['date'].dt.is_month_start.astype(int)
-            df['is_month_end'] = df['date'].dt.is_month_end.astype(int)
-            df['is_quarter_end'] = df['date'].dt.is_quarter_end.astype(int)
+        if "date" in df.columns:
+            df["date"] = pd.to_datetime(df["date"])
+            df["day_of_week"] = df["date"].dt.dayofweek
+            df["day_of_month"] = df["date"].dt.day
+            df["month"] = df["date"].dt.month
+            df["quarter"] = df["date"].dt.quarter
+            df["is_month_start"] = df["date"].dt.is_month_start.astype(int)
+            df["is_month_end"] = df["date"].dt.is_month_end.astype(int)
+            df["is_quarter_end"] = df["date"].dt.is_quarter_end.astype(int)
         return df
 
     def _add_statistical_moments(self, df: pd.DataFrame) -> pd.DataFrame:
         """统计矩特征"""
         for period in [10, 20, 60]:
-            returns = df['close'].pct_change()
-            df[f'skewness_{period}'] = returns.rolling(window=period).skew()
-            df[f'kurtosis_{period}'] = returns.rolling(window=period).kurt()
-            df[f'median_{period}'] = df['close'].rolling(window=period).median()
-            df[f'mad_{period}'] = (df['close'] - df[f'median_{period}']).abs().rolling(window=period).mean()
+            returns = df["close"].pct_change()
+            df[f"skewness_{period}"] = returns.rolling(window=period).skew()
+            df[f"kurtosis_{period}"] = returns.rolling(window=period).kurt()
+            df[f"median_{period}"] = df["close"].rolling(window=period).median()
+            df[f"mad_{period}"] = (df["close"] - df[f"median_{period}"]).abs().rolling(window=period).mean()
 
         return df
 
     def _add_cross_sectional(self, df: pd.DataFrame) -> pd.DataFrame:
         """横截面特征"""
         for period in [5, 10, 20]:
-            df[f'rank_close_{period}'] = df['close'].rolling(window=period).rank(pct=True)
-            df[f'rank_volume_{period}'] = df['volume'].rolling(window=period).rank(pct=True)
-            df[f'zscore_close_{period}'] = (df['close'] - df['close'].rolling(window=period).mean()) / \
-                                            df['close'].rolling(window=period).std()
+            df[f"rank_close_{period}"] = df["close"].rolling(window=period).rank(pct=True)
+            df[f"rank_volume_{period}"] = df["volume"].rolling(window=period).rank(pct=True)
+            df[f"zscore_close_{period}"] = (df["close"] - df["close"].rolling(window=period).mean()) / df[
+                "close"
+            ].rolling(window=period).std()
 
         return df
 
     def _add_lag_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """滞后特征"""
-        important_features = ['rsi', 'macd', 'kdj_k', 'williams_r', 'cci']
+        important_features = ["rsi", "macd", "kdj_k", "williams_r", "cci"]
 
         for feat in important_features:
             if feat in df.columns:
                 for lag in [1, 2, 3, 5]:
-                    df[f'{feat}_lag{lag}'] = df[feat].shift(lag)
-                df[f'{feat}_diff'] = df[feat].diff()
-                df[f'{feat}_diff3'] = df[feat].diff(3)
+                    df[f"{feat}_lag{lag}"] = df[feat].shift(lag)
+                df[f"{feat}_diff"] = df[feat].diff()
+                df[f"{feat}_diff3"] = df[feat].diff(3)
 
         return df
 
@@ -136,9 +144,7 @@ class OptimizedEnsembleModel:
 
     def train(self, X: pd.DataFrame, y: pd.Series) -> dict:
         """训练优化集成模型"""
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42, stratify=y
-        )
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
         self.feature_names = list(X.columns)
 
@@ -162,7 +168,7 @@ class OptimizedEnsembleModel:
                 verbose=-1,
                 n_jobs=1,
             )
-            estimators.append(('lgb', lgb_model))
+            estimators.append(("lgb", lgb_model))
 
         if HAS_XGBOOST:
             xgb_model = xgb.XGBClassifier(
@@ -176,10 +182,10 @@ class OptimizedEnsembleModel:
                 min_child_weight=5,
                 gamma=0.1,
                 random_state=42,
-                eval_metric='logloss',
+                eval_metric="logloss",
                 n_jobs=1,
             )
-            estimators.append(('xgb', xgb_model))
+            estimators.append(("xgb", xgb_model))
 
         if HAS_CATBOOST:
             cat_model = CatBoostClassifier(
@@ -190,7 +196,7 @@ class OptimizedEnsembleModel:
                 random_state=42,
                 verbose=0,
             )
-            estimators.append(('cat', cat_model))
+            estimators.append(("cat", cat_model))
 
         if len(estimators) == 0:
             raise ImportError("需要安装 LightGBM, XGBoost 或 CatBoost")
@@ -208,7 +214,7 @@ class OptimizedEnsembleModel:
                 estimators=estimators,
                 final_estimator=final_estimator,
                 cv=3,
-                stack_method='predict_proba',
+                stack_method="predict_proba",
                 n_jobs=1,
             )
 
@@ -218,7 +224,7 @@ class OptimizedEnsembleModel:
 
             self.model = VotingClassifier(
                 estimators=estimators,
-                voting='soft',
+                voting="soft",
             )
 
             self.model.fit(X_train_scaled, y_train)
@@ -227,11 +233,11 @@ class OptimizedEnsembleModel:
         y_proba = self.model.predict_proba(X_test_scaled)[:, 1]
 
         metrics = {
-            'accuracy': accuracy_score(y_test, y_pred),
-            'precision': precision_score(y_test, y_pred, zero_division=0),
-            'recall': recall_score(y_test, y_pred, zero_division=0),
-            'f1_score': f1_score(y_test, y_pred, zero_division=0),
-            'auc': roc_auc_score(y_test, y_proba) if len(y_test.unique()) > 1 else 0.5,
+            "accuracy": accuracy_score(y_test, y_pred),
+            "precision": precision_score(y_test, y_pred, zero_division=0),
+            "recall": recall_score(y_test, y_pred, zero_division=0),
+            "f1_score": f1_score(y_test, y_pred, zero_division=0),
+            "auc": roc_auc_score(y_test, y_proba) if len(y_test.unique()) > 1 else 0.5,
         }
 
         logger.info("📈 优化模型训练结果:")
@@ -271,7 +277,7 @@ class ThreeClassLabeler:
 
     def label(self, df: pd.DataFrame) -> pd.Series:
         """生成三分类标签"""
-        future_return = df['close'].shift(-self.prediction_days) / df['close'] - 1
+        future_return = df["close"].shift(-self.prediction_days) / df["close"] - 1
 
         def get_label(r):
             if pd.isna(r):
@@ -290,13 +296,13 @@ class ThreeClassLabeler:
         return future_return.apply(get_label)
 
 
-def balance_samples(X: pd.DataFrame, y: pd.Series, method: str = 'oversample') -> tuple:
+def balance_samples(X: pd.DataFrame, y: pd.Series, method: str = "oversample") -> tuple:
     """样本平衡"""
     from collections import Counter
 
     logger.info("📊 原始样本分布: %s", Counter(y))
 
-    if method == 'oversample':
+    if method == "oversample":
         max_count = y.value_counts().max()
 
         balanced_X = []
@@ -337,12 +343,12 @@ def prepare_enhanced_data(days: int = 500, balance: bool = True):
             continue
 
         df = pd.DataFrame(klines)
-        df['date'] = pd.to_datetime(df['date'])
-        df = df.sort_values('date').reset_index(drop=True)
+        df["date"] = pd.to_datetime(df["date"])
+        df = df.sort_values("date").reset_index(drop=True)
 
-        for col in ['open', 'close', 'high', 'low', 'volume', 'amount']:
+        for col in ["open", "close", "high", "low", "volume", "amount"]:
             if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
         stocks_data[code] = df
 
@@ -355,7 +361,7 @@ def prepare_enhanced_data(days: int = 500, balance: bool = True):
     for df in stocks_data.values():
         df_features = feature_engineer.calculate_all_features(df)
 
-        future_return = df_features['close'].shift(-5) / df_features['close'] - 1
+        future_return = df_features["close"].shift(-5) / df_features["close"] - 1
 
         def label_return(r):
             if pd.isna(r):
@@ -373,8 +379,11 @@ def prepare_enhanced_data(days: int = 500, balance: bool = True):
         X = df_features[valid_mask].copy()
         y_valid = y[valid_mask].copy()
 
-        feature_cols = [col for col in df_features.columns
-                       if col not in ['open', 'high', 'low', 'close', 'volume', 'amount', 'date', 'code']]
+        feature_cols = [
+            col
+            for col in df_features.columns
+            if col not in ["open", "high", "low", "close", "volume", "amount", "date", "code"]
+        ]
         X = X[feature_cols].fillna(0).replace([np.inf, -np.inf], 0)
 
         all_X.append(X)
@@ -398,11 +407,11 @@ def cross_validate_model(X: pd.DataFrame, y: pd.Series, n_splits: int = 3) -> di
     tscv = TimeSeriesSplit(n_splits=n_splits)
 
     scores = {
-        'accuracy': [],
-        'precision': [],
-        'recall': [],
-        'f1': [],
-        'auc': [],
+        "accuracy": [],
+        "precision": [],
+        "recall": [],
+        "f1": [],
+        "auc": [],
     }
 
     for fold, (train_idx, val_idx) in enumerate(tscv.split(X)):
@@ -419,20 +428,20 @@ def cross_validate_model(X: pd.DataFrame, y: pd.Series, n_splits: int = 3) -> di
         y_pred = model.predict(X_val)
         y_proba = model.predict_proba(X_val)[:, 1]
 
-        scores['accuracy'].append(accuracy_score(y_val, y_pred))
-        scores['precision'].append(precision_score(y_val, y_pred, zero_division=0))
-        scores['recall'].append(recall_score(y_val, y_pred, zero_division=0))
-        scores['f1'].append(f1_score(y_val, y_pred, zero_division=0))
-        scores['auc'].append(roc_auc_score(y_val, y_proba))
+        scores["accuracy"].append(accuracy_score(y_val, y_pred))
+        scores["precision"].append(precision_score(y_val, y_pred, zero_division=0))
+        scores["recall"].append(recall_score(y_val, y_pred, zero_division=0))
+        scores["f1"].append(f1_score(y_val, y_pred, zero_division=0))
+        scores["auc"].append(roc_auc_score(y_val, y_proba))
 
         logger.info(f"   Fold {fold + 1}: Acc={scores['accuracy'][-1]:.2%}, AUC={scores['auc'][-1]:.4f}")
 
     return {
-        'accuracy_mean': np.mean(scores['accuracy']) if scores['accuracy'] else 0,
-        'accuracy_std': np.std(scores['accuracy']) if scores['accuracy'] else 0,
-        'auc_mean': np.mean(scores['auc']) if scores['auc'] else 0,
-        'auc_std': np.std(scores['auc']) if scores['auc'] else 0,
-        'f1_mean': np.mean(scores['f1']) if scores['f1'] else 0,
+        "accuracy_mean": np.mean(scores["accuracy"]) if scores["accuracy"] else 0,
+        "accuracy_std": np.std(scores["accuracy"]) if scores["accuracy"] else 0,
+        "auc_mean": np.mean(scores["auc"]) if scores["auc"] else 0,
+        "auc_std": np.std(scores["auc"]) if scores["auc"] else 0,
+        "f1_mean": np.mean(scores["f1"]) if scores["f1"] else 0,
     }
 
 
@@ -459,18 +468,25 @@ def main():
     total_time = time.time() - start_time
     logger.info(f"⏱️ 总耗时: {total_time:.1f} 秒")
 
-    improvement = (metrics['accuracy'] - 0.72) / 0.72 * 100
-    logger.info(f"📈 准确率提升: {metrics['accuracy']:.2%} (相比基准 72% {'↑' if improvement > 0 else '↓'}{abs(improvement):.1f}%)")
+    improvement = (metrics["accuracy"] - 0.72) / 0.72 * 100
+    logger.info(
+        f"📈 准确率提升: {metrics['accuracy']:.2%} (相比基准 72% {'↑' if improvement > 0 else '↓'}{abs(improvement):.1f}%)"
+    )
 
     output_path = Path("models/optimization_v2_results.json")
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, 'w', encoding='utf-8') as f:
-        json.dump({
-            'model_metrics': metrics,
-            'cv_results': cv_results,
-            'total_time': total_time,
-            'improvement_pct': improvement,
-        }, f, indent=2, default=str)
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "model_metrics": metrics,
+                "cv_results": cv_results,
+                "total_time": total_time,
+                "improvement_pct": improvement,
+            },
+            f,
+            indent=2,
+            default=str,
+        )
     logger.info("📄 结果已保存: %s", output_path)
 
     return metrics

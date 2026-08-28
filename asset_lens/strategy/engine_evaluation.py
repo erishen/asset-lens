@@ -40,7 +40,9 @@ class StrategyEvaluationMixin:
         total_weight = sum(c.weight for c in strategy.buy_conditions)
         score = conditions_met / total_weight if total_weight > 0 else 0
 
-        recommendation = "强烈推荐" if score >= 0.8 else "推荐" if score >= 0.6 else "观望" if score >= 0.4 else "不推荐"
+        recommendation = (
+            "强烈推荐" if score >= 0.8 else "推荐" if score >= 0.6 else "观望" if score >= 0.4 else "不推荐"
+        )
 
         return {
             "stock_code": stock.get("code", ""),

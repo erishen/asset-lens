@@ -95,7 +95,10 @@ class AIAnalyzer:
                 json={
                     "model": self.model,
                     "messages": [
-                        {"role": "system", "content": "你是一位专业的投资顾问，擅长分析投资组合的风险和收益。请基于提供的投资数据，给出专业的投资建议和风险评估。"},
+                        {
+                            "role": "system",
+                            "content": "你是一位专业的投资顾问，擅长分析投资组合的风险和收益。请基于提供的投资数据，给出专业的投资建议和风险评估。",
+                        },
                         {"role": "user", "content": prompt},
                     ],
                     "temperature": 0.3,

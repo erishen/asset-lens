@@ -251,10 +251,14 @@ class AISimulatedTrader(AITraderExecutionMixin):
                 if change > 2 and turnover > 3:
                     signals.append(
                         TradeSignal(
-                            code=code, name=name, action="buy",
-                            confidence=0.6 + min(change / 20, 0.3), price=price,
+                            code=code,
+                            name=name,
+                            action="buy",
+                            confidence=0.6 + min(change / 20, 0.3),
+                            price=price,
                             reason=f"牛市动量策略: 涨幅{change:.1f}%, 换手{turnover:.1f}%",
-                            market_condition=self.market_condition, strategy=self.current_strategy,
+                            market_condition=self.market_condition,
+                            strategy=self.current_strategy,
                         )
                     )
 
@@ -262,10 +266,14 @@ class AISimulatedTrader(AITraderExecutionMixin):
                 if change < -3 and turnover < 3:
                     signals.append(
                         TradeSignal(
-                            code=code, name=name, action="sell",
-                            confidence=0.6 + min(abs(change) / 20, 0.3), price=price,
+                            code=code,
+                            name=name,
+                            action="sell",
+                            confidence=0.6 + min(abs(change) / 20, 0.3),
+                            price=price,
                             reason=f"熊市防御策略: 跌幅{change:.1f}%",
-                            market_condition=self.market_condition, strategy=self.current_strategy,
+                            market_condition=self.market_condition,
+                            strategy=self.current_strategy,
                         )
                     )
 
@@ -273,26 +281,41 @@ class AISimulatedTrader(AITraderExecutionMixin):
                 if change < -5:
                     signals.append(
                         TradeSignal(
-                            code=code, name=name, action="buy", confidence=0.65, price=price,
+                            code=code,
+                            name=name,
+                            action="buy",
+                            confidence=0.65,
+                            price=price,
                             reason=f"反转策略: 超跌反弹机会 (跌幅{change:.1f}%)",
-                            market_condition=self.market_condition, strategy=self.current_strategy,
+                            market_condition=self.market_condition,
+                            strategy=self.current_strategy,
                         )
                     )
                 elif change < -3:
                     signals.append(
                         TradeSignal(
-                            code=code, name=name, action="buy", confidence=0.58, price=price,
+                            code=code,
+                            name=name,
+                            action="buy",
+                            confidence=0.58,
+                            price=price,
                             reason=f"反转策略: 跌幅较大可能有反弹 (跌幅{change:.1f}%)",
-                            market_condition=self.market_condition, strategy=self.current_strategy,
+                            market_condition=self.market_condition,
+                            strategy=self.current_strategy,
                         )
                     )
 
             elif self.market_condition == "sideways" and -2 < change < 2 and turnover > 2:
                 signals.append(
                     TradeSignal(
-                        code=code, name=name, action="buy", confidence=0.55, price=price,
+                        code=code,
+                        name=name,
+                        action="buy",
+                        confidence=0.55,
+                        price=price,
                         reason="震荡市策略: 横盘整理后可能突破",
-                        market_condition=self.market_condition, strategy=self.current_strategy,
+                        market_condition=self.market_condition,
+                        strategy=self.current_strategy,
                     )
                 )
 

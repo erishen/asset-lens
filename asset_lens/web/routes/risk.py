@@ -18,6 +18,7 @@ async def get_risk_summary():
     # Demo 模式下返回模拟风险数据
     if DEMO_MODE:
         from ..demo_data import get_demo_risk_summary
+
         return get_demo_risk_summary()
 
     from ...risk import risk_service

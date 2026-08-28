@@ -250,9 +250,7 @@ def _display_sell_signals(sell_signals):
         click.echo(f"\n📉 卖出信号 ({len(sell_signals)}):")
         for signal in sell_signals:
             signal_type = (
-                "🟢止损"
-                if signal.get("is_stop_loss")
-                else ("🔴止盈" if signal.get("is_take_profit") else "📊趋势")
+                "🟢止损" if signal.get("is_stop_loss") else ("🔴止盈" if signal.get("is_take_profit") else "📊趋势")
             )
             click.echo(f"  {signal['code']} - {signal['name']} [{signal_type}]")
             click.echo(f"    收益率: {signal['profit_rate']:+.2f}%, 持仓: {signal['holding_days']}天")
@@ -307,7 +305,15 @@ def _execute_sell_signals(sell_signals, pool, max_sell, market_ok):
 
 
 def _analyze_buy_signals(
-    watching_stocks, holding_codes, stocks_data, engine, strategy_name, ai_advisor, ml_predictor, history_fetcher, market_data
+    watching_stocks,
+    holding_codes,
+    stocks_data,
+    engine,
+    strategy_name,
+    ai_advisor,
+    ml_predictor,
+    history_fetcher,
+    market_data,
 ):
     buy_signals = []
 
@@ -421,9 +427,7 @@ def _analyze_buy_signals(
                         "ml_up_prob": ml_up_prob,
                         "risk_level": ai_decision.get("risk_level", "medium") if ai_decision else "medium",
                         "suggested_stop_loss": ai_decision.get("suggested_stop_loss") if ai_decision else None,
-                        "suggested_take_profit": ai_decision.get("suggested_take_profit")
-                        if ai_decision
-                        else None,
+                        "suggested_take_profit": ai_decision.get("suggested_take_profit") if ai_decision else None,
                     }
                 )
 
@@ -487,7 +491,9 @@ def _execute_buy_signals(buy_signals, pool, remaining_buy, remaining_position, m
     click.echo(f"\n💰 买入统计: {bought} 只股票，总金额: ¥{total_amount:,.2f}")
 
 
-def _display_position_advice(holding_stocks, total_position, max_position, unrealized_pnl, unrealized_pnl_pct, market_ok):
+def _display_position_advice(
+    holding_stocks, total_position, max_position, unrealized_pnl, unrealized_pnl_pct, market_ok
+):
     position_usage = total_position / max_position * 100 if max_position > 0 else 0
     click.echo("\n💡 仓位调整建议")
     if position_usage < 30:

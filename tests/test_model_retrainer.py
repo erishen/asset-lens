@@ -101,22 +101,40 @@ class TestModelRetrainer:
 
     def test_check_model_status_current(self, retrainer):
         today = datetime.now().strftime("%Y-%m-%d")
-        retrainer._save_version(ModelVersion(
-            version="v1.0", model_type="lightgbm", accuracy=0.85,
-            precision=0.8, recall=0.8, f1_score=0.8, training_samples=1000,
-            training_date=today, file_path="model.pkl", status=ModelStatus.CURRENT,
-        ))
+        retrainer._save_version(
+            ModelVersion(
+                version="v1.0",
+                model_type="lightgbm",
+                accuracy=0.85,
+                precision=0.8,
+                recall=0.8,
+                f1_score=0.8,
+                training_samples=1000,
+                training_date=today,
+                file_path="model.pkl",
+                status=ModelStatus.CURRENT,
+            )
+        )
         (retrainer.models_path / "model.pkl").touch()
         status = retrainer.check_model_status()
         assert status == ModelStatus.CURRENT
 
     def test_check_model_status_outdated(self, retrainer):
         old_date = (datetime.now() - timedelta(days=60)).strftime("%Y-%m-%d")
-        retrainer._save_version(ModelVersion(
-            version="v1.0", model_type="lightgbm", accuracy=0.85,
-            precision=0.8, recall=0.8, f1_score=0.8, training_samples=1000,
-            training_date=old_date, file_path="model.pkl", status=ModelStatus.CURRENT,
-        ))
+        retrainer._save_version(
+            ModelVersion(
+                version="v1.0",
+                model_type="lightgbm",
+                accuracy=0.85,
+                precision=0.8,
+                recall=0.8,
+                f1_score=0.8,
+                training_samples=1000,
+                training_date=old_date,
+                file_path="model.pkl",
+                status=ModelStatus.CURRENT,
+            )
+        )
         (retrainer.models_path / "model.pkl").touch()
         status = retrainer.check_model_status()
         assert status == ModelStatus.OUTDATED
@@ -151,10 +169,18 @@ class TestModelRetrainer:
 
     def test_retrain_model_force(self, retrainer):
         with patch.object(retrainer, "should_retrain", return_value=(False, "no need")):
-            with patch.object(retrainer, "_train_model", return_value={
-                "accuracy": 0.88, "precision": 0.85, "recall": 0.83,
-                "f1_score": 0.84, "training_samples": 5000, "metrics": {"auc": 0.92},
-            }):
+            with patch.object(
+                retrainer,
+                "_train_model",
+                return_value={
+                    "accuracy": 0.88,
+                    "precision": 0.85,
+                    "recall": 0.83,
+                    "f1_score": 0.84,
+                    "training_samples": 5000,
+                    "metrics": {"auc": 0.92},
+                },
+            ):
                 result = retrainer.retrain_model(force=True)
         assert result.success is True
         assert result.new_accuracy == 0.88
@@ -186,9 +212,16 @@ class TestModelRetrainer:
 
     def test_save_and_load_versions(self, retrainer):
         mv = ModelVersion(
-            version="v1.0", model_type="lightgbm", accuracy=0.85,
-            precision=0.8, recall=0.8, f1_score=0.8, training_samples=1000,
-            training_date="2025-01-01", file_path="model.pkl", status=ModelStatus.CURRENT,
+            version="v1.0",
+            model_type="lightgbm",
+            accuracy=0.85,
+            precision=0.8,
+            recall=0.8,
+            f1_score=0.8,
+            training_samples=1000,
+            training_date="2025-01-01",
+            file_path="model.pkl",
+            status=ModelStatus.CURRENT,
         )
         retrainer._save_version(mv)
         versions = retrainer._load_versions()
@@ -198,9 +231,16 @@ class TestModelRetrainer:
     def test_keep_versions_limit(self, retrainer):
         for i in range(5):
             mv = ModelVersion(
-                version=f"v{i}", model_type="lightgbm", accuracy=0.8 + i * 0.01,
-                precision=0.8, recall=0.8, f1_score=0.8, training_samples=1000,
-                training_date="2025-01-01", file_path="model.pkl", status=ModelStatus.CURRENT,
+                version=f"v{i}",
+                model_type="lightgbm",
+                accuracy=0.8 + i * 0.01,
+                precision=0.8,
+                recall=0.8,
+                f1_score=0.8,
+                training_samples=1000,
+                training_date="2025-01-01",
+                file_path="model.pkl",
+                status=ModelStatus.CURRENT,
             )
             retrainer._save_version(mv)
         versions = retrainer._load_versions()
@@ -208,9 +248,16 @@ class TestModelRetrainer:
 
     def test_get_version_history(self, retrainer):
         mv = ModelVersion(
-            version="v1.0", model_type="lightgbm", accuracy=0.85,
-            precision=0.8, recall=0.8, f1_score=0.8, training_samples=1000,
-            training_date="2025-01-01", file_path="model.pkl", status=ModelStatus.CURRENT,
+            version="v1.0",
+            model_type="lightgbm",
+            accuracy=0.85,
+            precision=0.8,
+            recall=0.8,
+            f1_score=0.8,
+            training_samples=1000,
+            training_date="2025-01-01",
+            file_path="model.pkl",
+            status=ModelStatus.CURRENT,
         )
         retrainer._save_version(mv)
         history = retrainer.get_version_history()
@@ -223,9 +270,14 @@ class TestModelRetrainer:
 
     def test_log_retraining(self, retrainer):
         result = RetrainingResult(
-            old_version="v1.0", new_version="v2.0",
-            old_accuracy=0.8, new_accuracy=0.85, improvement=0.05,
-            training_time=120.0, success=True, message="成功",
+            old_version="v1.0",
+            new_version="v2.0",
+            old_accuracy=0.8,
+            new_accuracy=0.85,
+            improvement=0.05,
+            training_time=120.0,
+            success=True,
+            message="成功",
         )
         retrainer._log_retraining(result)
         log_file = retrainer.models_path / "retrain_log.json"

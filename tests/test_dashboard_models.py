@@ -58,16 +58,24 @@ class TestChartData:
 class TestMetricCard:
     def test_creation(self):
         card = MetricCard(
-            title="总资产", value="¥100,000", change="+5.0%",
-            change_type="positive", icon="💰", color="blue",
+            title="总资产",
+            value="¥100,000",
+            change="+5.0%",
+            change_type="positive",
+            icon="💰",
+            color="blue",
         )
         assert card.title == "总资产"
         assert card.change_type == "positive"
 
     def test_to_dict(self):
         card = MetricCard(
-            title="Test", value="100", change="+1%",
-            change_type="positive", icon="📊", color="green",
+            title="Test",
+            value="100",
+            change="+1%",
+            change_type="positive",
+            icon="📊",
+            color="green",
         )
         d = card.to_dict()
         assert d["title"] == "Test"
@@ -131,7 +139,15 @@ class TestDashboardGenerator:
 
     def test_generate_dashboard_with_holdings(self, generator):
         holdings = [
-            {"code": "600519", "name": "贵州茅台", "current_value": 180000, "buy_price": 1700, "shares": 100, "profit_rate": 0.05, "industry": "白酒"},
+            {
+                "code": "600519",
+                "name": "贵州茅台",
+                "current_value": 180000,
+                "buy_price": 1700,
+                "shares": 100,
+                "profit_rate": 0.05,
+                "industry": "白酒",
+            },
         ]
         dashboard = generator.generate_dashboard(holdings=holdings)
         assert isinstance(dashboard, PerformanceDashboard)

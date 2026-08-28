@@ -75,11 +75,13 @@ class TestTechnicalAnalysis:
         assert (valid >= 0).all()
 
     def test_full_analysis(self):
-        df = pd.DataFrame({
-            "close": self.close,
-            "high": self.high,
-            "low": self.low,
-        })
+        df = pd.DataFrame(
+            {
+                "close": self.close,
+                "high": self.high,
+                "low": self.low,
+            }
+        )
         result = self.ta.full_analysis(df)
         assert "sma_20" in result
         assert "rsi" in result
@@ -89,7 +91,9 @@ class TestTechnicalAnalysis:
         assert result["rsi"] is not None
 
     def test_full_analysis_empty(self):
-        df = pd.DataFrame({"close": pd.Series([], dtype=float), "high": pd.Series([], dtype=float), "low": pd.Series([], dtype=float)})
+        df = pd.DataFrame(
+            {"close": pd.Series([], dtype=float), "high": pd.Series([], dtype=float), "low": pd.Series([], dtype=float)}
+        )
         result = self.ta.full_analysis(df)
         assert result["sma_20"] is None
 
@@ -153,11 +157,13 @@ class TestPortfolioAnalysis:
         self.pa = PortfolioAnalysis()
         np.random.seed(42)
         n = 100
-        self.prices_df = pd.DataFrame({
-            "close": pd.Series(np.cumsum(np.random.randn(n)) + 100),
-            "high": pd.Series(np.cumsum(np.random.randn(n)) + 102),
-            "low": pd.Series(np.cumsum(np.random.randn(n)) + 98),
-        })
+        self.prices_df = pd.DataFrame(
+            {
+                "close": pd.Series(np.cumsum(np.random.randn(n)) + 100),
+                "high": pd.Series(np.cumsum(np.random.randn(n)) + 102),
+                "low": pd.Series(np.cumsum(np.random.randn(n)) + 98),
+            }
+        )
         self.holdings = {"sh600519": 100, "sh000858": 200}
 
     def test_init(self):
@@ -177,10 +183,12 @@ class TestPortfolioAnalysis:
         assert result["portfolio_value"] == 0
 
     def test_calculate_correlation_matrix(self):
-        returns = pd.DataFrame({
-            "A": np.random.randn(50),
-            "B": np.random.randn(50),
-        })
+        returns = pd.DataFrame(
+            {
+                "A": np.random.randn(50),
+                "B": np.random.randn(50),
+            }
+        )
         corr = self.pa.calculate_correlation_matrix(returns)
         assert corr.shape == (2, 2)
         assert corr.iloc[0, 0] == pytest.approx(1.0)

@@ -81,7 +81,6 @@ def register_ml_info_commands(ml_group: click.Group) -> None:
             result_path = model_path.with_suffix(".json")
             result = read_json_cache_dict(result_path)
             if result:
-
                 console.print(f"   模型类型: {result.get('model_type')}")
                 console.print(f"   准确率: {result.get('accuracy', 0):.2%}")
                 console.print(f"   训练时间: {result.get('timestamp', 'N/A')}")

@@ -35,30 +35,39 @@ def engine():
 
 class TestEvaluateStock:
     def test_evaluate_with_strategy(self, engine):
-        engine.add_strategy("value", [
-            {"field": "pe_ratio", "operator": "lt", "value": 20, "weight": 1.0},
-            {"field": "roe", "operator": "gt", "value": 15, "weight": 1.0},
-        ])
+        engine.add_strategy(
+            "value",
+            [
+                {"field": "pe_ratio", "operator": "lt", "value": 20, "weight": 1.0},
+                {"field": "roe", "operator": "gt", "value": 15, "weight": 1.0},
+            ],
+        )
         stock = {"code": "600519", "name": "贵州茅台", "pe_ratio": 18, "roe": 25}
         result = engine.evaluate_stock(stock, "value")
         assert result["score"] == 1.0
         assert result["recommendation"] == "强烈推荐"
 
     def test_evaluate_partial_match(self, engine):
-        engine.add_strategy("value", [
-            {"field": "pe_ratio", "operator": "lt", "value": 20, "weight": 1.0},
-            {"field": "roe", "operator": "gt", "value": 15, "weight": 1.0},
-        ])
+        engine.add_strategy(
+            "value",
+            [
+                {"field": "pe_ratio", "operator": "lt", "value": 20, "weight": 1.0},
+                {"field": "roe", "operator": "gt", "value": 15, "weight": 1.0},
+            ],
+        )
         stock = {"code": "600519", "name": "贵州茅台", "pe_ratio": 25, "roe": 25}
         result = engine.evaluate_stock(stock, "value")
         assert result["score"] == 0.5
         assert result["recommendation"] == "观望"
 
     def test_evaluate_no_match(self, engine):
-        engine.add_strategy("value", [
-            {"field": "pe_ratio", "operator": "lt", "value": 20, "weight": 1.0},
-            {"field": "roe", "operator": "gt", "value": 15, "weight": 1.0},
-        ])
+        engine.add_strategy(
+            "value",
+            [
+                {"field": "pe_ratio", "operator": "lt", "value": 20, "weight": 1.0},
+                {"field": "roe", "operator": "gt", "value": 15, "weight": 1.0},
+            ],
+        )
         stock = {"code": "600519", "name": "贵州茅台", "pe_ratio": 30, "roe": 5}
         result = engine.evaluate_stock(stock, "value")
         assert result["score"] == 0.0
@@ -69,9 +78,12 @@ class TestEvaluateStock:
         assert "error" in result
 
     def test_evaluate_with_none_values(self, engine):
-        engine.add_strategy("value", [
-            {"field": "pe_ratio", "operator": "lt", "value": 20, "weight": 1.0},
-        ])
+        engine.add_strategy(
+            "value",
+            [
+                {"field": "pe_ratio", "operator": "lt", "value": 20, "weight": 1.0},
+            ],
+        )
         stock = {"code": "600519"}
         result = engine.evaluate_stock(stock, "value")
         assert result["score"] == 0.0
@@ -147,9 +159,12 @@ class TestEvaluateCondition:
 
 class TestScreenStocks:
     def test_screen(self, engine):
-        engine.add_strategy("value", [
-            {"field": "pe_ratio", "operator": "lt", "value": 20, "weight": 1.0},
-        ])
+        engine.add_strategy(
+            "value",
+            [
+                {"field": "pe_ratio", "operator": "lt", "value": 20, "weight": 1.0},
+            ],
+        )
         stocks = [
             {"code": "001", "name": "A", "pe_ratio": 15},
             {"code": "002", "name": "B", "pe_ratio": 25},
@@ -161,9 +176,12 @@ class TestScreenStocks:
         assert codes == {"001", "003"}
 
     def test_screen_with_limit(self, engine):
-        engine.add_strategy("value", [
-            {"field": "pe_ratio", "operator": "lt", "value": 20, "weight": 1.0},
-        ])
+        engine.add_strategy(
+            "value",
+            [
+                {"field": "pe_ratio", "operator": "lt", "value": 20, "weight": 1.0},
+            ],
+        )
         stocks = [{"code": f"{i:03d}", "name": f"S{i}", "pe_ratio": 10} for i in range(10)]
         result = engine.screen_stocks(stocks, "value", min_score=0.5, limit=3)
         assert len(result) <= 3

@@ -56,7 +56,9 @@ class AITraderExecutionMixin:
                                 "profit_rate": trade.profit_rate,
                             }
                         )
-                        logger.info(f"卖出 {signal.code} {signal.name} @ {signal.price:.2f} (收益: {profit_rate:+.2f}%)")
+                        logger.info(
+                            f"卖出 {signal.code} {signal.name} @ {signal.price:.2f} (收益: {profit_rate:+.2f}%)"
+                        )
 
         for signal in buy_signals:
             if holding_count >= self.max_positions:  # type: ignore[attr-defined]

@@ -127,7 +127,6 @@ class SellRecordParser:
                             records.append(record)
 
         except (OSError, ValueError, KeyError) as e:
-
             raise DataLoadError(f"读取卖出记录 CSV 文件失败: {e}", file_path=str(csv_path)) from e
 
         return records

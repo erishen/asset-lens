@@ -122,7 +122,7 @@ def batch_fetch(
     console.print(f"   成功: {success_count} 只股票")
     console.print(f"   失败: {failed_count} 只股票")
     console.print(f"   K线总数: {total_klines:,} 条")
-    console.print(f"   耗时: {elapsed_time/60:.1f} 分钟")
+    console.print(f"   耗时: {elapsed_time / 60:.1f} 分钟")
 
     if failed_codes and len(failed_codes) <= 20:
         console.print("\n⚠️ 失败的股票代码:")

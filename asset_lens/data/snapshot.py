@@ -32,7 +32,6 @@ class PortfolioSnapshot:
 
 
 class SnapshotManager:
-
     def __init__(self, storage_path: Path | None = None):
         self.storage_path = storage_path or Path.home() / ".asset_lens" / "snapshots"
         self.storage_path.mkdir(parents=True, exist_ok=True)

@@ -205,7 +205,15 @@ def register_auto_trade_command(cli: click.Group) -> None:
             holding_codes = {s["code"] for s in holding_stocks}
 
             buy_signals = _analyze_buy_signals(
-                watching_stocks, holding_codes, stocks_data, engine, strategy_name, ai_advisor, ml_predictor, history_fetcher, market_data
+                watching_stocks,
+                holding_codes,
+                stocks_data,
+                engine,
+                strategy_name,
+                ai_advisor,
+                ml_predictor,
+                history_fetcher,
+                market_data,
             )
 
             if buy_signals:
@@ -233,7 +241,9 @@ def register_auto_trade_command(cli: click.Group) -> None:
             if use_ai and ai_advisor:
                 click.echo("  🧠 AI 分析: 已启用")
 
-            _display_position_advice(holding_stocks, total_position, max_position, unrealized_pnl, unrealized_pnl_pct, market_ok)
+            _display_position_advice(
+                holding_stocks, total_position, max_position, unrealized_pnl, unrealized_pnl_pct, market_ok
+            )
 
         except Exception as e:
             import traceback

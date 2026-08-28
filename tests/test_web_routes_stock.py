@@ -68,6 +68,7 @@ class TestGetStockQuote:
         class AsyncContextManager:
             async def __aenter__(self):
                 return mock_response
+
             async def __aexit__(self, *args):
                 pass
 
@@ -91,6 +92,7 @@ class TestGetStockQuote:
         class AsyncContextManager:
             async def __aenter__(self):
                 return mock_response
+
             async def __aexit__(self, *args):
                 pass
 
@@ -110,6 +112,7 @@ class TestGetStockQuote:
         class AsyncContextManager:
             async def __aenter__(self):
                 return mock_response
+
             async def __aexit__(self, *args):
                 pass
 

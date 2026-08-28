@@ -130,12 +130,15 @@ class PredictorModelMixin:
 
             if task == "classification":
                 models["xgb"] = xgb.XGBClassifier(
-                    n_estimators=150, max_depth=5, learning_rate=0.05, random_state=42, use_label_encoder=False, eval_metric="logloss"
+                    n_estimators=150,
+                    max_depth=5,
+                    learning_rate=0.05,
+                    random_state=42,
+                    use_label_encoder=False,
+                    eval_metric="logloss",
                 )
             else:
-                models["xgb"] = xgb.XGBRegressor(
-                    n_estimators=150, max_depth=5, learning_rate=0.05, random_state=42
-                )
+                models["xgb"] = xgb.XGBRegressor(n_estimators=150, max_depth=5, learning_rate=0.05, random_state=42)
         except ImportError:
             pass
 
@@ -164,7 +167,14 @@ class PredictorModelMixin:
         try:
             import xgboost as xgb
 
-            estimators.append(("xgb", xgb.XGBClassifier(n_estimators=100, max_depth=5, random_state=42, use_label_encoder=False, eval_metric="logloss")))
+            estimators.append(
+                (
+                    "xgb",
+                    xgb.XGBClassifier(
+                        n_estimators=100, max_depth=5, random_state=42, use_label_encoder=False, eval_metric="logloss"
+                    ),
+                )
+            )
         except ImportError:
             pass
 

@@ -1,4 +1,3 @@
-
 import pytest
 
 from asset_lens.trading.auto_trader import AutoTradeAction, AutoTrader, AutoTradeRecord, TradeReason

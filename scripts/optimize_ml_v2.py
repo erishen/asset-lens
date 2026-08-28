@@ -23,20 +23,30 @@ session = db_manager.get_session()
 
 logger.info("1️⃣ 筛选流动性好的股票...")
 
-subquery = session.query(
-    StockKline.code,
-    func.count(StockKline.id).label('count'),
-    func.avg(StockKline.volume).label('avg_volume'),
-    func.avg(StockKline.amount).label('avg_amount'),
-).group_by(StockKline.code).subquery()
-
-good_stocks = session.query(subquery).filter(
-    and_(
-        subquery.c.count >= 200,
-        subquery.c.avg_volume >= 100000,
-        subquery.c.avg_amount >= 1000000,
+subquery = (
+    session.query(
+        StockKline.code,
+        func.count(StockKline.id).label("count"),
+        func.avg(StockKline.volume).label("avg_volume"),
+        func.avg(StockKline.amount).label("avg_amount"),
     )
-).order_by(subquery.c.avg_amount.desc()).limit(500).all()
+    .group_by(StockKline.code)
+    .subquery()
+)
+
+good_stocks = (
+    session.query(subquery)
+    .filter(
+        and_(
+            subquery.c.count >= 200,
+            subquery.c.avg_volume >= 100000,
+            subquery.c.avg_amount >= 1000000,
+        )
+    )
+    .order_by(subquery.c.avg_amount.desc())
+    .limit(500)
+    .all()
+)
 
 codes = [s.code for s in good_stocks]
 logger.info("   筛选出 %s 只流动性好的股票", len(codes))
@@ -54,7 +64,7 @@ configs = [
 results = []
 
 for cfg in configs:
-    logger.info("\n   测试: %s", cfg['name'])
+    logger.info("\n   测试: %s", cfg["name"])
 
     config = TrainingConfig(
         prediction_days=cfg["prediction_days"],
@@ -70,13 +80,15 @@ for cfg in configs:
         logger.info(f"   AUC: {result.auc:.2%}")
         logger.info(f"   F1: {result.f1_score:.2%}")
         logger.info("   训练样本: %s", result.training_samples)
-        results.append({
-            "name": cfg["name"],
-            "config": cfg,
-            "accuracy": result.accuracy,
-            "auc": result.auc,
-            "f1": result.f1_score,
-        })
+        results.append(
+            {
+                "name": cfg["name"],
+                "config": cfg,
+                "accuracy": result.accuracy,
+                "auc": result.auc,
+                "f1": result.f1_score,
+            }
+        )
     except Exception as e:
         logger.error("   错误: %s", e)
 
@@ -86,7 +98,7 @@ logger.info("-" * 60)
 
 if results:
     best = max(results, key=lambda x: x["accuracy"])
-    logger.info("\n🏆 最佳配置: %s", best['name'])
+    logger.info("\n🏆 最佳配置: %s", best["name"])
     logger.info(f"   准确率: {best['accuracy']:.2%}")
     logger.info(f"   AUC: {best['auc']:.2%}")
     logger.info(f"   F1: {best['f1']:.2%}")

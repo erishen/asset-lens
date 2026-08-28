@@ -93,6 +93,7 @@ class CSVDataLoaderMixin:
                 ]
 
                 if dirs:
+
                     def extract_date(d: Path) -> int:
                         match = re.search(r"(\d{8})", d.name)
                         return int(match.group(1)) if match else 0
@@ -214,7 +215,7 @@ class CSVDataLoaderMixin:
         csv_path = csv_files[0]
 
         csv_reference_date: date | None = None
-        if effective_reference_date and hasattr(effective_reference_date, 'date'):
+        if effective_reference_date and hasattr(effective_reference_date, "date"):
             csv_reference_date = effective_reference_date.date()
         products = cls.parse_csv_file(csv_path, reference_date=csv_reference_date)
 

@@ -30,16 +30,16 @@ def test_token_usage():
     # 测试分析
     result = ai_analyzer.analyze_stock_sync(
         stock_data={
-            'code': '300750',
-            'name': '宁德时代',
-            'price': 413.0,
-            'change_percent': 3.12,
-            'volume': 125000,
-            'turnover_rate': 2.35,
-            'market_cap': 9800,
-            'pe_ratio': 25.5,
+            "code": "300750",
+            "name": "宁德时代",
+            "price": 413.0,
+            "change_percent": 3.12,
+            "volume": 125000,
+            "turnover_rate": 2.35,
+            "market_cap": 9800,
+            "pe_ratio": 25.5,
         },
-        strategy_signal='策略得分85分'
+        strategy_signal="策略得分85分",
     )
 
     print("\n📊 Token 使用统计:")
@@ -73,6 +73,7 @@ def test_token_usage():
     print("\n📈 累计统计:")
     print(f"  总 tokens: {ai_analyzer.total_tokens_used}")
     print(f"  总费用: ¥{ai_analyzer.total_cost:.6f}")
+
 
 if __name__ == "__main__":
     test_token_usage()

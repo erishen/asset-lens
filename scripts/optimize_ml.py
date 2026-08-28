@@ -24,7 +24,7 @@ logger.info("=" * 60)
 results = []
 
 for i, cfg in enumerate(configs, 1):
-    logger.info("\n测试配置 %s: prediction_days=%s, threshold=%s", i, cfg['prediction_days'], cfg['positive_threshold'])
+    logger.info("\n测试配置 %s: prediction_days=%s, threshold=%s", i, cfg["prediction_days"], cfg["positive_threshold"])
 
     config = TrainingConfig(
         prediction_days=cfg["prediction_days"],
@@ -40,12 +40,14 @@ for i, cfg in enumerate(configs, 1):
         logger.info(f"  AUC: {result.auc:.2%}")
         logger.info(f"  F1: {result.f1_score:.2%}")
         logger.info("  训练样本: %s", result.training_samples)
-        results.append({
-            "config": cfg,
-            "accuracy": result.accuracy,
-            "auc": result.auc,
-            "f1": result.f1_score,
-        })
+        results.append(
+            {
+                "config": cfg,
+                "accuracy": result.accuracy,
+                "auc": result.auc,
+                "f1": result.f1_score,
+            }
+        )
     except Exception as e:
         logger.error("  错误: %s", e)
 
@@ -55,7 +57,11 @@ logger.info("-" * 60)
 
 if results:
     best = max(results, key=lambda x: x["accuracy"])
-    logger.info("最佳配置: prediction_days=%s, threshold=%s", best['config']['prediction_days'], best['config']['positive_threshold'])
+    logger.info(
+        "最佳配置: prediction_days=%s, threshold=%s",
+        best["config"]["prediction_days"],
+        best["config"]["positive_threshold"],
+    )
     logger.info(f"最佳准确率: {best['accuracy']:.2%}")
     logger.info(f"最佳 AUC: {best['auc']:.2%}")
 

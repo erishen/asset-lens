@@ -39,15 +39,17 @@ def momentum_screen():
     for stock in stocks:
         result = engine.evaluate_stock(stock, "momentum")
         if result.get("passed", False):
-            results.append({
-                "code": stock.get("code", ""),
-                "name": stock.get("name", ""),
-                "score": result.get("score", 0),
-                "change_percent": stock.get("change_percent", 0),
-                "turnover_rate": stock.get("turnover_rate", 0),
-                "market_cap": stock.get("market_cap", 0),
-                "current_price": stock.get("current_price", 0),
-            })
+            results.append(
+                {
+                    "code": stock.get("code", ""),
+                    "name": stock.get("name", ""),
+                    "score": result.get("score", 0),
+                    "change_percent": stock.get("change_percent", 0),
+                    "turnover_rate": stock.get("turnover_rate", 0),
+                    "market_cap": stock.get("market_cap", 0),
+                    "current_price": stock.get("current_price", 0),
+                }
+            )
 
     results.sort(key=lambda x: x["score"], reverse=True)
 

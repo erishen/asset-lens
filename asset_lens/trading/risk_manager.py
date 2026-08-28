@@ -89,9 +89,9 @@ class RiskManager(RiskPositionMixin):
         if total_value <= 0:
             return self.warnings
 
-        total_position = sum(
-            1 for h in holdings if h.get("market_value", h.get("amount", 0)) > 0
-        ) / max(len(holdings), 1)
+        total_position = sum(1 for h in holdings if h.get("market_value", h.get("amount", 0)) > 0) / max(
+            len(holdings), 1
+        )
 
         if total_position > self.config.max_total_position:
             self.warnings.append(
@@ -149,8 +149,7 @@ class RiskManager(RiskPositionMixin):
             "high_count": len(high),
             "medium_count": len(medium),
             "warnings": [
-                {"type": w.warning_type, "level": w.level, "message": w.message, "code": w.code}
-                for w in warnings
+                {"type": w.warning_type, "level": w.level, "message": w.message, "code": w.code} for w in warnings
             ],
             "config": {
                 "risk_tolerance": self.config.risk_tolerance,
