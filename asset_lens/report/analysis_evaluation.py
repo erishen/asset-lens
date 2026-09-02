@@ -3,6 +3,11 @@ from typing import Any
 
 from ..data.models import Portfolio, SellRecord
 
+# 年化收益率的合理上限（10000% = 100 倍/年）。
+# 超过此值的 annual_return 通常是短期暴利被复利年化后的数学产物
+# （如 10 天 +201% → 年化 1e19%），无经济意义，且会污染组合加权平均，故在聚合时跳过。
+ANNUAL_RETURN_PLAUSIBLE_CAP = Decimal("10000")
+
 
 class AnalysisEvaluationMixin:
     def generate_comprehensive_evaluation(
@@ -95,6 +100,10 @@ class AnalysisEvaluationMixin:
                 annual_value = product.annual_return if product.annual_return else product.compound_return
             else:
                 annual_value = product.compound_return if product.compound_return else product.annual_return
+            if annual_value is not None and abs(annual_value) > ANNUAL_RETURN_PLAUSIBLE_CAP:
+                # 短期暴利年化会产生天文数字（如 10 天 +201% → 年化 1e19%），
+                # 无经济意义且会污染组合加权平均，跳过该产品的贡献。
+                continue
             if annual_value is not None and product.initial_amount:
                 net_invest = portfolio._calculate_net_invest(product)
                 weight = net_invest if net_invest else product.initial_amount
