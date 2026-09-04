@@ -80,8 +80,8 @@ class TestAIAnalyzer:
             assert analyzer.enabled is False
 
     def test_ai_analyzer_init_with_api_key(self):
-        """测试有 API Key 初始化"""
-        with patch.dict("os.environ", {"DEEPSEEK_API_KEY": "test_key"}):
+        """测试有 API Key 初始化（StockAIAnalyzer 读 LLM_API_KEY）"""
+        with patch.dict("os.environ", {"LLM_API_KEY": "test_key"}):
             from asset_lens.strategy.stock_ai_analyzer import StockAIAnalyzer
 
             analyzer = StockAIAnalyzer()

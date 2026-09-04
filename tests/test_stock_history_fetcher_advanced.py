@@ -163,6 +163,8 @@ class TestFetchHistoryBaostock:
 
     def test_fetch_history_baostock_already_logged_in(self, fetcher):
         """Test fetch_history_baostock already logged in"""
+        from asset_lens.data.baostock_session import baostock_session
+
         mock_bs = MagicMock()
 
         mock_rs = MagicMock()
@@ -170,9 +172,13 @@ class TestFetchHistoryBaostock:
         mock_rs.next.return_value = False
         mock_bs.query_history_k_data_plus.return_value = mock_rs
 
-        with patch.dict("sys.modules", {"baostock": mock_bs}):
-            fetcher._baostock_logged_in = True
+        with (
+            patch.dict("sys.modules", {"baostock": mock_bs}),
+            patch.object(baostock_session, "_logged_in", True),
+            patch.object(baostock_session, "_bs", mock_bs),
+        ):
             fetcher.fetch_history_baostock("sh600519", 60)
+            # 全局会话已登录时不再触发 bs.login()
             mock_bs.login.assert_not_called()
 
 
@@ -480,26 +486,35 @@ class TestBaostockLogout:
             yield fetcher
 
     def test_baostock_logout_not_logged_in(self, fetcher):
-        """Test logout when not logged in - baostock_logout always calls bs.logout()"""
-        fetcher._baostock_logged_in = False
+        """Test logout when not logged in - baostock_logout is a no-op (global session)"""
+        from asset_lens.data.baostock_session import baostock_session
 
         mock_bs = MagicMock()
-        with patch.dict("sys.modules", {"baostock": mock_bs}):
+        with (
+            patch.dict("sys.modules", {"baostock": mock_bs}),
+            patch.object(baostock_session, "_logged_in", False),
+            patch.object(baostock_session, "_bs", None),
+        ):
             fetcher.baostock_logout()
-            # baostock_logout always calls bs.logout() regardless of login state
-            mock_bs.logout.assert_called_once()
-            assert fetcher._baostock_logged_in is False
+            # 全局会话不主动登出：既不调用 bs.logout()，也不改变登录状态
+            mock_bs.logout.assert_not_called()
+            assert baostock_session.is_logged_in is False
 
     def test_baostock_logout_success(self, fetcher):
-        """Test successful logout"""
+        """Test logout keeps the global session logged in"""
+        from asset_lens.data.baostock_session import baostock_session
+
         mock_bs = MagicMock()
 
-        with patch.dict("sys.modules", {"baostock": mock_bs}):
-            fetcher._baostock_logged_in = True
+        with (
+            patch.dict("sys.modules", {"baostock": mock_bs}),
+            patch.object(baostock_session, "_logged_in", True),
+            patch.object(baostock_session, "_bs", mock_bs),
+        ):
             fetcher.baostock_logout()
 
-            mock_bs.logout.assert_called_once()
-            assert fetcher._baostock_logged_in is False
+            mock_bs.logout.assert_not_called()
+            assert baostock_session.is_logged_in is True
 
 
 class TestCalculateAvgMetrics:

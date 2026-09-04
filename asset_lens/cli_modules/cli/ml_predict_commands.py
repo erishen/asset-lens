@@ -111,7 +111,7 @@ def register_ml_predict_commands(ml_group: click.Group) -> None:
 
             console.print("📊 数据集统计")
             console.print("=" * 60)
-            console.print(f"  数据源: 数据库 K 线")
+            console.print("  数据源: 数据库 K 线")
             console.print(f"  数据条数: {len(price_df)}")
 
             from asset_lens.ml.features import FeatureEngineer

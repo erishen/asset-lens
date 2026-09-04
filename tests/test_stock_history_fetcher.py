@@ -69,11 +69,17 @@ class TestStockHistoryFetcher:
         assert result is True
 
     def test_baostock_logout(self, fetcher):
-        """测试 Baostock 登出"""
-        fetcher._baostock_logged_in = True
+        """测试 Baostock 登出 - 全局会话不主动登出（no-op）"""
+        from asset_lens.data.baostock_session import baostock_session
 
         mock_bs = MagicMock()
-        with patch.dict("sys.modules", {"baostock": mock_bs}):
+        with (
+            patch.dict("sys.modules", {"baostock": mock_bs}),
+            patch.object(baostock_session, "_logged_in", True),
+            patch.object(baostock_session, "_bs", mock_bs),
+        ):
             fetcher.baostock_logout()
 
-        assert fetcher._baostock_logged_in is False
+            # 全局会话保持登录，不调用 bs.logout()
+            assert baostock_session.is_logged_in is True
+            mock_bs.logout.assert_not_called()

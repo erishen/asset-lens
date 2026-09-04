@@ -1,4 +1,11 @@
+from datetime import datetime, timedelta
+
 from asset_lens.core.portfolio_comparator import PortfolioComparator, portfolio_comparator
+
+
+def _recent_ts(days_ago: int) -> str:
+    """生成相对当前时间的快照时间戳（get_trend_analysis 按 now-days 截断，写死日期会过期）"""
+    return (datetime.now() - timedelta(days=days_ago)).strftime("%Y-%m-%d %H:%M:%S")
 
 
 class TestPortfolioComparator:
@@ -48,23 +55,23 @@ class TestPortfolioComparator:
 
     def test_get_trend_up(self):
         comparator = PortfolioComparator()
-        comparator.add_snapshot({"timestamp": "2026-05-15 10:00:00", "total_assets": 90000})
-        comparator.add_snapshot({"timestamp": "2026-06-01 10:00:00", "total_assets": 100000})
+        comparator.add_snapshot({"timestamp": _recent_ts(10), "total_assets": 90000})
+        comparator.add_snapshot({"timestamp": _recent_ts(1), "total_assets": 100000})
         result = comparator.get_trend_analysis(days=30)
         assert result["trend"] == "up"
         assert result["days"] == 2
 
     def test_get_trend_down(self):
         comparator = PortfolioComparator()
-        comparator.add_snapshot({"timestamp": "2026-05-15 10:00:00", "total_assets": 100000})
-        comparator.add_snapshot({"timestamp": "2026-06-01 10:00:00", "total_assets": 90000})
+        comparator.add_snapshot({"timestamp": _recent_ts(10), "total_assets": 100000})
+        comparator.add_snapshot({"timestamp": _recent_ts(1), "total_assets": 90000})
         result = comparator.get_trend_analysis(days=30)
         assert result["trend"] == "down"
 
     def test_get_trend_stable(self):
         comparator = PortfolioComparator()
-        comparator.add_snapshot({"timestamp": "2026-05-15 10:00:00", "total_assets": 100000})
-        comparator.add_snapshot({"timestamp": "2026-06-01 10:00:00", "total_assets": 100000})
+        comparator.add_snapshot({"timestamp": _recent_ts(10), "total_assets": 100000})
+        comparator.add_snapshot({"timestamp": _recent_ts(1), "total_assets": 100000})
         result = comparator.get_trend_analysis(days=30)
         assert result["trend"] == "stable"
 

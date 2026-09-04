@@ -6,10 +6,8 @@ Demo 模式模拟数据模块
     from .demo_data import get_demo_portfolio_summary, get_demo_market_indexes, ...
 """
 
-from datetime import datetime
-
 import random
-
+from datetime import datetime
 
 # ============================================================
 # 投资组合模拟数据

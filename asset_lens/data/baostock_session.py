@@ -2,8 +2,8 @@
 
 import logging
 import sys
-from io import StringIO
 from contextlib import contextmanager
+from io import StringIO
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -88,9 +88,8 @@ baostock_session = _BaostockSession.get()
 def baostock_ctx():
     """Baostock 会话上下文管理器，确保登录状态"""
     session = _BaostockSession.get()
-    logged_in_by_us = False
     if not session.is_logged_in:
-        logged_in_by_us = session.login()
+        session.login()
     try:
         yield session.bs
     finally:

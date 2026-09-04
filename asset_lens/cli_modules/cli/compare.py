@@ -208,11 +208,9 @@ def _exclude_from_trend(info: dict) -> bool:
     - 建仓期产品（持有天数过短），年化率会因持仓过短而剧烈失真；
     - 年化率绝对值超过上限，通常是源数据噪声（如高换手产品净投入残差极小）导致的异常值。
     """
-    if (info.get("investment_days") or 0) < YOUNG_POSITION_DAYS:
-        return True
-    if abs(info.get("annual_return") or 0) > ANNUAL_RETURN_CAP:
-        return True
-    return False
+    return (info.get("investment_days") or 0) < YOUNG_POSITION_DAYS or abs(
+        info.get("annual_return") or 0
+    ) > ANNUAL_RETURN_CAP
 
 
 def _show_trend_analysis(console: Console, data_dirs: list[Path], before: str | None, after: str | None):
@@ -317,7 +315,10 @@ def _show_trend_analysis(console: Console, data_dirs: list[Path], before: str | 
 
     first_data = all_data[dir_dates[0]]
     last_data = all_data[dir_dates[-1]]
-    _mature = lambda d: [v["annual_return"] for v in d.values() if not _exclude_from_trend(v)]
+
+    def _mature(d: dict) -> list:
+        return [v["annual_return"] for v in d.values() if not _exclude_from_trend(v)]
+
     first_vals = _mature(first_data)
     last_vals = _mature(last_data)
     first_avg = sum(first_vals) / len(first_vals) if first_vals else 0

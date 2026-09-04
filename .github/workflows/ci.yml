@@ -31,7 +31,7 @@ jobs:
 
     - name: Lint with ruff
       run: |
-        uv run ruff check asset_lens --select=F,E,W --ignore=E501,F401,F841,E722
+        uv run ruff check asset_lens
 
     - name: Type check with mypy
       run: |
