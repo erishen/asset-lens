@@ -27,7 +27,7 @@ jobs:
         enable-cache: true
 
     - name: Install dependencies
-      run: uv sync --dev
+      run: uv sync --extra dev
 
     - name: Lint with ruff
       run: |
@@ -88,7 +88,7 @@ jobs:
         enable-cache: true
 
     - name: Install dependencies
-      run: uv sync --dev
+      run: uv sync --extra dev
 
     - name: Security check
       run: uv run safety check || true
@@ -111,7 +111,7 @@ jobs:
         enable-cache: true
 
     - name: Install dependencies
-      run: uv sync --dev
+      run: uv sync --extra dev
 
     - name: Generate docs
       run: |
