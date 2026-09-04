@@ -106,10 +106,14 @@ class TestConfigPlatforms:
     """Test config platforms"""
 
     def test_platforms_property(self):
-        """Test platforms property"""
+        """Test platforms property
+
+        platforms.json 含用户真实持仓平台信息，属 gitignored 隐私配置：
+        本地存在则非空，CI/他人 checkout 上为空列表 —— 只断言降级行为。
+        """
         platforms = config.platforms
         assert platforms is not None
-        assert len(platforms) > 0
+        assert isinstance(platforms, list)
 
     def test_get_platform_by_name(self):
         """Test get_platform_by_name method"""
@@ -140,10 +144,14 @@ class TestConfigInvestmentTypes:
     """Test config investment types"""
 
     def test_investment_types_property(self):
-        """Test investment_types property"""
+        """Test investment_types property
+
+        investment_types.json 为 gitignored 隐私配置：本地存在则非空，
+        CI/他人 checkout 上为空列表 —— 只断言降级行为。
+        """
         types = config.investment_types
         assert types is not None
-        assert len(types) > 0
+        assert isinstance(types, list)
 
     def test_get_investment_type_by_id(self):
         """Test get_investment_type_by_id method"""
