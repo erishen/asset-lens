@@ -157,14 +157,14 @@ class TestPersonalIRRCommand:
 
     def test_personal_irr_default_params(self, runner):
         """测试默认参数（显式设定工资，避免依赖本地 .env 的 MONTHLY_SALARY）"""
-        with patch.object(settings, "monthly_salary", 24000):
+        with patch.object(settings, "monthly_salary", 15000):
             with patch("asset_lens.data.csv_parser.CSVParser.load_data") as mock_load:
                 mock_load.return_value = []
                 with patch("asset_lens.cli_modules.cli.analyze_core._get_data_dir") as mock_dir:
                     mock_dir.return_value = None
                     result = runner.invoke(cli, ["personal-irr"])
                     assert result.exit_code == 0
-                    assert "月工资（税后）: ¥24,000" in result.output
+                    assert "月工资（税后）: ¥15,000" in result.output
                     assert "年终奖" in result.output
 
     def test_personal_irr_custom_params(self, runner):
