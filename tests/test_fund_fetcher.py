@@ -118,10 +118,15 @@ class TestFundDataFetcher:
         assert result == {"cached": "000002"}
 
     def test_fetch_fund_quote_akshare_empty_df(self, fetcher):
-        """测试获取基金净值 - 空数据"""
+        """测试获取基金净值 - 空数据
+
+        akshare 返回空后会走东方财富 HTTP 兜底，必须 mock 掉，
+        否则单测会真实请求 fundgz.1234567.com.cn，在 CI 上随网络抖动挂掉。
+        """
         mock_ak = MagicMock()
         mock_ak.fund_open_fund_info_em = MagicMock(return_value=None)
         fetcher._akshare = mock_ak
+        fetcher._fetch_fund_quote_eastmoney_api = MagicMock(return_value=None)
 
         result = fetcher.fetch_fund_quote_akshare("000001")
         assert result is None
@@ -131,6 +136,7 @@ class TestFundDataFetcher:
         mock_ak = MagicMock()
         mock_ak.fund_open_fund_info_em = MagicMock(side_effect=Exception("Network error"))
         fetcher._akshare = mock_ak
+        fetcher._fetch_fund_quote_eastmoney_api = MagicMock(return_value=None)
 
         result = fetcher.fetch_fund_quote_akshare("000001")
         assert result is None

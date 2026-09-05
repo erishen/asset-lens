@@ -197,6 +197,11 @@ class FundDataFetcher(FetcherCacheMixin):
         except (ValueError, KeyError, ConnectionError) as e:
             logger.error(f"东方财富API获取基金 {fund_code} 净值失败: {e}")
             return None
+        except TimeoutError as e:
+            # ReadTimeout 继承链不在 (ValueError, KeyError, ConnectionError) 内；
+            # 备用方案失败应静默降级返回 None，而不是把超时抛给调用方
+            logger.warning(f"东方财富API获取基金 {fund_code} 净值超时: {e}")
+            return None
 
     def fetch_fund_quote_eastmoney(self, fund_code: str) -> dict[str, Any] | None:
         """
