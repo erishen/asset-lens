@@ -208,8 +208,6 @@ help: ## 显示帮助信息
 	@echo "  🌐 Web Dashboard:"
 	@echo "    make web              启动 Web Dashboard (默认端口 8000)"
 	@echo "    make web-port PORT=9000  启动 Web Dashboard (指定端口)"
-	@echo "    make web-bg           后台启动 Web Dashboard"
-	@echo "    make web-stop         停止 Web Dashboard"
 	@echo ""
 	@echo "  🔧 其他:"
 	@echo "    make check            检查项目状态"
@@ -1433,13 +1431,12 @@ web: ## 启动 Web Dashboard (默认端口 8000)
 	@echo "📚 API 文档地址: http://localhost:8000/docs"
 	@echo ""
 	@echo "🛑 检查并关闭 8000 端口上的进程..."
-	@pkill -9 -f "uvicorn" 2>/dev/null || true
-	@pkill -9 -f "python.*web" 2>/dev/null || true
-	@lsof -ti :8000 | xargs kill -9 2>/dev/null || true
+	@lsof -ti tcp:8000 2>/dev/null | xargs kill -9 2>/dev/null || true
+	@pkill -9 -f "asset_lens.web:app" 2>/dev/null || true
 	@sleep 2
 	@echo "✅ 端口已清理"
 	@echo ""
-	$(PY) -m uvicorn asset_lens.web:app --host 0.0.0.0 --port 8000
+	uv run --no-sync python -m uvicorn asset_lens.web:app --host 127.0.0.1 --port 8000
 
 .PHONY: web-port
 web-port: ## 启动 Web Dashboard (指定端口, make web-port PORT=9000)
@@ -1453,24 +1450,7 @@ endif
 	@echo "📊 Dashboard 地址: http://localhost:$(PORT)"
 	@echo "📚 API 文档地址: http://localhost:$(PORT)/docs"
 	@echo ""
-	$(PY) -m uvicorn asset_lens.web:app --host 0.0.0.0 --port $(PORT)
-
-.PHONY: web-bg
-web-bg: ## 后台启动 Web Dashboard
-	@echo "🌐 后台启动 Web Dashboard..."
-	@echo "📊 Dashboard 地址: http://localhost:8000"
-	@echo "📚 API 文档地址: http://localhost:8000/docs"
-	@echo ""
-	uv run nohup python -m uvicorn asset_lens.web:app --host 0.0.0.0 --port 8000 > web.log 2>&1 &
-	@echo "✅ Web Dashboard 已在后台启动"
-	@echo "💡 查看日志: tail -f web.log"
-	@echo "💡 停止服务: make web-stop"
-
-.PHONY: web-stop
-web-stop: ## 停止 Web Dashboard
-	@echo "🛑 停止 Web Dashboard..."
-	@pkill -f "python -m uvicorn asset_lens.web:app" 2>/dev/null || true
-	@echo "✅ Web Dashboard 已停止"
+	uv run --no-sync python -m uvicorn asset_lens.web:app --host 127.0.0.1 --port $(PORT)
 
 # ============================================
 # 项目自检

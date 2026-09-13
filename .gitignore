@@ -173,6 +173,9 @@ data/trading_records/
 asset_lens/data/cache/*.json
 !asset_lens/data/cache/.gitkeep
 
+# 运行时生成的市场环境指标（make analyze 自动抓取重建）
+asset_lens/data/market_env.json
+
 # Scheduler logs
 scheduler_logs/
 

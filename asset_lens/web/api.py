@@ -63,6 +63,9 @@ app = FastAPI(
     description="Personal Asset Operating System API",
     version="1.0.0",
     lifespan=lifespan,
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
 )
 
 CORS_ORIGINS = os.getenv(
@@ -87,16 +90,21 @@ from .routes import (
     backup_router,
     chat_router,
     compare_router,
+    equity_router,
+    fixed_income_router,
     market_router,
     ml_router,
     portfolio_router,
     recommendation_router,
+    remaining_router,
     report_router,
     risk_router,
     stock_pool_router,
     stock_router,
     strategy_router,
     system_router,
+    trend_router,
+    wealth_router,
 )
 
 app.include_router(stock_router)
@@ -113,6 +121,11 @@ app.include_router(report_router)
 app.include_router(dashboard_router)
 app.include_router(ml_router)
 app.include_router(chat_router)
+app.include_router(wealth_router)
+app.include_router(equity_router)
+app.include_router(fixed_income_router)
+app.include_router(remaining_router)
+app.include_router(trend_router)
 
 from asset_lens.api.main import register_exception_handlers
 from asset_lens.api.main import router as api_v1_router

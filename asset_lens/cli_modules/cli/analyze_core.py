@@ -69,6 +69,14 @@ def register_analyze_commands(cli: click.Group) -> None:
 
         setup_data_mode(data_mode)
 
+        # 更新市场环境指标（组合配置页参考区间用；失败不影响分析主流程）
+        try:
+            from asset_lens.data.market_fetcher import update_market_env
+
+            update_market_env(verbose=True)
+        except Exception as e:
+            logger.warning(f"市场环境指标更新失败（忽略）: {e}")
+
         logger.info("正在加载数据...")
         try:
             products = CSVParser.load_data(Path(data_path)) if data_path else CSVParser.load_data()

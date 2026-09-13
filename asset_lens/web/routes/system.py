@@ -24,6 +24,9 @@ async def get_provider_health():
 async def get_cache_stats():
     try:
         stats = provider_cache.stats()
+        # 脱敏：不对外暴露本机绝对路径
+        if isinstance(stats, dict) and stats.get("file") and "cache_dir" in stats["file"]:
+            stats = {**stats, "file": {**stats["file"], "cache_dir": "~/.asset_lens/cache"}}
         return {"success": True, **stats}
     except (ValueError, KeyError, RuntimeError) as e:
         return {"success": False, "error": str(e)}

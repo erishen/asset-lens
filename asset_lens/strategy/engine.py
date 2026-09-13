@@ -205,6 +205,8 @@ class StrategyEngine(StrategyEvaluationMixin):
                 "sell_conditions": len(s.sell_conditions),
                 "position_size": s.position_size,
                 "max_positions": s.max_positions,
+                "stop_loss": s.stop_loss,
+                "take_profit": s.take_profit,
             }
             for s in self.strategies.values()
         ]

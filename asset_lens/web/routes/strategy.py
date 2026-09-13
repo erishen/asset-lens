@@ -12,6 +12,19 @@ router = APIRouter(prefix="/api/strategies", tags=["strategy"])
 # Demo 模式检测
 DEMO_MODE = os.getenv("ASSET_LENS_DEMO_MODE", "").lower() in ("true", "1", "yes")
 
+# 策略英文 ID → 中文显示名（UI 展示用，内部 ID 不变）
+_STRATEGY_NAMES_ZH = {
+    "value": "价值投资",
+    "growth": "成长投资",
+    "momentum": "动量策略",
+    "dividend": "高股息",
+    "quality": "质量策略",
+}
+
+
+def _display_name(name: str) -> str:
+    return _STRATEGY_NAMES_ZH.get(name, name)
+
 
 class StrategyInfo(BaseModel):
     """策略信息模型"""
@@ -36,7 +49,7 @@ async def list_strategies():
         strategies = get_demo_strategies()
         return [
             StrategyInfo(
-                name=s["name"],
+                name=_display_name(s["name"]),
                 description=s["description"],
                 buy_conditions=s["buy_conditions"],
                 sell_conditions=s["sell_conditions"],
@@ -62,7 +75,7 @@ async def list_strategies():
 
         result.append(
             StrategyInfo(
-                name=s.get("name", ""),
+                name=_display_name(s.get("name", "")),
                 description=s.get("description", ""),
                 buy_conditions=buy_count,
                 sell_conditions=sell_count,
