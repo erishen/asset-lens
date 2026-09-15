@@ -7,7 +7,6 @@ Fixed Income Routes - 固收类资产（债券基金/特别国债/公募固收/�
 """
 
 import os
-from datetime import date
 
 from fastapi import APIRouter
 
@@ -28,9 +27,7 @@ def _is_fixed_income_product(p) -> bool:
     if p.investment_type.value in FIXED_INCOME_TYPES:
         return True
     # CSV "债券基金（美元）"未映射枚举时落为"其他"，按名称兜底识别
-    if p.investment_type.value == "其他" and "债" in p.name:
-        return True
-    return False
+    return p.investment_type.value == "其他" and "债" in p.name
 
 
 def _classify_fi(name: str, itype: str) -> str:
@@ -86,7 +83,7 @@ def _load_fi_products() -> list[dict]:
     from .portfolio import _load_portfolio_with_returns
 
     portfolio = _load_portfolio_with_returns()
-    usd_rate, hkd_rate = _load_fx_rates()
+    usd_rate, _hkd_rate = _load_fx_rates()
     products = []
     for p in portfolio.products:
         if not _is_fixed_income_product(p):
@@ -145,7 +142,7 @@ def _generate_fi_advice(products: list[dict]) -> list[dict]:
         # 4. 美元债：汇率 + 美债利率
         if p["category"] == "美元债":
             advice.append({**base, "priority": "low", "type": "美元债",
-                           "message": f"美元计价，收益含汇率变动，关注美债利率与美元走势"})
+                           "message": "美元计价，收益含汇率变动，关注美债利率与美元走势"})
         # 5. 集中度
         if total > 0 and amt / total >= 0.25:
             advice.append({**base, "priority": "medium", "type": "集中风险",

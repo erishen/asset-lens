@@ -97,10 +97,7 @@ def _converted_profit(product, portfolio) -> float:
     cur = _product_currency(product, portfolio)
 
     current = product.current_amount or Decimal("0")
-    if product.start_date and product.initial_amount:
-        initial = product.initial_amount
-    else:
-        initial = current
+    initial = product.initial_amount if product.start_date and product.initial_amount else current
 
     if cur == "USD":
         rate = product.usd_rate or portfolio.usd_rate

@@ -7,7 +7,7 @@ Equity Routes - 权益类资产（基金/ETF/QDII/美股）风险透视 API
 """
 
 import os
-from datetime import date
+from contextlib import suppress
 
 from fastapi import APIRouter
 
@@ -96,10 +96,8 @@ def _load_benchmark_series() -> tuple[list[tuple[int, int, int]], dict]:
             for col in BENCHMARK_COLUMNS:
                 raw = (r.get(col) or "").strip()
                 if raw:
-                    try:
+                    with suppress(ValueError):
                         vals[col] = float(raw)
-                    except ValueError:
-                        pass
             if vals:
                 dates.append(d)
                 series[d] = vals
@@ -142,10 +140,7 @@ def _compute_benchmark(product: dict, dates: list, series: dict) -> dict:
     from datetime import date as _date
 
     interval_days = (_date(*end_d) - _date(*start_d)).days
-    if interval_days > 0:
-        bench_annual = ((1 + bench_ret / 100) ** (360 / interval_days) - 1) * 100
-    else:
-        bench_annual = bench_ret
+    bench_annual = ((1 + bench_ret / 100) ** (360 / interval_days) - 1) * 100 if interval_days > 0 else bench_ret
 
     # 产品年化（make analyze 已算好）；超额 = 年化差（同口径可比）
     annualized = product.get("annualized_return")
@@ -170,9 +165,7 @@ def _is_equity_product(p) -> bool:
         return False
     if itype == "券商理财" and not any(kw in p.name for kw in EQUITY_FUND_KEYWORDS):
         return False  # 券商理财中的固收类不归权益
-    if any(kw in p.name for kw in CASH_FUND_KEYWORDS):
-        return False  # 货币基金不归权益
-    return True
+    return not any(kw in p.name for kw in CASH_FUND_KEYWORDS)  # 货币基金不归权益
 
 
 def _classify_asset(name: str, itype: str) -> str:

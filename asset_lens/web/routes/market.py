@@ -293,7 +293,6 @@ async def get_allocation_advice():
     auto_keys = [k for k, v in ind.items() if v.get("auto")]
     if not fresh:
         try:
-            import asyncio
             if "cn_10y_bond_yield" in auto_keys:
                 try:
                     r = await _fetch_bond_yield()

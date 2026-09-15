@@ -24,9 +24,7 @@ def _is_remaining_product(p) -> bool:
         return False
     if _is_fixed_income_product(p):
         return False
-    if _is_equity_product(p):
-        return False
-    return True
+    return not _is_equity_product(p)
 
 
 def _classify_remaining(name: str, itype: str) -> str:

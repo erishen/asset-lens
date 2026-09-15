@@ -7,7 +7,6 @@ Wealth Routes - 理财类产品风险透视 API
 
 import os
 from datetime import date
-from decimal import Decimal
 
 from fastapi import APIRouter
 
