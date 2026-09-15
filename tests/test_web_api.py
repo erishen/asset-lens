@@ -29,18 +29,15 @@ class TestWebAPI:
         data = response.json()
         assert data.get("status") == "healthy"
 
-    def test_api_docs(self, client):
-        """测试 API 文档"""
+    def test_api_docs_disabled(self, client):
+        """测试 API 文档（安全加固：生产禁用了 docs，期望 404）"""
         response = client.get("/docs")
-        assert response.status_code == 200
+        assert response.status_code == 404
 
-    def test_openapi_json(self, client):
-        """测试 OpenAPI JSON"""
+    def test_openapi_json_disabled(self, client):
+        """测试 OpenAPI JSON（安全加固：禁用了 openapi，期望 404）"""
         response = client.get("/openapi.json")
-        assert response.status_code == 200
-        data = response.json()
-        assert "openapi" in data
-        assert "paths" in data
+        assert response.status_code == 404
 
 
 class TestStockRoutes:
