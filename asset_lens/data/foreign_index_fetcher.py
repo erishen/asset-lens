@@ -208,9 +208,12 @@ class ForeignIndexFetcherMixin:
             return None
 
     def _fetch_from_finnhub(self, symbol: str) -> dict[str, Any] | None:
+        if not config.finnhub_api_key:
+            logger.debug("未配置 FINNHUB_API_KEY（.env），跳过 finnhub 数据源")
+            return None
+
         try:
-            api_key = config.finnhub_api_key or "demo"
-            url = f"https://api.finnhub.io/api/v1/quote?symbol={symbol}&token={api_key}"
+            url = f"https://api.finnhub.io/api/v1/quote?symbol={symbol}&token={config.finnhub_api_key}"
 
             data = self._http_client.get_json(url, timeout=15)  # type: ignore[attr-defined]
             if data is None:
@@ -278,10 +281,12 @@ class ForeignIndexFetcherMixin:
             return None
 
     def _fetch_from_alpha_vantage(self, symbol: str) -> dict[str, Any] | None:
+        if not config.alphavantage_api_key:
+            logger.debug("未配置 ALPHAVANTAGE_API_KEY（.env），跳过 alpha_vantage 数据源")
+            return None
+
         try:
             import subprocess
-
-            api_key = config.alphavantage_api_key or "demo"
 
             symbol_map = {
                 "^GSPC": "SPY",
@@ -292,7 +297,7 @@ class ForeignIndexFetcherMixin:
             }
 
             av_symbol = symbol_map.get(symbol, symbol.replace("^", ""))
-            url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={av_symbol}&apikey={api_key}"
+            url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={av_symbol}&apikey={config.alphavantage_api_key}"
 
             result = subprocess.run(
                 ["curl", "-s", "--max-time", "30", url],

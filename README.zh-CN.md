@@ -132,6 +132,8 @@ FINNHUB_API_KEY=your_key
 OPENAI_API_KEY=your_key
 ```
 
+未配置 Key 的数据源会被跳过，改用回退链中的下一个数据源。
+
 ### 配置文件
 
 配置文件使用 `.example` 模板——复制并去掉 `.example` 后缀后自定义。

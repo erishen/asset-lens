@@ -255,14 +255,17 @@ class StockFetcherSourcesMixin:
             return None
 
     def _fetch_us_stock_quote_finnhub(self, symbol: str) -> dict[str, Any] | None:
+        from ..config import config
+
+        if not config.finnhub_api_key:
+            logger.debug("未配置 FINNHUB_API_KEY（.env），跳过 finnhub 数据源")
+            return None
+
         try:
             import json
             import subprocess
 
-            from ..config import config
-
-            api_key = config.finnhub_api_key or "demo"
-            url = f"https://api.finnhub.io/api/v1/quote?symbol={symbol}&token={api_key}"
+            url = f"https://api.finnhub.io/api/v1/quote?symbol={symbol}&token={config.finnhub_api_key}"
 
             result = subprocess.run(
                 ["curl", "-s", "--max-time", "15", url],

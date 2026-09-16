@@ -132,6 +132,9 @@ FINNHUB_API_KEY=your_key
 OPENAI_API_KEY=your_key
 ```
 
+Data sources whose key is left unset are skipped, and the next source in the
+fallback chain is tried instead.
+
 ### Config Files
 
 Config files use `.example` templates — copy to remove the `.example` suffix and customize.
