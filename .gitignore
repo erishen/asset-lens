@@ -244,8 +244,15 @@ data/asset_lens.db.corrupted*
 data/*.sql
 
 # Real investment data (privacy protection)
-data/sample_data/投资产品.csv
+# Do NOT add data/sample_data/*.csv here: that directory is the sanitised demo
+# set that ships with the repo (see its README), it is read by the web routes
+# and by the CLI, and it is tracked on purpose. Ignoring a tracked file has no
+# effect anyway - it only makes the next reader believe real data is safe to
+# drop there. A real snapshot instead goes to data/money_csv_*/ (ignored above),
+# and `make check-privacy` flags these filenames if they ever show up tracked
+# outside data/sample_data/.
 data/投资产品.csv
+data/资产汇总.csv
 
 # Personal financial records (NEVER commit)
 data/bonus_records.json
