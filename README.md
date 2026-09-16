@@ -153,7 +153,7 @@ Config files use `.example` templates — copy to remove the `.example` suffix a
 
 ## Ecosystem
 
-asset-lens is the core data engine. Three companion apps in `invest-kit/apps/` consume its output for different analysis paradigms:
+asset-lens is the core data engine. Three companion apps in the same workspace consume its output for different analysis paradigms:
 
 | App | Framework | Pattern | Input | Output |
 |-----|-----------|---------|-------|--------|

@@ -4,10 +4,14 @@ After=network.target
 
 [Service]
 Type=simple
+# Adjust the install directory below to wherever you checked the project out
+# (/opt/asset-lens is assumed). Running the monitor as a dedicated
+# unprivileged user instead of root is recommended:
+#   useradd -r -s /usr/sbin/nologin asset-lens
 User=root
-WorkingDirectory=/root/Github/asset-lens
-Environment=PATH=/root/Github/asset-lens/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-ExecStart=/root/Github/asset-lens/venv/bin/python3 simple_investment_monitor.py
+WorkingDirectory=/opt/asset-lens
+Environment=PATH=/opt/asset-lens/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/opt/asset-lens/venv/bin/python3 simple_investment_monitor.py
 Restart=on-failure
 RestartSec=10
 
