@@ -1469,7 +1469,13 @@ check-privacy: ## 检查隐私数据是否被 Git 追踪
 	@git check-ignore -v .env 2>/dev/null && echo "✅ .env 已被忽略" || echo "⚠️ .env 未被忽略！"
 	@echo ""
 	@echo "=== 检查 Git 追踪的敏感文件 ==="
-	@tracked=$$(git ls-files | grep -E "money_csv|money_|投资产品|资产汇总|卖出记录|\.env$$" 2>/dev/null); \
+	@# core.quotePath=false keeps git from C-escaping non-ASCII paths, otherwise
+	@# the Chinese file names below can never match. data/sample_data/ holds the
+	@# synthetic demo set, so it is excluded; money_ is anchored to data/ so that
+	@# the money-flow source modules are not mistaken for data snapshots.
+	@tracked=$$(git -c core.quotePath=false ls-files \
+		| grep -E "^(data/(real/|money_))|投资产品|资产汇总|卖出记录|(^|/)\.env$$" \
+		| grep -v "^data/sample_data/" 2>/dev/null); \
 	if [ -z "$$tracked" ]; then \
 		echo "✅ 没有追踪敏感文件"; \
 	else \
