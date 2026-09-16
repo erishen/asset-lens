@@ -238,7 +238,11 @@ models/*.json
 !models/.gitkeep
 
 # Optimization results (runtime artifacts)
-results/
+# results/* and not results/: a trailing-slash pattern excludes the directory
+# itself, and git never re-includes anything under an excluded directory, so
+# the !results/.gitkeep negation below could never fire. The same negation for
+# models/ works because models/*.json are file patterns.
+results/*
 !results/.gitkeep
 data/asset_lens.db.corrupted*
 data/*.sql
