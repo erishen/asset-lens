@@ -35,8 +35,21 @@ class AlphaVantageProvider(BaseProvider):
                 DataType.INDEX,
             ],
         )
-        self._api_key = api_key or os.getenv("ALPHAVANTAGE_API_KEY")
+        # 显式传入优先；否则延迟到使用时经 config 层读 .env / 环境变量。
+        # 不在 __init__ 里固化：模块级单例在 import 时就构造，若此处落成 None
+        # 会永久失去密钥（config 层的 load_dotenv 也可能尚未执行）。
+        self._api_key_override = api_key
         self._session: requests.Session | None = None
+
+    @property
+    def api_key(self) -> str | None:
+        """Alpha Vantage API 密钥：显式传入 > .env / 环境变量。"""
+        if self._api_key_override:
+            return self._api_key_override
+
+        from ...config import config
+
+        return config.alphavantage_api_key or os.getenv("ALPHAVANTAGE_API_KEY")
 
     @property
     def session(self):
@@ -52,7 +65,7 @@ class AlphaVantageProvider(BaseProvider):
 
     def _check_availability(self) -> bool:
         """检查 Alpha Vantage 是否可用"""
-        return self._api_key is not None and self.session is not None
+        return self.api_key is not None and self.session is not None
 
     def fetch(
         self,
@@ -81,7 +94,7 @@ class AlphaVantageProvider(BaseProvider):
             params = {
                 "function": "GLOBAL_QUOTE",
                 "symbol": symbol,
-                "apikey": self._api_key,
+                "apikey": self.api_key,
             }
 
             response = self.session.get(self.BASE_URL, params=params, timeout=10)
