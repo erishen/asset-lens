@@ -96,7 +96,11 @@ def _load_fi_products() -> list[dict]:
             itype = "债券基金（美元）"
         currency = "USD" if itype == "债券基金（美元）" else "CNY"
         fx_rate = usd_rate if currency == "USD" else 1.0
-        holding_return = float(p.return_rate) if p.return_rate is not None else (float(p.annual_return or 0) if p.annual_return is not None else 0.0)
+        holding_return = (
+            float(p.return_rate)
+            if p.return_rate is not None
+            else (float(p.annual_return or 0) if p.annual_return is not None else 0.0)
+        )
         annualized = float(p.annual_return or 0) if p.annual_return is not None else None
         products.append(
             {
@@ -129,28 +133,59 @@ def _generate_fi_advice(products: list[dict]) -> list[dict]:
 
         # 1. 负收益（持有期）
         if ret < 0:
-            advice.append({**base, "priority": "high", "type": "负收益",
-                           "message": f"持有期收益 {ret}%，债市波动或含权益敞口，评估是否继续持有"})
+            advice.append(
+                {
+                    **base,
+                    "priority": "high",
+                    "type": "负收益",
+                    "message": f"持有期收益 {ret}%，债市波动或含权益敞口，评估是否继续持有",
+                }
+            )
         # 2. 低收益（年化 < 1.5%，低于常见货基）
         elif annualized is not None and annualized < 1.5:
-            advice.append({**base, "priority": "medium", "type": "低收益",
-                           "message": f"年化仅 {annualized}%，低于货币基金水平，考虑换更高收益固收"})
+            advice.append(
+                {
+                    **base,
+                    "priority": "medium",
+                    "type": "低收益",
+                    "message": f"年化仅 {annualized}%，低于货币基金水平，考虑换更高收益固收",
+                }
+            )
         # 3. 高收益（年化 >= 4%，信用下沉信号）
         if annualized is not None and annualized >= 4:
-            advice.append({**base, "priority": "medium", "type": "高收益关注",
-                           "message": f"年化 {annualized}% 高于一般债基，注意信用下沉/久期风险"})
+            advice.append(
+                {
+                    **base,
+                    "priority": "medium",
+                    "type": "高收益关注",
+                    "message": f"年化 {annualized}% 高于一般债基，注意信用下沉/久期风险",
+                }
+            )
         # 4. 美元债：汇率 + 美债利率
         if p["category"] == "美元债":
-            advice.append({**base, "priority": "low", "type": "美元债",
-                           "message": "美元计价，收益含汇率变动，关注美债利率与美元走势"})
+            advice.append(
+                {
+                    **base,
+                    "priority": "low",
+                    "type": "美元债",
+                    "message": "美元计价，收益含汇率变动，关注美债利率与美元走势",
+                }
+            )
         # 5. 集中度
         if total > 0 and amt / total >= 0.25:
-            advice.append({**base, "priority": "medium", "type": "集中风险",
-                           "message": f"单笔占固收总额 {amt / total * 100:.0f}%，持仓集中，注意单一产品风险"})
+            advice.append(
+                {
+                    **base,
+                    "priority": "medium",
+                    "type": "集中风险",
+                    "message": f"单笔占固收总额 {amt / total * 100:.0f}%，持仓集中，注意单一产品风险",
+                }
+            )
         # 6. 兜底：正常持有
         if not any(a["product"] == p["name"] and a["product_type"] == p["type"] for a in advice):
-            advice.append({**base, "priority": "low", "type": "持有",
-                           "message": f"年化 {annualized or ret}%，收益平稳，维持持有"})
+            advice.append(
+                {**base, "priority": "low", "type": "持有", "message": f"年化 {annualized or ret}%，收益平稳，维持持有"}
+            )
 
     priority_order = {"high": 0, "medium": 1, "low": 2}
     advice.sort(key=lambda x: (priority_order.get(x["priority"], 9), -x["amount"]))
@@ -173,10 +208,17 @@ async def fixed_income_overview():
 
     if not products or portfolio_total <= 0:
         return {
-            "total_amount": 0, "ratio": 0, "product_count": 0,
-            "avg_return": 0, "avg_annualized": 0, "negative_count": 0,
-            "categories": [], "risk_distribution": {}, "held_distribution": {},
-            "advice": [], "products": [],
+            "total_amount": 0,
+            "ratio": 0,
+            "product_count": 0,
+            "avg_return": 0,
+            "avg_annualized": 0,
+            "negative_count": 0,
+            "categories": [],
+            "risk_distribution": {},
+            "held_distribution": {},
+            "advice": [],
+            "products": [],
         }
 
     total = sum(p["amount_cny"] for p in products)
@@ -188,8 +230,7 @@ async def fixed_income_overview():
         bucket["amount"] += p["amount_cny"]
         bucket["count"] += 1
     categories = [
-        {"name": name, **bucket, "ratio": round(bucket["amount"] / total * 100, 1)}
-        for name, bucket in cat_map.items()
+        {"name": name, **bucket, "ratio": round(bucket["amount"] / total * 100, 1)} for name, bucket in cat_map.items()
     ]
     categories.sort(key=lambda x: -x["amount"])
 
@@ -221,27 +262,39 @@ async def fixed_income_overview():
     portfolio_insights: list[dict] = []
     if avg_annualized is not None:
         if avg_annualized < 1.5:
-            portfolio_insights.append({
-                "level": "medium", "type": "整体收益",
-                "message": f"固收组合平均年化 {avg_annualized:.2f}%，低于货基水平，考虑优化结构",
-            })
+            portfolio_insights.append(
+                {
+                    "level": "medium",
+                    "type": "整体收益",
+                    "message": f"固收组合平均年化 {avg_annualized:.2f}%，低于货基水平，考虑优化结构",
+                }
+            )
         elif avg_annualized >= 4:
-            portfolio_insights.append({
-                "level": "low", "type": "整体收益",
-                "message": f"固收组合平均年化 {avg_annualized:.2f}%，收益偏高，留意信用下沉风险",
-            })
+            portfolio_insights.append(
+                {
+                    "level": "low",
+                    "type": "整体收益",
+                    "message": f"固收组合平均年化 {avg_annualized:.2f}%，收益偏高，留意信用下沉风险",
+                }
+            )
     if negative:
-        portfolio_insights.append({
-            "level": "medium", "type": "负收益面",
-            "message": f"{len(negative)} 个固收产品持有期负收益，多为债市波动或含权益/汇率敞口",
-        })
+        portfolio_insights.append(
+            {
+                "level": "medium",
+                "type": "负收益面",
+                "message": f"{len(negative)} 个固收产品持有期负收益，多为债市波动或含权益/汇率敞口",
+            }
+        )
     if categories:
         top_cat = categories[0]
         if top_cat["ratio"] >= 50:
-            portfolio_insights.append({
-                "level": "low", "type": "类别集中",
-                "message": f"{top_cat['name']}占固收总额 {top_cat['ratio']:.0f}%，结构相对集中",
-            })
+            portfolio_insights.append(
+                {
+                    "level": "low",
+                    "type": "类别集中",
+                    "message": f"{top_cat['name']}占固收总额 {top_cat['ratio']:.0f}%，结构相对集中",
+                }
+            )
 
     return {
         "total_amount": round(total, 2),
@@ -251,7 +304,9 @@ async def fixed_income_overview():
         "avg_return": round(avg_return, 2),
         "avg_annualized": round(avg_annualized, 2) if avg_annualized is not None else None,
         "negative_count": len(negative),
-        "negative_products": [{"name": p["name"], "annual_return": p["annual_return"], "amount_cny": p["amount_cny"]} for p in negative],
+        "negative_products": [
+            {"name": p["name"], "annual_return": p["annual_return"], "amount_cny": p["amount_cny"]} for p in negative
+        ],
         "categories": categories,
         "risk_distribution": risk_dist,
         "held_distribution": held_dist,
@@ -259,3 +314,64 @@ async def fixed_income_overview():
         "advice": advice,
         "products": products,
     }
+
+
+# ---------------------------------------------------------------------------
+# 固收+ 风险视图
+# ---------------------------------------------------------------------------
+def _load_raw_maturity() -> dict[str, str]:
+    """{产品名: CSV 原始『到期时间』字符串}。
+
+    InvestmentProduct 只保留解析后的 date，『可赎』哨兵和填错的脏值都会丢成 None——
+    而这两者恰恰是风险视图必须区分的：开放型（本来就没有到期日）≠ 数据缺失（该补）
+    ≠ 填错（该修）。实测 CSV 的到期时间列从不空白，92 行写的是『可赎』，
+    只看 product.maturity_date 会把它们全算成缺失，缺失率虚报到 86%。
+    """
+    import csv as csv_module
+    from pathlib import Path
+
+    from ...config import config
+
+    data_dir = config.get_latest_data_dir()
+    if not data_dir or not data_dir.is_dir():
+        return {}
+    for path in sorted(Path(data_dir).glob("投资产品*.csv")):
+        try:
+            with open(path, encoding="utf-8-sig") as f:
+                rows = list(csv_module.DictReader(f))
+        except OSError:
+            continue
+        return {(r.get("名称") or "").strip(): (r.get("到期时间") or "") for r in rows if (r.get("名称") or "").strip()}
+    return {}
+
+
+@router.get("/risk-view")
+async def fixed_income_risk_view():
+    """固收+ 风险视图（到期梯队 / 发行方集中度 / 收益异常 / 数据完整度）。
+
+    与上面的 /overview 口径不同，别混淆：
+      - /overview    只看债券类（债券/特别国债/公募固收/美元债基金）
+      - /risk-view   覆盖整个固收+ 盘子（再加理财、货币、现金、个人养老金）
+
+    固收部分没有交易所行情源（stock_klines 只有 A 股），所以这里的指标全部从
+    CSV 已有字段派生，不依赖任何行情。
+    """
+    if DEMO_MODE:
+        from ..demo_data import get_demo_fixed_income_risk_view
+
+        return get_demo_fixed_income_risk_view()
+
+    from datetime import date
+
+    from ...analysis.fixed_income_risk import build_fixed_income_risk_view
+    from .portfolio import _load_portfolio_with_returns
+
+    portfolio = _load_portfolio_with_returns()
+    view = build_fixed_income_risk_view(
+        portfolio.products,
+        as_of=date.today(),
+        raw_maturity=_load_raw_maturity(),
+        usd_rate=portfolio.usd_rate,
+        hkd_rate=portfolio.hkd_rate,
+    )
+    return view.to_dict()

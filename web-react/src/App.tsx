@@ -11,10 +11,18 @@ import { StrategyRiskChart } from './components/StrategyRiskChart';
 import { RiskChart } from './components/RiskChart';
 import { MarketPage } from './components/MarketPage';
 import { AnalysisPage } from './components/AnalysisPage';
+import { FixedIncomeRiskPage } from './components/FixedIncomeRiskPage';
 import { useTheme } from './context/ThemeContext';
 import './App.css';
 
-type TabType = 'overview' | 'portfolio' | 'strategies' | 'risk' | 'market' | 'analysis';
+type TabType =
+  | 'overview'
+  | 'portfolio'
+  | 'strategies'
+  | 'risk'
+  | 'market'
+  | 'analysis'
+  | 'fixed-income';
 
 function App() {
   const [currentTab, setCurrentTab] = useState<TabType>('overview');
@@ -142,6 +150,8 @@ function App() {
             <RiskChart />
           </>
         );
+      case 'fixed-income':
+        return <FixedIncomeRiskPage />;
       case 'market':
         return <MarketPage />;
       case 'analysis':
@@ -210,6 +220,12 @@ function App() {
               onClick={() => switchTab('analysis')}
             >
               数据分析
+            </button>
+            <button
+              className={`nav-btn ${currentTab === 'fixed-income' ? 'active' : ''}`}
+              onClick={() => switchTab('fixed-income')}
+            >
+              固收风险
             </button>
           </div>
         </div>

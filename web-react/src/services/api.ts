@@ -1,5 +1,10 @@
 import axios from 'axios';
-import type { PortfolioSummary, PortfolioItem, Strategy } from '../types';
+import type {
+  PortfolioSummary,
+  PortfolioItem,
+  Strategy,
+  FixedIncomeRiskView,
+} from '../types';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '';
 
@@ -23,6 +28,13 @@ export const portfolioApi = {
 export const strategyApi = {
   list: async (): Promise<Strategy[]> => {
     const response = await api.get<Strategy[]>('/api/strategies');
+    return response.data;
+  },
+};
+
+export const fixedIncomeApi = {
+  getRiskView: async (): Promise<FixedIncomeRiskView> => {
+    const response = await api.get<FixedIncomeRiskView>('/api/fixed-income/risk-view');
     return response.data;
   },
 };

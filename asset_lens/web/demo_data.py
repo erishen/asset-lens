@@ -417,3 +417,39 @@ def get_demo_performance() -> dict:
         ],
         "analysis_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
+
+
+def get_demo_fixed_income_risk_view() -> dict:
+    """固收+ 风险视图（Demo）。
+
+    **不编数字**：直接拿脱敏模板 data/sample_data/投资产品.csv 过一遍真实计算逻辑。
+    仓库里其他 demo 函数用硬编码常量，这里刻意不用——风险指标（到期梯队、集中度）
+    一旦编数字就会失去参考价值，而且 demo 模式常被拿来做截图。
+    """
+    from datetime import date
+    from decimal import Decimal
+    from pathlib import Path
+
+    from ..analysis.fixed_income_risk import build_fixed_income_risk_view
+    from ..data.csv_parser import CSVParser
+
+    sample = Path(__file__).resolve().parents[2] / "data" / "sample_data" / "投资产品.csv"
+    if not sample.exists():
+        return {"error": "demo 模板 data/sample_data/投资产品.csv 不存在"}
+
+    import csv as csv_module
+
+    with open(sample, encoding="utf-8-sig") as f:
+        rows = list(csv_module.DictReader(f))
+    products = [p for p in (CSVParser.parse_row(r) for r in rows) if p]
+    if not products:
+        return {"error": "demo 模板解析不出产品"}
+
+    view = build_fixed_income_risk_view(
+        products,
+        as_of=date.today(),
+        raw_maturity={(r.get("名称") or "").strip(): (r.get("到期时间") or "") for r in rows},
+        usd_rate=Decimal(str(7.0)),
+        hkd_rate=Decimal(str(0.9)),
+    )
+    return view.to_dict()
