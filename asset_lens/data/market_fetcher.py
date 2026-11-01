@@ -10,6 +10,7 @@
 import asyncio
 import json
 import logging
+import os
 import re
 from datetime import datetime
 from pathlib import Path
@@ -70,6 +71,100 @@ async def _fetch_gold_price() -> dict:
     return {"value": float(parts[0]), "date": parts[12]}
 
 
+def _fetch_fed_funds_rate_via_cmd(cmd: str) -> dict:
+    """跑 FED_FETCH_CMD（外部兜底抓取命令），从其 stdout 末行读 JSON。
+
+    背景：FRED（Akamai）按 TLS 指纹拦截 curl/urllib 类客户端（换代理节点无效，
+    表现为连接重置/读超时），只有浏览器指纹能通过。本仓（public）不耦合浏览器
+    依赖，故暴露 env 钩子：部署方（如 resolve-studio 容器 compose）可注入一条
+    「走 CDP 浏览器抓取 FRED」的命令。约定：stdout 最后一行为
+    {"value": <float>, "date": "YYYY-MM-DD"} 的 JSON 对象，退出码非 0 视为失败。
+    """
+    import json as _json
+    import subprocess
+
+    proc = subprocess.run(
+        ["sh", "-c", cmd],
+        capture_output=True,
+        text=True,
+        timeout=150,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"FED_FETCH_CMD rc={proc.returncode}: {proc.stderr.strip()[:150]}"
+        )
+    last_json = None
+    for line in reversed(proc.stdout.strip().splitlines()):
+        s = line.strip()
+        if s.startswith("{"):
+            last_json = s
+            break
+    if not last_json:
+        raise ValueError("FED_FETCH_CMD produced no JSON object on stdout")
+    data = _json.loads(last_json)
+    return {"value": float(data["value"]), "date": str(data.get("date", ""))}
+
+
+def _fetch_fed_funds_rate_sync(proxy: str | None) -> dict:
+    """同步抓取 FRED 联邦基金利率（urllib，标准库，线程池里调用）。"""
+    import urllib.request
+
+    url = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=FF&cosd=2025-01-01"
+    handlers = (
+        [urllib.request.ProxyHandler({"https": proxy, "http": proxy})]
+        if proxy
+        else []
+    )
+    opener = urllib.request.build_opener(*handlers)
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with opener.open(req, timeout=30) as r:
+        text = r.read().decode("utf-8", "replace")
+    last_val = None
+    last_date = ""
+    for line in reversed(text.strip().splitlines()):
+        parts = line.split(",")
+        if len(parts) < 2 or parts[0] == "observation_date":
+            continue
+        v = parts[1].strip()
+        if v in ("", "."):
+            continue
+        try:
+            last_val = float(v)
+            last_date = parts[0]
+            break
+        except ValueError:
+            continue
+    if last_val is None:
+        raise ValueError("FF rate parse failed (no valid observation)")
+    return {"value": last_val, "date": last_date}
+
+
+async def _fetch_fed_funds_rate(proxy: str | None = None) -> dict:
+    """FRED 联邦基金利率目标值（序列 FF，FOMC 决议后的目标区间中值，与 CSV
+    手工列「美联基利率」同源可比）。
+
+    FRED 免 API key 公开 CSV 端点，美国源，CN 直连不可达 → 必须走代理。
+    数据在议息会议后更新，两次议息之间值不变属正常。取值：序列最后一个非缺失观测值。
+
+    实现说明：
+    1) 主路径 urllib（同步，经 asyncio.to_thread 在线程池执行）——比 aiohttp 稳
+       （本环境实测 aiohttp 的 per-request/session 级 proxy 在 3.14 下 60s 超时）。
+    2) FRED（Akamai）会按 TLS 指纹拦截 curl/urllib 这类非浏览器客户端，换代理
+       节点无效；此时若部署方配置了 FED_FETCH_CMD（一条走 CDP 浏览器指纹的外部
+       抓取命令），自动降级到它。未配置该 env 时行为不变（仅 urllib）。
+    """
+    import asyncio
+
+    cmd = os.getenv("FED_FETCH_CMD", "").strip()
+    try:
+        return await asyncio.to_thread(_fetch_fed_funds_rate_sync, proxy)
+    except Exception as e:
+        if cmd:
+            logger.info("fed urllib 抓取失败（%s: %s），改用 FED_FETCH_CMD", type(e).__name__, str(e)[:80])
+            return await asyncio.to_thread(_fetch_fed_funds_rate_via_cmd, cmd)
+        raise
+
+
 def update_market_env(verbose: bool = False) -> dict:
     """
     抓取 auto=true 的市场指标并更新 market_env.json。
@@ -106,6 +201,20 @@ def update_market_env(verbose: bool = False) -> dict:
                 results["gold_price_cny_g"] = await _fetch_gold_price()
             except Exception as e:
                 logger.debug("gold fetch failed: %s", e)
+        if "fed_funds_rate" in auto_keys:
+            # FRED 是美国源，必须走代理；宿主/容器代理地址由 env 提供
+            # （asset-lens Makefile 会把 HTTP_PROXY_VALUE 导出为 HTTPS_PROXY；
+            #  容器内 PSE 注入 WP_PROXY 等）。aiohttp 不读宿主 env，故显式取 env。
+            proxy = (
+                os.getenv("MARKET_FETCH_PROXY")
+                or os.getenv("WP_PROXY")
+                or os.getenv("HTTPS_PROXY")
+                or os.getenv("https_proxy")
+            )
+            try:
+                results["fed_funds_rate"] = await _fetch_fed_funds_rate(proxy=proxy)
+            except Exception as e:
+                logger.debug("fed rate fetch failed: %s", e)
         return results
 
     try:

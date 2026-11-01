@@ -43,6 +43,7 @@ async def async_get(
     params: dict[str, Any] | None = None,
     headers: dict[str, str] | None = None,
     timeout: float | None = None,
+    proxy: str | None = None,
 ) -> aiohttp.ClientResponse:
     """异步 GET 请求
 
@@ -51,6 +52,8 @@ async def async_get(
         params: 查询参数
         headers: 请求头
         timeout: 超时秒数（覆盖默认值）
+        proxy: 可选代理地址（如 http://127.0.0.1:7897）。aiohttp 不信任宿主
+               的 HTTP_PROXY env，外部源（如 FRED 等美国数据接口）需要显式传。
 
     Returns:
         aiohttp.ClientResponse
@@ -63,6 +66,8 @@ async def async_get(
         kwargs["headers"] = headers
     if timeout is not None:
         kwargs["timeout"] = aiohttp.ClientTimeout(total=timeout)
+    if proxy:
+        kwargs["proxy"] = proxy
     return await session.get(url, **kwargs)
 
 
