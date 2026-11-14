@@ -7,7 +7,7 @@ name = "asset-lens"
 version = "1.0.0"
 description = "个人资产分析系统 - 投资组合分析、股票基金查询、策略筛选、自动化监控"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 requires-python = ">=3.11,<3.14"
 authors = [
     {name = "asset-lens team"}
