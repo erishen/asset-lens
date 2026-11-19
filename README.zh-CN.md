@@ -23,7 +23,7 @@ make analyze
 
 ### 前置要求
 
-- Python 3.9+
+- Python 3.11–3.13
 - conda（推荐）或 pip
 
 ### 1. 克隆并安装
@@ -98,6 +98,31 @@ asset-lens/
 
 ---
 
+## 量化工具箱（`quant`）
+
+一个轻依赖的量化层（只用 numpy / scipy / pandas），用于组合风险度量与优化。
+所有命令都接受 `--returns <csv>`（首列为日期，其余列为各资产单期收益率）；不传则用内置的确定性演示数据。
+风险数值统一为**正数=损失**（如 `CVaR=0.03` 表示尾部平均亏损 3%）。
+
+```bash
+python -m asset_lens quant cvar --returns returns.csv --level 0.95
+python -m asset_lens quant optimize --objective min_variance        # 另有 max_sharpe / min_cvar / target_return / frontier
+python -m asset_lens quant simulate --method bootstrap --paths 1000 --horizon 252
+python -m asset_lens quant mpc --lookback 60 --rebalance-every 5 --cost 0.001
+```
+
+| 方法 | 命令 | 说明 |
+|------|------|------|
+| CVaR | `quant cvar` / `optimize --objective min_cvar` | 历史模拟与正态假设 CVaR；Rockafellar-Uryasev LP 求最小 CVaR 权重 |
+| Markowitz | `quant optimize` / `frontier` | 最小方差、最大夏普、目标收益（SLSQP）及有效前沿 |
+| Monte Carlo | `quant simulate` | 几何布朗运动与分块自举路径，终值 VaR / CVaR / 亏损概率（固定 seed 可复现） |
+| MPC | `quant mpc` | 滚动时域再平衡，含交易成本惩罚 |
+
+Python API：`from asset_lens.quant import historical_cvar, min_variance, minimize_cvar, simulate, rolling_rebalance`。
+输入约定：收益率矩阵 shape `(T, N)`（T 期 × N 资产）；权重和为 1，默认只做多。
+
+---
+
 ## 数据模式
 
 | 模式 | 说明 | 用途 |
@@ -142,7 +167,7 @@ OPENAI_API_KEY=your_key
 
 ## 技术栈
 
-- **Python 3.10+**
+- **Python 3.11–3.13**
 - **pandas / numpy** — 数据处理
 - **click** — CLI 框架
 - **rich** — 格式化输出

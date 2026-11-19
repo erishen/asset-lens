@@ -263,6 +263,15 @@ install-web: ## 安装 Web 依赖（使用 uv）
 	uv sync --extra web
 	@echo "✅ Web 依赖安装完成"
 
+.PHONY: web-build
+web-build: ## 构建 React 前端并同步到 asset_lens/web/static
+	@echo "🔨 构建 React 前端..."
+	cd web-react && npm run build
+	@echo "📦 同步构建产物到 static..."
+	rm -rf asset_lens/web/static/assets
+	cp -R web-react/dist/. asset_lens/web/static/
+	@echo "✅ 前端构建完成，入口: asset_lens/web/static/index.html"
+
 .PHONY: install-ai
 install-ai: ## 安装 AI 依赖（使用 uv）
 	@echo "📥 安装 AI 依赖..."

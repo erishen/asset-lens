@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { KLineChart } from './KLineChart';
 import { PerformanceChart } from './PerformanceChart';
+import { QuantAnalysis } from './QuantAnalysis';
 
 export function AnalysisPage() {
   const [stockCode, setStockCode] = useState('sh600519');
@@ -43,6 +44,8 @@ export function AnalysisPage() {
       <KLineChart code={stockCode} name={stockName} />
 
       <PerformanceChart />
+
+      <QuantAnalysis />
 
       <div className="chart-container">
         <h3 className="chart-title">导出报告</h3>

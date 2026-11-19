@@ -16,6 +16,7 @@ from .ml_train import ml_cli as ml_train_group
 from .monitor import register_monitor_commands
 from .notify import register_notify_commands
 from .predict import register_predict_commands
+from .quant import register_quant_commands
 from .report import register_report_commands
 from .risk import register_risk_commands
 from .scheduler import register_scheduler_commands
@@ -46,6 +47,7 @@ register_risk_commands(cli)
 register_ml_advanced_commands(cli)
 register_notify_commands(cli)
 register_scheduler_commands(cli)
+register_quant_commands(cli)
 
 # 注册 ML 命令组
 cli.add_command(ml_group, name="ml")

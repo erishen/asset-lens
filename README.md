@@ -23,7 +23,7 @@ make analyze
 
 ### Prerequisites
 
-- Python 3.9+
+- Python 3.11–3.13
 - conda (recommended) or pip
 
 ### 1. Clone & Install
@@ -98,6 +98,32 @@ asset-lens/
 
 ---
 
+## Quantitative Toolkit (`quant`)
+
+A dependency-light quantitative layer (only numpy / scipy / pandas) for portfolio risk and optimization.
+All commands accept `--returns <csv>` (first column = date, remaining columns = per-period returns per asset);
+omit it to try built-in deterministic demo data. Risk figures are **positive = loss** (e.g. `CVaR=0.03` means
+a 3% average tail loss).
+
+```bash
+python -m asset_lens quant cvar --returns returns.csv --level 0.95
+python -m asset_lens quant optimize --objective min_variance        # also: max_sharpe / min_cvar / target_return / frontier
+python -m asset_lens quant simulate --method bootstrap --paths 1000 --horizon 252
+python -m asset_lens quant mpc --lookback 60 --rebalance-every 5 --cost 0.001
+```
+
+| Method | CLI | What it does |
+|--------|-----|--------------|
+| CVaR | `quant cvar` / `optimize --objective min_cvar` | Historical & parametric CVaR; Rockafellar-Uryasev LP for minimum-CVaR weights |
+| Markowitz | `quant optimize` / `frontier` | Min-variance, max-Sharpe, target-return (SLSQP) and efficient frontier |
+| Monte Carlo | `quant simulate` | GBM & block-bootstrap paths, terminal VaR / CVaR / loss probability (seeded, reproducible) |
+| MPC | `quant mpc` | Rolling-horizon rebalancing with transaction-cost penalty |
+
+Python API: `from asset_lens.quant import historical_cvar, min_variance, minimize_cvar, simulate, rolling_rebalance`.
+Input convention: return matrix shape `(T, N)` (T periods × N assets); weights sum to 1, long-only by default.
+
+---
+
 ## Data Modes
 
 | Mode | Description | Use Case |
@@ -143,7 +169,7 @@ Config files use `.example` templates — copy to remove the `.example` suffix a
 
 ## Tech Stack
 
-- **Python 3.10+**
+- **Python 3.11–3.13**
 - **pandas / numpy** — data processing
 - **click** — CLI framework
 - **rich** — formatted output

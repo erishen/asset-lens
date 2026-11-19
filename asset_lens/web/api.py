@@ -95,6 +95,7 @@ from .routes import (
     market_router,
     ml_router,
     portfolio_router,
+    quant_router,
     recommendation_router,
     remaining_router,
     report_router,
@@ -109,6 +110,7 @@ from .routes import (
 
 app.include_router(stock_router)
 app.include_router(portfolio_router)
+app.include_router(quant_router)
 app.include_router(strategy_router)
 app.include_router(market_router)
 app.include_router(compare_router)
@@ -180,6 +182,20 @@ async def dashboard():
 static_path = Path(__file__).parent / "static"
 if static_path.exists():
     app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
+
+    # Vite 构建产物以绝对路径 /assets/ 引用 JS/CSS（见 static/index.html），
+    # 需单独挂载，否则浏览器请求 /assets/index-*.js 会 404。
+    assets_path = static_path / "assets"
+    if assets_path.exists():
+        app.mount("/assets", StaticFiles(directory=str(assets_path)), name="assets")
+
+    # Vite 模板把 /vite.svg 作为图标的绝对路径引用。
+    vite_icon = static_path / "vite.svg"
+    if vite_icon.exists():
+
+        @app.get("/vite.svg", include_in_schema=False)
+        async def vite_svg():
+            return FileResponse(str(vite_icon))
 
 
 from .websocket import manager

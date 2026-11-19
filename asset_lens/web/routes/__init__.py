@@ -10,6 +10,7 @@ from .fixed_income import router as fixed_income_router
 from .market import router as market_router
 from .ml import router as ml_router
 from .portfolio import router as portfolio_router
+from .quant import router as quant_router
 from .recommendation import router as recommendation_router
 from .remaining import router as remaining_router
 from .report import router as report_router
@@ -30,6 +31,7 @@ __all__ = [
     "market_router",
     "ml_router",
     "portfolio_router",
+    "quant_router",
     "recommendation_router",
     "remaining_router",
     "report_router",

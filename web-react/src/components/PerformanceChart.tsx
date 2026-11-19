@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import ReactECharts from 'echarts-for-react';
 
+// 后端 /api/portfolio/performance 实际返回 summary / top_performers / evaluation，
+// 并不提供 history（历史净值序列）或 type_summary（分类汇总）。前端早年的
+// PerformanceData 契约从未对齐，导致 data.history.map(...) 对 undefined 调用而崩溃。
+// 这里按真实响应归一化：数值字段兜底，缺失的图表数据用空数组，页面不崩且不伪造数据。
 interface PerformanceData {
   total_initial: number;
   total_current: number;
@@ -26,10 +30,32 @@ interface HistoryItem {
   return_rate: number;
 }
 
+const toFinite = (value: unknown): number => {
+  // 后端 evaluation 里不少字段是带千分位/百分号的字符串，剥掉这些符号再转数值。
+  const cleaned = String(value ?? '').replace(/[,%]/g, '');
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : 0;
+};
+
+const normalizePerformance = (raw: any): PerformanceData => {
+  const summary = raw?.summary ?? {};
+  return {
+    total_initial: toFinite(summary.total_assets),
+    total_current: toFinite(summary.total_assets),
+    total_profit: toFinite(summary.total_profit),
+    total_return_rate: toFinite(summary.total_return),
+    // 后端无分类汇总/历史序列数据，用空数组兜底，图表显示"暂无数据"而非崩溃。
+    type_summary: [],
+    history: [],
+    update_time: raw?.analysis_date ?? '',
+  };
+};
+
 export function PerformanceChart() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [data, setData] = useState<PerformanceData | null>(null);
+  const [topPerformers, setTopPerformers] = useState<any[]>([]);
 
   useEffect(() => {
     fetchPerformanceData();
@@ -43,9 +69,10 @@ export function PerformanceChart() {
       const result = await response.json();
 
       if (result.error) {
-        setError(result.error);
+        setError(typeof result.error === 'string' ? result.error : (result.error?.message ?? '获取收益数据失败'));
       } else {
-        setData(result);
+        setData(normalizePerformance(result));
+        setTopPerformers(Array.isArray(result.top_performers) ? result.top_performers : []);
       }
     } catch (e) {
       setError('获取收益数据失败');
@@ -164,39 +191,50 @@ export function PerformanceChart() {
 
       <div className="chart-container">
         <h3 className="chart-title">资产趋势 (近30天)</h3>
-        <ReactECharts option={lineChartOption} style={{ height: '350px' }} />
+        {data?.history.length ? (
+          <ReactECharts option={lineChartOption} style={{ height: '350px' }} />
+        ) : (
+          <p style={{ color: '#888', padding: '40px 0', textAlign: 'center' }}>暂无历史净值数据</p>
+        )}
       </div>
 
       <div className="chart-container">
         <h3 className="chart-title">类型分布</h3>
-        <ReactECharts option={pieChartOption} style={{ height: '350px' }} />
+        {data?.type_summary.length ? (
+          <ReactECharts option={pieChartOption} style={{ height: '350px' }} />
+        ) : (
+          <p style={{ color: '#888', padding: '40px 0', textAlign: 'center' }}>暂无分类汇总数据</p>
+        )}
       </div>
 
       <div className="chart-container">
-        <h3 className="chart-title">类型收益对比</h3>
+        <h3 className="chart-title">收益 Top 5</h3>
         <div className="table-container">
           <table>
             <thead>
               <tr>
+                <th>排名</th>
+                <th>名称</th>
                 <th>类型</th>
-                <th>数量</th>
-                <th>初始金额</th>
                 <th>当前金额</th>
-                <th>收益</th>
                 <th>收益率</th>
+                <th>年化</th>
               </tr>
             </thead>
             <tbody>
-              {data?.type_summary.map((t) => (
-                <tr key={t.type}>
+              {topPerformers.map((t, i) => (
+                <tr key={`${t.name}-${i}`}>
+                  <td>{t.rank ?? i + 1}</td>
+                  <td>{t.name}</td>
                   <td>{t.type}</td>
-                  <td>{t.count}</td>
-                  <td>{formatMoney(t.initial)}</td>
-                  <td>{formatMoney(t.current)}</td>
-                  <td className={t.profit >= 0 ? 'positive' : 'negative'}>{formatMoney(t.profit)}</td>
-                  <td className={t.return_rate >= 0 ? 'positive' : 'negative'}>{t.return_rate.toFixed(2)}%</td>
+                  <td>{t.current_amount}</td>
+                  <td>{t.return_rate}</td>
+                  <td>{t.annual_return}</td>
                 </tr>
               ))}
+              {topPerformers.length === 0 && (
+                <tr><td colSpan={6} style={{ color: '#888', textAlign: 'center' }}>暂无数据</td></tr>
+              )}
             </tbody>
           </table>
         </div>

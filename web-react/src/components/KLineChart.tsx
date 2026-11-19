@@ -99,13 +99,17 @@ export function KLineChart({ code, name }: KLineChartProps) {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(`/api/stock/kline/${code}?period=${period}&count=120`);
+      // 后端参数是 ktype，取值为 day/week/month（不是 period=daily/weekly/monthly）。
+      const ktype = { daily: 'day', weekly: 'week', monthly: 'month' }[period];
+      const response = await fetch(`/api/stock/kline/${code}?ktype=${ktype}&count=120`);
       const data = await response.json();
 
-      if (data.error) {
-        setError(data.error);
+      // 统一错误处理器的 error 是对象 {message,...}，不是字符串；直接渲染对象会崩。
+      if (!response.ok || data.error || data.success === false) {
+        const err = data.error;
+        setError(typeof err === 'string' ? err : (err?.message ?? data.message ?? '获取 K 线数据失败'));
       } else {
-        setKlineData(data.data || []);
+        setKlineData(Array.isArray(data.data) ? data.data : []);
       }
     } catch (e) {
       setError('获取 K 线数据失败');

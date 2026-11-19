@@ -1,5 +1,7 @@
 export interface PortfolioSummary {
   total_assets: number;
+  /** 全口径总资产：资产汇总表末行「总金额」（含现金/各账户/信用卡负债） */
+  total_assets_overview?: number;
   total_profit: number;
   total_return: number;
   position_count: number;
@@ -126,4 +128,91 @@ export interface HealthResponse {
   status: string;
   version: string;
   timestamp: string;
+}
+
+// ===== 量化分析（CVaR / Markowitz / Monte Carlo / MPC）=====
+export interface QuantMeta {
+  source: string;
+  assets: string[];
+  proxies: { name: string; code: string }[];
+  start_date: string;
+  end_date: string;
+  periods: number;
+  portfolio: string;
+}
+
+export interface QuantCvarAsset {
+  name: string;
+  var: number;
+  cvar: number;
+  mean: number;
+  volatility: number;
+}
+
+export interface QuantCvarResponse {
+  level: number;
+  assets: QuantCvarAsset[];
+  portfolio: { name: string; var: number; cvar: number };
+  meta: QuantMeta;
+}
+
+export interface QuantOptimizeResult {
+  weights: Record<string, number>;
+  expected_return: number;
+  volatility: number;
+  objective_value: number;
+  cvar: number;
+  success: boolean;
+  message: string;
+}
+
+export interface QuantOptimizeResponse {
+  objective: string;
+  level: number;
+  result: QuantOptimizeResult | null;
+  frontier: QuantOptimizeResult[];
+  meta: QuantMeta;
+}
+
+export interface QuantSimulateResponse {
+  method: string;
+  summary: {
+    mean_terminal: number;
+    median_terminal: number;
+    p05: number;
+    p95: number;
+    var: number;
+    cvar: number;
+    prob_loss: number;
+    horizon: number;
+    n_paths: number;
+  };
+  timeline: number[];
+  quantiles: { p05: number[]; p50: number[]; p95: number[] };
+  sample_paths: number[][];
+  meta: QuantMeta;
+}
+
+export interface QuantMpcStep {
+  step: number;
+  date: string;
+  turnover: number;
+  cost: number;
+  portfolio_return: number;
+  weights: Record<string, number>;
+}
+
+export interface QuantMpcResponse {
+  dates: string[];
+  wealth: number[];
+  summary: {
+    final_wealth: number;
+    total_return: number;
+    total_turnover: number;
+    total_cost: number;
+    n_rebalances: number;
+    annualized_return: number;
+  };
+  recent_steps: QuantMpcStep[];
+  meta: QuantMeta;
 }

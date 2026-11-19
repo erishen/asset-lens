@@ -12,6 +12,7 @@ import { RiskChart } from './components/RiskChart';
 import { MarketPage } from './components/MarketPage';
 import { AnalysisPage } from './components/AnalysisPage';
 import { FixedIncomeRiskPage } from './components/FixedIncomeRiskPage';
+import { GuidePage } from './components/GuidePage';
 import { useTheme } from './context/ThemeContext';
 import './App.css';
 
@@ -22,7 +23,8 @@ type TabType =
   | 'risk'
   | 'market'
   | 'analysis'
-  | 'fixed-income';
+  | 'fixed-income'
+  | 'guide';
 
 function App() {
   const [currentTab, setCurrentTab] = useState<TabType>('overview');
@@ -81,7 +83,7 @@ function App() {
   };
 
   const renderContent = () => {
-    if (loading && currentTab !== 'market') {
+    if (loading && currentTab !== 'market' && currentTab !== 'guide') {
       return (
         <div className="loading">
           <div className="loading-spinner"></div>
@@ -90,7 +92,7 @@ function App() {
       );
     }
 
-    if (error && currentTab !== 'market') {
+    if (error && currentTab !== 'market' && currentTab !== 'guide') {
       return (
         <div className="error">
           <p>{error}</p>
@@ -152,6 +154,8 @@ function App() {
         );
       case 'fixed-income':
         return <FixedIncomeRiskPage />;
+      case 'guide':
+        return <GuidePage />;
       case 'market':
         return <MarketPage />;
       case 'analysis':
@@ -226,6 +230,12 @@ function App() {
               onClick={() => switchTab('fixed-income')}
             >
               固收风险
+            </button>
+            <button
+              className={`nav-btn ${currentTab === 'guide' ? 'active' : ''}`}
+              onClick={() => switchTab('guide')}
+            >
+              使用说明
             </button>
           </div>
         </div>

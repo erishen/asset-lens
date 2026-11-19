@@ -165,9 +165,12 @@ async def _get_kline_tencent(code: str, ktype: str, count: int) -> list[dict]:
     ktype_param = ktype_map.get(ktype, "day")
 
     url = "http://web.ifzq.gtimg.cn/appstock/app/fqkline/get"
+    # param 必须 6 段：code,ktype,,,count,fq。此前拼成 7 段（多一个尾随空段），
+    # 腾讯返回 {"code":0,"msg":"param error","data":[]}，表现为 K 线恒为空。
+    # fq 用 qfq 前复权（分红/送股不失真），返回键为 qfqday/qfqweek/qfqmonth。
     params = {
         "_var": f"fqkline_{code}",
-        "param": f"{code},{ktype_param},,{count},,",
+        "param": f"{code},{ktype_param},,,{count},qfq",
         "r": str(int(datetime.now().timestamp() * 1000)),
     }
     headers = {
@@ -185,20 +188,40 @@ async def _get_kline_tencent(code: str, ktype: str, count: int) -> list[dict]:
                 data = json.loads(text[json_start:])
 
                 if data.get("code") == 0:
-                    stock_data = data.get("data", {}).get(code, {})
-                    kline_data = stock_data.get(ktype_param, [])
+                    # 腾讯的 data 字段有时是 dict {code: {...}}，异常时是 list/空，
+                    # 直接 .get(code) 会抛 AttributeError（曾导致 /kline 稳定 500）。
+                    payload = data.get("data", {})
+                    stock_data = payload.get(code, {}) if isinstance(payload, dict) else {}
+                    if not isinstance(stock_data, dict):
+                        return []
 
-                    result = [
-                        {
-                            "date": item[0],
-                            "open": float(item[1]),
-                            "close": float(item[2]),
-                            "high": float(item[3]),
-                            "low": float(item[4]),
-                            "volume": float(item[5]),
-                        }
-                        for item in kline_data
-                    ]
+                    # 复权数据在 qfqday/qfqweek/qfqmonth 下，未复权在 day/week/month 下。
+                    kline_data = (
+                        stock_data.get(f"qfq{ktype_param}")
+                        or stock_data.get(ktype_param)
+                        or []
+                    )
+                    if not isinstance(kline_data, list):
+                        return []
+
+                    result = []
+                    for item in kline_data:
+                        # 每条 K 线至少要有 date + OHLC，字段不足时跳过而非整体崩溃。
+                        if not isinstance(item, (list, tuple)) or len(item) < 6:
+                            continue
+                        try:
+                            result.append(
+                                {
+                                    "date": item[0],
+                                    "open": float(item[1]),
+                                    "close": float(item[2]),
+                                    "high": float(item[3]),
+                                    "low": float(item[4]),
+                                    "volume": float(item[5]),
+                                }
+                            )
+                        except (ValueError, TypeError):
+                            continue
 
                     return result
 

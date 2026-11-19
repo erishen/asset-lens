@@ -110,10 +110,10 @@ all = [
 asset-lens = "asset_lens.cli:cli"
 
 [project.urls]
-Homepage = "https://github.com/asset-lens/asset-lens"
-Documentation = "https://github.com/asset-lens/asset-lens#readme"
-Repository = "https://github.com/asset-lens/asset-lens"
-Issues = "https://github.com/asset-lens/asset-lens/issues"
+Homepage = "https://github.com/erishen/asset-lens"
+Documentation = "https://github.com/erishen/asset-lens#readme"
+Repository = "https://github.com/erishen/asset-lens"
+Issues = "https://github.com/erishen/asset-lens/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]

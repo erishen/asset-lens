@@ -78,12 +78,12 @@ data/money_*/
 Thumbs.db
 
 # Docker
-Dockerfile
 docker-compose.yml
 .dockerignore
 
-# Documentation
+# Documentation（README.md 必须保留：pyproject.toml 的 readme 字段指向它）
 *.md
+!README.md
 docs/
 
 # Tests

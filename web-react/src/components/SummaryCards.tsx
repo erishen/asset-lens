@@ -19,8 +19,13 @@ export function SummaryCards({ summary, strategyCount, lastUpdate }: SummaryCard
     <div className="cards">
       <div className="card">
         <div className="card-title">总资产</div>
-        <div className="card-value">{formatMoney(summary.total_assets)}</div>
-        <div className="card-change">持仓数量: {summary.position_count}</div>
+        <div className="card-value">
+          {formatMoney(summary.total_assets_overview ?? summary.total_assets)}
+        </div>
+        <div className="card-change">
+          全口径（含现金）| 投资市值: {formatMoney(summary.total_assets)} | 持仓{' '}
+          {summary.position_count}
+        </div>
       </div>
       <div className="card">
         <div className="card-title">总收益</div>
