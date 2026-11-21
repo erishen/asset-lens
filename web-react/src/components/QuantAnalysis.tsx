@@ -146,9 +146,10 @@ export function QuantAnalysis() {
               yAxis: { type: 'category', data: cvar.assets.map((a) => a.name).reverse(), axisLabel: { color: '#888' } },
               series: [{
                 type: 'bar',
-                data: cvar.assets.map((a) => +(a.cvar * 100).toFixed(3)).reverse(),
+                // data 存原始小数（与后端 cvar 口径一致），三处显示统一走 pct 乘 100
+                data: cvar.assets.map((a) => a.cvar).reverse(),
                 itemStyle: { color: '#ff6b6b' },
-                label: { show: true, position: 'right', formatter: (p: any) => `${p.value}%`, color: '#888' },
+                label: { show: true, position: 'right', formatter: (p: any) => pct(p.value), color: '#888' },
               }],
             }}
           />
@@ -205,7 +206,7 @@ export function QuantAnalysis() {
                 <Stat label="预期日收益" value={pct(optimize.result.expected_return)} cls={optimize.result.expected_return >= 0 ? 'positive' : 'negative'} />
                 <Stat label="日波动率" value={pct(optimize.result.volatility)} />
                 <Stat label="CVaR (95%)" value={pct(optimize.result.cvar)} cls="negative" />
-                <Stat label="目标值" value={num(optimize.result.objective_value, 4)} />
+                <Stat label="目标值" value={optimize.result.objective_value === null ? '无定义' : num(optimize.result.objective_value, 4)} />
               </div>
               <ReactECharts
                 style={{ height: 380 }}
@@ -270,7 +271,7 @@ export function QuantAnalysis() {
           <div className="cards" style={{ marginBottom: 12 }}>
             <Stat label="期末净值" value={num(mpc.summary.final_wealth)} cls={mpc.summary.total_return >= 0 ? 'positive' : 'negative'} />
             <Stat label="区间收益" value={pct(mpc.summary.total_return)} cls={mpc.summary.total_return >= 0 ? 'positive' : 'negative'} />
-            <Stat label="累计换手" value={pct(mpc.summary.total_turnover, 1)} />
+            <Stat label="累计双边换手" value={pct(mpc.summary.total_turnover, 1)} />
             <Stat label="交易成本" value={pct(mpc.summary.total_cost, 2)} />
           </div>
           <ReactECharts
@@ -290,7 +291,7 @@ export function QuantAnalysis() {
           />
           <div className="table-container" style={{ marginTop: 12 }}>
             <table>
-              <thead><tr><th>日期</th><th>换手率</th><th>成本</th><th>当期收益</th><th>目标权重（前 4）</th></tr></thead>
+              <thead><tr><th>日期</th><th>双边换手</th><th>成本</th><th>当期收益</th><th>目标权重（前 4）</th></tr></thead>
               <tbody>
                 {mpc.recent_steps.slice().reverse().map((s) => (
                   <tr key={s.step}>

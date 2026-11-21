@@ -20,6 +20,7 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -156,11 +157,16 @@ class OptimizationResult:
     def as_dict(self, names: list[str] | None = None) -> dict[str, Any]:
         """转成可 JSON 序列化的字典。"""
         keys = names or [f"asset_{i}" for i in range(len(self.weights))]
+        # JSON（RFC 8259）不接受 NaN/Inf；优化无定义时用 NaN 表示，序列化必须转成 null，
+        # 否则 starlette JSONResponse 在路由 try/except 之外抛 ValueError 直接 500。
+        objective: float | None = float(self.objective_value)
+        if not math.isfinite(objective):
+            objective = None
         return {
             "weights": {name: float(weight) for name, weight in zip(keys, self.weights, strict=True)},
             "expected_return": float(self.expected_return),
             "volatility": float(self.volatility),
-            "objective_value": float(self.objective_value),
+            "objective_value": objective,
             "success": bool(self.success),
             "message": self.message,
         }

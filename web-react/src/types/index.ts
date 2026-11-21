@@ -160,7 +160,8 @@ export interface QuantOptimizeResult {
   weights: Record<string, number>;
   expected_return: number;
   volatility: number;
-  objective_value: number;
+  /** 优化目标值；无定义（如夏普比率分母为 0）时后端返回 null。 */
+  objective_value: number | null;
   cvar: number;
   success: boolean;
   message: string;

@@ -17,7 +17,9 @@ from fastapi import APIRouter, HTTPException, Query
 
 from ...data.quant_returns import ASSET_PROXIES, load_returns
 from ...quant import (
+    bootstrap_paths,
     efficient_frontier,
+    gbm_paths,
     historical_cvar,
     historical_var,
     max_sharpe,
@@ -26,10 +28,8 @@ from ...quant import (
     portfolio_cvar,
     portfolio_paths,
     portfolio_returns,
-    simulate_paths,
-    bootstrap_paths,
-    gbm_paths,
     rolling_rebalance,
+    simulate_paths,
 )
 
 router = APIRouter(prefix="/api/quant", tags=["quant"])
@@ -159,21 +159,23 @@ async def simulate_portfolio(
             # portfolio_paths: (steps, n_paths, n_assets) -> (steps, n_paths)
             combined = portfolio_paths(paths, equal_weights)
             summary = simulate_paths(combined, level)
-            timeline = list(range(horizon + 1))
-            quantiles = {
-                "p05": [round(float(v), 5) for v in np.percentile(combined, 5, axis=1)],
-                "p50": [round(float(v), 5) for v in np.percentile(combined, 50, axis=1)],
-                "p95": [round(float(v), 5) for v in np.percentile(combined, 95, axis=1)],
-            }
-            # 示例路径降采样到最多 40 点，避免响应体过大
+            # ECharts category 轴按索引对齐 series，timeline / 分位线 / 示例路径
+            # 必须用同一 stride 降采样，否则分位带只覆盖前面一小段且整体错位。
             stride = max(1, (horizon + 1) // 40)
+            timeline = list(range(horizon + 1))[::stride]
+            quantiles = {
+                "p05": [round(float(v), 5) for v in np.percentile(combined, 5, axis=1)[::stride]],
+                "p50": [round(float(v), 5) for v in np.percentile(combined, 50, axis=1)[::stride]],
+                "p95": [round(float(v), 5) for v in np.percentile(combined, 95, axis=1)[::stride]],
+            }
             samples = [
                 [round(float(v), 5) for v in combined[::stride, i]]
                 for i in range(6)
             ]
             return {
                 "summary": summary.as_dict(),
-                "timeline": timeline[::stride],
+                # timeline 已在上面按 stride 降采样，此处不可再切一次（否则步长变 stride²）
+                "timeline": timeline,
                 "quantiles": quantiles,
                 "sample_paths": samples,
             }
@@ -192,7 +194,7 @@ async def simulate_portfolio(
 async def mpc_backtest(
     lookback: int = Query(60, ge=20, le=200, description="滚动窗口期数"),
     rebalance_every: int = Query(5, ge=1, le=60, description="再平衡间隔期数"),
-    transaction_cost: float = Query(0.001, ge=0.0, le=0.05, description="单边交易成本率"),
+    transaction_cost: float = Query(0.001, ge=0.0, le=0.05, description="成本率（按双边换手额 Σ|Δw| 计费）"),
     count: int = Query(260, ge=60, le=1000),
 ):
     """MPC 滚动再平衡回测：净值曲线 + 换手/成本汇总 + 最近决策。"""

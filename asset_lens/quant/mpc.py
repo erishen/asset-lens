@@ -27,7 +27,7 @@ class MPCStep:
 
     step: int
     target_weights: np.ndarray
-    turnover: float
+    turnover: float  # 双边换手额 Σ|Δw|
     cost: float
     portfolio_return: float
 
@@ -42,7 +42,7 @@ class MPCResult:
 
     @property
     def total_turnover(self) -> float:
-        """累计单边换手率。"""
+        """累计双边换手额（Σ|Δw|，权重和为 1 时一次全换计 2）。"""
         return float(sum(step.turnover for step in self.steps))
 
     @property
@@ -86,7 +86,7 @@ class MPCResult:
                 f"MPC 滚动再平衡: {len(self.steps)} 次决策",
                 f"期末净值:   {self.final_wealth:.4f}",
                 f"最大回撤:   {self.max_drawdown():.2%}",
-                f"累计换手:   {self.total_turnover:.2%}",
+                f"累计双边换手: {self.total_turnover:.2%}",
                 f"累计成本:   {self.total_cost:.4f}",
             ]
         )
@@ -98,7 +98,7 @@ class MPCController:
     Args:
         lookback: 每次优化使用的历史窗口长度。
         rebalance_every: 每隔多少期再平衡一次（其间沿用上次权重）。
-        transaction_cost: 单边换手成本率，例如 0.001 表示每次调整按变动额的 0.1% 计费。
+        transaction_cost: 成本率，按双边换手额 Σ|Δw| 计费；0.001 表示每单位双边换手额收 0.1%。
         objective: ``"min_variance"`` 或 ``"max_sharpe"``。
         risk_free_rate: ``max_sharpe`` 目标下的单期无风险利率。
         constraints: 权重约束。
@@ -159,6 +159,7 @@ class MPCController:
         for t in range(self.lookback, n_periods):
             if (t - self.lookback) % self.rebalance_every == 0:
                 target = self._solve(matrix[t - self.lookback : t])
+                # Σ|Δw| 是双边换手额（如全仓 A→B 记 2），成本按此计费，口径与 total_turnover 一致
                 turnover = float(np.sum(np.abs(target - current_weights)))
                 cost = turnover * self.transaction_cost
                 current_weights = target

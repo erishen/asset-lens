@@ -162,6 +162,19 @@ class TestMarkowitz:
         negative = np.random.default_rng(3).normal(0, 0.01, (50, 3)) - 0.05
         assert not max_sharpe(negative).success
 
+    def test_nan_objective_serializes_to_null(self):
+        """回归：夏普无定义时 as_dict 必须输出 None，否则 JSONResponse 抛 ValueError→500。"""
+        import json
+
+        result = max_sharpe(np.full((50, 3), 0.001))
+        payload = result.as_dict(["a", "b", "c"])
+        assert payload["objective_value"] is None
+        assert payload["success"] is False
+        assert json.loads(json.dumps(payload))["objective_value"] is None
+        # 正常路径不受影响
+        normal = min_variance(_sample_returns()).as_dict(["a", "b", "c"])
+        assert normal["objective_value"] is not None
+
     def test_target_return_constraint(self):
         matrix = _sample_returns()
         mu = matrix.mean(axis=0)
@@ -300,3 +313,37 @@ class TestMPC:
             MPCController(lookback=1)
         with pytest.raises(ValueError):
             MPCController(objective="unknown")
+
+
+class TestQuantRoutes:
+    """路由层契约：降采样后三个 series 必须与 category 轴等长。"""
+
+    def test_simulate_series_aligned_with_timeline(self, monkeypatch):
+        import asyncio
+
+        import pandas as pd
+
+        from asset_lens.data.quant_returns import QuantDataset
+        from asset_lens.web.routes import quant as quant_route
+
+        matrix = _sample_returns(periods=120)
+        names = ["a", "b", "c"]
+        dataset = QuantDataset(
+            returns=pd.DataFrame(matrix, columns=names),
+            names=names,
+            start_date="2026-01-01",
+            end_date="2026-06-30",
+            periods=len(matrix),
+        )
+
+        async def fake_load(_count):
+            return dataset
+
+        monkeypatch.setattr(quant_route, "load_returns", fake_load)
+        payload = asyncio.run(quant_route.simulate_portfolio(
+            method="bootstrap", horizon=252, n_paths=100, level=0.95, count=120
+        ))
+        n = len(payload["timeline"])
+        assert n == len(payload["quantiles"]["p05"]) == len(payload["quantiles"]["p50"]) == len(payload["quantiles"]["p95"])
+        assert all(len(p) == n for p in payload["sample_paths"])
+        assert payload["timeline"][0] == 0 and payload["timeline"][-1] == 252

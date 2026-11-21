@@ -14,6 +14,7 @@ import json
 import time
 from dataclasses import dataclass
 
+import aiohttp
 import numpy as np
 import pandas as pd
 
@@ -39,7 +40,7 @@ _HEADERS = {
 }
 _TTL_SECONDS = 600  # 行情日内变化，10 分钟足够；避免每次请求打 8 次外部接口
 
-_CACHE: dict[int, tuple[float, "QuantDataset"]] = {}
+_CACHE: dict[int, tuple[float, QuantDataset]] = {}
 
 
 @dataclass(frozen=True)
@@ -91,7 +92,9 @@ async def _fetch_close_series(name: str, code: str, count: int) -> pd.Series | N
             if len(dates) < 30:
                 return None
             return pd.Series(closes, index=pd.Index(dates, name="date"), name=name, dtype=float)
-    except (ValueError, KeyError, TypeError, OSError, asyncio.TimeoutError):
+    except (ValueError, KeyError, TypeError, OSError, asyncio.TimeoutError, aiohttp.ClientError):
+        # ClientPayloadError / ClientResponseError 不是 OSError 子类：分块读取失败等
+        # 网络异常必须在此剔除单个资产，不能让它击穿 gather 导致四个端点全 500。
         return None
 
 

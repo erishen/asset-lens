@@ -270,3 +270,6 @@ data/salary_records.json
 
 # AI analysis output (from ai-analyze)
 ai-analysis/
+
+# Local Docker buildx state (created by BUILDX_CONFIG=$PWD/.data/buildx)
+.data/
