@@ -7,7 +7,10 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    TZ=Asia/Shanghai
+    TZ=Asia/Shanghai \
+    # uv 默认 HTTP 超时仅 30s，下载 xgboost(125MB)/scipy(31MB) 等大包会超时 ⇒ 调大。
+    UV_HTTP_TIMEOUT=600 \
+    UV_HTTP_RETRIES=3
 
 # git: investkit-utils 是 git 源；tzdata: TZ 生效；libgomp1: LightGBM/XGBoost 的 OpenMP 依赖。
 RUN apt-get update \
@@ -28,8 +31,13 @@ COPY pyproject.toml uv.lock README.md ./
 COPY asset_lens ./asset_lens
 
 # investkit-utils 由 [tool.uv.sources] 映射为 git 源，pip 不读该配置 ⇒ 必须用 uv + uv.lock。
+# xgboost 在 Linux 下强拉 nvidia-nccl-cu12（326MB，仅 CUDA 分布式训练用，CPU 推理用不到），
+# 用 --no-install-package 直接从源头跳过，省下载量+镜像体积（否则会卡在慢速大包下载上）。
 RUN python -m pip install --no-cache-dir uv \
- && uv sync --frozen --no-dev
+ && uv sync --frozen --no-dev --no-install-package nvidia-nccl-cu12 \
+ && uv pip uninstall --quiet nvidia-nccl-cu12 \
+ && rm -rf /app/.venv/lib/python*/site-packages/nvidia \
+ && rm -rf /root/.cache/uv
 
 ENV PATH="/app/.venv/bin:$PATH"
 

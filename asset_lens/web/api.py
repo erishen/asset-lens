@@ -20,9 +20,9 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 logger = logging.getLogger(__name__)
@@ -84,6 +84,56 @@ app.add_middleware(
     allow_methods=CORS_METHODS,
     allow_headers=CORS_HEADERS,
 )
+
+# ---------------------------------------------------------------------------
+# 可选 Web 数据路由鉴权（合规加固）
+# 默认关闭：本地仪表盘（/、/dashboard、/static、/assets、/health、/api/v1）零影响。
+# 对外暴露时开启：export ASSET_LENS_WEB_AUTH=1 ASSET_LENS_WEB_API_KEYS='{"k":"u"}'
+#   或复用现有 API_KEYS。开启后所有 /api/* 数据路由需携带 Authorization: Bearer <key>。
+# ---------------------------------------------------------------------------
+WEB_AUTH_ENABLED = os.getenv("ASSET_LENS_WEB_AUTH", "").lower() in ("true", "1", "yes")
+
+
+def _load_web_api_keys() -> set[str]:
+    """从 ASSET_LENS_WEB_API_KEYS（JSON 或逗号分隔）读取，回退到 API_KEYS。"""
+    raw = os.getenv("ASSET_LENS_WEB_API_KEYS", "")
+    if not raw:
+        raw = os.getenv("API_KEYS", "")
+    if not raw:
+        return set()
+    try:
+        import json as _json
+
+        parsed = _json.loads(raw)
+        if isinstance(parsed, dict):
+            return set(parsed.keys())
+        if isinstance(parsed, list):
+            return set(str(k) for k in parsed)
+    except (ValueError, TypeError):
+        pass
+    return {k.strip() for k in raw.split(",") if k.strip()}
+
+
+WEB_API_KEYS = _load_web_api_keys()
+
+
+@app.middleware("http")
+async def web_auth_middleware(request: Request, call_next):
+    """数据路由鉴权：默认放行；开启后校验 Bearer token。"""
+    if not WEB_AUTH_ENABLED:
+        return await call_next(request)
+
+    path = request.url.path
+    # 放行非数据路由：/、/health、/dashboard、/static、/assets 及已自鉴权的 /api/v1。
+    if not path.startswith("/api/") or path.startswith("/api/v1"):
+        return await call_next(request)
+
+    auth = request.headers.get("authorization", "")
+    token = auth.removeprefix("Bearer ").strip() if auth.lower().startswith("bearer ") else ""
+    if token and token in WEB_API_KEYS:
+        return await call_next(request)
+
+    return JSONResponse(status_code=401, content={"detail": "Unauthorized", "path": path})
 
 from .dashboard_enhanced import router as dashboard_router
 from .routes import (

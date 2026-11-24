@@ -4,8 +4,8 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        # 国内网络可覆盖：PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple docker compose build
-        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.org/simple}
+        # 默认走清华 TUNA 镜像（国内快、稳）；如需官方源/其他镜像：PIP_INDEX_URL=https://pypi.org/simple docker compose build
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}
     image: asset-lens:latest
     container_name: asset-lens
 
@@ -27,8 +27,9 @@ services:
 
     # 宿主端口取 >10000 的高位端口，避开 180xx/190xx 上其他项目占用的段。
     # 容器内仍为 8000；如需改宿主端口，只改冒号左侧。
+    # 仅绑定 127.0.0.1：Web API 无鉴权，避免暴露到局域网（合规/隐私）。
     ports:
-      - "29080:8000"
+      - "127.0.0.1:29080:8000"
 
     # 默认启动 Web API。跑 CLI：docker compose run --rm asset-lens python -m asset_lens --help
     command: ["uvicorn", "asset_lens.web.api:app", "--host", "0.0.0.0", "--port", "8000"]
