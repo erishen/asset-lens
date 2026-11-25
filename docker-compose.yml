@@ -4,8 +4,9 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        # 默认走清华 TUNA 镜像（国内快、稳）；如需官方源/其他镜像：PIP_INDEX_URL=https://pypi.org/simple docker compose build
-        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}
+        # 默认走阿里云 PyPI 镜像（国内快、稳，大包如 xgboost 比 TUNA 更可靠）；
+        # 如需其他镜像：PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple docker compose build
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://mirrors.aliyun.com/pypi/simple/}
     image: asset-lens:latest
     container_name: asset-lens
 

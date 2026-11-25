@@ -28,13 +28,21 @@ WORKDIR /app
 
 # pyproject.toml 声明了 readme = "README.md"，所以 README 必须进构建上下文。
 COPY pyproject.toml uv.lock README.md ./
-COPY asset_lens ./asset_lens
 
+# 阶段1：只安装依赖（--no-install-project 不装项目本身）。
+# --mount=type=cache 让 uv 下载缓存存进 BuildKit 缓存（不进镜像层），
+# 既避免镜像被缓存撑大，又让 pyproject/uv.lock 变更时复用已下载的 wheel。
+# 依赖层单独缓存 ⇒ 后续只改源码时此层命中缓存，无需重下 85 个包。
 # investkit-utils 由 [tool.uv.sources] 映射为 git 源，pip 不读该配置 ⇒ 必须用 uv + uv.lock。
 # xgboost 在 Linux 下强拉 nvidia-nccl-cu12（326MB，仅 CUDA 分布式训练用，CPU 推理用不到），
 # 用 --no-install-package 直接从源头跳过，省下载量+镜像体积（否则会卡在慢速大包下载上）。
-RUN python -m pip install --no-cache-dir uv \
- && uv sync --frozen --no-dev --no-install-package nvidia-nccl-cu12 \
+RUN --mount=type=cache,target=/root/.cache/uv \
+    python -m pip install --no-cache-dir uv \
+ && uv sync --frozen --no-dev --no-install-project --no-install-package nvidia-nccl-cu12
+
+# 阶段2：COPY 源码后仅安装项目本身（依赖已就绪，秒级），并清理 nvidia/缓存。
+COPY asset_lens ./asset_lens
+RUN uv sync --frozen --no-dev --no-install-package nvidia-nccl-cu12 \
  && uv pip uninstall --quiet nvidia-nccl-cu12 \
  && rm -rf /app/.venv/lib/python*/site-packages/nvidia \
  && rm -rf /root/.cache/uv

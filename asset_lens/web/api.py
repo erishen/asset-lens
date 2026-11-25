@@ -11,6 +11,12 @@ Web API 服务 - 提供 REST API 接口
 
 使用方法:
     uvicorn asset_lens.web.api:app --reload --port 8000
+
+可选鉴权（默认关闭，对外暴露时开启）:
+    设置环境变量 ASSET_LENS_WEB_AUTH=1 和 ASSET_LENS_WEB_API_KEYS
+    （JSON 对象或逗号分隔的 key 列表，未设时回退到 API_KEYS）。
+    开启后所有 /api/* 数据路由需携带 Authorization: Bearer <key>；
+    /、/health、/api/v1 不受影响。
 """
 
 import json
@@ -90,6 +96,7 @@ app.add_middleware(
 # 默认关闭：本地仪表盘（/、/dashboard、/static、/assets、/health、/api/v1）零影响。
 # 对外暴露时开启：export ASSET_LENS_WEB_AUTH=1 ASSET_LENS_WEB_API_KEYS='{"k":"u"}'
 #   或复用现有 API_KEYS。开启后所有 /api/* 数据路由需携带 Authorization: Bearer <key>。
+# 注意：仅绑定 127.0.0.1 时可不开启；若改绑 0.0.0.0 或走公网，必须开启。
 # ---------------------------------------------------------------------------
 WEB_AUTH_ENABLED = os.getenv("ASSET_LENS_WEB_AUTH", "").lower() in ("true", "1", "yes")
 
